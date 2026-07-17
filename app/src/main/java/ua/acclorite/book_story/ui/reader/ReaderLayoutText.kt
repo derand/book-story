@@ -30,6 +30,8 @@ fun LazyItemScope.ReaderLayoutText(
     imagesAlignment: HorizontalAlignment,
     imagesWidth: Float,
     imagesColorEffects: ColorFilter?,
+    imagesCaptions: Boolean,
+    captionSpacing: Dp,
     fontFamily: FontWithName,
     fontColor: Color,
     lineHeight: TextUnit,
@@ -53,11 +55,30 @@ fun LazyItemScope.ReaderLayoutText(
         is ReaderText.Image -> {
             ReaderLayoutTextImage(
                 entry = entry,
+                showMenu = showMenu,
                 sidePadding = sidePadding,
                 imagesCornersRoundness = imagesCornersRoundness,
                 imagesAlignment = imagesAlignment,
                 imagesWidth = imagesWidth,
-                imagesColorEffects = imagesColorEffects
+                imagesColorEffects = imagesColorEffects,
+                imagesCaptions = imagesCaptions,
+                captionSpacing = captionSpacing,
+                fontFamily = fontFamily,
+                fontColor = fontColor,
+                lineHeight = lineHeight,
+                fontThickness = fontThickness,
+                fontStyle = fontStyle,
+                textAlignment = textAlignment,
+                horizontalAlignment = horizontalAlignment,
+                fontSize = fontSize,
+                letterSpacing = letterSpacing,
+                paragraphIndentation = paragraphIndentation,
+                doubleClickTranslation = doubleClickTranslation,
+                highlightedReading = highlightedReading,
+                highlightedReadingThickness = highlightedReadingThickness,
+                toolbarHidden = toolbarHidden,
+                openTranslator = openTranslator,
+                menuVisibility = menuVisibility
             )
         }
 

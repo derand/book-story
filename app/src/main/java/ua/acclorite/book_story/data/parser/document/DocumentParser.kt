@@ -98,7 +98,7 @@ class DocumentParser @Inject constructor(
 
                     val alt = element.attr("alt").trim().takeIf {
                         it.clearMarkdown().containsVisibleText()
-                    } ?: "Image"
+                    } ?: ""
 
                     element.append("\n[[$src|$alt]]\n")
                 }
@@ -122,9 +122,7 @@ class DocumentParser @Inject constructor(
                                     )
                         } ?: return@forEach
 
-                    val alt = "Image"
-
-                    element.append("\n[[$src|$alt]]\n")
+                    element.append("\n[[$src|]]\n")
                 }
             }.wholeText().lines().forEach { line ->
                 yield()
@@ -144,20 +142,20 @@ class DocumentParser @Inject constructor(
                         imageRegex.matches(line) -> {
                             val trimmedLine = line.removeSurrounding("[[", "]]")
                             val src = trimmedLine.substringBefore("|")
-                            val alt = "_${trimmedLine.substringAfter("|")}_"
+                            val alt = trimmedLine.substringAfter("|")
 
                             val image = loadedImages.getOrPut(src) {
                                 loadImage(src, zipFile, imageEntries, base64Images)
                             } ?: return@forEach
 
-                            readerText.add( // Adding image
+                            readerText.add(
                                 ReaderText.Image(
-                                    image = image
-                                )
-                            )
-                            readerText.add( // Adding alternative text (caption) for image
-                                ReaderText.Text(
-                                    markdownParser.parse(alt)
+                                    image = image,
+                                    caption = alt.takeIf { caption ->
+                                        caption.clearMarkdown().containsVisibleText()
+                                    }?.let { caption -> // Alternative text (caption) for image
+                                        ReaderText.Text(markdownParser.parse("_${caption}_"))
+                                    }
                                 )
                             )
                         }
