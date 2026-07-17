@@ -27,7 +27,15 @@ class XmlTextParser @Inject constructor(
 
         return try {
             val readerText = cachedFile.openInputStream()?.use { stream ->
-                documentParser.parseDocument(Jsoup.parse(stream, null, "", Parser.xmlParser()))
+                val document = Jsoup.parse(stream, null, "", Parser.xmlParser())
+
+                // FB2 stores images as Base64 <binary id="...">, referenced by <image>
+                val base64Images = document.select("binary").associate { binary ->
+                    binary.attr("id").trim().lowercase() to binary.wholeText()
+                }.filterKeys { it.isNotBlank() }
+                document.select("binary").remove()
+
+                documentParser.parseDocument(document, base64Images = base64Images)
             }
 
             yield()

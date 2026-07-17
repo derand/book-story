@@ -8,6 +8,7 @@ package ua.acclorite.book_story.data.parser.document
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.util.Base64
 import androidx.compose.ui.graphics.asImageBitmap
 import kotlinx.coroutines.yield
 import org.jsoup.nodes.Document
@@ -36,6 +37,7 @@ class DocumentParser @Inject constructor(
         document: Document,
         zipFile: ZipFile? = null,
         imageEntries: List<ZipEntry>? = null,
+        base64Images: Map<String, String>? = null,
         includeChapter: Boolean = true
     ): List<ReaderText> {
         yield()
@@ -100,17 +102,23 @@ class DocumentParser @Inject constructor(
                     element.append("\n[[$src|$alt]]\n")
                 }
 
-                // Image (<image>)
+                // Image (<image>, FB2 references <binary> by id)
                 select("image").forEach { element ->
                     val src = element.attr("xlink:href")
+                        .ifBlank { element.attr("l:href") }
+                        .ifBlank { element.attr("href") }
                         .trim()
+                        .removePrefix("#")
                         .substringAfterLast(File.separator)
                         .lowercase()
                         .let { src -> URLDecoder.decode(src, StandardCharsets.UTF_8.name()) }
                         .takeIf {
-                            it.containsVisibleText() && imageEntries?.any { image ->
-                                it == image.name.substringAfterLast(File.separator).lowercase()
-                            } == true
+                            it.containsVisibleText() && (
+                                    base64Images?.containsKey(it) == true ||
+                                            imageEntries?.any { image ->
+                                                it == image.name.substringAfterLast(File.separator).lowercase()
+                                            } == true
+                                    )
                         } ?: return@forEach
 
                     val alt = "Image"
@@ -138,11 +146,12 @@ class DocumentParser @Inject constructor(
                             val alt = "_${trimmedLine.substringAfter("|")}_"
 
                             val image = try {
-                                val imageEntry = imageEntries?.find { image ->
-                                    src == image.name.substringAfterLast(File.separator).lowercase()
-                                } ?: return@forEach
-
-                                zipFile?.getImage(imageEntry)?.asImageBitmap()
+                                base64Images?.get(src)?.decodeBase64Image()?.asImageBitmap()
+                                    ?: imageEntries?.find { image ->
+                                        src == image.name.substringAfterLast(File.separator).lowercase()
+                                    }?.let { imageEntry ->
+                                        zipFile?.getImage(imageEntry)?.asImageBitmap()
+                                    }
                             } catch (e: Exception) {
                                 e.printStackTrace()
                                 null
@@ -200,6 +209,26 @@ class DocumentParser @Inject constructor(
         }
 
         return readerText
+    }
+
+    /**
+     * Decoding Base64 encoded image (FB2 <binary>).
+     */
+    private fun String.decodeBase64Image(): Bitmap? {
+        return try {
+            val bytes = Base64.decode(this, Base64.DEFAULT)
+            BitmapFactory.decodeByteArray(
+                bytes,
+                0,
+                bytes.size,
+                BitmapFactory.Options().apply {
+                    inPreferredConfig = Bitmap.Config.RGB_565
+                }
+            )
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
     }
 
     /**
