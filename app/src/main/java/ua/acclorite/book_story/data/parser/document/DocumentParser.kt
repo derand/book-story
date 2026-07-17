@@ -6,19 +6,19 @@
 
 package ua.acclorite.book_story.data.parser.document
 
-import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.util.Base64
-import androidx.compose.ui.graphics.asImageBitmap
 import kotlinx.coroutines.yield
 import org.jsoup.nodes.Document
 import ua.acclorite.book_story.core.helpers.clearAllMarkdown
 import ua.acclorite.book_story.core.helpers.clearMarkdown
 import ua.acclorite.book_story.core.helpers.containsVisibleText
+import ua.acclorite.book_story.domain.model.reader.ReaderImage
 import ua.acclorite.book_story.domain.model.reader.ReaderText
 import java.io.File
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
+import java.util.zip.CRC32
 import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
 import javax.inject.Inject
@@ -43,6 +43,7 @@ class DocumentParser @Inject constructor(
         yield()
 
         val readerText = mutableListOf<ReaderText>()
+        val loadedImages = mutableMapOf<String, ReaderImage?>()
         var chapterAdded = false
 
         document.selectFirst("body")
@@ -145,22 +146,13 @@ class DocumentParser @Inject constructor(
                             val src = trimmedLine.substringBefore("|")
                             val alt = "_${trimmedLine.substringAfter("|")}_"
 
-                            val image = try {
-                                base64Images?.get(src)?.decodeBase64Image()?.asImageBitmap()
-                                    ?: imageEntries?.find { image ->
-                                        src == image.name.substringAfterLast(File.separator).lowercase()
-                                    }?.let { imageEntry ->
-                                        zipFile?.getImage(imageEntry)?.asImageBitmap()
-                                    }
-                            } catch (e: Exception) {
-                                e.printStackTrace()
-                                null
+                            val image = loadedImages.getOrPut(src) {
+                                loadImage(src, zipFile, imageEntries, base64Images)
                             } ?: return@forEach
 
-                            image.prepareToDraw()
                             readerText.add( // Adding image
                                 ReaderText.Image(
-                                    imageBitmap = image
+                                    image = image
                                 )
                             )
                             readerText.add( // Adding alternative text (caption) for image
@@ -212,45 +204,41 @@ class DocumentParser @Inject constructor(
     }
 
     /**
-     * Decoding Base64 encoded image (FB2 <binary>).
+     * Loading the encoded image bytes from a [ZipFile] entry (EPUB)
+     * or a Base64 <binary> (FB2). Only the image bounds are decoded here,
+     * pixels are decoded lazily when the reader shows the image.
+     *
+     * @return Null if the image was not found or is not decodable.
      */
-    private fun String.decodeBase64Image(): Bitmap? {
+    private fun loadImage(
+        src: String,
+        zipFile: ZipFile?,
+        imageEntries: List<ZipEntry>?,
+        base64Images: Map<String, String>?
+    ): ReaderImage? {
         return try {
-            val bytes = Base64.decode(this, Base64.DEFAULT)
-            BitmapFactory.decodeByteArray(
-                bytes,
-                0,
-                bytes.size,
-                BitmapFactory.Options().apply {
-                    inPreferredConfig = Bitmap.Config.RGB_565
-                }
+            val bytes = base64Images?.get(src)?.let { encoded ->
+                Base64.decode(encoded, Base64.DEFAULT)
+            } ?: imageEntries?.find { image ->
+                src == image.name.substringAfterLast(File.separator).lowercase()
+            }?.let { imageEntry ->
+                zipFile?.getInputStream(imageEntry)?.use { it.readBytes() }
+            } ?: return null
+
+            val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
+            if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null
+
+            val checksum = CRC32().apply { update(bytes) }.value
+            ReaderImage(
+                id = "$src-${bytes.size}-$checksum",
+                bytes = bytes,
+                width = bounds.outWidth,
+                height = bounds.outHeight
             )
         } catch (e: Exception) {
             e.printStackTrace()
             null
         }
-    }
-
-    /**
-     * Getting bitmap from [ZipFile] with compression
-     * that depends on the [imageEntry] size.
-     */
-    private fun ZipFile.getImage(imageEntry: ZipEntry): Bitmap? {
-        fun getBitmapFromInputStream(compressionLevel: Int = 1): Bitmap? {
-            return getInputStream(imageEntry).use { inputStream ->
-                BitmapFactory.decodeStream(
-                    inputStream,
-                    null,
-                    BitmapFactory.Options().apply {
-                        inPreferredConfig = Bitmap.Config.RGB_565
-                        inSampleSize = compressionLevel
-                    }
-                )
-            }
-        }
-
-
-        val uncompressedBitmap = getBitmapFromInputStream() ?: return null
-        return uncompressedBitmap
     }
 }

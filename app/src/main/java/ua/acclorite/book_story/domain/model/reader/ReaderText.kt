@@ -7,7 +7,6 @@
 package ua.acclorite.book_story.domain.model.reader
 
 import androidx.compose.runtime.Immutable
-import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.text.AnnotatedString
 import java.util.UUID
 
@@ -28,6 +27,6 @@ sealed class ReaderText {
 
     @Immutable
     data class Image(
-        val imageBitmap: ImageBitmap
+        val image: ReaderImage
     ) : ReaderText()
 }
