@@ -8,6 +8,7 @@ package ua.acclorite.book_story.data.parser.text
 
 import kotlinx.coroutines.yield
 import org.jsoup.Jsoup
+import org.jsoup.nodes.TextNode
 import org.jsoup.parser.Parser
 import ua.acclorite.book_story.core.log.logE
 import ua.acclorite.book_story.core.log.logI
@@ -34,6 +35,26 @@ class XmlTextParser @Inject constructor(
                     binary.attr("id").trim().lowercase() to binary.wholeText()
                 }.filterKeys { it.isNotBlank() }
                 document.select("binary").remove()
+
+                // FB2 keeps chapter headings in <title> of <body>/<section>.
+                // Convert them to chapter markers before [DocumentParser]
+                // removes all <title> elements.
+                document.selectFirst("body")?.select("title")?.forEach { title ->
+                    val parentTag = title.parent()?.tagName()
+                    if (parentTag != "body" && parentTag != "section") return@forEach
+
+                    val text = title.wholeText()
+                        .replace(Regex("\\s+"), " ")
+                        .trim()
+                    if (text.isBlank()) return@forEach
+
+                    val nested = title.parents().count { parent ->
+                        parent.tagName() == "section"
+                    } > 1
+                    title.replaceWith(
+                        TextNode("\n[[[chapter|${if (nested) 1 else 0}|$text]]]\n")
+                    )
+                }
 
                 documentParser.parseDocument(document, base64Images = base64Images)
             }
