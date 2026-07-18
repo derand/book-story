@@ -8,6 +8,10 @@ package ua.acclorite.book_story.data.parser.document
 
 import android.graphics.BitmapFactory
 import android.util.Base64
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.yield
 import org.jsoup.nodes.Document
 import ua.acclorite.book_story.core.helpers.clearAllMarkdown
@@ -39,11 +43,12 @@ class DocumentParser @Inject constructor(
         imageEntries: List<ZipEntry>? = null,
         base64Images: Map<String, String>? = null,
         includeChapter: Boolean = true
-    ): List<ReaderText> {
+    ): List<ReaderText> = coroutineScope {
         yield()
 
         val readerText = mutableListOf<ReaderText>()
-        val loadedImages = mutableMapOf<String, ReaderImage?>()
+        // Images decode in parallel while the text is being parsed
+        val imageJobs = mutableMapOf<String, Deferred<ReaderImage?>>()
         var chapterAdded = false
 
         document.selectFirst("body")
@@ -100,6 +105,11 @@ class DocumentParser @Inject constructor(
                         it.clearMarkdown().containsVisibleText()
                     } ?: ""
 
+                    imageJobs.getOrPut(src) {
+                        async(Dispatchers.Default) {
+                            loadImage(src, zipFile, imageEntries, base64Images)
+                        }
+                    }
                     element.append("\n[[$src|$alt]]\n")
                 }
 
@@ -122,6 +132,11 @@ class DocumentParser @Inject constructor(
                                     )
                         } ?: return@forEach
 
+                    imageJobs.getOrPut(src) {
+                        async(Dispatchers.Default) {
+                            loadImage(src, zipFile, imageEntries, base64Images)
+                        }
+                    }
                     element.append("\n[[$src|]]\n")
                 }
             }.wholeText().lines().forEach { line ->
@@ -144,9 +159,7 @@ class DocumentParser @Inject constructor(
                             val src = trimmedLine.substringBefore("|")
                             val alt = trimmedLine.substringAfter("|")
 
-                            val image = loadedImages.getOrPut(src) {
-                                loadImage(src, zipFile, imageEntries, base64Images)
-                            } ?: return@forEach
+                            val image = imageJobs[src]?.await() ?: return@forEach
 
                             readerText.add(
                                 ReaderText.Image(
@@ -195,10 +208,10 @@ class DocumentParser @Inject constructor(
             readerText.filterIsInstance<ReaderText.Text>().isEmpty() ||
             (includeChapter && readerText.filterIsInstance<ReaderText.Chapter>().isEmpty())
         ) {
-            return emptyList()
+            return@coroutineScope emptyList()
         }
 
-        return readerText
+        readerText
     }
 
     /**
