@@ -32,6 +32,9 @@ import javax.inject.Inject
 /** Marker standing in for FB2 <empty-line/>, resolved to a blank line. */
 const val EMPTY_LINE_MARKER = "[[[emptyline]]]"
 
+/** Marker standing in for <hr>, resolved to a [ReaderText.Separator]. */
+const val SEPARATOR_MARKER = "[[[separator]]]"
+
 /**
  * Private-use sentinel wrapping FB2 <strikethrough> content. [MarkdownParser]
  * turns the enclosed text into a real strike-through span, which — unlike a
@@ -59,7 +62,7 @@ class DocumentParser @Inject constructor(
     /**
      * Parses document to get it's text.
      * Fixes issues such as manual line breaking in <p>.
-     * Applies Markdown to the text: Bold(**), Italic(_), Section separator(---), and Links(a > href).
+     * Applies Markdown to the text: Bold(**), Italic(_), Section separator(hr), and Links(a > href).
      *
      * @return Parsed text line by line with Markdown(all lines are not blank).
      */
@@ -101,7 +104,7 @@ class DocumentParser @Inject constructor(
                 }
 
                 // Markdown
-                select("hr").append("\n---\n")
+                select("hr").append("\n$SEPARATOR_MARKER\n")
                 select("b").append("**").prepend("**")
                 select("h1").append("**").prepend("**")
                 select("h2").append("**").prepend("**")
@@ -228,7 +231,7 @@ class DocumentParser @Inject constructor(
 
                 val imageRegex = Regex("""\[\[(.*?)\|(.*?)]]""")
                 val chapterRegex = Regex("""\[\[\[chapter\|([01])\|(.*)]]]""")
-                // Section separator: "---", "***", "___", also spaced out ("* * *")
+                // Separator-like text: "---", "***", "___", also spaced out ("* * *")
                 val separatorRegex = Regex("""^([-*_])(\s*\1){2,}$""")
 
                 if (line.containsVisibleText()) {
@@ -258,6 +261,11 @@ class DocumentParser @Inject constructor(
                             chapterAdded = true
                         }
 
+                        // Section separator (from <hr>)
+                        line.trim() == SEPARATOR_MARKER -> {
+                            readerText.add(ReaderText.Separator)
+                        }
+
                         imageRegex.matches(line) -> {
                             val trimmedLine = line.removeSurrounding("[[", "]]")
                             val src = trimmedLine.substringBefore("|")
@@ -277,8 +285,17 @@ class DocumentParser @Inject constructor(
                             )
                         }
 
+                        // A line of separator characters ("* * *", "---") is the
+                        // author's literal scene-break text, kept visible as-is.
+                        // Without this branch markdownParser.parse() would swallow
+                        // it as a thematic break, and the clearMarkdown() gate
+                        // below would drop the line entirely.
                         separatorRegex.matches(formattedLine) -> {
-                            readerText.add(ReaderText.Separator)
+                            readerText.add(
+                                ReaderText.Text(
+                                    AnnotatedString(line.replace("\t", " ").trim())
+                                )
+                            )
                         }
 
                         else -> {
