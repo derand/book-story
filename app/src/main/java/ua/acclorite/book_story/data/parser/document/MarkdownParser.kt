@@ -14,9 +14,11 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.BaselineShift
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withLink
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.em
 import org.commonmark.node.Code
 import org.commonmark.node.Emphasis
 import org.commonmark.node.Heading
@@ -27,6 +29,21 @@ import org.commonmark.node.Text
 import org.commonmark.parser.Parser
 import ua.acclorite.book_story.core.helpers.clearMarkdown
 import javax.inject.Inject
+
+/** Span styles toggled by the private-use marks embedded in the text. */
+private val MARK_STYLES = mapOf(
+    STRIKETHROUGH_MARK.single() to SpanStyle(
+        textDecoration = TextDecoration.LineThrough
+    ),
+    SUBSCRIPT_MARK.single() to SpanStyle(
+        baselineShift = BaselineShift.Subscript,
+        fontSize = 0.75.em
+    ),
+    SUPERSCRIPT_MARK.single() to SpanStyle(
+        baselineShift = BaselineShift.Superscript,
+        fontSize = 0.75.em
+    )
+)
 
 class MarkdownParser @Inject constructor(
     private val commonmarkParser: Parser
@@ -87,7 +104,7 @@ class MarkdownParser @Inject constructor(
             }
 
             is Text -> {
-                appendStrikethrough(node.literal.clearMarkdown())
+                appendMarked(node.literal.clearMarkdown())
                 parseChildren(node)
             }
 
@@ -98,27 +115,40 @@ class MarkdownParser @Inject constructor(
     }
 
     /**
-     * Appends [text], turning any run wrapped in [STRIKETHROUGH_MARK] into a
-     * strike-through span. Each mark toggles the state, so the closing style
-     * composes with whatever emphasis the surrounding nodes already applied.
+     * Appends [text], turning any run wrapped in a private-use mark
+     * ([STRIKETHROUGH_MARK], [SUBSCRIPT_MARK], [SUPERSCRIPT_MARK]) into the
+     * corresponding styled span. Each mark toggles its own state, so the
+     * styles compose with each other and with whatever emphasis the
+     * surrounding nodes already applied.
      */
-    private fun AnnotatedString.Builder.appendStrikethrough(text: String) {
-        if (!text.contains(STRIKETHROUGH_MARK)) {
+    private fun AnnotatedString.Builder.appendMarked(text: String) {
+        if (text.none { char -> char in MARK_STYLES }) {
             append(text)
             return
         }
-        var struck = false
-        text.split(STRIKETHROUGH_MARK).forEachIndexed { index, segment ->
-            if (index > 0) struck = !struck
-            if (segment.isEmpty()) return@forEachIndexed
-            if (struck) {
-                withStyle(SpanStyle(textDecoration = TextDecoration.LineThrough)) {
-                    append(segment)
-                }
+
+        val active = mutableSetOf<Char>()
+        val segment = StringBuilder()
+
+        fun flush() {
+            if (segment.isEmpty()) return
+            active
+                .map { mark -> MARK_STYLES.getValue(mark) }
+                .reduceOrNull { merged, style -> merged.merge(style) }
+                ?.let { style -> withStyle(style) { append(segment.toString()) } }
+                ?: append(segment.toString())
+            segment.clear()
+        }
+
+        text.forEach { char ->
+            if (char in MARK_STYLES) {
+                flush()
+                if (!active.remove(char)) active.add(char)
             } else {
-                append(segment)
+                segment.append(char)
             }
         }
+        flush()
     }
 
     private fun AnnotatedString.Builder.parseChildren(node: Node) {
