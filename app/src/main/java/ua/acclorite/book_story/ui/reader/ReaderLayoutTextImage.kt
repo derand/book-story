@@ -63,6 +63,7 @@ fun LazyItemScope.ReaderLayoutTextImage(
     highlightedReadingThickness: FontWeight,
     toolbarHidden: Boolean,
     openTranslator: (ReaderEvent.OnOpenTranslator) -> Unit,
+    openNote: (ReaderEvent.OnOpenNote) -> Unit,
     menuVisibility: (ReaderEvent.OnMenuVisibility) -> Unit
 ) {
     val context = LocalContext.current
@@ -122,6 +123,7 @@ fun LazyItemScope.ReaderLayoutTextImage(
                     highlightedReadingThickness = highlightedReadingThickness,
                     toolbarHidden = toolbarHidden,
                     openTranslator = openTranslator,
+                    openNote = openNote,
                     menuVisibility = menuVisibility
                 )
             }

@@ -20,6 +20,8 @@ import ua.acclorite.book_story.presentation.reader.model.Checkpoint
 data class ReaderState(
     val book: Book = Book.default,
     val text: List<ReaderText> = emptyList(),
+    val notes: Map<String, String> = emptyMap(),
+    val currentNote: String? = null,
     val listState: LazyListState = LazyListState(),
 
     val currentChapter: Chapter? = null,

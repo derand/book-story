@@ -9,7 +9,7 @@ package ua.acclorite.book_story.domain.repository
 import ua.acclorite.book_story.core.CoverImage
 import ua.acclorite.book_story.domain.model.file.File
 import ua.acclorite.book_story.domain.model.library.Book
-import ua.acclorite.book_story.domain.model.reader.ReaderText
+import ua.acclorite.book_story.domain.model.reader.ParsedText
 
 interface BookRepository {
     suspend fun searchBooks(
@@ -22,7 +22,7 @@ interface BookRepository {
 
     suspend fun getText(
         bookId: Int
-    ): Result<List<ReaderText>>
+    ): Result<ParsedText>
 
     suspend fun getFileFromBook(
         bookId: Int

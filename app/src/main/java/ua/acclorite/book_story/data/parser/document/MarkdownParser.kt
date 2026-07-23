@@ -28,6 +28,8 @@ import org.commonmark.node.StrongEmphasis
 import org.commonmark.node.Text
 import org.commonmark.parser.Parser
 import ua.acclorite.book_story.core.helpers.clearMarkdown
+import ua.acclorite.book_story.domain.model.reader.ANCHOR_LINK_TAG_PREFIX
+import ua.acclorite.book_story.domain.model.reader.NOTE_LINK_TAG_PREFIX
 import javax.inject.Inject
 
 /** Span styles toggled by the private-use marks embedded in the text. */
@@ -45,6 +47,11 @@ private val MARK_STYLES = mapOf(
     )
 )
 
+private val NOTE_REF_CHAR = NOTE_REF_MARK.single()
+private val ANCHOR_REF_CHAR = ANCHOR_REF_MARK.single()
+private val REF_SEPARATOR_CHAR = REF_SEPARATOR.single()
+private val REF_END_CHAR = REF_END_MARK.single()
+
 class MarkdownParser @Inject constructor(
     private val commonmarkParser: Parser
 ) {
@@ -56,7 +63,7 @@ class MarkdownParser @Inject constructor(
     fun parse(markdown: String): AnnotatedString {
         return try {
             val annotatedString = buildAnnotatedString {
-                parseNode(commonmarkParser.parse(markdown))
+                parseNode(commonmarkParser.parse(markdown), MarkScanner(this))
             }.ifBlank { buildAnnotatedString { append(markdown) } }
                 .trim() as AnnotatedString
 
@@ -71,17 +78,17 @@ class MarkdownParser @Inject constructor(
      * Parses [Node].
      * Appends text and applies styles to the target [AnnotatedString.Builder].
      */
-    private fun AnnotatedString.Builder.parseNode(node: Node) {
+    private fun AnnotatedString.Builder.parseNode(node: Node, scanner: MarkScanner) {
         when (node) {
             is Heading, is StrongEmphasis -> {
                 withStyle(SpanStyle(fontWeight = FontWeight.Medium)) {
-                    parseChildren(node)
+                    parseChildren(node, scanner)
                 }
             }
 
             is Emphasis -> {
                 withStyle(SpanStyle(fontStyle = FontStyle.Italic)) {
-                    parseChildren(node)
+                    parseChildren(node, scanner)
                 }
             }
 
@@ -98,64 +105,134 @@ class MarkdownParser @Inject constructor(
                         styles = TextLinkStyles(style = SpanStyle(textDecoration = TextDecoration.Underline))
                     )
                 ) {
-                    parseChildren(node)
-                    append(" (${node.destination})")
+                    parseChildren(node, scanner)
                 }
             }
 
             is Text -> {
-                appendMarked(node.literal.clearMarkdown())
-                parseChildren(node)
+                scanner.append(node.literal.clearMarkdown())
+                parseChildren(node, scanner)
             }
 
             else -> {
-                parseChildren(node)
+                parseChildren(node, scanner)
             }
         }
     }
 
-    /**
-     * Appends [text], turning any run wrapped in a private-use mark
-     * ([STRIKETHROUGH_MARK], [SUBSCRIPT_MARK], [SUPERSCRIPT_MARK]) into the
-     * corresponding styled span. Each mark toggles its own state, so the
-     * styles compose with each other and with whatever emphasis the
-     * surrounding nodes already applied.
-     */
-    private fun AnnotatedString.Builder.appendMarked(text: String) {
-        if (text.none { char -> char in MARK_STYLES }) {
-            append(text)
-            return
+    private fun AnnotatedString.Builder.parseChildren(node: Node, scanner: MarkScanner) {
+        var child = node.firstChild
+        while (child != null) {
+            parseNode(child, scanner)
+            child = child.next
         }
+    }
+}
 
-        val active = mutableSetOf<Char>()
-        val segment = StringBuilder()
+/**
+ * Streaming scanner for the private-use marks embedded in the text.
+ *
+ * Toggle marks ([STRIKETHROUGH_MARK], [SUBSCRIPT_MARK], [SUPERSCRIPT_MARK])
+ * each flip their own state, so the styles compose with each other and with
+ * whatever emphasis the surrounding nodes already applied. Reference runs
+ * ([NOTE_REF_MARK]/[ANCHOR_REF_MARK] … [REF_END_MARK]) become tappable
+ * [LinkAnnotation.Clickable] spans.
+ *
+ * The scanner instance lives for a whole [MarkdownParser.parse] call, because
+ * commonmark can split one line into several [Text] nodes — the state must
+ * survive the node boundaries.
+ */
+private class MarkScanner(private val builder: AnnotatedString.Builder) {
+    private val active = mutableSetOf<Char>()
+    private val segment = StringBuilder()
 
-        fun flush() {
-            if (segment.isEmpty()) return
-            active
-                .map { mark -> MARK_STYLES.getValue(mark) }
-                .reduceOrNull { merged, style -> merged.merge(style) }
-                ?.let { style -> withStyle(style) { append(segment.toString()) } }
-                ?: append(segment.toString())
-            segment.clear()
-        }
+    private var refMark: Char? = null
+    private var refInText = false
+    private val refId = StringBuilder()
+    private val refText = StringBuilder()
 
-        text.forEach { char ->
-            if (char in MARK_STYLES) {
-                flush()
-                if (!active.remove(char)) active.add(char)
-            } else {
-                segment.append(char)
-            }
-        }
+    fun append(text: String) {
+        text.forEach { char -> consume(char) }
+        // Only the toggle state may survive an append() call — text is
+        // flushed so it stays inside the builder's current style scope
         flush()
     }
 
-    private fun AnnotatedString.Builder.parseChildren(node: Node) {
-        var child = node.firstChild
-        while (child != null) {
-            parseNode(child)
-            child = child.next
+    private fun consume(char: Char) {
+        when {
+            refMark != null -> consumeRef(char)
+
+            char in MARK_STYLES -> {
+                flush()
+                if (!active.remove(char)) active.add(char)
+            }
+
+            char == NOTE_REF_CHAR || char == ANCHOR_REF_CHAR -> {
+                flush()
+                refMark = char
+                refInText = false
+                refId.clear()
+                refText.clear()
+            }
+
+            else -> segment.append(char)
         }
+    }
+
+    private fun consumeRef(char: Char) {
+        when {
+            char == REF_SEPARATOR_CHAR -> refInText = true
+            char == REF_END_CHAR -> emitRef()
+            refInText -> refText.append(char)
+            else -> refId.append(char)
+        }
+    }
+
+    private fun emitRef() {
+        val mark = refMark
+        refMark = null
+
+        val id = try {
+            refId.toString().decodeReferenceId()
+        } catch (e: Exception) {
+            refId.toString()
+        }
+        val text = refText.toString()
+        if (text.isBlank()) return
+
+        val (tag, style) = if (mark == NOTE_REF_CHAR) {
+            // Footnote marker: superscript, slightly smaller
+            "$NOTE_LINK_TAG_PREFIX$id" to SpanStyle(
+                baselineShift = BaselineShift.Superscript,
+                fontSize = 0.75.em
+            )
+        } else {
+            // Plain internal link: styled like an external one
+            "$ANCHOR_LINK_TAG_PREFIX$id" to SpanStyle(
+                textDecoration = TextDecoration.Underline
+            )
+        }
+
+        builder.withLink(
+            LinkAnnotation.Clickable(
+                tag = tag,
+                styles = TextLinkStyles(style = style),
+                // The listener is injected at render time — parsed text is
+                // data and cannot reach the reader's event handlers
+                linkInteractionListener = null
+            )
+        ) {
+            builder.append(text)
+        }
+    }
+
+    private fun flush() {
+        if (segment.isEmpty()) return
+        active
+            .map { mark -> MARK_STYLES.getValue(mark) }
+            .reduceOrNull { merged, style -> merged.merge(style) }
+            ?.let { style -> builder.withStyle(style) { builder.append(segment.toString()) } }
+            ?: builder.append(segment.toString())
+        segment.clear()
     }
 }

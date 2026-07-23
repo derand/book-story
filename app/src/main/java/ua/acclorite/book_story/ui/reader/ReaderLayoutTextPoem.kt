@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -56,6 +57,7 @@ fun LazyItemScope.ReaderLayoutTextPoem(
     highlightedReadingThickness: FontWeight,
     toolbarHidden: Boolean,
     openTranslator: (ReaderEvent.OnOpenTranslator) -> Unit,
+    openNote: (ReaderEvent.OnOpenNote) -> Unit,
     menuVisibility: (ReaderEvent.OnMenuVisibility) -> Unit
 ) {
     val poemFontSize = fontSize * POEM_FONT_SCALE
@@ -78,7 +80,11 @@ fun LazyItemScope.ReaderLayoutTextPoem(
         ) {
             poem.lines.forEach { line ->
                 StyledText(
-                    text = line.line,
+                    text = remember(line.line, openNote) {
+                        line.line.withReferenceListeners { tag ->
+                            openNote(ReaderEvent.OnOpenNote(tag))
+                        }
+                    },
                     modifier = Modifier
                         .padding(
                             start = BLOCK_INDENT_STEP * line.role.indentSteps +

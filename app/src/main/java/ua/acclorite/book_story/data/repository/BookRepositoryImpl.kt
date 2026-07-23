@@ -16,6 +16,7 @@ import ua.acclorite.book_story.data.parser.cover.CoverParser
 import ua.acclorite.book_story.data.parser.text.TextParser
 import ua.acclorite.book_story.domain.model.file.File
 import ua.acclorite.book_story.domain.model.library.Book
+import ua.acclorite.book_story.domain.model.reader.ParsedText
 import ua.acclorite.book_story.domain.model.reader.ReaderText
 import ua.acclorite.book_story.domain.repository.BookRepository
 import ua.acclorite.book_story.domain.service.FileProvider
@@ -47,7 +48,7 @@ class BookRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun getText(bookId: Int): Result<List<ReaderText>> {
+    override suspend fun getText(bookId: Int): Result<ParsedText> {
         return withContext(Dispatchers.IO) {
             getBook(bookId)
                 .mapCatching { fileProvider.getFileFromBook(it).getOrThrow() }

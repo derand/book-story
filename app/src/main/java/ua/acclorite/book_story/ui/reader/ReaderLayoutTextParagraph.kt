@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -71,6 +72,7 @@ fun LazyItemScope.ReaderLayoutTextParagraph(
     highlightedReadingThickness: FontWeight,
     toolbarHidden: Boolean,
     openTranslator: (ReaderEvent.OnOpenTranslator) -> Unit,
+    openNote: (ReaderEvent.OnOpenNote) -> Unit,
     menuVisibility: (ReaderEvent.OnMenuVisibility) -> Unit
 ) {
     val blockIndent = BLOCK_INDENT_STEP * paragraph.role.indentSteps +
@@ -78,6 +80,14 @@ fun LazyItemScope.ReaderLayoutTextParagraph(
                 // Authors are shifted one extra (current) character height
                 with(LocalDensity.current) { fontSize.toDp() }
             } else 0.dp
+
+    // Note/anchor references are parsed as listener-less clickable links;
+    // the actual handler is attached here, at render time
+    val line = remember(paragraph.line, openNote) {
+        paragraph.line.withReferenceListeners { tag ->
+            openNote(ReaderEvent.OnOpenNote(tag))
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -89,7 +99,7 @@ fun LazyItemScope.ReaderLayoutTextParagraph(
         horizontalAlignment = horizontalAlignment
     ) {
         StyledText(
-            text = paragraph.line,
+            text = line,
             modifier = Modifier.then(
                 if (doubleClickTranslation && toolbarHidden) {
                     Modifier.noRippleClickable(
