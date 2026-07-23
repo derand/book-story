@@ -36,8 +36,12 @@ sealed class ReaderText {
     data class Chapter(
         val id: UUID = UUID.randomUUID(),
         val title: String,
+        /** Nesting depth of the chapter: 0 for a top-level chapter. */
+        val depth: Int = 0
+    ) : ReaderText() {
         val nested: Boolean
-    ) : ReaderText()
+            get() = depth > 0
+    }
 
     @Immutable
     data class Text(

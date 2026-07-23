@@ -188,7 +188,7 @@ class EpubTextParser @Inject constructor(
 
                 return@run ReaderText.Chapter(
                     title = firstVisibleText.line.text,
-                    nested = false
+                    depth = 0
                 )
             }
 
@@ -263,7 +263,7 @@ class EpubTextParser @Inject constructor(
                     if (this == null) return@run title
                     return@run "$this / $title"
                 },
-                nested = titleMap[source]?.nested ?: (parent != null)
+                depth = titleMap[source]?.depth ?: if (parent != null) 1 else 0
             )
             titleMap[source] = chapter
         }

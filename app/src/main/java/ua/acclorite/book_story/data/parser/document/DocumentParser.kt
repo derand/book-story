@@ -266,7 +266,7 @@ class DocumentParser @Inject constructor(
                 }
 
                 val imageRegex = Regex("""\[\[(.*?)\|(.*?)]]""")
-                val chapterRegex = Regex("""\[\[\[chapter\|([01])\|(.*)]]]""")
+                val chapterRegex = Regex("""\[\[\[chapter\|(\d+)\|(.*)]]]""")
                 // Separator-like text: "---", "***", "___", also spaced out ("* * *")
                 val separatorRegex = Regex("""^([-*_])(\s*\1){2,}$""")
 
@@ -302,7 +302,7 @@ class DocumentParser @Inject constructor(
                             readerText.add(
                                 ReaderText.Chapter(
                                     title = title,
-                                    nested = match.groupValues[1] == "1"
+                                    depth = match.groupValues[1].toIntOrNull() ?: 0
                                 )
                             )
                             chapterAdded = true
@@ -354,8 +354,7 @@ class DocumentParser @Inject constructor(
                             ) {
                                 readerText.add(
                                     0, ReaderText.Chapter(
-                                        title = styledLine.clearAllMarkdown(),
-                                        nested = false
+                                        title = styledLine.clearAllMarkdown()
                                     )
                                 )
                                 chapterAdded = true
