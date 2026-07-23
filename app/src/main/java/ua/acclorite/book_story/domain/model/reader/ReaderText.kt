@@ -11,6 +11,26 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.text.AnnotatedString
 import java.util.UUID
 
+/**
+ * Semantic role of a [ReaderText.Text] paragraph. The paragraph text carries
+ * only inline styling; the role tells the renderer what the paragraph *is*,
+ * and the renderer decides how it looks (indentation step, font scale).
+ * Container context ([ReaderText.Poem]) composes on top: e.g. a title
+ * inside a poem is laid out relative to the poem block.
+ */
+enum class ReaderTextRole {
+    Paragraph,
+
+    /** <title> of a <poem>/<epigraph>/<cite> (section titles become chapters). */
+    Title,
+
+    /** Paragraph of an <epigraph>. */
+    Epigraph,
+
+    /** <text-author> of a poem, epigraph or cite. */
+    TextAuthor
+}
+
 @Immutable
 sealed class ReaderText {
     @Immutable
@@ -21,7 +41,19 @@ sealed class ReaderText {
     ) : ReaderText()
 
     @Immutable
-    data class Text(val line: AnnotatedString) : ReaderText()
+    data class Text(
+        val line: AnnotatedString,
+        val role: ReaderTextRole = ReaderTextRole.Paragraph
+    ) : ReaderText()
+
+    /**
+     * An FB2 <poem>: a self-contained block of [lines] laid out as one unit —
+     * as wide as its longest line, with a left-aligned interior.
+     */
+    @Immutable
+    data class Poem(
+        val lines: List<Text>
+    ) : ReaderText()
 
     @Immutable
     data object Separator : ReaderText()

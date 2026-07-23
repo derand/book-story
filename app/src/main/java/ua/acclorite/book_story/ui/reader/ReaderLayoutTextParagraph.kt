@@ -22,13 +22,34 @@ import androidx.compose.ui.text.style.LineBreak
 import androidx.compose.ui.text.style.TextIndent
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.dp
 import ua.acclorite.book_story.domain.model.reader.ReaderText.Text
+import ua.acclorite.book_story.domain.model.reader.ReaderTextRole
 import ua.acclorite.book_story.presentation.reader.ReaderEvent
 import ua.acclorite.book_story.presentation.reader.model.ReaderFontThickness
 import ua.acclorite.book_story.presentation.reader.model.ReaderTextAlignment
 import ua.acclorite.book_story.ui.common.components.common.StyledText
 import ua.acclorite.book_story.ui.common.helpers.noRippleClickable
 import ua.acclorite.book_story.ui.reader.model.FontWithName
+
+/**
+ * One step of block indentation. A paragraph's leading indent is
+ * `steps(role)` of these; inside a poem block the steps are relative to the
+ * poem block instead of the page — indents compose additively.
+ */
+internal val BLOCK_INDENT_STEP = 48.dp
+
+/** Poem font scale (15/16) — relative, so it tracks the reader font size. */
+internal const val POEM_FONT_SCALE = 0.9375f
+
+internal val ReaderTextRole.indentSteps: Int
+    get() = when (this) {
+        ReaderTextRole.Paragraph -> 0
+        ReaderTextRole.Title -> 1
+        ReaderTextRole.Epigraph -> 2
+        ReaderTextRole.TextAuthor -> 3
+    }
 
 @Composable
 fun LazyItemScope.ReaderLayoutTextParagraph(
@@ -52,11 +73,18 @@ fun LazyItemScope.ReaderLayoutTextParagraph(
     openTranslator: (ReaderEvent.OnOpenTranslator) -> Unit,
     menuVisibility: (ReaderEvent.OnMenuVisibility) -> Unit
 ) {
+    val blockIndent = BLOCK_INDENT_STEP * paragraph.role.indentSteps +
+            if (paragraph.role == ReaderTextRole.TextAuthor) {
+                // Authors are shifted one extra (current) character height
+                with(LocalDensity.current) { fontSize.toDp() }
+            } else 0.dp
+
     Column(
         modifier = Modifier
             .animateItem(fadeInSpec = null, fadeOutSpec = null)
             .fillMaxWidth()
-            .padding(horizontal = sidePadding),
+            .padding(horizontal = sidePadding)
+            .padding(start = blockIndent),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = horizontalAlignment
     ) {
