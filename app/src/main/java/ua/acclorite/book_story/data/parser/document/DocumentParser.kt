@@ -21,6 +21,7 @@ import ua.acclorite.book_story.core.helpers.clearMarkdown
 import ua.acclorite.book_story.core.helpers.containsVisibleText
 import ua.acclorite.book_story.domain.model.reader.ReaderImage
 import ua.acclorite.book_story.domain.model.reader.ReaderText
+import ua.acclorite.book_story.domain.model.reader.ReaderTextRole
 import java.io.File
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
@@ -34,6 +35,15 @@ const val EMPTY_LINE_MARKER = "[[[emptyline]]]"
 
 /** Marker standing in for <hr>, resolved to a [ReaderText.Separator]. */
 const val SEPARATOR_MARKER = "[[[separator]]]"
+
+/** Markers wrapping an FB2 <poem>; lines in between are poem content. */
+const val POEM_BEGIN_MARKER = "[[[poem-begin]]]"
+const val POEM_END_MARKER = "[[[poem-end]]]"
+
+/** Line-prefix markers carrying the [ReaderTextRole] of the line. */
+const val TITLE_ROLE_MARKER = "[[[role-title]]]"
+const val EPIGRAPH_ROLE_MARKER = "[[[role-epigraph]]]"
+const val AUTHOR_ROLE_MARKER = "[[[role-author]]]"
 
 /**
  * Private-use sentinel wrapping FB2 <strikethrough> content. [MarkdownParser]
@@ -80,6 +90,10 @@ class DocumentParser @Inject constructor(
         val imageJobs = mutableMapOf<String, Deferred<ReaderImage?>>()
         var chapterAdded = false
 
+        // Non-null while between poem markers: lines are collected here and
+        // flushed as a single [ReaderText.Poem] block
+        var poemLines: MutableList<ReaderText.Text>? = null
+
         document.selectFirst("body")
             .run { this ?: document.body() }
             .apply {
@@ -100,7 +114,7 @@ class DocumentParser @Inject constructor(
                 select("title").forEach { title ->
                     val text = title.wholeText().replace(Regex("\\s+"), " ").trim()
                     if (text.isBlank()) title.remove()
-                    else title.replaceWith(TextNode("\n**$text**\n"))
+                    else title.replaceWith(TextNode("\n$TITLE_ROLE_MARKER**$text**\n"))
                 }
 
                 // Markdown
@@ -118,7 +132,7 @@ class DocumentParser @Inject constructor(
                 // FB2 block-level tags carry no line break of their own, so in
                 // files without pretty-printing they glue to surrounding text.
                 select("subtitle").prepend("\n_**").append("**_\n") // bold + italic
-                select("poem").prepend("\n").append("\n")
+                select("poem").prepend("\n$POEM_BEGIN_MARKER\n").append("\n$POEM_END_MARKER\n")
                 select("epigraph").prepend("\n").append("\n")
                 // Blank line between stanzas, but not after the last one
                 select("stanza").forEach { stanza ->
@@ -129,7 +143,7 @@ class DocumentParser @Inject constructor(
                     }
                 }
                 select("v").append("\n") // verse line
-                select("text-author").prepend("\n_").append("_\n")
+                select("text-author").prepend("\n${AUTHOR_ROLE_MARKER}_").append("_\n")
 
                 // FB2 <epigraph>/<cite> are conventionally set in italic. The "\n"
                 // that the loop above appended to each <p> is its last child, so the
@@ -138,6 +152,11 @@ class DocumentParser @Inject constructor(
                     paragraph.prepend("_")
                     paragraph.childNode(paragraph.childNodeSize() - 1)
                         .before(TextNode("_"))
+                }
+                // Prepended after the italic wrapping, so the marker ends up
+                // first on the line
+                select("epigraph > p").forEach { paragraph ->
+                    paragraph.prepend(EPIGRAPH_ROLE_MARKER)
                 }
 
                 // FB2 inline: <code> as a monospace backtick code span
@@ -229,6 +248,23 @@ class DocumentParser @Inject constructor(
                     Regex("""_\s*(.*?)\s*_"""), "_$1_"
                 ).trim()
 
+                // Role marker prefix (from FB2 <title>/<epigraph>/<text-author>)
+                val (role, styledLine) = when {
+                    formattedLine.startsWith(TITLE_ROLE_MARKER) ->
+                        ReaderTextRole.Title to
+                                formattedLine.removePrefix(TITLE_ROLE_MARKER)
+
+                    formattedLine.startsWith(EPIGRAPH_ROLE_MARKER) ->
+                        ReaderTextRole.Epigraph to
+                                formattedLine.removePrefix(EPIGRAPH_ROLE_MARKER)
+
+                    formattedLine.startsWith(AUTHOR_ROLE_MARKER) ->
+                        ReaderTextRole.TextAuthor to
+                                formattedLine.removePrefix(AUTHOR_ROLE_MARKER)
+
+                    else -> ReaderTextRole.Paragraph to formattedLine
+                }
+
                 val imageRegex = Regex("""\[\[(.*?)\|(.*?)]]""")
                 val chapterRegex = Regex("""\[\[\[chapter\|([01])\|(.*)]]]""")
                 // Separator-like text: "---", "***", "___", also spaced out ("* * *")
@@ -236,11 +272,22 @@ class DocumentParser @Inject constructor(
 
                 if (line.containsVisibleText()) {
                     when {
+                        // Poem boundaries: everything in between is collected
+                        // into a single poem block
+                        line.trim() == POEM_BEGIN_MARKER -> poemLines = mutableListOf()
+                        line.trim() == POEM_END_MARKER -> {
+                            poemLines?.takeIf { it.isNotEmpty() }?.let { lines ->
+                                readerText.add(ReaderText.Poem(lines.toList()))
+                            }
+                            poemLines = null
+                        }
+
                         // Empty line marker (from FB2 <empty-line/>). A blank line
                         // cannot survive the containsVisibleText() gate on its own,
                         // so it is carried as a marker and rendered as a blank line.
                         line.trim() == EMPTY_LINE_MARKER -> {
-                            readerText.add(ReaderText.Text(AnnotatedString(" ")))
+                            val blank = ReaderText.Text(AnnotatedString(" "))
+                            poemLines?.add(blank) ?: readerText.add(blank)
                         }
 
                         // Chapter marker (from FB2 <title>), checked before
@@ -301,24 +348,25 @@ class DocumentParser @Inject constructor(
                         else -> {
                             if (
                                 !chapterAdded &&
-                                formattedLine.clearAllMarkdown().containsVisibleText() &&
+                                poemLines == null &&
+                                styledLine.clearAllMarkdown().containsVisibleText() &&
                                 includeChapter
                             ) {
                                 readerText.add(
                                     0, ReaderText.Chapter(
-                                        title = formattedLine.clearAllMarkdown(),
+                                        title = styledLine.clearAllMarkdown(),
                                         nested = false
                                     )
                                 )
                                 chapterAdded = true
                             } else if (
-                                formattedLine.clearMarkdown().containsVisibleText()
+                                styledLine.clearMarkdown().containsVisibleText()
                             ) {
-                                readerText.add(
-                                    ReaderText.Text(
-                                        line = markdownParser.parse(formattedLine)
-                                    )
+                                val text = ReaderText.Text(
+                                    line = markdownParser.parse(styledLine),
+                                    role = role
                                 )
+                                poemLines?.add(text) ?: readerText.add(text)
                             }
                         }
                     }

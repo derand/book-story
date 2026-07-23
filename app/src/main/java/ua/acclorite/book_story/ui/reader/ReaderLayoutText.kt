@@ -100,6 +100,27 @@ fun LazyItemScope.ReaderLayoutText(
             )
         }
 
+        is ReaderText.Poem -> {
+            ReaderLayoutTextPoem(
+                poem = entry,
+                showMenu = showMenu,
+                fontFamily = fontFamily,
+                fontColor = fontColor,
+                lineHeight = lineHeight,
+                fontThickness = fontThickness,
+                fontStyle = fontStyle,
+                fontSize = fontSize,
+                letterSpacing = letterSpacing,
+                sidePadding = sidePadding,
+                doubleClickTranslation = doubleClickTranslation,
+                highlightedReading = highlightedReading,
+                highlightedReadingThickness = highlightedReadingThickness,
+                toolbarHidden = toolbarHidden,
+                openTranslator = openTranslator,
+                menuVisibility = menuVisibility
+            )
+        }
+
         is ReaderText.Text -> {
             ReaderLayoutTextParagraph(
                 paragraph = entry,
