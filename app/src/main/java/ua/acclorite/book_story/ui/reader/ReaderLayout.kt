@@ -94,6 +94,7 @@ fun ReaderLayout(
     openShareApp: (ReaderEvent.OnOpenShareApp) -> Unit,
     openWebBrowser: (ReaderEvent.OnOpenWebBrowser) -> Unit,
     openTranslator: (ReaderEvent.OnOpenTranslator) -> Unit,
+    openNote: (ReaderEvent.OnOpenNote) -> Unit,
     openDictionary: (ReaderEvent.OnOpenDictionary) -> Unit
 ) {
     val activity = LocalActivity.current
@@ -217,6 +218,7 @@ fun ReaderLayout(
                                     highlightedReadingThickness = highlightedReadingThickness,
                                     toolbarHidden = toolbarHidden,
                                     openTranslator = openTranslator,
+                                    openNote = openNote,
                                     menuVisibility = menuVisibility
                                 )
                             }

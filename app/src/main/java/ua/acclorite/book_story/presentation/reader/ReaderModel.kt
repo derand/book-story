@@ -69,7 +69,8 @@ class ReaderModel @Inject constructor(
             when (event) {
                 is ReaderEvent.OnLoadText -> {
                     withContext(Dispatchers.Default) {
-                        val text = getTextUseCase(_state.value.book.id)
+                        val parsedText = getTextUseCase(_state.value.book.id)
+                        val text = parsedText.text
                         ensureActive()
 
                         if (text.isEmpty()) {
@@ -94,7 +95,8 @@ class ReaderModel @Inject constructor(
                                 book = it.book.copy(
                                     lastOpened = lastOpened
                                 ),
-                                text = text
+                                text = text,
+                                notes = parsedText.notes
                             )
                         }
                         ensureActive()
@@ -337,6 +339,19 @@ class ReaderModel @Inject constructor(
                     _state.update {
                         it.copy(
                             bottomSheet = ReaderScreen.SETTINGS_BOTTOM_SHEET,
+                            drawer = null
+                        )
+                    }
+                }
+
+                is ReaderEvent.OnOpenNote -> {
+                    val id = event.tag.substringAfter(':')
+                    val note = _state.value.notes[id] ?: return@launch
+
+                    _state.update {
+                        it.copy(
+                            bottomSheet = ReaderScreen.NOTE_BOTTOM_SHEET,
+                            currentNote = note,
                             drawer = null
                         )
                     }

@@ -67,6 +67,11 @@ sealed class ReaderEvent {
 
     data object OnShowSettingsBottomSheet : ReaderEvent()
 
+    /** [tag] is a clickable reference tag, e.g. "note:<id>" or "anchor:<id>". */
+    data class OnOpenNote(
+        val tag: String
+    ) : ReaderEvent()
+
     data object OnDismissBottomSheet : ReaderEvent()
 
     data object OnShowChaptersDrawer : ReaderEvent()

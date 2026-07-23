@@ -7,8 +7,8 @@
 package ua.acclorite.book_story.data.parser.text
 
 import ua.acclorite.book_story.data.model.file.CachedFile
-import ua.acclorite.book_story.domain.model.reader.ReaderText
+import ua.acclorite.book_story.domain.model.reader.ParsedText
 
 interface TextParser {
-    suspend fun parse(cachedFile: CachedFile): List<ReaderText>
+    suspend fun parse(cachedFile: CachedFile): ParsedText
 }

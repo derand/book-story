@@ -39,6 +39,7 @@ fun ReaderContent(
     text: List<ReaderText>,
     bottomSheet: BottomSheet?,
     drawer: Drawer?,
+    currentNote: String?,
     listState: LazyListState,
     currentChapter: Chapter?,
     nestedScrollConnection: NestedScrollConnection,
@@ -105,6 +106,7 @@ fun ReaderContent(
     openWebBrowser: (ReaderEvent.OnOpenWebBrowser) -> Unit,
     openTranslator: (ReaderEvent.OnOpenTranslator) -> Unit,
     openDictionary: (ReaderEvent.OnOpenDictionary) -> Unit,
+    openNote: (ReaderEvent.OnOpenNote) -> Unit,
     scrollToChapter: (ReaderEvent.OnScrollToChapter) -> Unit,
     showSettingsBottomSheet: (ReaderEvent.OnShowSettingsBottomSheet) -> Unit,
     dismissBottomSheet: (ReaderEvent.OnDismissBottomSheet) -> Unit,
@@ -115,6 +117,7 @@ fun ReaderContent(
 ) {
     ReaderBottomSheet(
         bottomSheet = bottomSheet,
+        currentNote = currentNote,
         menuVisibility = menuVisibility,
         dismissBottomSheet = dismissBottomSheet
     )
@@ -187,6 +190,7 @@ fun ReaderContent(
             openShareApp = openShareApp,
             openWebBrowser = openWebBrowser,
             openTranslator = openTranslator,
+            openNote = openNote,
             openDictionary = openDictionary,
             showSettingsBottomSheet = showSettingsBottomSheet,
             showChaptersDrawer = showChaptersDrawer,

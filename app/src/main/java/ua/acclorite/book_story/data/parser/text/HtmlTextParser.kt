@@ -13,6 +13,7 @@ import ua.acclorite.book_story.core.log.logE
 import ua.acclorite.book_story.core.log.logI
 import ua.acclorite.book_story.data.model.file.CachedFile
 import ua.acclorite.book_story.data.parser.document.DocumentParser
+import ua.acclorite.book_story.domain.model.reader.ParsedText
 import ua.acclorite.book_story.domain.model.reader.ReaderText
 import javax.inject.Inject
 
@@ -22,7 +23,7 @@ class HtmlTextParser @Inject constructor(
     private val documentParser: DocumentParser
 ) : TextParser {
 
-    override suspend fun parse(cachedFile: CachedFile): List<ReaderText> {
+    override suspend fun parse(cachedFile: CachedFile): ParsedText {
         logI(TAG, "Started HTML parsing: ${cachedFile.name}.")
 
         return try {
@@ -38,14 +39,14 @@ class HtmlTextParser @Inject constructor(
                 readerText.filterIsInstance<ReaderText.Chapter>().isEmpty()
             ) {
                 logE(TAG, "Could not extract text from HTML.")
-                return emptyList()
+                return ParsedText.EMPTY
             }
 
             logI(TAG, "Successfully finished HTML parsing.")
-            readerText
+            ParsedText(readerText)
         } catch (e: Exception) {
             logE(TAG, "Could not parse text with message: ${e.message}.")
-            emptyList()
+            ParsedText.EMPTY
         }
     }
 }

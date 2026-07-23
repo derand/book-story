@@ -63,6 +63,7 @@ data class ReaderScreen(val bookId: Int) : Screen, Parcelable {
     companion object {
         const val CHAPTERS_DRAWER = "chapters_drawer"
         const val SETTINGS_BOTTOM_SHEET = "settings_bottom_sheet"
+        const val NOTE_BOTTOM_SHEET = "note_bottom_sheet"
     }
 
     @OptIn(ExperimentalLayoutApi::class)
@@ -398,6 +399,7 @@ data class ReaderScreen(val bookId: Int) : Screen, Parcelable {
             text = state.value.text,
             bottomSheet = state.value.bottomSheet,
             drawer = state.value.drawer,
+            currentNote = state.value.currentNote,
             listState = listState,
             currentChapter = state.value.currentChapter,
             nestedScrollConnection = nestedScrollConnection.value,
@@ -464,6 +466,7 @@ data class ReaderScreen(val bookId: Int) : Screen, Parcelable {
             openWebBrowser = screenModel::onEvent,
             openTranslator = screenModel::onEvent,
             openDictionary = screenModel::onEvent,
+            openNote = screenModel::onEvent,
             scrollToChapter = screenModel::onEvent,
             showSettingsBottomSheet = screenModel::onEvent,
             dismissBottomSheet = screenModel::onEvent,

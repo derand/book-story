@@ -10,7 +10,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import ua.acclorite.book_story.core.log.logE
 import ua.acclorite.book_story.data.model.file.CachedFile
-import ua.acclorite.book_story.domain.model.reader.ReaderText
+import ua.acclorite.book_story.domain.model.reader.ParsedText
 import javax.inject.Inject
 
 private const val TAG = "TextParser"
@@ -26,10 +26,10 @@ class TextParserImpl @Inject constructor(
     private val xmlTextParser: XmlTextParser
 ) : TextParser {
 
-    override suspend fun parse(cachedFile: CachedFile): List<ReaderText> {
+    override suspend fun parse(cachedFile: CachedFile): ParsedText {
         if (!cachedFile.canAccess()) {
             logE(TAG, "File does not exist or no read access is granted.")
-            return emptyList()
+            return ParsedText.EMPTY
         }
 
         val fileFormat = ".${cachedFile.name.substringAfterLast(".")}".lowercase().trim()
@@ -65,7 +65,7 @@ class TextParserImpl @Inject constructor(
 
                 else -> {
                     logE(TAG, "Wrong file format, could not find supported extension.")
-                    emptyList()
+                    ParsedText.EMPTY
                 }
             }
         }

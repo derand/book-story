@@ -42,6 +42,28 @@ const val STRIKETHROUGH_MARK = "\uE011"
 const val SUBSCRIPT_MARK = "\uE012"
 const val SUPERSCRIPT_MARK = "\uE013"
 
+/**
+ * Inline reference marks (from FB2 <a l:href="#id">). The run between a
+ * start mark and [REF_END_MARK] is "<hex-encoded id>[REF_SEPARATOR]<display
+ * text>"; the id is hex-encoded so markdown transformations cannot corrupt
+ * it. [MarkdownParser] turns the run into a tappable link annotation.
+ * [NOTE_REF_MARK] starts a footnote reference (<a type="note">),
+ * [ANCHOR_REF_MARK] \u2014 a plain internal link.
+ */
+const val NOTE_REF_MARK = "\uE014"
+const val ANCHOR_REF_MARK = "\uE017"
+const val REF_SEPARATOR = "\uE015"
+const val REF_END_MARK = "\uE016"
+
+/** Hex-encodes an FB2 element id for safe transport through the pipeline. */
+fun String.encodeReferenceId(): String =
+    toByteArray(Charsets.UTF_8).joinToString("") { byte -> "%02x".format(byte) }
+
+/** Reverses [encodeReferenceId]. */
+fun String.decodeReferenceId(): String =
+    chunked(2).map { chunk -> chunk.toInt(16).toByte() }
+        .toByteArray().toString(Charsets.UTF_8)
+
 class DocumentParser @Inject constructor(
     private val markdownParser: MarkdownParser
 ) {
@@ -131,15 +153,38 @@ class DocumentParser @Inject constructor(
                 select("sub").prepend(SUBSCRIPT_MARK).append(SUBSCRIPT_MARK)
                 select("sup").prepend(SUPERSCRIPT_MARK).append(SUPERSCRIPT_MARK)
                 select("a").forEach { element ->
-                    var link = element.attr("href")
-                    if (!link.startsWith("http") || element.wholeText().isBlank()) return@forEach
+                    // FB2 links the href through the XLink namespace
+                    var link = element.attr("xlink:href")
+                        .ifBlank { element.attr("l:href") }
+                        .ifBlank { element.attr("href") }
+                        .trim()
+                    if (element.wholeText().isBlank()) return@forEach
 
-                    if (link.startsWith("http://")) {
-                        link = link.replaceFirst("http://", "https://")
+                    when {
+                        link.startsWith("http") -> {
+                            if (link.startsWith("http://")) {
+                                link = link.replaceFirst("http://", "https://")
+                            }
+
+                            element.prepend("[")
+                            element.append("]($link)")
+                        }
+
+                        // Internal reference: a footnote (<a type="note">) or
+                        // a plain anchor link
+                        link.startsWith("#") -> {
+                            val id = link.removePrefix("#").trim().lowercase()
+                                .encodeReferenceId()
+                            val mark = if (element.attr("type") == "note") {
+                                NOTE_REF_MARK
+                            } else {
+                                ANCHOR_REF_MARK
+                            }
+
+                            element.prepend("$mark$id$REF_SEPARATOR")
+                            element.append(REF_END_MARK)
+                        }
                     }
-
-                    element.prepend("[")
-                    element.append("]($link)")
                 }
 
                 // Image (<img>)

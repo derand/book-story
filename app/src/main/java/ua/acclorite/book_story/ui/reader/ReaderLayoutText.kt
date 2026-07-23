@@ -47,6 +47,7 @@ fun LazyItemScope.ReaderLayoutText(
     highlightedReadingThickness: FontWeight,
     toolbarHidden: Boolean,
     openTranslator: (ReaderEvent.OnOpenTranslator) -> Unit,
+    openNote: (ReaderEvent.OnOpenNote) -> Unit,
     menuVisibility: (ReaderEvent.OnMenuVisibility) -> Unit
 ) {
     when (entry) {
@@ -99,6 +100,7 @@ fun LazyItemScope.ReaderLayoutText(
                 highlightedReadingThickness = highlightedReadingThickness,
                 toolbarHidden = toolbarHidden,
                 openTranslator = openTranslator,
+                openNote = openNote,
                 menuVisibility = menuVisibility
             )
         }
