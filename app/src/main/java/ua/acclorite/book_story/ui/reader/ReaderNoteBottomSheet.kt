@@ -15,6 +15,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 import ua.acclorite.book_story.presentation.reader.ReaderEvent
 import ua.acclorite.book_story.ui.common.components.common.StyledText
@@ -26,7 +27,7 @@ import ua.acclorite.book_story.ui.common.components.modal_bottom_sheet.ModalBott
  */
 @Composable
 fun ReaderNoteBottomSheet(
-    note: String,
+    note: AnnotatedString,
     dismissBottomSheet: (ReaderEvent.OnDismissBottomSheet) -> Unit
 ) {
     ModalBottomSheet(

@@ -197,7 +197,10 @@ private class MarkScanner(private val builder: AnnotatedString.Builder) {
         } catch (e: Exception) {
             refId.toString()
         }
-        val text = refText.toString()
+        // The reference text may carry inline markers (e.g. a note number
+        // wrapped in <strong> becomes "**[3]**"); strip them so no literal
+        // asterisks/underscores show in the tiny marker.
+        val text = refText.toString().clearMarkdown()
         if (text.isBlank()) return
 
         val (tag, style) = if (mark == NOTE_REF_CHAR) {
