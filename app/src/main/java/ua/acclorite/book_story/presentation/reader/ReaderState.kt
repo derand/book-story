@@ -12,6 +12,7 @@ import ua.acclorite.book_story.core.BottomSheet
 import ua.acclorite.book_story.core.Drawer
 import ua.acclorite.book_story.core.ui.UIText
 import ua.acclorite.book_story.domain.model.library.Book
+import androidx.compose.ui.text.AnnotatedString
 import ua.acclorite.book_story.domain.model.reader.ReaderText
 import ua.acclorite.book_story.domain.model.reader.ReaderText.Chapter
 import ua.acclorite.book_story.presentation.reader.model.Checkpoint
@@ -20,8 +21,8 @@ import ua.acclorite.book_story.presentation.reader.model.Checkpoint
 data class ReaderState(
     val book: Book = Book.default,
     val text: List<ReaderText> = emptyList(),
-    val notes: Map<String, String> = emptyMap(),
-    val currentNote: String? = null,
+    val notes: Map<String, AnnotatedString> = emptyMap(),
+    val currentNote: AnnotatedString? = null,
     val listState: LazyListState = LazyListState(),
 
     val currentChapter: Chapter? = null,

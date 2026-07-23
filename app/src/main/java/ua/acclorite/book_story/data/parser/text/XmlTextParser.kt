@@ -14,6 +14,7 @@ import ua.acclorite.book_story.core.log.logE
 import ua.acclorite.book_story.core.log.logI
 import ua.acclorite.book_story.data.model.file.CachedFile
 import ua.acclorite.book_story.data.parser.document.DocumentParser
+import androidx.compose.ui.text.AnnotatedString
 import ua.acclorite.book_story.data.parser.document.EMPTY_LINE_MARKER
 import ua.acclorite.book_story.domain.model.reader.ParsedText
 import ua.acclorite.book_story.domain.model.reader.ReaderText
@@ -29,7 +30,7 @@ class XmlTextParser @Inject constructor(
         logI(TAG, "Started XML parsing: ${cachedFile.name}.")
 
         return try {
-            val notes = mutableMapOf<String, String>()
+            val notes = mutableMapOf<String, AnnotatedString>()
             val readerText = cachedFile.openInputStream()?.use { stream ->
                 val document = Jsoup.parse(stream, null, "", Parser.xmlParser())
 
@@ -69,18 +70,9 @@ class XmlTextParser @Inject constructor(
                         val id = section.attr("id").trim().lowercase()
                         if (id.isBlank()) return@forEach
 
-                        val title = section.selectFirst("title")?.wholeText()
-                            ?.replace(Regex("\\s+"), " ")?.trim()
-                            ?.takeIf { it.isNotBlank() }
-                        val text = section.clone()
-                            .apply { select("title").remove() }
-                            .wholeText().replace(Regex("\\s+"), " ").trim()
-                        if (text.isBlank()) return@forEach
-
-                        notes[id] = listOfNotNull(
-                            title?.let { "$it." },
-                            text
-                        ).joinToString(" ")
+                        val note = documentParser.parseNote(section)
+                        if (note.isBlank()) return@forEach
+                        notes[id] = note
                     }
                 }
 

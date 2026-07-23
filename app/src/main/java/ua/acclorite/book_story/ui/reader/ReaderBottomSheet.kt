@@ -7,6 +7,7 @@
 package ua.acclorite.book_story.ui.reader
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.text.AnnotatedString
 import ua.acclorite.book_story.core.BottomSheet
 import ua.acclorite.book_story.presentation.reader.ReaderEvent
 import ua.acclorite.book_story.presentation.reader.ReaderScreen
@@ -14,7 +15,7 @@ import ua.acclorite.book_story.presentation.reader.ReaderScreen
 @Composable
 fun ReaderBottomSheet(
     bottomSheet: BottomSheet?,
-    currentNote: String?,
+    currentNote: AnnotatedString?,
     menuVisibility: (ReaderEvent.OnMenuVisibility) -> Unit,
     dismissBottomSheet: (ReaderEvent.OnDismissBottomSheet) -> Unit
 ) {

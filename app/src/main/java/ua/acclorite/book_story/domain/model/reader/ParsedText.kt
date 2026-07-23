@@ -7,6 +7,7 @@
 package ua.acclorite.book_story.domain.model.reader
 
 import androidx.compose.runtime.Immutable
+import androidx.compose.ui.text.AnnotatedString
 
 /**
  * Tag prefixes of clickable in-text references ([androidx.compose.ui.text.LinkAnnotation.Clickable]).
@@ -27,7 +28,7 @@ data class ParsedText(
      * Footnote texts by id (FB2 <body name="notes">/<body name="comments">),
      * shown in a popup when the in-text note reference is tapped.
      */
-    val notes: Map<String, String> = emptyMap()
+    val notes: Map<String, AnnotatedString> = emptyMap()
 ) {
     companion object {
         val EMPTY = ParsedText(text = emptyList())

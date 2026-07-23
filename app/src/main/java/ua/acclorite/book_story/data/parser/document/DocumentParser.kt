@@ -10,6 +10,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.buildAnnotatedString
 import kotlinx.coroutines.yield
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.TextNode
@@ -333,6 +334,38 @@ class DocumentParser @Inject constructor(
         }
 
         return readerText
+    }
+
+    /**
+     * Renders a footnote body (an FB2 <section> from <body name="notes">) to a
+     * formatted [AnnotatedString]: inline styling is kept and paragraphs are
+     * separated by a blank line. Runs the same inline markdown transforms as
+     * the main flow, on a clone so the source tree is untouched.
+     */
+    fun parseNote(section: org.jsoup.nodes.Element): AnnotatedString {
+        val clone = section.clone()
+        clone.select("title").remove()
+
+        clone.select("strong, b").prepend("**").append("**")
+        clone.select("emphasis, em").prepend("_").append("_")
+        clone.select("strikethrough").prepend(STRIKETHROUGH_MARK).append(STRIKETHROUGH_MARK)
+        clone.select("sub").prepend(SUBSCRIPT_MARK).append(SUBSCRIPT_MARK)
+        clone.select("sup").prepend(SUPERSCRIPT_MARK).append(SUPERSCRIPT_MARK)
+        clone.select("p").forEach { paragraph ->
+            paragraph.html(paragraph.html().replace(Regex("\\n+"), " "))
+            paragraph.append("\n")
+        }
+
+        val paragraphs = clone.wholeText().lines()
+            .map { line -> line.trim() }
+            .filter { line -> line.containsVisibleText() }
+
+        return buildAnnotatedString {
+            paragraphs.forEachIndexed { index, paragraph ->
+                if (index > 0) append("\n\n")
+                append(markdownParser.parse(paragraph))
+            }
+        }
     }
 
     /**
