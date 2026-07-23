@@ -44,7 +44,7 @@ class TxtTextParser @Inject constructor(
                                         readerText.add(
                                             0, ReaderText.Chapter(
                                                 title = line.clearAllMarkdown(),
-                                                nested = false
+                                                depth = 0
                                             )
                                         )
                                         chapterAdded = true

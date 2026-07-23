@@ -43,11 +43,12 @@ class XmlTextParser @Inject constructor(
                         .trim()
                     if (text.isBlank()) return@forEach
 
-                    val nested = title.parents().count { parent ->
+                    // Depth 0 = a title of a <body> or top-level <section>
+                    val depth = title.parents().count { parent ->
                         parent.tagName() == "section"
-                    } > 1
+                    }.let { sections -> (sections - 1).coerceAtLeast(0) }
                     title.replaceWith(
-                        TextNode("\n[[[chapter|${if (nested) 1 else 0}|$text]]]\n")
+                        TextNode("\n[[[chapter|$depth|$text]]]\n")
                     )
                 }
 

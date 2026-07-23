@@ -49,12 +49,17 @@ fun LazyItemScope.ReaderLayoutTextChapter(
             modifier = Modifier
                 .padding(horizontal = sidePadding)
                 .fillMaxWidth(),
-            style = (if (!chapter.nested) MaterialTheme.typography.headlineMedium
-            else MaterialTheme.typography.headlineSmall)
-                .copy(
+            style = MaterialTheme.typography.headlineMedium.let { base ->
+                // The deeper the section, the smaller its title: -15% per
+                // level, bottoming out at three levels deep
+                val scale = 1f - 0.15f * chapter.depth.coerceAtMost(3)
+                base.copy(
+                    fontSize = base.fontSize * scale,
+                    lineHeight = base.lineHeight * scale,
                     color = fontColor,
                     textAlign = chapterTitleAlignment.textAlignment
-                ),
+                )
+            },
             highlightText = highlightedReading,
             highlightThickness = highlightedReadingThickness
         )

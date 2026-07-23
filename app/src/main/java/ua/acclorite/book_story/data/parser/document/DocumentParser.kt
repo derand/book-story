@@ -202,7 +202,7 @@ class DocumentParser @Inject constructor(
                 ).trim()
 
                 val imageRegex = Regex("""\[\[(.*?)\|(.*?)]]""")
-                val chapterRegex = Regex("""\[\[\[chapter\|([01])\|(.*)]]]""")
+                val chapterRegex = Regex("""\[\[\[chapter\|(\d+)\|(.*)]]]""")
 
                 if (line.containsVisibleText()) {
                     when {
@@ -225,7 +225,7 @@ class DocumentParser @Inject constructor(
                             readerText.add(
                                 ReaderText.Chapter(
                                     title = title,
-                                    nested = match.groupValues[1] == "1"
+                                    depth = match.groupValues[1].toIntOrNull() ?: 0
                                 )
                             )
                             chapterAdded = true
@@ -270,8 +270,7 @@ class DocumentParser @Inject constructor(
                             ) {
                                 readerText.add(
                                     0, ReaderText.Chapter(
-                                        title = formattedLine.clearAllMarkdown(),
-                                        nested = false
+                                        title = formattedLine.clearAllMarkdown()
                                     )
                                 )
                                 chapterAdded = true

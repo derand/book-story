@@ -64,7 +64,7 @@ fun ReaderChaptersDrawer(
                     true -> {
                         add(
                             ExpandableChapter(
-                                parent = chapter.copy(nested = false),
+                                parent = chapter.copy(depth = 0),
                                 expanded = false,
                                 chapters = null
                             )
@@ -154,7 +154,8 @@ fun ReaderChaptersDrawer(
                                 dismissDrawer(ReaderEvent.OnDismissDrawer)
                             }
                         ) {
-                            Spacer(modifier = Modifier.width(18.dp))
+                            // Indent grows with the chapter's nesting depth
+                            Spacer(modifier = Modifier.width(18.dp * chapter.depth))
 
                             StyledText(
                                 text = chapter.title,
