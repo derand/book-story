@@ -73,6 +73,10 @@ const val ANCHOR_REF_MARK = "\uE017"
 const val REF_SEPARATOR = "\uE015"
 const val REF_END_MARK = "\uE016"
 
+/** A GFM table delimiter row, e.g. "| --- | :--: |". */
+private val TABLE_DELIMITER_REGEX =
+    Regex("""^\s*\|?\s*:?-{1,}:?\s*(\|\s*:?-{1,}:?\s*)*\|?\s*$""")
+
 /** Hex-encodes an FB2 element id for safe transport through the pipeline. */
 fun String.encodeReferenceId(): String =
     toByteArray(Charsets.UTF_8).joinToString("") { byte -> "%02x".format(byte) }
@@ -109,6 +113,9 @@ class DocumentParser @Inject constructor(
         // Non-null while between poem markers: lines are collected here and
         // flushed as a single [ReaderText.Poem] block
         var poemLines: MutableList<ReaderText.Text>? = null
+
+        // Tables extracted in the DOM phase, re-emitted by their marker line
+        val tables = mutableListOf<ReaderText.Table>()
 
         document.selectFirst("body")
             .run { this ?: document.body() }
@@ -268,7 +275,36 @@ class DocumentParser @Inject constructor(
                     }
                     element.append("\n[[$src|]]\n")
                 }
-            }.wholeText().lines().forEach { line ->
+
+                // Tables: extracted whole (a table cannot be flattened into the
+                // line stream), replaced by a marker that re-emits the parsed
+                // table. Runs after the inline transforms above, so cell text
+                // already carries its markdown. Nested tables are left to the
+                // outer one.
+                select("table")
+                    .filter { table -> table.parents().none { it.tagName() == "table" } }
+                    .forEach { table ->
+                        val rows = table.select("tr").mapNotNull { row ->
+                            val cells = row.select("th, td")
+                            if (cells.isEmpty()) return@mapNotNull null
+                            cells.map { cell ->
+                                markdownParser.parse(
+                                    cell.wholeText().replace(Regex("\\s+"), " ").trim()
+                                )
+                            }
+                        }
+                        if (rows.isEmpty()) {
+                            table.remove()
+                            return@forEach
+                        }
+
+                        val hasHeader = table.selectFirst("tr")?.selectFirst("th") != null
+                        table.replaceWith(TextNode("\n[[[table|${tables.size}]]]\n"))
+                        tables.add(ReaderText.Table(rows, hasHeader))
+                    }
+            }.wholeText().lines()
+            .let { lines -> extractMarkdownTables(lines, tables) }
+            .forEach { line ->
                 yield()
 
                 val formattedLine = line.replace(
@@ -301,6 +337,7 @@ class DocumentParser @Inject constructor(
 
                 val imageRegex = Regex("""\[\[(.*?)\|(.*?)]]""")
                 val chapterRegex = Regex("""\[\[\[chapter\|(\d+)\|(.*)]]]""")
+                val tableRegex = Regex("""\[\[\[table\|(\d+)]]]""")
                 // Separator-like text: "---", "***", "___", also spaced out ("* * *")
                 val separatorRegex = Regex("""^([-*_])(\s*\1){2,}$""")
 
@@ -322,6 +359,13 @@ class DocumentParser @Inject constructor(
                         line.trim() == EMPTY_LINE_MARKER -> {
                             val blank = ReaderText.Text(AnnotatedString(" "))
                             poemLines?.add(blank) ?: readerText.add(blank)
+                        }
+
+                        // Table marker (from <table>)
+                        tableRegex.matches(line) -> {
+                            val index = tableRegex.matchEntire(line)
+                                ?.groupValues?.get(1)?.toIntOrNull() ?: return@forEach
+                            tables.getOrNull(index)?.let { readerText.add(it) }
                         }
 
                         // Chapter marker (from FB2 <title>), checked before
@@ -416,6 +460,57 @@ class DocumentParser @Inject constructor(
         }
 
         readerText
+    }
+
+    /**
+     * Finds GFM pipe tables in the line stream (a header row, a delimiter row
+     * of dashes, then body rows) and replaces each with a table marker,
+     * appending the parsed table to [tables]. Unlike HTML/FB2 tables these
+     * have no DOM element — markdown tables reach here as plain text lines.
+     */
+    private fun extractMarkdownTables(
+        lines: List<String>,
+        tables: MutableList<ReaderText.Table>
+    ): List<String> {
+        val result = mutableListOf<String>()
+        var i = 0
+        while (i < lines.size) {
+            val header = lines[i]
+            val delimiter = lines.getOrNull(i + 1)
+
+            if (
+                header.contains('|') &&
+                delimiter != null &&
+                delimiter.contains('-') &&
+                TABLE_DELIMITER_REGEX.matches(delimiter)
+            ) {
+                val rowLines = mutableListOf(header)
+                var j = i + 2
+                while (j < lines.size && lines[j].contains('|') && lines[j].isNotBlank()) {
+                    rowLines.add(lines[j])
+                    j++
+                }
+
+                val rows = rowLines.map { row ->
+                    splitTableRow(row).map { cell -> markdownParser.parse(cell) }
+                }
+                result.add("[[[table|${tables.size}]]]")
+                tables.add(ReaderText.Table(rows, hasHeader = true))
+                i = j
+            } else {
+                result.add(header)
+                i++
+            }
+        }
+        return result
+    }
+
+    /** Splits a markdown table row into cells, dropping the outer pipes. */
+    private fun splitTableRow(line: String): List<String> {
+        var row = line.trim()
+        if (row.startsWith("|")) row = row.substring(1)
+        if (row.endsWith("|")) row = row.dropLast(1)
+        return row.split("|").map { it.trim() }
     }
 
     /**

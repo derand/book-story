@@ -91,6 +91,20 @@ fun LazyItemScope.ReaderLayoutText(
             )
         }
 
+        is ReaderText.Table -> {
+            ReaderLayoutTextTable(
+                table = entry,
+                fontFamily = fontFamily,
+                fontColor = fontColor,
+                lineHeight = lineHeight,
+                fontThickness = fontThickness,
+                fontStyle = fontStyle,
+                fontSize = fontSize,
+                letterSpacing = letterSpacing,
+                sidePadding = sidePadding
+            )
+        }
+
         is ReaderText.Chapter -> {
             ReaderLayoutTextChapter(
                 chapter = entry,

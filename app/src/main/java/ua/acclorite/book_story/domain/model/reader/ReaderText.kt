@@ -58,6 +58,16 @@ sealed class ReaderText {
         val lines: List<Text>
     ) : ReaderText()
 
+    /**
+     * A table: [rows] of cells, each cell an [AnnotatedString]. The first row
+     * is a header when [hasHeader] is set.
+     */
+    @Immutable
+    data class Table(
+        val rows: List<List<AnnotatedString>>,
+        val hasHeader: Boolean
+    ) : ReaderText()
+
     @Immutable
     data object Separator : ReaderText()
 
