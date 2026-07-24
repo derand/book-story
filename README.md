@@ -98,9 +98,10 @@ open-source, offering you a personalized, ad-free journey through your favorite 
 
 </div>
 
-> Nightly is an automated **debug** build of the latest `develop` in this fork
-> (`applicationId ...debug`, so it installs alongside a store build). Its
-> provenance is verifiable — it really is built from this repo's code by CI:
+> Nightly is an automated **optimized** build (`release-debug`: minified and not
+> debuggable) of the latest `develop` in this fork — `applicationId
+> ...release.debug`, so it installs alongside a store build. Its provenance is
+> verifiable — it really is built from this repo's code by CI:
 > `gh attestation verify book-story-nightly.apk --repo derand/book-story`
 
 ---

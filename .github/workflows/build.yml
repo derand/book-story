@@ -12,14 +12,16 @@ concurrency:
   group: build-${{ github.ref }}
   cancel-in-progress: true
 
-permissions:
-  contents: read
-
 jobs:
+  # Validate every push/PR and produce the distributable APK. We build the
+  # "release-debug" variant: optimized/minified like release and NOT debuggable,
+  # but signed with the shared debug key so no release secrets are needed.
   build:
-    name: Debug build
+    name: Build & test
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    permissions:
+      contents: read
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -36,8 +38,8 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x ./gradlew
 
-      - name: Assemble debug APK
-        run: ./gradlew :app:assembleDebug --stacktrace
+      - name: Assemble optimized APK (release-debug)
+        run: ./gradlew ":app:assembleRelease-debug" --stacktrace
 
       - name: Unit tests
         run: ./gradlew :app:testDebugUnitTest --stacktrace
@@ -46,9 +48,65 @@ jobs:
         continue-on-error: true
         run: ./gradlew :app:lintDebug --stacktrace
 
-      - name: Upload debug APK
+      - name: Stage APK under a stable name
+        run: |
+          mkdir -p out
+          cp app/build/outputs/apk/release-debug/app-release-debug.apk out/book-story-nightly.apk
+
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: app-debug
-          path: app/build/outputs/apk/debug/*.apk
+          name: book-story-nightly
+          path: out/book-story-nightly.apk
           if-no-files-found: error
+
+  # Publish the rolling "nightly" release — only for pushes to develop. Reuses
+  # the APK from the build job (no second build) and attaches a build-provenance
+  # attestation proving it was produced by this workflow from this commit.
+  nightly:
+    name: Publish nightly
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write       # create/update the rolling release
+      id-token: write       # sign the provenance attestation
+      attestations: write   # record the attestation
+    steps:
+      - name: Download APK from build job
+        uses: actions/download-artifact@v4
+        with:
+          name: book-story-nightly
+          path: out
+
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: out/book-story-nightly.apk
+
+      - name: Publish rolling "nightly" release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          SHORT="${SHA:0:7}"
+          NOTES="Automated optimized build from \`develop\` @ ${SHORT}.
+
+          Built by GitHub Actions run [${RUN_ID}](https://github.com/${REPO}/actions/runs/${RUN_ID}) — produced from this repo's code, not uploaded by hand.
+
+          **Verify it was built from this repo:**
+          \`\`\`
+          gh attestation verify book-story-nightly.apk --repo ${REPO}
+          \`\`\`
+
+          Optimized \`release-debug\` build: minified and NOT debuggable, applicationId \`...release.debug\`, signed with the shared debug key (installs alongside a store build)."
+          # Recreate so the 'nightly' tag/release always points at the latest commit.
+          gh release delete nightly --repo "$REPO" --cleanup-tag --yes || true
+          gh release create nightly out/book-story-nightly.apk \
+            --repo "$REPO" \
+            --target "$SHA" \
+            --prerelease \
+            --title "Nightly (develop)" \
+            --notes "$NOTES"
