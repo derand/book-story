@@ -12,6 +12,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -27,7 +28,8 @@ fun HighlightedText(
     style: TextStyle,
     maxLines: Int = Int.MAX_VALUE,
     minLines: Int = 1,
-    overflow: TextOverflow = TextOverflow.Ellipsis
+    overflow: TextOverflow = TextOverflow.Ellipsis,
+    onTextLayout: ((TextLayoutResult) -> Unit)? = null
 ) {
     val highlightedText = remember(text, highlightThickness) {
         buildAnnotatedString {
@@ -63,6 +65,7 @@ fun HighlightedText(
         text = highlightedText,
         modifier = modifier,
         style = style,
+        onTextLayout = onTextLayout,
         maxLines = maxLines,
         minLines = minLines,
         overflow = overflow
