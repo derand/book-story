@@ -92,6 +92,17 @@ open-source, offering you a personalized, ad-free journey through your favorite 
 [<img src="https://gitlab.com/IzzyOnDroid/repo/-/raw/master/assets/IzzyOnDroid.png" alt="Get it on IzzyOnDroid" height="80">](https://apt.izzysoft.de/fdroid/index/apk/ua.acclorite.book_story)
 </div>
 
+<div>
+
+[![Download Nightly](https://img.shields.io/badge/Download-Nightly%20APK-3f9b86?labelColor=27303D&logo=android&logoColor=white)](https://github.com/derand/book-story/releases/download/nightly/book-story-nightly.apk)
+
+</div>
+
+> Nightly is an automated **debug** build of the latest `develop` in this fork
+> (`applicationId ...debug`, so it installs alongside a store build). Its
+> provenance is verifiable — it really is built from this repo's code by CI:
+> `gh attestation verify book-story-nightly.apk --repo derand/book-story`
+
 ---
 
 ### 📲 How to install
