@@ -6,16 +6,23 @@
 
 package ua.acclorite.book_story.ui.reader
 
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -31,7 +38,6 @@ import ua.acclorite.book_story.presentation.reader.ReaderEvent
 import ua.acclorite.book_story.presentation.reader.model.ReaderFontThickness
 import ua.acclorite.book_story.presentation.reader.model.ReaderTextAlignment
 import ua.acclorite.book_story.ui.common.components.common.StyledText
-import ua.acclorite.book_story.ui.common.helpers.noRippleClickable
 import ua.acclorite.book_story.ui.reader.model.FontWithName
 
 /**
@@ -89,6 +95,11 @@ fun LazyItemScope.ReaderLayoutTextParagraph(
         }
     }
 
+    // Captured from the text's layout so taps can be resolved against the
+    // actual (justify-accurate) glyph positions — see [dispatchLinkAt].
+    var layoutResult by remember { mutableStateOf<TextLayoutResult?>(null) }
+    val uriHandler = LocalUriHandler.current
+
     Column(
         modifier = Modifier
             .animateItem(fadeInSpec = null, fadeOutSpec = null)
@@ -100,26 +111,44 @@ fun LazyItemScope.ReaderLayoutTextParagraph(
     ) {
         StyledText(
             text = line,
+            onTextLayout = { layoutResult = it },
             modifier = Modifier.then(
-                if (doubleClickTranslation && toolbarHidden) {
-                    Modifier.noRippleClickable(
-                        onDoubleClick = {
-                            openTranslator(
-                                ReaderEvent.OnOpenTranslator(
-                                    textToTranslate = paragraph.line.text,
-                                    translateWholeParagraph = true
-                                )
-                            )
-                        },
-                        onClick = {
-                            menuVisibility(
-                                ReaderEvent.OnMenuVisibility(
-                                    show = !showMenu,
-                                    saveCheckpoint = true
-                                )
-                            )
-                        }
-                    )
+                if (toolbarHidden) {
+                    // A single positional handler for the whole paragraph: a
+                    // tap first tries to hit a reference/link at its exact
+                    // position; only if it misses does it toggle the menu.
+                    // This replaces trusting Compose's per-link touch boxes,
+                    // which are misaligned on justified lines.
+                    Modifier.pointerInput(line, showMenu, doubleClickTranslation) {
+                        // Enlarge the reference hit boxes so the small
+                        // superscript footnote markers stay easy to tap.
+                        val linkPadding = 12.dp.toPx()
+                        detectTapGestures(
+                            onDoubleTap = if (doubleClickTranslation) {
+                                {
+                                    openTranslator(
+                                        ReaderEvent.OnOpenTranslator(
+                                            textToTranslate = paragraph.line.text,
+                                            translateWholeParagraph = true
+                                        )
+                                    )
+                                }
+                            } else null,
+                            onTap = { position ->
+                                val hitLink = layoutResult?.let { layout ->
+                                    line.dispatchLinkAt(layout, position, uriHandler, linkPadding)
+                                } ?: false
+                                if (!hitLink) {
+                                    menuVisibility(
+                                        ReaderEvent.OnMenuVisibility(
+                                            show = !showMenu,
+                                            saveCheckpoint = true
+                                        )
+                                    )
+                                }
+                            }
+                        )
+                    }
                 } else Modifier
             ),
             style = TextStyle(
