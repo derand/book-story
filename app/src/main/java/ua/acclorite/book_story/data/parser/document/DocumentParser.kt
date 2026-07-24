@@ -155,7 +155,18 @@ class DocumentParser @Inject constructor(
 
                 // FB2 block-level tags carry no line break of their own, so in
                 // files without pretty-printing they glue to surrounding text.
-                select("subtitle").prepend("\n_**").append("**_\n") // bold + italic
+                // A separator-only subtitle ("* * *", "---") is a scene break,
+                // not a heading: keep it as literal text on its own line rather
+                // than wrapping it in emphasis, which would fuse the marks into
+                // the markdown and drop the line entirely. Others get bold+italic.
+                select("subtitle").forEach { subtitle ->
+                    val text = subtitle.wholeText().trim()
+                    if (text.matches(Regex("""^([-*_])(\s*\1){2,}$"""))) {
+                        subtitle.replaceWith(TextNode("\n$text\n"))
+                    } else {
+                        subtitle.prepend("\n_**").append("**_\n") // bold + italic
+                    }
+                }
                 select("poem").prepend("\n$POEM_BEGIN_MARKER\n").append("\n$POEM_END_MARKER\n")
                 select("epigraph").prepend("\n").append("\n")
                 // Blank line between stanzas, but not after the last one
