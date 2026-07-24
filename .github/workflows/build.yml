@@ -24,16 +24,16 @@ jobs:
       contents: read
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
 
       - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v6
 
       - name: Make gradlew executable
         run: chmod +x ./gradlew
@@ -44,8 +44,7 @@ jobs:
       - name: Unit tests
         run: ./gradlew :app:testDebugUnitTest --stacktrace
 
-      - name: Lint (non-blocking)
-        continue-on-error: true
+      - name: Lint
         run: ./gradlew :app:lintDebug --stacktrace
 
       - name: Stage APK under a stable name
@@ -54,7 +53,7 @@ jobs:
           cp app/build/outputs/apk/release-debug/app-release-debug.apk out/book-story-nightly.apk
 
       - name: Upload APK
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: book-story-nightly
           path: out/book-story-nightly.apk
@@ -74,13 +73,13 @@ jobs:
       attestations: write   # record the attestation
     steps:
       - name: Download APK from build job
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: book-story-nightly
           path: out
 
       - name: Attest build provenance
-        uses: actions/attest-build-provenance@v2
+        uses: actions/attest-build-provenance@v4
         with:
           subject-path: out/book-story-nightly.apk
 
