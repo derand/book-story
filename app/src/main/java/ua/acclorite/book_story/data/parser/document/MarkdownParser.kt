@@ -44,6 +44,9 @@ private val MARK_STYLES = mapOf(
     SUPERSCRIPT_MARK.single() to SpanStyle(
         baselineShift = BaselineShift.Superscript,
         fontSize = 0.75.em
+    ),
+    ITALIC_MARK.single() to SpanStyle(
+        fontStyle = FontStyle.Italic
     )
 )
 

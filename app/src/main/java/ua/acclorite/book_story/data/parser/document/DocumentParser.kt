@@ -62,6 +62,15 @@ const val SUBSCRIPT_MARK = "\uE012"
 const val SUPERSCRIPT_MARK = "\uE013"
 
 /**
+ * Private-use sentinel wrapping FB2 <emphasis>/<em> content. [MarkdownParser]
+ * turns the enclosed text into an italic span. Unlike a markdown `_`, the mark
+ * also styles intra-word emphasis: CommonMark disables `_` emphasis inside a
+ * word, so a single stressed letter \u2014 \u00AB\u0431_\u043E_\u043B\u044C\u0448\u0438\u043D\u0441\u0442\u0432\u043E\u00BB \u2014 would otherwise be
+ * dropped (clearMarkdown() strips the underscores, leaving plain text).
+ */
+const val ITALIC_MARK = "\uE018"
+
+/**
  * Inline reference marks (from FB2 <a l:href="#id">). The run between a
  * start mark and [REF_END_MARK] is "<hex-encoded id>[REF_SEPARATOR]<display
  * text>"; the id is hex-encoded so markdown transformations cannot corrupt
@@ -148,10 +157,12 @@ class DocumentParser @Inject constructor(
                 select("h2").append("**").prepend("**")
                 select("h3").append("**").prepend("**")
                 select("strong").append("**").prepend("**")
-                select("em").append("_").prepend("_")
+                select("em").prepend(ITALIC_MARK).append(ITALIC_MARK)
 
-                // FB2 inline: <emphasis> is the italic tag (FB2 has no <em>)
-                select("emphasis").append("_").prepend("_")
+                // FB2 inline: <emphasis> is the italic tag (FB2 has no <em>).
+                // Wrapped in a sentinel rather than "_": a mark styles intra-word
+                // emphasis too, which markdown underscores cannot (see ITALIC_MARK).
+                select("emphasis").prepend(ITALIC_MARK).append(ITALIC_MARK)
 
                 // FB2 block-level tags carry no line break of their own, so in
                 // files without pretty-printing they glue to surrounding text.
@@ -485,7 +496,7 @@ class DocumentParser @Inject constructor(
         clone.select("title").remove()
 
         clone.select("strong, b").prepend("**").append("**")
-        clone.select("emphasis, em").prepend("_").append("_")
+        clone.select("emphasis, em").prepend(ITALIC_MARK).append(ITALIC_MARK)
         clone.select("strikethrough").prepend(STRIKETHROUGH_MARK).append(STRIKETHROUGH_MARK)
         clone.select("sub").prepend(SUBSCRIPT_MARK).append(SUBSCRIPT_MARK)
         clone.select("sup").prepend(SUPERSCRIPT_MARK).append(SUPERSCRIPT_MARK)
