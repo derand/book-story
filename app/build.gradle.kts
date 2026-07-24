@@ -26,6 +26,21 @@ android {
         }
     }
 
+    // Shared debug signing: pin the debug build to a committed keystore so every
+    // build — local, CI, any contributor — produces an identically-signed debug
+    // APK. Without this each machine uses its own auto-generated
+    // ~/.android/debug.keystore, and swapping between such builds fails with
+    // INSTALL_FAILED_UPDATE_INCOMPATIBLE. A debug keystore is not a secret
+    // (fixed password "android"); it only signs throwaway debug builds.
+    signingConfigs {
+        getByName("debug") {
+            storeFile = file("debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
+    }
+
     // Build types configuration
     buildTypes {
         getByName("debug") {
