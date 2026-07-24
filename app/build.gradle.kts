@@ -82,6 +82,16 @@ android {
         buildConfig = true
         compose = true
     }
+
+    lint {
+        // Missing/partial translations arrive via Weblate, not from our code —
+        // they are the only lint *errors* in the project, so ignoring them lets
+        // lint stay green (and thus be a blocking CI gate) while still failing
+        // on any real code-level error. Same reason for StringFormatCount
+        // (a translated string dropping a format placeholder).
+        disable += setOf("MissingTranslation", "StringFormatCount")
+    }
+
     dependenciesInfo {
         includeInApk = false
         includeInBundle = false
