@@ -286,12 +286,12 @@
     <string name="green_color">Green</string>
     <string name="blue_color">Blue</string>
     <string name="color_preset_placeholder">Name a preset…</string>
-    <string name="color_preset_dark_name">Dark</string>
-    <string name="color_preset_light_name">Light</string>
 
     <!-- Dark Theme properties -->
-    <string name="dark_theme_off">Light</string>
-    <string name="dark_theme_on">Dark</string>
+    <string name="dark_theme_off">Disabled</string>
+    <string name="dark_theme_on">Enabled</string>
+    <string name="dark_theme_light">Light</string>
+    <string name="dark_theme_dark">Dark</string>
     <string name="dark_theme_follow_system">System</string>
 
     <!-- Pure Dark properties -->

@@ -82,8 +82,8 @@ import ua.acclorite.book_story.ui.theme.Transitions
 @Composable
 private fun colorPresetTitle(colorPreset: ColorPreset): String {
     return when (colorPreset.type) {
-        ColorPresetType.DARK -> stringResource(id = R.string.color_preset_dark_name)
-        ColorPresetType.LIGHT -> stringResource(id = R.string.color_preset_light_name)
+        ColorPresetType.DARK -> stringResource(id = R.string.dark_theme_dark)
+        ColorPresetType.LIGHT -> stringResource(id = R.string.dark_theme_light)
         ColorPresetType.CUSTOM -> colorPreset.name.trim().ifBlank {
             stringResource(id = R.string.color_preset_query, colorPreset.id.toString())
         }

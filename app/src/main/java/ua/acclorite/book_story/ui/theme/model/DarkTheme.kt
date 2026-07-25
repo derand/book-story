@@ -13,8 +13,8 @@ import ua.acclorite.book_story.R
 
 enum class DarkTheme(@StringRes val title: Int) {
     FOLLOW_SYSTEM(R.string.dark_theme_follow_system),
-    OFF(R.string.dark_theme_off),
-    ON(R.string.dark_theme_on);
+    OFF(R.string.dark_theme_light),
+    ON(R.string.dark_theme_dark);
 
     @Composable
     fun isDark(): Boolean {
