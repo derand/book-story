@@ -26,6 +26,8 @@ import ua.acclorite.book_story.domain.use_case.category.DeleteCategoryUseCase
 import ua.acclorite.book_story.domain.use_case.category.GetCategoriesUseCase
 import ua.acclorite.book_story.domain.use_case.category.UpdateCategoriesOrderUseCase
 import ua.acclorite.book_story.domain.use_case.category.UpdateCategoryUseCase
+import ua.acclorite.book_story.domain.use_case.cache.ClearParseCacheUseCase
+import ua.acclorite.book_story.domain.use_case.cache.GetParseCacheSizeUseCase
 import ua.acclorite.book_story.domain.use_case.color_preset.DeleteColorPresetUseCase
 import ua.acclorite.book_story.domain.use_case.color_preset.GetColorPresetsUseCase
 import ua.acclorite.book_story.domain.use_case.color_preset.ReorderColorPresetsUseCase
@@ -52,7 +54,9 @@ class SettingsModel @Inject constructor(
     private val getCategoriesUseCase: GetCategoriesUseCase,
     private val updateCategoryUseCase: UpdateCategoryUseCase,
     private val updateCategoriesOrderUseCase: UpdateCategoriesOrderUseCase,
-    private val deleteCategoryUseCase: DeleteCategoryUseCase
+    private val deleteCategoryUseCase: DeleteCategoryUseCase,
+    private val getParseCacheSizeUseCase: GetParseCacheSizeUseCase,
+    private val clearParseCacheUseCase: ClearParseCacheUseCase
 ) : ViewModel() {
 
     private val mutex = Mutex()
@@ -86,11 +90,14 @@ class SettingsModel @Inject constructor(
                 )
             }
 
+            val parseCacheSize = withContext(Dispatchers.IO) { getParseCacheSizeUseCase() }
+
             _state.update {
                 it.copy(
                     selectedColorPreset = colorPresets.getSelectedColorPreset(),
                     colorPresets = colorPresets,
-                    categories = getCategoriesUseCase()
+                    categories = getCategoriesUseCase(),
+                    parseCacheSizeBytes = parseCacheSize
                 )
             }
 
@@ -403,6 +410,23 @@ class SettingsModel @Inject constructor(
                         withContext(Dispatchers.Default) {
                             reorderColorPresetsUseCase(_state.value.colorPresets)
                         }
+                    }
+                }
+
+                is SettingsEvent.OnClearParseCache -> {
+                    val size = withContext(Dispatchers.IO) {
+                        clearParseCacheUseCase()
+                        getParseCacheSizeUseCase()
+                    }
+                    _state.update {
+                        it.copy(parseCacheSizeBytes = size)
+                    }
+                }
+
+                is SettingsEvent.OnRefreshParseCacheSize -> {
+                    val size = withContext(Dispatchers.IO) { getParseCacheSizeUseCase() }
+                    _state.update {
+                        it.copy(parseCacheSizeBytes = size)
                     }
                 }
             }

@@ -18,5 +18,7 @@ data class SettingsState(
     val animateColorPreset: Boolean = false,
     val colorPresetListState: LazyListState = LazyListState(),
 
-    val categories: List<Category> = emptyList()
+    val categories: List<Category> = emptyList(),
+
+    val parseCacheSizeBytes: Long = 0L
 )

@@ -11,14 +11,24 @@ package ua.acclorite.book_story.ui.settings.general
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.coerceAtLeast
 import androidx.compose.ui.unit.dp
+import ua.acclorite.book_story.R
+import ua.acclorite.book_story.ui.settings.components.SettingsSubcategory
 import ua.acclorite.book_story.ui.settings.general.components.AppLanguageOption
+import ua.acclorite.book_story.ui.settings.general.components.CacheImagesOption
+import ua.acclorite.book_story.ui.settings.general.components.ClearParseCacheOption
 import ua.acclorite.book_story.ui.settings.general.components.DoublePressExitOption
+import ua.acclorite.book_story.ui.settings.general.components.ParseCacheSizeOption
 
 fun LazyListScope.GeneralSettingsCategory(
+    titleColor: @Composable () -> Color = { MaterialTheme.colorScheme.primary },
     topPadding: Dp = 16.dp,
     bottomPadding: Dp = 16.dp
 ) {
@@ -32,6 +42,25 @@ fun LazyListScope.GeneralSettingsCategory(
 
     item {
         DoublePressExitOption()
+    }
+
+    SettingsSubcategory(
+        titleColor = titleColor,
+        title = { stringResource(id = R.string.parse_cache_option) },
+        showTitle = true,
+        showDivider = false
+    ) {
+        item {
+            ParseCacheSizeOption()
+        }
+
+        item {
+            CacheImagesOption()
+        }
+
+        item {
+            ClearParseCacheOption()
+        }
     }
 
     item {
