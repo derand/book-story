@@ -51,6 +51,7 @@ import ua.acclorite.book_story.presentation.reader.model.ReaderProgressCount
 import ua.acclorite.book_story.presentation.reader.model.ReaderTextAlignment
 import ua.acclorite.book_story.presentation.settings.SettingsModel
 import ua.acclorite.book_story.ui.common.helpers.LocalActivity
+import ua.acclorite.book_story.domain.model.reader.activeColorPreset
 import ua.acclorite.book_story.ui.common.helpers.LocalSettings
 import ua.acclorite.book_story.ui.common.helpers.setBrightness
 import ua.acclorite.book_story.ui.reader.ReaderContent
@@ -111,11 +112,16 @@ data class ReaderScreen(val bookId: Int) : Screen, Parcelable {
             }
         }
 
+        // A built-in preset auto-follows the theme; a custom one is used as-is.
+        val activePreset = settingsState.value.colorPresets.activeColorPreset(
+            selected = settingsState.value.selectedColorPreset,
+            isDark = settings.darkTheme.value.isDark()
+        )
         val backgroundColor = animateColorAsState(
-            targetValue = settingsState.value.selectedColorPreset.backgroundColor
+            targetValue = activePreset.backgroundColor
         )
         val fontColor = animateColorAsState(
-            targetValue = settingsState.value.selectedColorPreset.fontColor
+            targetValue = activePreset.fontColor
         )
         val lineHeight = remember(
             settings.fontSize.value,

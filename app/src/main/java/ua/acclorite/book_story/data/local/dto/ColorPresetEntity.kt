@@ -6,6 +6,7 @@
 
 package ua.acclorite.book_story.data.local.dto
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
@@ -17,5 +18,8 @@ data class ColorPresetEntity(
     val backgroundColor: Long,
     val fontColor: Long,
     val isSelected: Boolean,
-    val order: Int
+    val order: Int,
+    /** [ua.acclorite.book_story.domain.model.reader.ColorPresetType] name; CUSTOM for user presets. */
+    @ColumnInfo(defaultValue = "CUSTOM")
+    val type: String = "CUSTOM"
 )

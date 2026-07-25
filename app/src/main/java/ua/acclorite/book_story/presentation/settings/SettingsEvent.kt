@@ -73,6 +73,10 @@ sealed class SettingsEvent {
         val fontColor: Color?
     ) : SettingsEvent()
 
+    data class OnResetColorPreset(
+        val id: Int
+    ) : SettingsEvent()
+
     data class OnReorderColorPresets(
         val from: Int,
         val to: Int
