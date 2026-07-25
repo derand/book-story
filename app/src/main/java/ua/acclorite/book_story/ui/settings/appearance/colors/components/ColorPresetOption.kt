@@ -35,6 +35,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Done
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.RestartAlt
 import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.rounded.DragHandle
 import androidx.compose.material3.Icon
@@ -49,7 +51,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -64,20 +65,42 @@ import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
 import ua.acclorite.book_story.R
 import ua.acclorite.book_story.domain.model.reader.ColorPreset
+import ua.acclorite.book_story.domain.model.reader.ColorPresetType
+import ua.acclorite.book_story.domain.model.reader.activeColorPreset
 import ua.acclorite.book_story.presentation.settings.SettingsEvent
 import ua.acclorite.book_story.presentation.settings.SettingsModel
 import ua.acclorite.book_story.ui.common.components.common.AnimatedVisibility
 import ua.acclorite.book_story.ui.common.components.common.IconButton
 import ua.acclorite.book_story.ui.common.components.common.StyledText
 import ua.acclorite.book_story.ui.common.components.settings.ColorPickerWithTitle
+import ua.acclorite.book_story.ui.common.helpers.LocalSettings
 import ua.acclorite.book_story.ui.settings.components.SettingsSubcategoryTitle
 import ua.acclorite.book_story.ui.theme.FadeTransitionPreservingSpace
 import ua.acclorite.book_story.ui.theme.Transitions
 
+/** Localized display name for a built-in preset; user name otherwise. */
+@Composable
+private fun colorPresetTitle(colorPreset: ColorPreset): String {
+    return when (colorPreset.type) {
+        ColorPresetType.DARK -> stringResource(id = R.string.color_preset_dark_name)
+        ColorPresetType.LIGHT -> stringResource(id = R.string.color_preset_light_name)
+        ColorPresetType.CUSTOM -> colorPreset.name.trim().ifBlank {
+            stringResource(id = R.string.color_preset_query, colorPreset.id.toString())
+        }
+    }
+}
+
 @Composable
 fun ColorPresetOption(backgroundColor: Color) {
     val settingsModel = hiltViewModel<SettingsModel>()
+    val settings = LocalSettings.current
     val state = settingsModel.state.collectAsStateWithLifecycle()
+
+    // The preset actually shown/edited: a built-in auto-follows the theme.
+    val activePreset = state.value.colorPresets.activeColorPreset(
+        selected = state.value.selectedColorPreset,
+        isDark = settings.darkTheme.value.isDark()
+    )
 
     val reorderableListState = rememberReorderableLazyListState(
         lazyListState = state.value.colorPresetListState
@@ -112,7 +135,7 @@ fun ColorPresetOption(backgroundColor: Color) {
             itemsIndexed(
                 state.value.colorPresets,
                 key = { _, colorPreset -> colorPreset.id }
-            ) { index, colorPreset ->
+            ) { _, colorPreset ->
                 ReorderableItem(
                     state = reorderableListState,
                     animateItemModifier = Modifier,
@@ -120,12 +143,15 @@ fun ColorPresetOption(backgroundColor: Color) {
                 ) {
                     ColorPresetOptionRowItem(
                         colorPreset = colorPreset,
+                        // A built-in auto-follows the theme, so highlight the one
+                        // actually applied rather than the raw selection.
                         isSelected = remember(
-                            colorPreset.isSelected,
+                            colorPreset.id,
+                            activePreset.id,
                             state.value.colorPresets.size
                         ) {
                             if (state.value.colorPresets.size > 1) {
-                                colorPreset.isSelected
+                                colorPreset.id == activePreset.id
                             } else true
                         },
                         enableAnimation = state.value.animateColorPreset,
@@ -159,28 +185,29 @@ fun ColorPresetOption(backgroundColor: Color) {
             Spacer(modifier = Modifier.height(18.dp))
 
             ColorPresetOptionConfigurationItem(
-                selectedColorPreset = state.value.selectedColorPreset,
-                canDelete = state.value.colorPresets.size > 1,
+                colorPreset = activePreset,
+                canDelete = state.value.colorPresets.size > 1 && !activePreset.isBuiltIn,
                 onDelete = {
                     settingsModel.onEvent(
-                        SettingsEvent.OnDeleteColorPreset(
-                            id = state.value.selectedColorPreset.id
-                        )
+                        SettingsEvent.OnDeleteColorPreset(id = activePreset.id)
+                    )
+                },
+                onReset = {
+                    settingsModel.onEvent(
+                        SettingsEvent.OnResetColorPreset(id = activePreset.id)
                     )
                 },
                 onTitleChange = {
                     settingsModel.onEvent(
                         SettingsEvent.OnUpdateColorPresetTitle(
-                            id = state.value.selectedColorPreset.id,
+                            id = activePreset.id,
                             title = it
                         )
                     )
                 },
                 onShuffle = {
                     settingsModel.onEvent(
-                        SettingsEvent.OnShuffleColorPreset(
-                            id = state.value.selectedColorPreset.id
-                        )
+                        SettingsEvent.OnShuffleColorPreset(id = activePreset.id)
                     )
                 },
                 onAdd = {
@@ -196,13 +223,13 @@ fun ColorPresetOption(backgroundColor: Color) {
             Spacer(modifier = Modifier.height(8.dp))
 
             ColorPickerWithTitle(
-                value = state.value.selectedColorPreset.backgroundColor,
-                presetId = state.value.selectedColorPreset.id,
+                value = activePreset.backgroundColor,
+                presetId = activePreset.id,
                 title = stringResource(id = R.string.background_color_option),
                 onValueChange = {
                     settingsModel.onEvent(
                         SettingsEvent.OnUpdateColorPresetColor(
-                            id = state.value.selectedColorPreset.id,
+                            id = activePreset.id,
                             backgroundColor = it,
                             fontColor = null
                         )
@@ -210,13 +237,13 @@ fun ColorPresetOption(backgroundColor: Color) {
                 }
             )
             ColorPickerWithTitle(
-                value = state.value.selectedColorPreset.fontColor,
-                presetId = state.value.selectedColorPreset.id,
+                value = activePreset.fontColor,
+                presetId = activePreset.id,
                 title = stringResource(id = R.string.font_color_option),
                 onValueChange = {
                     settingsModel.onEvent(
                         SettingsEvent.OnUpdateColorPresetColor(
-                            id = state.value.selectedColorPreset.id,
+                            id = activePreset.id,
                             backgroundColor = null,
                             fontColor = it
                         )
@@ -238,17 +265,7 @@ private fun ReorderableCollectionItemScope.ColorPresetOptionRowItem(
     onDragStopped: () -> Unit,
     onClick: () -> Unit
 ) {
-    val context = LocalContext.current
-    val title = remember(colorPreset) {
-        if (colorPreset.name.isBlank()) {
-            return@remember context.getString(
-                R.string.color_preset_query,
-                colorPreset.id.toString()
-            )
-        }
-
-        colorPreset.name
-    }
+    val title = colorPresetTitle(colorPreset)
 
     val borderColor = remember(isSelected, colorPreset.fontColor) {
         if (!isSelected) colorPreset.fontColor.copy(0.3f)
@@ -303,7 +320,7 @@ private fun ReorderableCollectionItemScope.ColorPresetOptionRowItem(
         }
 
         StyledText(
-            text = title.trim(),
+            text = title,
             style = MaterialTheme.typography.labelLarge.copy(
                 color = animatedFontColor.value
             ),
@@ -335,90 +352,129 @@ private fun ReorderableCollectionItemScope.ColorPresetOptionRowItem(
 @OptIn(FlowPreview::class)
 @Composable
 private fun ColorPresetOptionConfigurationItem(
-    selectedColorPreset: ColorPreset,
+    colorPreset: ColorPreset,
     canDelete: Boolean,
     onDelete: () -> Unit,
+    onReset: () -> Unit,
     onShuffle: () -> Unit,
     onTitleChange: (String) -> Unit,
     onAdd: () -> Unit
 ) {
-    val title = remember(selectedColorPreset.id) {
-        mutableStateOf(selectedColorPreset.name)
-    }
-
-    LaunchedEffect(title) {
-        snapshotFlow {
-            title.value
-        }.debounce(50).collectLatest {
-            onTitleChange(it)
-        }
-    }
-
     Row(
         Modifier.padding(horizontal = 18.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        BasicTextField(
-            value = title.value,
-            singleLine = true,
-            modifier = Modifier.weight(1f),
-            textStyle = TextStyle(
-                color = MaterialTheme.colorScheme.onSurface,
-                fontSize = MaterialTheme.typography.titleLarge.fontSize,
-                lineHeight = MaterialTheme.typography.titleLarge.lineHeight,
-                fontFamily = MaterialTheme.typography.titleLarge.fontFamily
-            ),
-            onValueChange = {
-                if (it.length < 40 || it.length <= title.value.length) {
-                    title.value = it
+        if (colorPreset.isBuiltIn) {
+            // Built-in presets have a fixed, non-editable name.
+            StyledText(
+                text = colorPresetTitle(colorPreset),
+                modifier = Modifier.weight(1f),
+                style = MaterialTheme.typography.titleLarge.copy(
+                    color = MaterialTheme.colorScheme.onSurface
+                ),
+                maxLines = 1
+            )
+        } else {
+            val title = remember(colorPreset.id) {
+                mutableStateOf(colorPreset.name)
+            }
+
+            LaunchedEffect(title) {
+                snapshotFlow {
+                    title.value
+                }.debounce(50).collectLatest {
+                    onTitleChange(it)
                 }
-            },
-            keyboardOptions = KeyboardOptions(
-                KeyboardCapitalization.Sentences
-            ),
-            cursorBrush = SolidColor(MaterialTheme.colorScheme.onSurfaceVariant)
-        ) { innerText ->
-            Box(
-                modifier = Modifier.fillMaxHeight(),
-                contentAlignment = Alignment.CenterStart
-            ) {
-                if (title.value.isEmpty()) {
-                    StyledText(
-                        text = stringResource(id = R.string.color_preset_placeholder),
-                        style = MaterialTheme.typography.titleLarge.copy(
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        ),
-                        maxLines = 1
-                    )
+            }
+
+            BasicTextField(
+                value = title.value,
+                singleLine = true,
+                modifier = Modifier.weight(1f),
+                textStyle = TextStyle(
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontSize = MaterialTheme.typography.titleLarge.fontSize,
+                    lineHeight = MaterialTheme.typography.titleLarge.lineHeight,
+                    fontFamily = MaterialTheme.typography.titleLarge.fontFamily
+                ),
+                onValueChange = {
+                    if (it.length < 40 || it.length <= title.value.length) {
+                        title.value = it
+                    }
+                },
+                keyboardOptions = KeyboardOptions(
+                    KeyboardCapitalization.Sentences
+                ),
+                cursorBrush = SolidColor(MaterialTheme.colorScheme.onSurfaceVariant)
+            ) { innerText ->
+                Box(
+                    modifier = Modifier.fillMaxHeight(),
+                    contentAlignment = Alignment.CenterStart
+                ) {
+                    if (title.value.isEmpty()) {
+                        StyledText(
+                            text = stringResource(id = R.string.color_preset_placeholder),
+                            style = MaterialTheme.typography.titleLarge.copy(
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            ),
+                            maxLines = 1
+                        )
+                    }
+                    innerText()
                 }
-                innerText()
             }
         }
 
         Spacer(modifier = Modifier.width(12.dp))
 
-        FadeTransitionPreservingSpace(visible = canDelete) {
+        if (colorPreset.isBuiltIn) {
+            // Non-deletable — a lock hints why, plus a reset to the defaults.
+            Icon(
+                imageVector = Icons.Default.Lock,
+                contentDescription = stringResource(
+                    id = R.string.builtin_color_preset_content_desc
+                ),
+                modifier = Modifier.size(24.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            Spacer(modifier = Modifier.width(12.dp))
+
             IconButton(
                 modifier = Modifier.size(24.dp),
-                icon = Icons.Default.DeleteOutline,
-                contentDescription = R.string.delete_color_preset_content_desc,
+                icon = Icons.Default.RestartAlt,
+                contentDescription = R.string.reset_color_preset_content_desc,
                 disableOnClick = false,
-                enabled = canDelete,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             ) {
-                onDelete()
+                onReset()
+            }
+        } else {
+            FadeTransitionPreservingSpace(visible = canDelete) {
+                IconButton(
+                    modifier = Modifier.size(24.dp),
+                    icon = Icons.Default.DeleteOutline,
+                    contentDescription = R.string.delete_color_preset_content_desc,
+                    disableOnClick = false,
+                    enabled = canDelete,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                ) {
+                    onDelete()
+                }
+            }
+
+            IconButton(
+                modifier = Modifier.size(24.dp),
+                icon = Icons.Default.Shuffle,
+                contentDescription = R.string.shuffle_color_preset_content_desc,
+                disableOnClick = false,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            ) {
+                onShuffle()
             }
         }
 
-        IconButton(
-            modifier = Modifier.size(24.dp),
-            icon = Icons.Default.Shuffle,
-            contentDescription = R.string.shuffle_color_preset_content_desc,
-            disableOnClick = false,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        ) {
-            onShuffle()
-        }
+        Spacer(modifier = Modifier.width(12.dp))
 
         IconButton(
             modifier = Modifier.size(24.dp),

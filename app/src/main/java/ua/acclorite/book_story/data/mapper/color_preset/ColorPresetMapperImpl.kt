@@ -9,6 +9,7 @@ package ua.acclorite.book_story.data.mapper.color_preset
 import androidx.compose.ui.graphics.Color
 import ua.acclorite.book_story.data.local.dto.ColorPresetEntity
 import ua.acclorite.book_story.domain.model.reader.ColorPreset
+import ua.acclorite.book_story.domain.model.reader.ColorPresetType
 import javax.inject.Inject
 
 class ColorPresetMapperImpl @Inject constructor() : ColorPresetMapper {
@@ -23,7 +24,8 @@ class ColorPresetMapperImpl @Inject constructor() : ColorPresetMapper {
             backgroundColor = colorPreset.backgroundColor.value.toLong(),
             fontColor = colorPreset.fontColor.value.toLong(),
             isSelected = colorPreset.isSelected,
-            order = order
+            order = order,
+            type = colorPreset.type.name
         )
     }
 
@@ -33,7 +35,10 @@ class ColorPresetMapperImpl @Inject constructor() : ColorPresetMapper {
             name = colorPresetEntity.name,
             backgroundColor = Color(colorPresetEntity.backgroundColor.toULong()),
             fontColor = Color(colorPresetEntity.fontColor.toULong()),
-            isSelected = colorPresetEntity.isSelected
+            isSelected = colorPresetEntity.isSelected,
+            type = runCatching {
+                ColorPresetType.valueOf(colorPresetEntity.type)
+            }.getOrDefault(ColorPresetType.CUSTOM)
         )
     }
 }

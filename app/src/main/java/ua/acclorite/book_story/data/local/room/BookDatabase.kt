@@ -28,7 +28,7 @@ import java.io.File
         ColorPresetEntity::class,
         CategoryEntity::class
     ],
-    version = 16,
+    version = 17,
     autoMigrations = [
         AutoMigration(1, 2),
         AutoMigration(2, 3),
@@ -45,6 +45,7 @@ import java.io.File
         AutoMigration(13, 14),
         AutoMigration(14, 15),
         AutoMigration(15, 16, spec = DatabaseHelper.AUTO_MIGRATION_15_16::class),
+        AutoMigration(16, 17), // ColorPresetEntity.type (default CUSTOM)
     ],
     exportSchema = true
 )

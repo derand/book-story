@@ -21,6 +21,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import ua.acclorite.book_story.domain.model.reader.ColorPreset
+import ua.acclorite.book_story.domain.model.reader.ColorPresetType
 import ua.acclorite.book_story.domain.use_case.category.AddCategoryUseCase
 import ua.acclorite.book_story.domain.use_case.category.DeleteCategoryUseCase
 import ua.acclorite.book_story.domain.use_case.category.GetCategoriesUseCase
@@ -76,9 +77,24 @@ class SettingsModel @Inject constructor(
         viewModelScope.launch {
             var colorPresets = getColorPresetsUseCase()
 
-            if (colorPresets.isEmpty()) {
-                updateColorPresetUseCase(ColorPreset.default)
-                getColorPresetsUseCase().first().selectColorPreset()
+            // Ensure the two built-in presets (Dark/Light) always exist. Seeded
+            // once, non-deletable, and (when active) they auto-follow the theme.
+            val wasEmpty = colorPresets.isEmpty()
+            var seededAny = false
+            if (colorPresets.none { it.type == ColorPresetType.DARK }) {
+                updateColorPresetUseCase(ColorPreset.builtInDark)
+                seededAny = true
+            }
+            if (colorPresets.none { it.type == ColorPresetType.LIGHT }) {
+                updateColorPresetUseCase(ColorPreset.builtInLight)
+                seededAny = true
+            }
+            if (seededAny) colorPresets = getColorPresetsUseCase()
+
+            if (wasEmpty) {
+                // Fresh install: default to auto mode (a built-in is selected, so
+                // the reading colors follow the app's dark/light theme).
+                colorPresets.first { it.type == ColorPresetType.DARK }.selectColorPreset()
                 colorPresets = getColorPresetsUseCase()
             }
 
@@ -375,9 +391,52 @@ class SettingsModel @Inject constructor(
                             updateColorPresetUseCase(updatedColorPreset)
                             _state.update {
                                 it.copy(
-                                    selectedColorPreset = updatedColorPreset,
+                                    // Keep the raw selection; in auto mode the edited
+                                    // built-in may differ from the isSelected one.
+                                    selectedColorPreset =
+                                        if (it.selectedColorPreset.id == updatedColorPreset.id) {
+                                            updatedColorPreset
+                                        } else {
+                                            it.selectedColorPreset
+                                        },
                                     colorPresets = it.colorPresets.updateColorPreset(
                                         updatedColorPreset
+                                    )
+                                )
+                            }
+                        }
+                    }
+                }
+
+                is SettingsEvent.OnResetColorPreset -> {
+                    withContext(Dispatchers.IO) {
+                        colorPresetJob?.join()
+                        colorPresetJob = viewModelScope.launch(Dispatchers.Default) {
+                            val colorPreset = _state.value.colorPresets.getColorPresetById(event.id)
+                                ?: return@launch
+                            val defaults = when (colorPreset.type) {
+                                ColorPresetType.DARK -> ColorPreset.builtInDark
+                                ColorPresetType.LIGHT -> ColorPreset.builtInLight
+                                ColorPresetType.CUSTOM -> return@launch // custom has no reset
+                            }
+                            val resetColorPreset = colorPreset.copy(
+                                backgroundColor = defaults.backgroundColor,
+                                fontColor = defaults.fontColor
+                            )
+
+                            ensureActive()
+
+                            updateColorPresetUseCase(resetColorPreset)
+                            _state.update {
+                                it.copy(
+                                    selectedColorPreset =
+                                        if (it.selectedColorPreset.id == resetColorPreset.id) {
+                                            resetColorPreset
+                                        } else {
+                                            it.selectedColorPreset
+                                        },
+                                    colorPresets = it.colorPresets.updateColorPreset(
+                                        resetColorPreset
                                     )
                                 )
                             }
@@ -455,9 +514,8 @@ class SettingsModel @Inject constructor(
     }
 
     private fun List<ColorPreset>.updateColorPreset(colorPreset: ColorPreset): List<ColorPreset> {
-        if (size == 1) return listOf(colorPreset)
         return map {
-            if (it.isSelected) colorPreset
+            if (it.id == colorPreset.id) colorPreset
             else it
         }
     }
