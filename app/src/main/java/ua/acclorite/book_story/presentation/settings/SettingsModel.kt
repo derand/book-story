@@ -81,12 +81,14 @@ class SettingsModel @Inject constructor(
             // once, non-deletable, and (when active) they auto-follow the theme.
             val wasEmpty = colorPresets.isEmpty()
             var seededAny = false
-            if (colorPresets.none { it.type == ColorPresetType.DARK }) {
-                updateColorPresetUseCase(ColorPreset.builtInDark)
-                seededAny = true
-            }
+            // Seed Light before Dark so the built-in chips read Light → Dark,
+            // matching the Appearance "Mode" segmented control (System/Light/Dark).
             if (colorPresets.none { it.type == ColorPresetType.LIGHT }) {
                 updateColorPresetUseCase(ColorPreset.builtInLight)
+                seededAny = true
+            }
+            if (colorPresets.none { it.type == ColorPresetType.DARK }) {
+                updateColorPresetUseCase(ColorPreset.builtInDark)
                 seededAny = true
             }
             if (seededAny) colorPresets = getColorPresetsUseCase()
