@@ -79,4 +79,8 @@ sealed class SettingsEvent {
     ) : SettingsEvent()
 
     data object OnConfirmReorderColorPresets : SettingsEvent()
+
+    data object OnClearParseCache : SettingsEvent()
+
+    data object OnRefreshParseCacheSize : SettingsEvent()
 }

@@ -113,6 +113,12 @@ class SettingsManager @Inject constructor(
     val showNavigationLabels = setting<Boolean, Boolean>(
         key = booleanPreferencesKey("show_navigation_labels"), default = true
     )
+    val parseCacheSizeMb = setting<Int, Int>(
+        key = intPreferencesKey("parse_cache_size_mb"), default = 150
+    )
+    val cacheImagesInBooks = setting<Boolean, Boolean>(
+        key = booleanPreferencesKey("cache_images_in_books"), default = false
+    )
 
     /* ------ Reader ----------------------------- */
     val fontFamily = setting<FontWithName, String>(

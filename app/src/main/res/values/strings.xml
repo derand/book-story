@@ -185,6 +185,16 @@
     <string name="double_press_exit_option_desc">Press back twice to exit the app</string>
     <string name="show_navigation_labels_option">Show navigation labels</string>
     <string name="show_navigation_labels_option_desc">Show navigation bar labels under icons</string>
+    <string name="parse_cache_option">Parse cache</string>
+    <string name="parse_cache_size_option">Cache size limit</string>
+    <string name="parse_cache_off">Off</string>
+    <string name="parse_cache_size_value">%1$d MB</string>
+    <string name="cache_images_option">Cache images in books</string>
+    <string name="cache_images_option_desc">Also store image data in the cache so books with images open instantly too. Uses more space.</string>
+    <string name="clear_parse_cache_option">Clear cache</string>
+    <string name="clear_parse_cache_option_desc">Currently using %1$s</string>
+    <string name="clear_parse_cache_dialog">Clear parse cache?</string>
+    <string name="clear_parse_cache_dialog_desc">This removes all cached parsed books. They will be re-parsed the next time you open them.</string>
 
     <!-- Reader -->
     <string name="font_family_option">Font family</string>

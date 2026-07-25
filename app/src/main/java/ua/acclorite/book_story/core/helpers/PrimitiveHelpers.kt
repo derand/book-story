@@ -30,12 +30,17 @@ fun Float?.coerceAndPreventNaN(): Float {
     return this.coerceIn(0f, 1f)
 }
 
+// Compiled once — these run in the per-line hot loop of DocumentParser, several
+// times per line, so per-call Regex() compilation dominated parse time.
+private val MARKDOWN_MARKS_REGEX = Regex("(_+)|(\\*+)")
+private val ALL_MARKDOWN_MARKS_REGEX = Regex("(_+)|(\\*+)|(#+)")
+
 fun String.clearMarkdown(): String {
-    return replace(Regex("(_+)|(\\*+)"), "")
+    return replace(MARKDOWN_MARKS_REGEX, "")
 }
 
 fun String.clearAllMarkdown(): String {
-    return replace(Regex("(_+)|(\\*+)|(#+)"), "").trim()
+    return replace(ALL_MARKDOWN_MARKS_REGEX, "").trim()
 }
 
 fun String.containsVisibleText(): Boolean {

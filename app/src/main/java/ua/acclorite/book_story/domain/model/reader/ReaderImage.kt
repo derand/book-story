@@ -15,11 +15,15 @@ import androidx.compose.runtime.Immutable
  * layout space before that happens.
  *
  * @param id Stable cache key, unique per image content.
- * @param bytes Encoded image (JPEG/PNG/GIF) bytes.
+ * @param src Source reference (FB2 <binary> id / EPUB entry name), the lookup
+ *   key used to (re)load [bytes] from the book file — e.g. lazily on a cache hit.
+ * @param bytes Encoded image (JPEG/PNG/GIF) bytes. May be empty when the image
+ *   was restored from the parse cache and its bytes are not loaded yet.
  */
 @Immutable
 class ReaderImage(
     val id: String,
+    val src: String,
     val bytes: ByteArray,
     val width: Int,
     val height: Int

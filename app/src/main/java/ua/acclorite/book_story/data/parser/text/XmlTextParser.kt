@@ -22,6 +22,9 @@ import javax.inject.Inject
 
 private const val TAG = "XmlTextParser"
 
+/** Compiled once — used per <title> when converting FB2 headings to chapters. */
+private val WHITESPACE_REGEX = Regex("\\s+")
+
 class XmlTextParser @Inject constructor(
     private val documentParser: DocumentParser
 ) : TextParser {
@@ -48,7 +51,7 @@ class XmlTextParser @Inject constructor(
                     if (parentTag != "body" && parentTag != "section") return@forEach
 
                     val text = title.wholeText()
-                        .replace(Regex("\\s+"), " ")
+                        .replace(WHITESPACE_REGEX, " ")
                         .trim()
                     if (text.isBlank()) return@forEach
 
@@ -98,6 +101,7 @@ class XmlTextParser @Inject constructor(
             }
 
             logI(TAG, "Successfully finished XML parsing.")
+
             ParsedText(readerText, notes)
         } catch (e: Exception) {
             logE(TAG, "Could not parse text with message: ${e.message}.")

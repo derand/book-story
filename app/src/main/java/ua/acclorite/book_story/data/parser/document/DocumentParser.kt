@@ -87,6 +87,20 @@ const val REF_END_MARK = "\uE016"
 private val TABLE_DELIMITER_REGEX =
     Regex("""^\s*\|?\s*:?-{1,}:?\s*(\|\s*:?-{1,}:?\s*)*\|?\s*$""")
 
+// Compiled once — all of these run in the per-line hot loop over the whole book
+// (parseDocument), so per-line Regex() compilation added up to a large share of
+// parse time. Kept at file scope like TABLE_DELIMITER_REGEX above.
+private val BOLD_ITALIC_NORMALIZE_REGEX = Regex("""\*\*\*\s*(.*?)\s*\*\*\*""")
+private val BOLD_NORMALIZE_REGEX = Regex("""\*\*\s*(.*?)\s*\*\*""")
+private val ITALIC_NORMALIZE_REGEX = Regex("""_\s*(.*?)\s*_""")
+private val IMAGE_LINE_REGEX = Regex("""\[\[(.*?)\|(.*?)]]""")
+private val CHAPTER_LINE_REGEX = Regex("""\[\[\[chapter\|(\d+)\|(.*)]]]""")
+private val TABLE_LINE_REGEX = Regex("""\[\[\[table\|(\d+)]]]""")
+/** Separator-like text: "---", "***", "___", also spaced out ("* * *"). */
+private val SEPARATOR_TEXT_REGEX = Regex("""^([-*_])(\s*\1){2,}$""")
+private val NEWLINES_REGEX = Regex("\\n+")
+private val WHITESPACE_REGEX = Regex("\\s+")
+
 /** Hex-encodes an FB2 element id for safe transport through the pipeline. */
 fun String.encodeReferenceId(): String =
     toByteArray(Charsets.UTF_8).joinToString("") { byte -> "%02x".format(byte) }
@@ -99,6 +113,7 @@ fun String.decodeReferenceId(): String =
 class DocumentParser @Inject constructor(
     private val markdownParser: MarkdownParser
 ) {
+
     /**
      * Parses document to get it's text.
      * Fixes issues such as manual line breaking in <p>.
@@ -130,22 +145,30 @@ class DocumentParser @Inject constructor(
         document.selectFirst("body")
             .run { this ?: document.body() }
             .apply {
-                // Remove manual line breaks from all <p>, <a>
+                // Remove manual line breaks from all <p>, <a>. Setting .html()
+                // re-parses the fragment, so skip it when there is no newline —
+                // most paragraphs in a non-pretty-printed file have none.
                 select("p").forEach { element ->
                     yield()
-                    element.html(element.html().replace(Regex("\\n+"), " "))
+                    val html = element.html()
+                    if (html.indexOf('\n') >= 0) {
+                        element.html(html.replace(NEWLINES_REGEX, " "))
+                    }
                     element.append("\n")
                 }
                 select("a").forEach { element ->
                     yield()
-                    element.html(element.html().replace(Regex("\\n+"), ""))
+                    val html = element.html()
+                    if (html.indexOf('\n') >= 0) {
+                        element.html(html.replace(NEWLINES_REGEX, ""))
+                    }
                 }
 
                 // Section/body titles are already turned into chapter markers
                 // upstream; the titles left here belong to FB2 <poem>/<epigraph>/
                 // <cite>. Flatten them into a bold line instead of dropping them.
                 select("title").forEach { title ->
-                    val text = title.wholeText().replace(Regex("\\s+"), " ").trim()
+                    val text = title.wholeText().replace(WHITESPACE_REGEX, " ").trim()
                     if (text.isBlank()) title.remove()
                     else title.replaceWith(TextNode("\n$TITLE_ROLE_MARKER**$text**\n"))
                 }
@@ -172,7 +195,7 @@ class DocumentParser @Inject constructor(
                 // the markdown and drop the line entirely. Others get bold+italic.
                 select("subtitle").forEach { subtitle ->
                     val text = subtitle.wholeText().trim()
-                    if (text.matches(Regex("""^([-*_])(\s*\1){2,}$"""))) {
+                    if (text.matches(SEPARATOR_TEXT_REGEX)) {
                         subtitle.replaceWith(TextNode("\n$text\n"))
                     } else {
                         subtitle.prepend("\n_**").append("**_\n") // bold + italic
@@ -312,7 +335,7 @@ class DocumentParser @Inject constructor(
                             if (cells.isEmpty()) return@mapNotNull null
                             cells.map { cell ->
                                 markdownParser.parse(
-                                    cell.wholeText().replace(Regex("\\s+"), " ").trim()
+                                    cell.wholeText().replace(WHITESPACE_REGEX, " ").trim()
                                 )
                             }
                         }
@@ -334,11 +357,11 @@ class DocumentParser @Inject constructor(
                     // Tabs are not rendered and would glue the surrounding words together
                     "\t", " "
                 ).replace(
-                    Regex("""\*\*\*\s*(.*?)\s*\*\*\*"""), "_**$1**_"
+                    BOLD_ITALIC_NORMALIZE_REGEX, "_**$1**_"
                 ).replace(
-                    Regex("""\*\*\s*(.*?)\s*\*\*"""), "**$1**"
+                    BOLD_NORMALIZE_REGEX, "**$1**"
                 ).replace(
-                    Regex("""_\s*(.*?)\s*_"""), "_$1_"
+                    ITALIC_NORMALIZE_REGEX, "_$1_"
                 ).trim()
 
                 // Role marker prefix (from FB2 <title>/<epigraph>/<text-author>)
@@ -358,18 +381,18 @@ class DocumentParser @Inject constructor(
                     else -> ReaderTextRole.Paragraph to formattedLine
                 }
 
-                val imageRegex = Regex("""\[\[(.*?)\|(.*?)]]""")
-                val chapterRegex = Regex("""\[\[\[chapter\|(\d+)\|(.*)]]]""")
-                val tableRegex = Regex("""\[\[\[table\|(\d+)]]]""")
-                // Separator-like text: "---", "***", "___", also spaced out ("* * *")
-                val separatorRegex = Regex("""^([-*_])(\s*\1){2,}$""")
+                val imageRegex = IMAGE_LINE_REGEX
+                val chapterRegex = CHAPTER_LINE_REGEX
+                val tableRegex = TABLE_LINE_REGEX
+                val separatorRegex = SEPARATOR_TEXT_REGEX
 
                 if (line.containsVisibleText()) {
+                    val trimmed = line.trim()
                     when {
                         // Poem boundaries: everything in between is collected
                         // into a single poem block
-                        line.trim() == POEM_BEGIN_MARKER -> poemLines = mutableListOf()
-                        line.trim() == POEM_END_MARKER -> {
+                        trimmed == POEM_BEGIN_MARKER -> poemLines = mutableListOf()
+                        trimmed == POEM_END_MARKER -> {
                             poemLines?.takeIf { it.isNotEmpty() }?.let { lines ->
                                 readerText.add(ReaderText.Poem(lines.toList()))
                             }
@@ -379,7 +402,7 @@ class DocumentParser @Inject constructor(
                         // Empty line marker (from FB2 <empty-line/>). A blank line
                         // cannot survive the containsVisibleText() gate on its own,
                         // so it is carried as a marker and rendered as a blank line.
-                        line.trim() == EMPTY_LINE_MARKER -> {
+                        trimmed == EMPTY_LINE_MARKER -> {
                             val blank = ReaderText.Text(AnnotatedString(" "))
                             poemLines?.add(blank) ?: readerText.add(blank)
                         }
@@ -410,7 +433,7 @@ class DocumentParser @Inject constructor(
                         }
 
                         // Section separator (from <hr>)
-                        line.trim() == SEPARATOR_MARKER -> {
+                        trimmed == SEPARATOR_MARKER -> {
                             readerText.add(ReaderText.Separator)
                         }
 
@@ -501,7 +524,7 @@ class DocumentParser @Inject constructor(
         clone.select("sub").prepend(SUBSCRIPT_MARK).append(SUBSCRIPT_MARK)
         clone.select("sup").prepend(SUPERSCRIPT_MARK).append(SUPERSCRIPT_MARK)
         clone.select("p").forEach { paragraph ->
-            paragraph.html(paragraph.html().replace(Regex("\\n+"), " "))
+            paragraph.html(paragraph.html().replace(NEWLINES_REGEX, " "))
             paragraph.append("\n")
         }
 
@@ -597,6 +620,7 @@ class DocumentParser @Inject constructor(
             val checksum = CRC32().apply { update(bytes) }.value
             ReaderImage(
                 id = "$src-${bytes.size}-$checksum",
+                src = src,
                 bytes = bytes,
                 width = bounds.outWidth,
                 height = bounds.outHeight
