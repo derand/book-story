@@ -47,6 +47,10 @@ private val MARK_STYLES = mapOf(
     ),
     ITALIC_MARK.single() to SpanStyle(
         fontStyle = FontStyle.Italic
+    ),
+    BOLD_MARK.single() to SpanStyle(
+        // Same weight as a <strong>/StrongEmphasis run
+        fontWeight = FontWeight.Medium
     )
 )
 

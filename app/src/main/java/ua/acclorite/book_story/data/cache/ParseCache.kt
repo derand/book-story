@@ -246,6 +246,6 @@ class ParseCache @Inject constructor(application: Application) {
          * Bump on any change to parser output or [ParsedTextCodec] format so
          * stale entries are ignored instead of rendering outdated text.
          */
-        const val VERSION = 2
+        const val VERSION = 3
     }
 }

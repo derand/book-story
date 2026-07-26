@@ -9,6 +9,7 @@ package ua.acclorite.book_story.data.parser.document
 import android.graphics.BitmapFactory
 import android.util.Base64
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.buildAnnotatedString
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
@@ -16,10 +17,13 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.yield
 import org.jsoup.nodes.Document
+import org.jsoup.nodes.Element
+import org.jsoup.nodes.Node
 import org.jsoup.nodes.TextNode
 import ua.acclorite.book_story.core.helpers.clearAllMarkdown
 import ua.acclorite.book_story.core.helpers.clearMarkdown
 import ua.acclorite.book_story.core.helpers.containsVisibleText
+import ua.acclorite.book_story.domain.model.reader.NOTE_LINK_TAG_PREFIX
 import ua.acclorite.book_story.domain.model.reader.ReaderImage
 import ua.acclorite.book_story.domain.model.reader.ReaderText
 import ua.acclorite.book_story.domain.model.reader.ReaderTextRole
@@ -71,6 +75,14 @@ const val SUPERSCRIPT_MARK = "\uE013"
 const val ITALIC_MARK = "\uE018"
 
 /**
+ * Private-use sentinel wrapping a flattened <title> (of an FB2 <poem>/
+ * <epigraph>/<cite>). A mark rather than "**", because the title keeps its own
+ * inline markup, which may itself carry "**" from a <strong>: nested asterisks
+ * would fuse into one malformed emphasis run.
+ */
+const val BOLD_MARK = "\uE019"
+
+/**
  * Inline reference marks (from FB2 <a l:href="#id">). The run between a
  * start mark and [REF_END_MARK] is "<hex-encoded id>[REF_SEPARATOR]<display
  * text>"; the id is hex-encoded so markdown transformations cannot corrupt
@@ -100,6 +112,107 @@ private val TABLE_LINE_REGEX = Regex("""\[\[\[table\|(\d+)]]]""")
 private val SEPARATOR_TEXT_REGEX = Regex("""^([-*_])(\s*\1){2,}$""")
 private val NEWLINES_REGEX = Regex("\\n+")
 private val WHITESPACE_REGEX = Regex("\\s+")
+
+/**
+ * Leading block marker of a line: an ordered/bullet list item, a quote or an
+ * ATX heading. See [escapeLeadingBlockMarker].
+ */
+private val LEADING_BLOCK_MARKER_REGEX = Regex("""^(\s*)(\d{1,9}[.)]|[-+*>]|#{1,6})(\s|$)""")
+
+/**
+ * Escapes a leading block marker so commonmark keeps it as text. A chapter
+ * title is a title, not markdown: "1. Prologue" must stay "1. Prologue"
+ * instead of becoming a list item that swallows its own numbering.
+ */
+private fun String.escapeLeadingBlockMarker(): String =
+    replace(LEADING_BLOCK_MARKER_REGEX) { match ->
+        val marker = match.groupValues[2]
+        val escaped = when {
+            // Only the punctuation of "12." / "12)" needs escaping
+            marker.first().isDigit() -> marker.dropLast(1) + "\\" + marker.last()
+            else -> "\\" + marker
+        }
+        "${match.groupValues[1]}$escaped${match.groupValues[3]}"
+    }
+
+/**
+ * Plain text of a parsed chapter title, for the chapter list and the toolbar:
+ * the styling is already resolved, and footnote markers are dropped, as a
+ * dangling "[1]" is noise outside the text itself.
+ */
+private fun AnnotatedString.plainTitle(): String {
+    val notes = getLinkAnnotations(0, length).filter { range ->
+        val item = range.item
+        item is LinkAnnotation.Clickable && item.tag.startsWith(NOTE_LINK_TAG_PREFIX)
+    }
+    if (notes.isEmpty()) return text.trim()
+
+    return buildString {
+        append(text)
+        notes.sortedByDescending { note -> note.start }.forEach { note ->
+            delete(note.start, note.end)
+        }
+    }.trim()
+}
+
+/** Whether the string carries any styling worth keeping over its plain text. */
+private fun AnnotatedString.hasInlineMarkup(): Boolean =
+    spanStyles.isNotEmpty() || hasLinkAnnotations(0, length)
+
+/**
+ * Flattens a <title> subtree into inline content on a single line, keeping its
+ * markup. Block children (<p>, <v>, ...) are unwrapped with a separating
+ * space, children that cannot live inside a line (<image>, <empty-line>, ...)
+ * are dropped, and all whitespace is collapsed, so neither the source
+ * indentation nor an appended "\n" can split the title in two. The inline
+ * elements (<emphasis>, <strong>, <sub>, <a>, ...) are left in place: the
+ * regular transforms then style a title exactly like body text.
+ */
+fun Element.flattenTitleToInline() {
+    select("empty-line, image, img, table, hr").remove()
+    select("p, v, subtitle, stanza, poem").forEach { block ->
+        block.after(TextNode(" "))
+        block.unwrap()
+    }
+    collapseWhitespaceDeep()
+}
+
+/**
+ * Collapses whitespace over the whole subtree, as one continuous run of text:
+ * a space split across two text nodes (the source indentation next to the
+ * separator of an unwrapped block) collapses into a single one, and the
+ * leading whitespace is dropped.
+ */
+private fun Node.collapseWhitespaceDeep() {
+    var lastWasSpace = true
+
+    fun collapse(node: Node) {
+        node.childNodes().forEach { child ->
+            if (child !is TextNode) {
+                collapse(child)
+                return@forEach
+            }
+
+            val collapsed = StringBuilder(child.wholeText.length)
+            child.wholeText.forEach { char ->
+                when {
+                    !char.isWhitespace() -> {
+                        collapsed.append(char)
+                        lastWasSpace = false
+                    }
+
+                    !lastWasSpace -> {
+                        collapsed.append(' ')
+                        lastWasSpace = true
+                    }
+                }
+            }
+            child.text(collapsed.toString())
+        }
+    }
+
+    collapse(this)
+}
 
 /** Hex-encodes an FB2 element id for safe transport through the pipeline. */
 fun String.encodeReferenceId(): String =
@@ -166,11 +279,18 @@ class DocumentParser @Inject constructor(
 
                 // Section/body titles are already turned into chapter markers
                 // upstream; the titles left here belong to FB2 <poem>/<epigraph>/
-                // <cite>. Flatten them into a bold line instead of dropping them.
+                // <cite>. Flatten them into a bold line instead of dropping them,
+                // keeping the inline markup for the transforms below.
                 select("title").forEach { title ->
-                    val text = title.wholeText().replace(WHITESPACE_REGEX, " ").trim()
-                    if (text.isBlank()) title.remove()
-                    else title.replaceWith(TextNode("\n$TITLE_ROLE_MARKER**$text**\n"))
+                    if (title.wholeText().isBlank()) {
+                        title.remove()
+                        return@forEach
+                    }
+
+                    title.flattenTitleToInline()
+                    title.before(TextNode("\n$TITLE_ROLE_MARKER$BOLD_MARK"))
+                    title.after(TextNode("$BOLD_MARK\n"))
+                    title.unwrap()
                 }
 
                 // Markdown
@@ -420,13 +540,20 @@ class DocumentParser @Inject constructor(
                             if (!includeChapter) return@forEach
 
                             val match = chapterRegex.matchEntire(line) ?: return@forEach
-                            val title = match.groupValues[2].clearAllMarkdown().trim()
+                            // The title keeps its inline markup (see
+                            // [flattenTitleToInline]), so it is parsed like any
+                            // other line; the chapter list gets the plain text.
+                            val styledTitle = markdownParser.parse(
+                                match.groupValues[2].escapeLeadingBlockMarker()
+                            )
+                            val title = styledTitle.plainTitle()
                             if (!title.containsVisibleText()) return@forEach
 
                             readerText.add(
                                 ReaderText.Chapter(
                                     title = title,
-                                    depth = match.groupValues[1].toIntOrNull() ?: 0
+                                    depth = match.groupValues[1].toIntOrNull() ?: 0,
+                                    styledTitle = styledTitle.takeIf { it.hasInlineMarkup() }
                                 )
                             )
                             chapterAdded = true

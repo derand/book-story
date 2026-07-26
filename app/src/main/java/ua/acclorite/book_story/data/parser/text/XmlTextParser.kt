@@ -8,6 +8,7 @@ package ua.acclorite.book_story.data.parser.text
 
 import kotlinx.coroutines.yield
 import org.jsoup.Jsoup
+import org.jsoup.nodes.Document
 import org.jsoup.nodes.TextNode
 import org.jsoup.parser.Parser
 import ua.acclorite.book_story.core.log.logE
@@ -16,14 +17,39 @@ import ua.acclorite.book_story.data.model.file.CachedFile
 import ua.acclorite.book_story.data.parser.document.DocumentParser
 import androidx.compose.ui.text.AnnotatedString
 import ua.acclorite.book_story.data.parser.document.EMPTY_LINE_MARKER
+import ua.acclorite.book_story.data.parser.document.flattenTitleToInline
 import ua.acclorite.book_story.domain.model.reader.ParsedText
 import ua.acclorite.book_story.domain.model.reader.ReaderText
 import javax.inject.Inject
 
 private const val TAG = "XmlTextParser"
 
-/** Compiled once — used per <title> when converting FB2 headings to chapters. */
-private val WHITESPACE_REGEX = Regex("\\s+")
+/**
+ * FB2 keeps chapter headings in the <title> of a <body>/<section>. Converts
+ * them into chapter markers before [DocumentParser] gets to the remaining
+ * (poem/epigraph/cite) titles.
+ *
+ * The title is flattened to a single line but keeps its inline markup
+ * (emphasis, sub/superscript, note references, ...): its children stay in the
+ * tree, so [DocumentParser] styles a chapter title like any other line.
+ */
+internal fun Document.markChapterTitles() {
+    selectFirst("body")?.select("title")?.forEach { title ->
+        val parentTag = title.parent()?.tagName()
+        if (parentTag != "body" && parentTag != "section") return@forEach
+        if (title.wholeText().isBlank()) return@forEach
+
+        // Depth 0 = a title of a <body> or top-level <section>
+        val depth = title.parents().count { parent ->
+            parent.tagName() == "section"
+        }.let { sections -> (sections - 1).coerceAtLeast(0) }
+
+        title.flattenTitleToInline()
+        title.before(TextNode("\n[[[chapter|$depth|"))
+        title.after(TextNode("]]]\n"))
+        title.unwrap()
+    }
+}
 
 class XmlTextParser @Inject constructor(
     private val documentParser: DocumentParser
@@ -43,26 +69,7 @@ class XmlTextParser @Inject constructor(
                 }.filterKeys { it.isNotBlank() }
                 document.select("binary").remove()
 
-                // FB2 keeps chapter headings in <title> of <body>/<section>.
-                // Convert them to chapter markers before [DocumentParser]
-                // removes all <title> elements.
-                document.selectFirst("body")?.select("title")?.forEach { title ->
-                    val parentTag = title.parent()?.tagName()
-                    if (parentTag != "body" && parentTag != "section") return@forEach
-
-                    val text = title.wholeText()
-                        .replace(WHITESPACE_REGEX, " ")
-                        .trim()
-                    if (text.isBlank()) return@forEach
-
-                    // Depth 0 = a title of a <body> or top-level <section>
-                    val depth = title.parents().count { parent ->
-                        parent.tagName() == "section"
-                    }.let { sections -> (sections - 1).coerceAtLeast(0) }
-                    title.replaceWith(
-                        TextNode("\n[[[chapter|$depth|$text]]]\n")
-                    )
-                }
+                document.markChapterTitles()
 
                 // FB2 <empty-line/> is a blank paragraph. It carries no text, so
                 // it is turned into a marker that survives text extraction and is
