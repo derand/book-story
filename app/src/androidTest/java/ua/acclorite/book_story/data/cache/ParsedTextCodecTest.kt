@@ -53,6 +53,27 @@ class ParsedTextCodecTest {
             text = listOf(
                 ReaderText.Chapter(title = "Розділ 1", depth = 0),
                 ReaderText.Chapter(title = "Nested", depth = 2),
+                // A title with inline markup: italic plus a footnote reference,
+                // which the plain title drops
+                ReaderText.Chapter(
+                    title = "Styled",
+                    depth = 1,
+                    styledTitle = buildAnnotatedString {
+                        withStyle(SpanStyle(fontStyle = FontStyle.Italic)) { append("Styled") }
+                        withLink(
+                            LinkAnnotation.Clickable(
+                                tag = "note:n1",
+                                styles = TextLinkStyles(
+                                    SpanStyle(
+                                        baselineShift = BaselineShift.Superscript,
+                                        fontSize = 0.75.em
+                                    )
+                                ),
+                                linkInteractionListener = null
+                            )
+                        ) { append("[1]") }
+                    }
+                ),
                 ReaderText.Text(
                     line = buildAnnotatedString {
                         append("A ")
@@ -152,6 +173,12 @@ class ParsedTextCodecTest {
                 assertEquals("$msg id", expected.id, actual.id)
                 assertEquals("$msg title", expected.title, actual.title)
                 assertEquals("$msg depth", expected.depth, actual.depth)
+                val expectedStyled = expected.styledTitle
+                if (expectedStyled == null) {
+                    assertEquals("$msg styledTitle", null, actual.styledTitle)
+                } else {
+                    assertAnnotatedEquals("$msg styledTitle", expectedStyled, actual.styledTitle!!)
+                }
             }
 
             is ReaderText.Text -> assertTextEquals(msg, expected, actual as ReaderText.Text)

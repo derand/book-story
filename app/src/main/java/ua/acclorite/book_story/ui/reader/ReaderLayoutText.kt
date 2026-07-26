@@ -108,11 +108,15 @@ fun LazyItemScope.ReaderLayoutText(
         is ReaderText.Chapter -> {
             ReaderLayoutTextChapter(
                 chapter = entry,
+                showMenu = showMenu,
                 chapterTitleAlignment = chapterTitleAlignment,
                 fontColor = fontColor,
                 sidePadding = sidePadding,
                 highlightedReading = highlightedReading,
-                highlightedReadingThickness = highlightedReadingThickness
+                highlightedReadingThickness = highlightedReadingThickness,
+                toolbarHidden = toolbarHidden,
+                openNote = openNote,
+                menuVisibility = menuVisibility
             )
         }
 

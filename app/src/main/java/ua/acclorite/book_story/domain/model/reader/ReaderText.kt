@@ -37,7 +37,13 @@ sealed class ReaderText {
         val id: UUID = UUID.randomUUID(),
         val title: String,
         /** Nesting depth of the chapter: 0 for a top-level chapter. */
-        val depth: Int = 0
+        val depth: Int = 0,
+        /**
+         * The title as it is set in the text, with its inline markup (italic,
+         * sub/superscript, footnote references, ...); null when the title is
+         * plain. The chapter list and the toolbar always use [title].
+         */
+        val styledTitle: AnnotatedString? = null
     ) : ReaderText() {
         val nested: Boolean
             get() = depth > 0

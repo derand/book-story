@@ -34,7 +34,7 @@ import java.util.UUID
  */
 object ParsedTextCodec {
 
-    const val VERSION = 1
+    const val VERSION = 2
 
     private const val TYPE_CHAPTER = 0
     private const val TYPE_TEXT = 1
@@ -91,6 +91,9 @@ object ParsedTextCodec {
                 out.writeLong(element.id.leastSignificantBits)
                 out.writeUTF(element.title)
                 out.writeInt(element.depth)
+                val styledTitle = element.styledTitle
+                out.writeBoolean(styledTitle != null)
+                if (styledTitle != null) AnnotatedStringCodec.encode(styledTitle, out)
             }
 
             is ReaderText.Text -> {
@@ -131,11 +134,19 @@ object ParsedTextCodec {
 
     private fun decodeElement(input: DataInput): ReaderText {
         return when (val type = input.readByte().toInt()) {
-            TYPE_CHAPTER -> ReaderText.Chapter(
-                id = UUID(input.readLong(), input.readLong()),
-                title = input.readUTF(),
-                depth = input.readInt()
-            )
+            TYPE_CHAPTER -> {
+                val id = UUID(input.readLong(), input.readLong())
+                val title = input.readUTF()
+                val depth = input.readInt()
+                val styledTitle =
+                    if (input.readBoolean()) AnnotatedStringCodec.decode(input) else null
+                ReaderText.Chapter(
+                    id = id,
+                    title = title,
+                    depth = depth,
+                    styledTitle = styledTitle
+                )
+            }
 
             TYPE_TEXT -> decodeText(input)
 
