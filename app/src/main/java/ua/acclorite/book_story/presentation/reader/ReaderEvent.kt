@@ -15,6 +15,13 @@ sealed class ReaderEvent {
 
     data object OnLoadText : ReaderEvent()
 
+    /**
+     * Loads the images the text does not carry bytes for (a parse-cache hit) in
+     * the background. Idempotent: a no-op while a load is running or once every
+     * image is available. Dispatched only when images are shown at all.
+     */
+    data object OnLoadImages : ReaderEvent()
+
     data object OnRestoreScroll : ReaderEvent()
 
     data class OnMenuVisibility(

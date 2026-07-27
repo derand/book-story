@@ -239,7 +239,8 @@ class DocumentParser @Inject constructor(
         zipFile: ZipFile? = null,
         imageEntries: List<ZipEntry>? = null,
         base64Images: Map<String, String>? = null,
-        includeChapter: Boolean = true
+        includeChapter: Boolean = true,
+        keepImageBytes: Boolean = true
     ): List<ReaderText> = coroutineScope {
         yield()
 
@@ -409,7 +410,7 @@ class DocumentParser @Inject constructor(
 
                     imageJobs.getOrPut(src) {
                         async(Dispatchers.Default) {
-                            loadImage(src, zipFile, imageEntries, base64Images)
+                            loadImage(src, zipFile, imageEntries, base64Images, keepImageBytes)
                         }
                     }
                     element.append("\n[[$src|$alt]]\n")
@@ -436,7 +437,7 @@ class DocumentParser @Inject constructor(
 
                     imageJobs.getOrPut(src) {
                         async(Dispatchers.Default) {
-                            loadImage(src, zipFile, imageEntries, base64Images)
+                            loadImage(src, zipFile, imageEntries, base64Images, keepImageBytes)
                         }
                     }
                     element.append("\n[[$src|]]\n")
@@ -729,7 +730,8 @@ class DocumentParser @Inject constructor(
         src: String,
         zipFile: ZipFile?,
         imageEntries: List<ZipEntry>?,
-        base64Images: Map<String, String>?
+        base64Images: Map<String, String>?,
+        keepImageBytes: Boolean
     ): ReaderImage? {
         return try {
             val bytes = base64Images?.get(src)?.let { encoded ->
@@ -744,11 +746,13 @@ class DocumentParser @Inject constructor(
             BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
             if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null
 
+            // Identity always comes from the real bytes, so an image keeps the
+            // same id whether or not they are kept — the parse stays cacheable.
             val checksum = CRC32().apply { update(bytes) }.value
             ReaderImage(
                 id = "$src-${bytes.size}-$checksum",
                 src = src,
-                bytes = bytes,
+                bytes = if (keepImageBytes) bytes else ByteArray(0),
                 width = bounds.outWidth,
                 height = bounds.outHeight
             )

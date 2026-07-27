@@ -27,7 +27,8 @@ class PdfTextParser @Inject constructor(
     private val application: Application
 ) : TextParser {
 
-    override suspend fun parse(cachedFile: CachedFile): ParsedText {
+    @Suppress("UNUSED_PARAMETER")
+    override suspend fun parse(cachedFile: CachedFile, keepImageBytes: Boolean): ParsedText {
         logI(TAG, "Started PDF parsing: ${cachedFile.name}.")
 
         return try {

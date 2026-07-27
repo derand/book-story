@@ -55,7 +55,7 @@ class XmlTextParser @Inject constructor(
     private val documentParser: DocumentParser
 ) : TextParser {
 
-    override suspend fun parse(cachedFile: CachedFile): ParsedText {
+    override suspend fun parse(cachedFile: CachedFile, keepImageBytes: Boolean): ParsedText {
         logI(TAG, "Started XML parsing: ${cachedFile.name}.")
 
         return try {
@@ -93,7 +93,11 @@ class XmlTextParser @Inject constructor(
                     }
                 }
 
-                documentParser.parseDocument(document, base64Images = base64Images)
+                documentParser.parseDocument(
+                    document = document,
+                    base64Images = base64Images,
+                    keepImageBytes = keepImageBytes
+                )
             }
 
             yield()

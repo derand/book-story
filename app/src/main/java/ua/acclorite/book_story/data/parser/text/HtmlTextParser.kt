@@ -23,12 +23,15 @@ class HtmlTextParser @Inject constructor(
     private val documentParser: DocumentParser
 ) : TextParser {
 
-    override suspend fun parse(cachedFile: CachedFile): ParsedText {
+    override suspend fun parse(cachedFile: CachedFile, keepImageBytes: Boolean): ParsedText {
         logI(TAG, "Started HTML parsing: ${cachedFile.name}.")
 
         return try {
             val readerText = cachedFile.openInputStream()?.use { stream ->
-                documentParser.parseDocument(Jsoup.parse(stream, null, "", Parser.htmlParser()))
+                documentParser.parseDocument(
+                    document = Jsoup.parse(stream, null, "", Parser.htmlParser()),
+                    keepImageBytes = keepImageBytes
+                )
             }
 
             yield()

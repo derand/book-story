@@ -26,7 +26,7 @@ class TextParserImpl @Inject constructor(
     private val xmlTextParser: XmlTextParser
 ) : TextParser {
 
-    override suspend fun parse(cachedFile: CachedFile): ParsedText {
+    override suspend fun parse(cachedFile: CachedFile, keepImageBytes: Boolean): ParsedText {
         if (!cachedFile.canAccess()) {
             logE(TAG, "File does not exist or no read access is granted.")
             return ParsedText.EMPTY
@@ -36,31 +36,31 @@ class TextParserImpl @Inject constructor(
         return withContext(Dispatchers.IO) {
             when (fileFormat) {
                 ".pdf" -> {
-                    pdfTextParser.parse(cachedFile)
+                    pdfTextParser.parse(cachedFile, keepImageBytes)
                 }
 
                 ".epub" -> {
-                    epubTextParser.parse(cachedFile)
+                    epubTextParser.parse(cachedFile, keepImageBytes)
                 }
 
                 ".txt" -> {
-                    txtTextParser.parse(cachedFile)
+                    txtTextParser.parse(cachedFile, keepImageBytes)
                 }
 
                 ".fb2" -> {
-                    xmlTextParser.parse(cachedFile)
+                    xmlTextParser.parse(cachedFile, keepImageBytes)
                 }
 
                 ".html" -> {
-                    htmlTextParser.parse(cachedFile)
+                    htmlTextParser.parse(cachedFile, keepImageBytes)
                 }
 
                 ".htm" -> {
-                    htmlTextParser.parse(cachedFile)
+                    htmlTextParser.parse(cachedFile, keepImageBytes)
                 }
 
                 ".md" -> {
-                    htmlTextParser.parse(cachedFile)
+                    htmlTextParser.parse(cachedFile, keepImageBytes)
                 }
 
                 else -> {

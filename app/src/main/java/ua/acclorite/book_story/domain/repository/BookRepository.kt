@@ -24,6 +24,17 @@ interface BookRepository {
         bookId: Int
     ): Result<ParsedText>
 
+    /**
+     * Loads the encoded bytes of the images [srcs] of a book whose text came
+     * from the parse cache (and therefore carries image metadata only), calling
+     * [onImage] for each one as soon as it is available.
+     */
+    suspend fun loadBookImages(
+        bookId: Int,
+        srcs: Set<String>,
+        onImage: (src: String, bytes: ByteArray) -> Unit
+    ): Result<Unit>
+
     suspend fun getFileFromBook(
         bookId: Int
     ): Result<File>
