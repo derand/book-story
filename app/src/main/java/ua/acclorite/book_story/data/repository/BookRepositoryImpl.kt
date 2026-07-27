@@ -77,7 +77,14 @@ class BookRepositoryImpl @Inject constructor(
                         // width/height.
                         cached
                     } else {
-                        textParser.parse(cachedFile).also { fresh ->
+                        // With images off the reader never renders them, so the
+                        // parse keeps their size (the cached text is the same
+                        // either way) but not their bytes — on an image-heavy
+                        // book that is tens of MB held for the whole session.
+                        textParser.parse(
+                            cachedFile,
+                            keepImageBytes = settings.images.lastValue
+                        ).also { fresh ->
                             // Best-effort caching; skip empty/failed parses.
                             if (cachingEnabled && fresh.text.isNotEmpty()) {
                                 parseCache.write(

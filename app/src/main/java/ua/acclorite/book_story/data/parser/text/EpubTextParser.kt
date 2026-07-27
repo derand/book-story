@@ -44,7 +44,7 @@ class EpubTextParser @Inject constructor(
     private val documentParser: DocumentParser
 ) : TextParser {
 
-    override suspend fun parse(cachedFile: CachedFile): ParsedText {
+    override suspend fun parse(cachedFile: CachedFile, keepImageBytes: Boolean): ParsedText {
         logI(TAG, "Started EPUB parsing: ${cachedFile.name}.")
 
         return try {
@@ -79,7 +79,8 @@ class EpubTextParser @Inject constructor(
                     readerText = zip.parseEpub(
                         chapterEntries = chapterEntries,
                         imageEntries = imageEntries,
-                        chapterTitleEntries = chapterTitleEntries
+                        chapterTitleEntries = chapterTitleEntries,
+                        keepImageBytes = keepImageBytes
                     )
                 }
             }
@@ -114,7 +115,8 @@ class EpubTextParser @Inject constructor(
     private suspend fun ZipFile.parseEpub(
         chapterEntries: List<ZipEntry>,
         imageEntries: List<ZipEntry>,
-        chapterTitleEntries: Map<Source, ReaderText.Chapter>?
+        chapterTitleEntries: Map<Source, ReaderText.Chapter>?,
+        keepImageBytes: Boolean
     ): List<ReaderText> {
 
         val readerText = mutableListOf<ReaderText>()
@@ -131,7 +133,8 @@ class EpubTextParser @Inject constructor(
                         index = index,
                         entry = entry,
                         imageEntries = imageEntries,
-                        chapterTitleMap = chapterTitleEntries
+                        chapterTitleMap = chapterTitleEntries,
+                        keepImageBytes = keepImageBytes
                     )
 
                     yield()
@@ -164,7 +167,8 @@ class EpubTextParser @Inject constructor(
         index: Int,
         entry: ZipEntry,
         imageEntries: List<ZipEntry>,
-        chapterTitleMap: Map<Source, ReaderText.Chapter>?
+        chapterTitleMap: Map<Source, ReaderText.Chapter>?,
+        keepImageBytes: Boolean
     ) {
         // Getting all text
         val content = withContext(Dispatchers.IO) {
@@ -174,7 +178,8 @@ class EpubTextParser @Inject constructor(
             document = Jsoup.parse(content, Parser.htmlParser()),
             zipFile = zip,
             imageEntries = imageEntries,
-            includeChapter = false
+            includeChapter = false,
+            keepImageBytes = keepImageBytes
         ).toMutableList()
 
         // Adding chapter title from TOC if found

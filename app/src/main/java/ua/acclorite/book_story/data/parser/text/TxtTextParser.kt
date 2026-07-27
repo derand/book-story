@@ -24,7 +24,8 @@ class TxtTextParser @Inject constructor(
     private val markdownParser: MarkdownParser
 ) : TextParser {
 
-    override suspend fun parse(cachedFile: CachedFile): ParsedText {
+    @Suppress("UNUSED_PARAMETER")
+    override suspend fun parse(cachedFile: CachedFile, keepImageBytes: Boolean): ParsedText {
         logI(TAG, "Started TXT parsing: ${cachedFile.name}.")
 
         return try {
