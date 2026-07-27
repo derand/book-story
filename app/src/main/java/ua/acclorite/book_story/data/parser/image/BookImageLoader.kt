@@ -60,13 +60,6 @@ class BookImageLoader @Inject constructor() {
         }
     }
 
-    /** [loadImages] collected into a map, for callers that need it at once. */
-    fun loadImageBytes(cachedFile: CachedFile, srcs: Set<String>): Map<String, ByteArray> {
-        val result = HashMap<String, ByteArray>(srcs.size)
-        loadImages(cachedFile, srcs) { src, bytes -> result[src] = bytes }
-        return result
-    }
-
     private fun loadFromFb2(
         cachedFile: CachedFile,
         srcs: Set<String>,

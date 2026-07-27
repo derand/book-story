@@ -29,10 +29,12 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import ua.acclorite.book_story.domain.model.reader.BookImage
 import ua.acclorite.book_story.domain.model.reader.ReaderText
 import ua.acclorite.book_story.presentation.reader.ReaderEvent
 import ua.acclorite.book_story.presentation.reader.model.ReaderFontThickness
 import ua.acclorite.book_story.presentation.reader.model.ReaderTextAlignment
+import ua.acclorite.book_story.ui.common.helpers.LocalBookImages
 import ua.acclorite.book_story.ui.reader.model.FontWithName
 import ua.acclorite.book_story.ui.theme.model.HorizontalAlignment
 import java.nio.ByteBuffer
@@ -67,12 +69,20 @@ fun LazyItemScope.ReaderLayoutTextImage(
     menuVisibility: (ReaderEvent.OnMenuVisibility) -> Unit
 ) {
     val context = LocalContext.current
-    val imageRequest = remember(entry.image) {
-        ImageRequest.Builder(context)
-            .data(ByteBuffer.wrap(entry.image.bytes))
-            .memoryCacheKey(entry.image.id)
-            .crossfade(100)
-            .build()
+    // Bytes come from the store, not from the entry: on a parse-cache hit the
+    // text arrives without them and they are filled in by a background load.
+    val image = LocalBookImages.current[entry.image.src]
+    val imageRequest = remember(image) {
+        (image as? BookImage.Ready)?.let { ready ->
+            ImageRequest.Builder(context)
+                .data(ByteBuffer.wrap(ready.bytes))
+                .memoryCacheKey(entry.image.id)
+                .crossfade(100)
+                .build()
+        }
+    }
+    val shape = remember(imagesCornersRoundness) {
+        RoundedCornerShape(imagesCornersRoundness)
     }
 
     Column(
@@ -90,16 +100,29 @@ fun LazyItemScope.ReaderLayoutTextImage(
                 .fillMaxWidth(),
             contentAlignment = imagesAlignment.alignment
         ) {
-            AsyncImage(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(imagesCornersRoundness))
-                    .fillMaxWidth(imagesWidth)
-                    .aspectRatio(entry.image.aspectRatio),
-                model = imageRequest,
-                contentDescription = entry.caption?.line?.text,
-                colorFilter = imagesColorEffects,
-                contentScale = ContentScale.FillWidth
-            )
+            // The slot is sized from the image's width/height either way, so an
+            // image landing later cannot reflow the text around it.
+            val slot = Modifier
+                .clip(shape)
+                .fillMaxWidth(imagesWidth)
+                .aspectRatio(entry.image.aspectRatio)
+
+            when (imageRequest) {
+                null -> ReaderLayoutTextImagePlaceholder(
+                    modifier = slot,
+                    shape = shape,
+                    fontColor = fontColor,
+                    missing = image is BookImage.Missing
+                )
+
+                else -> AsyncImage(
+                    modifier = slot,
+                    model = imageRequest,
+                    contentDescription = entry.caption?.line?.text,
+                    colorFilter = imagesColorEffects,
+                    contentScale = ContentScale.FillWidth
+                )
+            }
         }
 
         if (imagesCaptions) {

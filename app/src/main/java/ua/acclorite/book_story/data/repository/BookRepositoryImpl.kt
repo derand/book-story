@@ -11,7 +11,6 @@ import kotlinx.coroutines.withContext
 import ua.acclorite.book_story.core.CoverImage
 import ua.acclorite.book_story.data.cache.ParseCache
 import ua.acclorite.book_story.data.local.room.BookDatabase
-import ua.acclorite.book_story.data.model.file.CachedFile
 import ua.acclorite.book_story.data.settings.SettingsManager
 import ua.acclorite.book_story.data.mapper.book.BookMapper
 import ua.acclorite.book_story.data.mapper.file.FileMapper
@@ -21,7 +20,6 @@ import ua.acclorite.book_story.data.parser.text.TextParser
 import ua.acclorite.book_story.domain.model.file.File
 import ua.acclorite.book_story.domain.model.library.Book
 import ua.acclorite.book_story.domain.model.reader.ParsedText
-import ua.acclorite.book_story.domain.model.reader.ReaderImage
 import ua.acclorite.book_story.domain.model.reader.ReaderText
 import ua.acclorite.book_story.domain.repository.BookRepository
 import ua.acclorite.book_story.domain.service.FileProvider
@@ -72,9 +70,12 @@ class BookRepositoryImpl @Inject constructor(
                     ) else null
 
                     if (cached != null) {
-                        // Hit: the stored text carries image metadata only —
-                        // refill any image bytes from cached blobs or the source.
-                        fillImages(cached, cachedFile, maxBytes, cacheImages)
+                        // Hit: the stored text carries image metadata only. Its
+                        // bytes are loaded in the background (see [loadBookImages])
+                        // so the reader can show the text right away; the layout
+                        // is unaffected, image slots are sized from the cached
+                        // width/height.
+                        cached
                     } else {
                         textParser.parse(cachedFile).also { fresh ->
                             // Best-effort caching; skip empty/failed parses.
@@ -95,63 +96,51 @@ class BookRepositoryImpl @Inject constructor(
     }
 
     /**
-     * Refills empty image bytes on a cache hit: cached blobs first, then the
-     * source book (one pass). When [cacheImages] is on, bytes read from the
-     * source are persisted as blobs for the next hit. Returns [parsed] unchanged
-     * when there are no images to fill or none could be resolved.
+     * Loads the bytes of [srcs] for a book restored from the parse cache,
+     * reporting each image through [onImage] as soon as it is available: cached
+     * blobs first (a plain disk read), then the source file. When image caching
+     * is on, bytes read from the source are persisted as blobs for the next open.
+     *
+     * Runs off the reader's critical path — the text is already on screen.
      */
-    private fun fillImages(
-        parsed: ParsedText,
-        cachedFile: CachedFile,
-        maxBytes: Long,
-        cacheImages: Boolean
-    ): ParsedText {
-        val missingSrcs = parsed.text.asSequence()
-            .filterIsInstance<ReaderText.Image>()
-            .map { it.image }
-            .filter { it.bytes.isEmpty() }
-            .map { it.src }
-            .toSet()
-        if (missingSrcs.isEmpty()) return parsed
+    override suspend fun loadBookImages(
+        bookId: Int,
+        srcs: Set<String>,
+        onImage: (src: String, bytes: ByteArray) -> Unit
+    ): Result<Unit> {
+        if (srcs.isEmpty()) return Result.success(Unit)
+        return withContext(Dispatchers.IO) {
+            getBook(bookId)
+                .mapCatching { fileProvider.getFileFromBook(it).getOrThrow() }
+                .mapCatching { cachedFile ->
+                    val capMb = settings.parseCacheSizeMb.lastValue
+                    val maxBytes = capMb.toLong() * 1024 * 1024
+                    val cacheImages = capMb > 0 && settings.cacheImagesInBooks.lastValue
 
-        val fromBlobs = parseCache.readImageBlobs(
-            cachedFile.path, cachedFile.size, cachedFile.lastModified, missingSrcs
-        )
-        val stillMissing = missingSrcs - fromBlobs.keys
-        val fromSource = if (stillMissing.isNotEmpty()) {
-            bookImageLoader.loadImageBytes(cachedFile, stillMissing)
-        } else {
-            emptyMap()
-        }
+                    val fromBlobs = if (capMb > 0) parseCache.readImageBlobs(
+                        cachedFile.path, cachedFile.size, cachedFile.lastModified, srcs
+                    ) else emptyMap()
+                    fromBlobs.forEach { (src, bytes) -> onImage(src, bytes) }
 
-        if (cacheImages && fromSource.isNotEmpty()) {
-            parseCache.writeImageBlobs(
-                cachedFile.path, cachedFile.size, cachedFile.lastModified,
-                fromSource, maxBytes
-            )
-        }
+                    val stillMissing = srcs - fromBlobs.keys
+                    if (stillMissing.isEmpty()) return@mapCatching
 
-        val bytesBySrc = fromBlobs + fromSource
-        if (bytesBySrc.isEmpty()) return parsed
+                    // Only kept when they are about to be written to disk; the
+                    // reader already holds what it needs through [onImage].
+                    val loaded = if (cacheImages) HashMap<String, ByteArray>() else null
+                    bookImageLoader.loadImages(cachedFile, stillMissing) { src, bytes ->
+                        loaded?.put(src, bytes)
+                        onImage(src, bytes)
+                    }
 
-        return parsed.copy(
-            text = parsed.text.map { element ->
-                if (element is ReaderText.Image && element.image.bytes.isEmpty()) {
-                    val bytes = bytesBySrc[element.image.src] ?: return@map element
-                    element.copy(
-                        image = ReaderImage(
-                            id = element.image.id,
-                            src = element.image.src,
-                            bytes = bytes,
-                            width = element.image.width,
-                            height = element.image.height
+                    if (!loaded.isNullOrEmpty()) {
+                        parseCache.writeImageBlobs(
+                            cachedFile.path, cachedFile.size, cachedFile.lastModified,
+                            loaded, maxBytes
                         )
-                    )
-                } else {
-                    element
+                    }
                 }
-            }
-        )
+        }
     }
 
     /** Encoded bytes of every image that has them, keyed by src. */

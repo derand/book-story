@@ -31,10 +31,13 @@ import kotlinx.coroutines.withContext
 import ua.acclorite.book_story.R
 import ua.acclorite.book_story.core.helpers.coerceAndPreventNaN
 import ua.acclorite.book_story.core.ui.UIText
+import ua.acclorite.book_story.domain.model.reader.BookImageStore
+import ua.acclorite.book_story.domain.model.reader.ReaderText
 import ua.acclorite.book_story.domain.model.reader.ReaderText.Chapter
 import ua.acclorite.book_story.domain.use_case.book.GetBookUseCase
 import ua.acclorite.book_story.domain.use_case.book.GetChapterProgressUseCase
 import ua.acclorite.book_story.domain.use_case.book.GetTextUseCase
+import ua.acclorite.book_story.domain.use_case.book.LoadBookImagesUseCase
 import ua.acclorite.book_story.domain.use_case.book.UpdateBookUseCase
 import ua.acclorite.book_story.domain.use_case.history.GetHistoryForBookUseCase
 import ua.acclorite.book_story.presentation.history.HistoryScreen
@@ -50,13 +53,22 @@ class ReaderModel @Inject constructor(
     private val getTextUseCase: GetTextUseCase,
     private val getBookUseCase: GetBookUseCase,
     private val getHistoryForBookUseCase: GetHistoryForBookUseCase,
-    private val getChapterProgressUseCase: GetChapterProgressUseCase
+    private val getChapterProgressUseCase: GetChapterProgressUseCase,
+    private val loadBookImagesUseCase: LoadBookImagesUseCase
 ) : ViewModel() {
 
     private val mutex = Mutex()
 
     private val _state = MutableStateFlow(ReaderState())
     val state = _state.asStateFlow()
+
+    /**
+     * Bytes of the open book's images. Kept out of [state] on purpose: it is
+     * observable on its own, so filling an image in repaints just that image
+     * instead of pushing a new text list through the whole reader.
+     */
+    val imageStore = BookImageStore()
+    private var imageJob: Job? = null
 
     private val _effects = MutableSharedFlow<ReaderEffect>()
     val effects = _effects.asSharedFlow()
@@ -88,6 +100,15 @@ class ReaderModel @Inject constructor(
 
                         _effects.emit(ReaderEffect.OnSystemBarsVisibility(show = null))
 
+                        // A freshly parsed book already carries its image bytes;
+                        // one restored from the cache carries metadata only and
+                        // has them loaded in the background (see [OnLoadImages]).
+                        val images = text.filterIsInstance<ReaderText.Image>().map { it.image }
+                        imageStore.reset(images.map { image -> image.src })
+                        images.forEach { image ->
+                            if (image.bytes.isNotEmpty()) imageStore.put(image.src, image.bytes)
+                        }
+
                         val lastOpened = getHistoryForBookUseCase(_state.value.book.id)?.time
                         _state.update {
                             it.copy(
@@ -107,6 +128,21 @@ class ReaderModel @Inject constructor(
                         HistoryScreen.refreshListChannel.trySend(0)
 
                         onEvent(ReaderEvent.OnRestoreScroll)
+                    }
+                }
+
+                is ReaderEvent.OnLoadImages -> {
+                    if (imageJob?.isActive == true) return@launch
+                    val pending = imageStore.pending()
+                    if (pending.isEmpty()) return@launch
+
+                    val bookId = _state.value.book.id
+                    imageJob = viewModelScope.launch(Dispatchers.IO) {
+                        loadBookImagesUseCase(bookId, pending) { src, bytes ->
+                            imageStore.put(src, bytes)
+                        }
+                        // Whatever the pass did not resolve is not coming.
+                        imageStore.finish()
                     }
                 }
 
@@ -419,6 +455,8 @@ class ReaderModel @Inject constructor(
             eventStack.forEach { job ->
                 job.cancel()
             }
+            imageJob?.cancel()
+            imageStore.reset()
             _state.update { ReaderState() }
         }
     }
@@ -429,6 +467,8 @@ class ReaderModel @Inject constructor(
             job.join()
         }
         eventStack.clear()
+        imageJob?.cancel()
+        imageStore.reset()
         _state.update { ReaderState() }
     }
 
