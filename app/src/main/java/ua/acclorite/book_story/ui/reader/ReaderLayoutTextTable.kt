@@ -30,12 +30,14 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import ua.acclorite.book_story.domain.model.reader.ReaderText.Table
+import ua.acclorite.book_story.domain.model.reader.TableAlignment
 import ua.acclorite.book_story.presentation.reader.model.ReaderFontThickness
 import ua.acclorite.book_story.ui.common.components.common.StyledText
 import ua.acclorite.book_story.ui.reader.model.FontWithName
@@ -81,6 +83,15 @@ fun LazyItemScope.ReaderLayoutTextTable(
     )
     val headerStyle = bodyStyle.copy(fontWeight = FontWeight.Bold)
 
+    // Alignment does not affect either intrinsic width, so the columns are
+    // still measured with the plain styles above — these only draw.
+    val bodyStyles = remember(bodyStyle, table, columns) {
+        table.alignedStyles(bodyStyle, columns)
+    }
+    val headerStyles = remember(headerStyle, table, columns) {
+        table.alignedStyles(headerStyle, columns)
+    }
+
     BoxWithConstraints(
         modifier = Modifier
             .animateItem(fadeInSpec = null, fadeOutSpec = null)
@@ -121,7 +132,11 @@ fun LazyItemScope.ReaderLayoutTextTable(
                             modifier = Modifier
                                 .width(with(density) { columnWidths[columnIndex].toDp() })
                                 .padding(CELL_PADDING),
-                            style = if (header) headerStyle else bodyStyle
+                            style = if (header) {
+                                headerStyles[columnIndex]
+                            } else {
+                                bodyStyles[columnIndex]
+                            }
                         )
 
                         VerticalDivider(thickness = LINE_THICKNESS, color = lineColor)
@@ -133,6 +148,21 @@ fun LazyItemScope.ReaderLayoutTextTable(
         }
     }
 }
+
+/**
+ * One drawing style per column: [style] with the column's alignment applied.
+ * A column that states nothing reuses [style] itself, so a table without
+ * alignment allocates nothing and draws exactly as it did before.
+ */
+private fun Table.alignedStyles(style: TextStyle, columns: Int): List<TextStyle> =
+    List(columns) { column ->
+        when (alignmentAt(column)) {
+            TableAlignment.Unspecified -> style
+            TableAlignment.Start -> style.copy(textAlign = TextAlign.Start)
+            TableAlignment.Center -> style.copy(textAlign = TextAlign.Center)
+            TableAlignment.End -> style.copy(textAlign = TextAlign.End)
+        }
+    }
 
 /**
  * Measures every cell to learn how much room each column wants, then asks

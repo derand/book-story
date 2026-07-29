@@ -21,6 +21,7 @@ import org.junit.runner.RunWith
 import ua.acclorite.book_story.domain.model.reader.ParsedText
 import ua.acclorite.book_story.domain.model.reader.ReaderText
 import java.io.File
+import java.io.RandomAccessFile
 
 @RunWith(AndroidJUnit4::class)
 class ParseCacheTest {
@@ -160,6 +161,24 @@ class ParseCacheTest {
 
         assertNull(cache.read(PATH, SIZE, MODIFIED))
         // A corrupt entry is dropped (whole book dir), not left behind.
+        assertNull(dir.listFiles()?.firstOrNull { it.name == entry.name })
+    }
+
+    @Test
+    fun entryFromAnOlderFormatVersionIsTreatedAsMiss() {
+        cache.write(PATH, SIZE, MODIFIED, sample)
+
+        // Restamp the entry with the previous format version — what every
+        // device already holds after ParsedTextCodec.VERSION is bumped. The
+        // version int is the first four bytes of the blob.
+        val dir = File(app.cacheDir, "parsed_books")
+        val entry = dir.listFiles()!!.first { it.isDirectory }
+        RandomAccessFile(File(entry, "text"), "rw").use { file ->
+            file.writeInt(ParsedTextCodec.VERSION - 1)
+        }
+
+        assertNull(cache.read(PATH, SIZE, MODIFIED))
+        // The stale entry is dropped, so the book is simply re-parsed.
         assertNull(dir.listFiles()?.firstOrNull { it.name == entry.name })
     }
 

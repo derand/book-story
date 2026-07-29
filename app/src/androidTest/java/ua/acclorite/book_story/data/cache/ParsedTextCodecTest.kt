@@ -27,6 +27,7 @@ import ua.acclorite.book_story.domain.model.reader.ParsedText
 import ua.acclorite.book_story.domain.model.reader.ReaderImage
 import ua.acclorite.book_story.domain.model.reader.ReaderText
 import ua.acclorite.book_story.domain.model.reader.ReaderTextRole
+import ua.acclorite.book_story.domain.model.reader.TableAlignment
 
 @RunWith(AndroidJUnit4::class)
 class ParsedTextCodecTest {
@@ -105,7 +106,13 @@ class ParsedTextCodecTest {
                         ),
                         listOf(AnnotatedString("a"), AnnotatedString("b"))
                     ),
-                    hasHeader = true
+                    hasHeader = true,
+                    alignments = listOf(TableAlignment.End, TableAlignment.Center)
+                ),
+                // A table from a source that states no alignment at all.
+                ReaderText.Table(
+                    rows = listOf(listOf(AnnotatedString("x"), AnnotatedString("y"))),
+                    hasHeader = false
                 ),
                 ReaderText.Image(
                     image = ReaderImage(
@@ -194,6 +201,7 @@ class ParsedTextCodecTest {
             is ReaderText.Table -> {
                 actual as ReaderText.Table
                 assertEquals("$msg hasHeader", expected.hasHeader, actual.hasHeader)
+                assertEquals("$msg alignments", expected.alignments, actual.alignments)
                 assertEquals("$msg rows", expected.rows.size, actual.rows.size)
                 expected.rows.forEachIndexed { r, row ->
                     assertEquals("$msg row[$r] size", row.size, actual.rows[r].size)
