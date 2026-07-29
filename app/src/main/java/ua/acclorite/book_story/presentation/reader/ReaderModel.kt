@@ -14,6 +14,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -495,15 +496,7 @@ class ReaderModel @Inject constructor(
     }
 
     fun clearAsync() {
-        val bookId = _state.value.book.id
-        viewModelScope.launch {
-            eventStack.forEach { job ->
-                job.cancel()
-            }
-            imageJob?.cancel()
-            releaseImages(bookId)
-            _state.update { ReaderState() }
-        }
+        viewModelScope.launch { clear() }
     }
 
     suspend fun clear() {
@@ -513,20 +506,20 @@ class ReaderModel @Inject constructor(
             job.join()
         }
         eventStack.clear()
-        imageJob?.cancel()
-        releaseImages(bookId)
-        _state.update { ReaderState() }
-    }
 
-    /**
-     * Lets go of the book's images: the store, the bytes still waiting to be
-     * written, and the files written for this session. Parse-cache blobs are a
-     * different thing and outlive the reader on purpose.
-     */
-    private suspend fun releaseImages(bookId: Int) {
+        // Joined, not just cancelled: the image pass ends in blocking file I/O
+        // that cancellation cannot interrupt, so letting go of the files below
+        // has to wait for it to actually stop writing them.
+        imageJob?.cancelAndJoin()
+
+        // Lets go of the book's images: the store, the bytes still waiting to be
+        // written, and the files written for this session. Parse-cache blobs are
+        // a different thing and outlive the reader on purpose.
         imageStore.reset()
         parsedImageBytes = emptyMap()
         clearBookImagesUseCase(bookId)
+
+        _state.update { ReaderState() }
     }
 
     @OptIn(FlowPreview::class)

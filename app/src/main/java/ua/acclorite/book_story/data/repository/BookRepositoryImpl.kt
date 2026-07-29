@@ -7,6 +7,7 @@
 package ua.acclorite.book_story.data.repository
 
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.job
 import kotlinx.coroutines.withContext
 import ua.acclorite.book_story.core.CoverImage
 import ua.acclorite.book_story.data.cache.ParseCache
@@ -24,6 +25,7 @@ import ua.acclorite.book_story.domain.model.reader.ParsedText
 import ua.acclorite.book_story.domain.model.reader.ReaderText
 import ua.acclorite.book_story.domain.repository.BookRepository
 import ua.acclorite.book_story.domain.service.FileProvider
+import kotlin.coroutines.coroutineContext
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -126,6 +128,11 @@ class BookRepositoryImpl @Inject constructor(
     ): Result<Unit> {
         if (srcs.isEmpty()) return Result.success(Unit)
         return withContext(Dispatchers.IO) {
+            // The source scan is plain blocking I/O with nowhere to observe
+            // cancellation, so it runs on after the pass is cancelled. Publishing
+            // has to check for itself, or it would keep writing files into a
+            // directory the closing reader has just deleted.
+            val pass = coroutineContext.job
             getBook(bookId)
                 .mapCatching { fileProvider.getFileFromBook(it).getOrThrow() }
                 .mapCatching { cachedFile ->
@@ -140,6 +147,7 @@ class BookRepositoryImpl @Inject constructor(
 
                     var wroteBlob = false
                     fun publish(src: String, bytes: ByteArray) {
+                        if (!pass.isActive) return
                         val blob = if (cacheImages) parseCache.writeImageBlob(
                             cachedFile.path, cachedFile.size, cachedFile.lastModified,
                             src, bytes
@@ -160,7 +168,7 @@ class BookRepositoryImpl @Inject constructor(
                     }
 
                     // One cap check for the whole pass, rather than one per image.
-                    if (wroteBlob) parseCache.trimToSizeKeeping(
+                    if (wroteBlob && pass.isActive) parseCache.trimToSizeKeeping(
                         cachedFile.path, cachedFile.size, cachedFile.lastModified, maxBytes
                     )
                 }
