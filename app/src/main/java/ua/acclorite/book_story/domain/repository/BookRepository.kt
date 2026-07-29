@@ -25,15 +25,24 @@ interface BookRepository {
     ): Result<ParsedText>
 
     /**
-     * Loads the encoded bytes of the images [srcs] of a book whose text came
-     * from the parse cache (and therefore carries image metadata only), calling
+     * Resolves the images [srcs] of the open book to local files, calling
      * [onImage] for each one as soon as it is available.
+     *
+     * [parsed] carries the bytes a fresh parse has just produced, keyed by src;
+     * they are written out and handed back as files like everything else, so the
+     * reader has a single render path and never holds encoded bytes itself. It
+     * is empty for a book restored from the parse cache, whose text carries
+     * image metadata only.
      */
     suspend fun loadBookImages(
         bookId: Int,
         srcs: Set<String>,
-        onImage: (src: String, bytes: ByteArray) -> Unit
+        parsed: Map<String, ByteArray>,
+        onImage: (src: String, file: java.io.File) -> Unit
     ): Result<Unit>
+
+    /** Drops the transient image files of [bookId]; call when its reader closes. */
+    suspend fun clearBookImages(bookId: Int): Result<Unit>
 
     suspend fun getFileFromBook(
         bookId: Int

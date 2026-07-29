@@ -31,6 +31,15 @@ class ReaderImage(
 ) {
     val aspectRatio = width.toFloat() / height.toFloat()
 
+    /**
+     * The same image without its encoded bytes. The reader reads bytes through
+     * [BookImageStore], which backs them with a file, so keeping a second copy
+     * in the text would pin tens of megabytes for the whole session.
+     */
+    fun withoutBytes(): ReaderImage =
+        if (bytes.isEmpty()) this
+        else ReaderImage(id, src, ByteArray(0), width, height)
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is ReaderImage) return false

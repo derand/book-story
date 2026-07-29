@@ -183,37 +183,56 @@ class ParseCacheTest {
     }
 
     @Test
-    fun writeImagesThenReadBlobs() {
+    fun writeImagesThenGetTheirBlobFiles() {
         val images = mapOf(
             "cover.jpg" to byteArrayOf(1, 2, 3, 4),
             "fig1.png" to byteArrayOf(5, 6, 7)
         )
         cache.write(PATH, SIZE, MODIFIED, sample, images = images)
 
-        val blobs = cache.readImageBlobs(PATH, SIZE, MODIFIED, images.keys)
+        val blobs = cache.imageBlobFiles(PATH, SIZE, MODIFIED, images.keys)
         assertEquals(setOf("cover.jpg", "fig1.png"), blobs.keys)
-        assertArrayEquals(images["cover.jpg"], blobs["cover.jpg"])
-        assertArrayEquals(images["fig1.png"], blobs["fig1.png"])
+        // Files, not bytes — the reader hands them straight to the image loader.
+        assertArrayEquals(images["cover.jpg"], blobs["cover.jpg"]!!.readBytes())
+        assertArrayEquals(images["fig1.png"], blobs["fig1.png"]!!.readBytes())
     }
 
     @Test
-    fun readImageBlobsIgnoresAbsentSrcs() {
+    fun imageBlobFilesIgnoresAbsentSrcs() {
         cache.write(
             PATH, SIZE, MODIFIED, sample,
             images = mapOf("present.jpg" to byteArrayOf(9))
         )
 
-        val blobs = cache.readImageBlobs(PATH, SIZE, MODIFIED, setOf("present.jpg", "absent.jpg"))
+        val blobs = cache.imageBlobFiles(PATH, SIZE, MODIFIED, setOf("present.jpg", "absent.jpg"))
         assertEquals(setOf("present.jpg"), blobs.keys)
     }
 
     @Test
-    fun writeImageBlobsRequiresExistingBook() {
-        // No text entry written first → blobs must not be persisted on their own.
-        cache.writeImageBlobs(PATH, SIZE, MODIFIED, mapOf("x.jpg" to byteArrayOf(1)))
+    fun writeImageBlobReturnsTheFileItWrote() {
+        cache.write(PATH, SIZE, MODIFIED, sample)
 
+        val blob = cache.writeImageBlob(PATH, SIZE, MODIFIED, "late.jpg", byteArrayOf(7, 7))
+
+        assertNotNull(blob)
+        assertArrayEquals(byteArrayOf(7, 7), blob!!.readBytes())
+        assertEquals(
+            setOf("late.jpg"),
+            cache.imageBlobFiles(PATH, SIZE, MODIFIED, setOf("late.jpg")).keys
+        )
+    }
+
+    @Test
+    fun writeImageBlobRequiresExistingBook() {
+        // No text entry written first → blobs must not be persisted on their own.
+        val blob = cache.writeImageBlob(PATH, SIZE, MODIFIED, "x.jpg", byteArrayOf(1))
+
+        assertNull(blob)
         assertNull(cache.read(PATH, SIZE, MODIFIED))
-        assertEquals(emptySet<String>(), cache.readImageBlobs(PATH, SIZE, MODIFIED, setOf("x.jpg")).keys)
+        assertEquals(
+            emptySet<String>(),
+            cache.imageBlobFiles(PATH, SIZE, MODIFIED, setOf("x.jpg")).keys
+        )
     }
 
     @Test

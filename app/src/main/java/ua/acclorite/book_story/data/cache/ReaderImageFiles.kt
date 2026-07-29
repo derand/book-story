@@ -1,0 +1,102 @@
+/*
+ * Book's Story — free and open-source Material You eBook reader.
+ * Copyright (C) 2026 derand
+ * Copyright (C) 2024-2026 Acclorite
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
+
+package ua.acclorite.book_story.data.cache
+
+import android.app.Application
+import ua.acclorite.book_story.core.log.logE
+import java.io.File
+import java.security.MessageDigest
+import java.util.UUID
+import javax.inject.Inject
+import javax.inject.Singleton
+
+private const val TAG = "ReaderImageFiles"
+
+/**
+ * Transient on-disk home for the images of the book being read, for the case
+ * where the parse cache does not already hold them as blobs — "Cache images in
+ * books" turned off, or the parse cache disabled entirely.
+ *
+ * It exists so the reader can hand the image loader a *file* instead of a byte
+ * array: a local file is read directly and not copied into any cache of the
+ * loader's own, so the only image memory left is the loader's decoded-bitmap
+ * cache, which is bounded and trims itself. Before this, every encoded image of
+ * the open book stayed resident for the whole session with nothing to bound it.
+ *
+ * Layout is `cacheDir/reader_images/<session>/<bookId>/<sha256(src)>`:
+ *
+ * - **per session** (one directory per process) so [sweep] can delete what other
+ *   runs left behind without ever racing a live one;
+ * - **per book** so closing one book cannot delete another's files — and so that
+ *   two books using the same src name ("images/cover.jpg" is not exotic) never
+ *   collide.
+ *
+ * Everything here is best-effort: a file that cannot be written just leaves the
+ * image unresolved, exactly like one missing from the book.
+ */
+@Singleton
+class ReaderImageFiles @Inject constructor(application: Application) {
+
+    private val root = File(application.cacheDir, DIR_NAME)
+
+    /** This process's directory — the one [sweep] must not touch. */
+    private val session = File(root, UUID.randomUUID().toString())
+
+    /** Writes [bytes] as the image [src] of [bookId], or null if it could not be. */
+    fun write(bookId: Int, src: String, bytes: ByteArray): File? {
+        val dir = File(session, bookId.toString())
+        if (!dir.exists() && !dir.mkdirs()) {
+            logE(TAG, "Could not create reader image dir.")
+            return null
+        }
+        val file = File(dir, sha256Hex(src))
+        // Temp file then rename: a half-written image must never be published.
+        val tmp = File(dir, "${file.name}.tmp")
+        return try {
+            tmp.writeBytes(bytes)
+            if (!tmp.renameTo(file)) {
+                tmp.copyTo(file, overwrite = true)
+                tmp.delete()
+            }
+            file
+        } catch (e: Exception) {
+            logE(TAG, "Could not write reader image: ${e.message}")
+            tmp.delete()
+            null
+        }
+    }
+
+    /** Drops every image file of [bookId]; call when its reader closes. */
+    fun clear(bookId: Int) {
+        File(session, bookId.toString()).deleteRecursively()
+    }
+
+    /**
+     * Deletes the leftovers of previous runs. Nothing runs when the process is
+     * killed — and swiping the app away from the recents list is an ordinary way
+     * to leave a book — so leftovers are the rule rather than an edge case, and
+     * app start is the only reliable place to catch them. Waiting for Android to
+     * purge `cacheDir` is not enough: that only happens under real storage
+     * pressure, so on a roomy device they would pile up for weeks, precisely in
+     * the setup where the user asked *not* to cache images.
+     */
+    fun sweep() {
+        root.listFiles()
+            ?.filter { it.name != session.name }
+            ?.forEach { it.deleteRecursively() }
+    }
+
+    private fun sha256Hex(value: String): String =
+        MessageDigest.getInstance("SHA-256")
+            .digest(value.toByteArray(Charsets.UTF_8))
+            .joinToString("") { byte -> "%02x".format(byte) }
+
+    private companion object {
+        const val DIR_NAME = "reader_images"
+    }
+}

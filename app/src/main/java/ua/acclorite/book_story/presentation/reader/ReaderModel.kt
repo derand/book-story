@@ -34,6 +34,7 @@ import ua.acclorite.book_story.core.ui.UIText
 import ua.acclorite.book_story.domain.model.reader.BookImageStore
 import ua.acclorite.book_story.domain.model.reader.ReaderText
 import ua.acclorite.book_story.domain.model.reader.ReaderText.Chapter
+import ua.acclorite.book_story.domain.use_case.book.ClearBookImagesUseCase
 import ua.acclorite.book_story.domain.use_case.book.GetBookUseCase
 import ua.acclorite.book_story.domain.use_case.book.GetChapterProgressUseCase
 import ua.acclorite.book_story.domain.use_case.book.GetTextUseCase
@@ -54,7 +55,8 @@ class ReaderModel @Inject constructor(
     private val getBookUseCase: GetBookUseCase,
     private val getHistoryForBookUseCase: GetHistoryForBookUseCase,
     private val getChapterProgressUseCase: GetChapterProgressUseCase,
-    private val loadBookImagesUseCase: LoadBookImagesUseCase
+    private val loadBookImagesUseCase: LoadBookImagesUseCase,
+    private val clearBookImagesUseCase: ClearBookImagesUseCase
 ) : ViewModel() {
 
     private val mutex = Mutex()
@@ -69,6 +71,13 @@ class ReaderModel @Inject constructor(
      */
     val imageStore = BookImageStore()
     private var imageJob: Job? = null
+
+    /**
+     * Image bytes a fresh parse produced, held only until [ReaderEvent.OnLoadImages]
+     * has written them out. Kept off [state] so they are not pinned for the whole
+     * session by the text that no longer needs them.
+     */
+    private var parsedImageBytes: Map<String, ByteArray> = emptyMap()
 
     private val _effects = MutableSharedFlow<ReaderEffect>()
     val effects = _effects.asSharedFlow()
@@ -100,14 +109,28 @@ class ReaderModel @Inject constructor(
 
                         _effects.emit(ReaderEffect.OnSystemBarsVisibility(show = null))
 
-                        // A freshly parsed book already carries its image bytes;
-                        // one restored from the cache carries metadata only and
-                        // has them loaded in the background (see [OnLoadImages]).
-                        val images = text.filterIsInstance<ReaderText.Image>().map { it.image }
-                        imageStore.reset(images.map { image -> image.src })
-                        images.forEach { image ->
-                            if (image.bytes.isNotEmpty()) imageStore.put(image.src, image.bytes)
+                        // A freshly parsed book carries its image bytes, one
+                        // restored from the cache carries metadata only. Either
+                        // way the bytes are kept out of the state: [OnLoadImages]
+                        // writes them to disk in the background and the reader
+                        // renders from the file. Holding them here as well would
+                        // pin tens of megabytes for the whole session.
+                        val bytes = HashMap<String, ByteArray>()
+                        val strippedText = text.map { entry ->
+                            when {
+                                entry !is ReaderText.Image -> entry
+                                entry.image.bytes.isEmpty() -> entry
+                                else -> {
+                                    bytes[entry.image.src] = entry.image.bytes
+                                    entry.copy(image = entry.image.withoutBytes())
+                                }
+                            }
                         }
+                        parsedImageBytes = bytes
+                        imageStore.reset(
+                            strippedText.filterIsInstance<ReaderText.Image>()
+                                .map { it.image.src }
+                        )
 
                         val lastOpened = getHistoryForBookUseCase(_state.value.book.id)?.time
                         _state.update {
@@ -116,7 +139,7 @@ class ReaderModel @Inject constructor(
                                 book = it.book.copy(
                                     lastOpened = lastOpened
                                 ),
-                                text = text,
+                                text = strippedText,
                                 notes = parsedText.notes
                             )
                         }
@@ -137,10 +160,13 @@ class ReaderModel @Inject constructor(
                     if (pending.isEmpty()) return@launch
 
                     val bookId = _state.value.book.id
+                    val parsed = parsedImageBytes
                     imageJob = viewModelScope.launch(Dispatchers.IO) {
-                        loadBookImagesUseCase(bookId, pending) { src, bytes ->
-                            imageStore.put(src, bytes)
+                        loadBookImagesUseCase(bookId, pending, parsed) { src, file ->
+                            imageStore.put(src, file)
                         }
+                        // Written out, so the last reference to them can go.
+                        parsedImageBytes = emptyMap()
                         // Whatever the pass did not resolve is not coming.
                         imageStore.finish()
                     }
@@ -469,25 +495,38 @@ class ReaderModel @Inject constructor(
     }
 
     fun clearAsync() {
+        val bookId = _state.value.book.id
         viewModelScope.launch {
             eventStack.forEach { job ->
                 job.cancel()
             }
             imageJob?.cancel()
-            imageStore.reset()
+            releaseImages(bookId)
             _state.update { ReaderState() }
         }
     }
 
     suspend fun clear() {
+        val bookId = _state.value.book.id
         eventStack.forEach { job ->
             job.cancel()
             job.join()
         }
         eventStack.clear()
         imageJob?.cancel()
-        imageStore.reset()
+        releaseImages(bookId)
         _state.update { ReaderState() }
+    }
+
+    /**
+     * Lets go of the book's images: the store, the bytes still waiting to be
+     * written, and the files written for this session. Parse-cache blobs are a
+     * different thing and outlive the reader on purpose.
+     */
+    private suspend fun releaseImages(bookId: Int) {
+        imageStore.reset()
+        parsedImageBytes = emptyMap()
+        clearBookImagesUseCase(bookId)
     }
 
     @OptIn(FlowPreview::class)
