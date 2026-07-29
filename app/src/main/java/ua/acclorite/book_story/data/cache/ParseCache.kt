@@ -36,8 +36,8 @@ private const val TAG = "ParseCache"
  * evicted (text + its blobs together) as a unit, least-recently-used first.
  *
  * The parsed text stores images as metadata only (see [ParsedTextCodec]); a
- * restored image carries empty bytes. Its bytes are (re)loaded either from a
- * cached blob ([readImageBlobs]) or from the source book file.
+ * restored image carries empty bytes. The image itself is (re)resolved to a file
+ * either from a cached blob ([imageBlobFiles]) or from the source book file.
  */
 @Singleton
 class ParseCache @Inject constructor(application: Application) {
@@ -106,51 +106,52 @@ class ParseCache @Inject constructor(application: Application) {
     }
 
     /**
-     * Returns the cached image blobs for [srcs] that are present on disk, keyed
-     * by src. Missing srcs are simply absent from the result.
+     * Returns the cached image blob *files* for [srcs] that are present on disk,
+     * keyed by src. Missing srcs are simply absent from the result.
+     *
+     * Deliberately hands back files rather than bytes: the reader feeds them
+     * straight to the image loader, so on a cache hit an image-heavy book costs
+     * no image memory at all here (see [ReaderImageFiles]).
      */
-    fun readImageBlobs(
+    fun imageBlobFiles(
         path: String,
         size: Long,
         lastModified: Long,
         srcs: Set<String>
-    ): Map<String, ByteArray> {
+    ): Map<String, File> {
         if (srcs.isEmpty()) return emptyMap()
         val entry = entryDir(path, size, lastModified)
         if (!entry.exists()) return emptyMap()
-        val result = HashMap<String, ByteArray>(srcs.size)
+        val result = HashMap<String, File>(srcs.size)
         srcs.forEach { src ->
             val blob = blobFile(entry, src)
-            if (blob.exists()) {
-                try {
-                    result[src] = blob.readBytes()
-                } catch (e: Exception) {
-                    logE(TAG, "Could not read image blob: ${e.message}")
-                }
-            }
+            if (blob.exists()) result[src] = blob
         }
         if (result.isNotEmpty()) entry.setLastModified(System.currentTimeMillis())
         return result
     }
 
     /**
-     * Persists [images] blobs for this source (only if a text entry already
-     * exists — blobs never live without their book), then enforces [maxBytes].
-     * Used on a cache hit after (re)loading bytes from the source book.
+     * Persists one image blob for this source and returns its file, or null if
+     * it could not be written — including when no text entry exists yet, as
+     * blobs never live without their book.
+     *
+     * Does not enforce the size cap: a load pass writes one blob per image and
+     * walking the whole cache each time would be wasteful. Call
+     * [trimToSizeKeeping] once the pass is done.
      */
-    fun writeImageBlobs(
+    fun writeImageBlob(
         path: String,
         size: Long,
         lastModified: Long,
-        images: Map<String, ByteArray>,
-        maxBytes: Long = Long.MAX_VALUE
-    ) {
-        if (images.isEmpty()) return
+        src: String,
+        bytes: ByteArray
+    ): File? {
         val entry = entryDir(path, size, lastModified)
-        if (!textFile(entry).exists()) return
-        images.forEach { (src, bytes) -> writeBlob(entry, src, bytes) }
+        if (!textFile(entry).exists()) return null
+        val blob = writeBlob(entry, src, bytes) ?: return null
         entry.setLastModified(System.currentTimeMillis())
-        if (maxBytes != Long.MAX_VALUE) enforceCap(maxBytes, keep = entry)
+        return blob
     }
 
     /**
@@ -158,6 +159,10 @@ class ParseCache @Inject constructor(application: Application) {
      * Best-effort; call e.g. when the size-cap setting is lowered.
      */
     fun trimToSize(maxBytes: Long) = enforceCap(maxBytes, keep = null)
+
+    /** [trimToSize], but never evicting the book of this source. */
+    fun trimToSizeKeeping(path: String, size: Long, lastModified: Long, maxBytes: Long) =
+        enforceCap(maxBytes, keep = entryDir(path, size, lastModified))
 
     /** Total size in bytes of every cached book (text + image blobs). */
     fun totalSizeBytes(): Long =
@@ -177,23 +182,25 @@ class ParseCache @Inject constructor(application: Application) {
         dir.listFiles()?.forEach { it.deleteRecursively() }
     }
 
-    private fun writeBlob(entry: File, src: String, bytes: ByteArray) {
+    private fun writeBlob(entry: File, src: String, bytes: ByteArray): File? {
         val imgDir = File(entry, IMG_DIR)
         if (!imgDir.exists() && !imgDir.mkdirs()) {
             logE(TAG, "Could not create image cache dir.")
-            return
+            return null
         }
         val blob = blobFile(entry, src)
         val tmp = File(imgDir, "${blob.name}.tmp")
-        try {
+        return try {
             tmp.writeBytes(bytes)
             if (!tmp.renameTo(blob)) {
                 tmp.copyTo(blob, overwrite = true)
                 tmp.delete()
             }
+            blob
         } catch (e: Exception) {
             logE(TAG, "Could not write image blob: ${e.message}")
             tmp.delete()
+            null
         }
     }
 

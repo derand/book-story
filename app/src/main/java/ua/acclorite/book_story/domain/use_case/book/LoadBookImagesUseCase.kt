@@ -10,14 +10,15 @@ package ua.acclorite.book_story.domain.use_case.book
 import ua.acclorite.book_story.core.log.logE
 import ua.acclorite.book_story.core.log.logI
 import ua.acclorite.book_story.domain.repository.BookRepository
+import java.io.File
 import javax.inject.Inject
 
 private const val TAG = "LoadBookImages"
 
 /**
- * Loads the images of a book restored from the parse cache, in the background,
- * handing each one over as soon as it is ready. Failures are not fatal: the text
- * is already on screen, an image that cannot be loaded simply stays unavailable.
+ * Resolves the images of the open book to files, in the background, handing each
+ * one over as soon as it is ready. Failures are not fatal: the text is already on
+ * screen, an image that cannot be loaded simply stays unavailable.
  */
 class LoadBookImagesUseCase @Inject constructor(
     private val bookRepository: BookRepository
@@ -26,12 +27,13 @@ class LoadBookImagesUseCase @Inject constructor(
     suspend operator fun invoke(
         bookId: Int,
         srcs: Set<String>,
-        onImage: (src: String, bytes: ByteArray) -> Unit
+        parsed: Map<String, ByteArray> = emptyMap(),
+        onImage: (src: String, file: File) -> Unit
     ) {
         if (bookId == -1 || srcs.isEmpty()) return
         logI(TAG, "Loading [${srcs.size}] image(s) of [$bookId].")
 
-        bookRepository.loadBookImages(bookId, srcs, onImage).fold(
+        bookRepository.loadBookImages(bookId, srcs, parsed, onImage).fold(
             onSuccess = { logI(TAG, "Finished loading images of [$bookId].") },
             onFailure = { logE(TAG, "Could not load images: ${it.message}") }
         )

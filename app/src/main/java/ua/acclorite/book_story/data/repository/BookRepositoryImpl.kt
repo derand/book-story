@@ -7,9 +7,11 @@
 package ua.acclorite.book_story.data.repository
 
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.job
 import kotlinx.coroutines.withContext
 import ua.acclorite.book_story.core.CoverImage
 import ua.acclorite.book_story.data.cache.ParseCache
+import ua.acclorite.book_story.data.cache.ReaderImageFiles
 import ua.acclorite.book_story.data.local.room.BookDatabase
 import ua.acclorite.book_story.data.settings.SettingsManager
 import ua.acclorite.book_story.data.mapper.book.BookMapper
@@ -23,6 +25,7 @@ import ua.acclorite.book_story.domain.model.reader.ParsedText
 import ua.acclorite.book_story.domain.model.reader.ReaderText
 import ua.acclorite.book_story.domain.repository.BookRepository
 import ua.acclorite.book_story.domain.service.FileProvider
+import kotlin.coroutines.coroutineContext
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -35,6 +38,7 @@ class BookRepositoryImpl @Inject constructor(
     private val textParser: TextParser,
     private val fileProvider: FileProvider,
     private val parseCache: ParseCache,
+    private val readerImageFiles: ReaderImageFiles,
     private val bookImageLoader: BookImageLoader,
     private val settings: SettingsManager
 ) : BookRepository {
@@ -103,20 +107,32 @@ class BookRepositoryImpl @Inject constructor(
     }
 
     /**
-     * Loads the bytes of [srcs] for a book restored from the parse cache,
-     * reporting each image through [onImage] as soon as it is available: cached
-     * blobs first (a plain disk read), then the source file. When image caching
-     * is on, bytes read from the source are persisted as blobs for the next open.
+     * Resolves [srcs] to files, reporting each through [onImage] as soon as it
+     * is available, cheapest source first:
+     *
+     * 1. cached blobs — already on disk, so nothing is read or written;
+     * 2. [parsed] bytes a fresh parse just produced;
+     * 3. a scan of the source book file for whatever is left.
+     *
+     * Bytes from 2 and 3 are written as parse-cache blobs when image caching is
+     * on (so the next open lands in 1), otherwise to the transient session
+     * directory. Either way the reader is handed a file and holds no bytes.
      *
      * Runs off the reader's critical path — the text is already on screen.
      */
     override suspend fun loadBookImages(
         bookId: Int,
         srcs: Set<String>,
-        onImage: (src: String, bytes: ByteArray) -> Unit
+        parsed: Map<String, ByteArray>,
+        onImage: (src: String, file: java.io.File) -> Unit
     ): Result<Unit> {
         if (srcs.isEmpty()) return Result.success(Unit)
         return withContext(Dispatchers.IO) {
+            // The source scan is plain blocking I/O with nowhere to observe
+            // cancellation, so it runs on after the pass is cancelled. Publishing
+            // has to check for itself, or it would keep writing files into a
+            // directory the closing reader has just deleted.
+            val pass = coroutineContext.job
             getBook(bookId)
                 .mapCatching { fileProvider.getFileFromBook(it).getOrThrow() }
                 .mapCatching { cachedFile ->
@@ -124,29 +140,44 @@ class BookRepositoryImpl @Inject constructor(
                     val maxBytes = capMb.toLong() * 1024 * 1024
                     val cacheImages = capMb > 0 && settings.cacheImagesInBooks.lastValue
 
-                    val fromBlobs = if (capMb > 0) parseCache.readImageBlobs(
+                    val fromBlobs = if (capMb > 0) parseCache.imageBlobFiles(
                         cachedFile.path, cachedFile.size, cachedFile.lastModified, srcs
                     ) else emptyMap()
-                    fromBlobs.forEach { (src, bytes) -> onImage(src, bytes) }
+                    fromBlobs.forEach { (src, file) -> onImage(src, file) }
 
-                    val stillMissing = srcs - fromBlobs.keys
-                    if (stillMissing.isEmpty()) return@mapCatching
-
-                    // Only kept when they are about to be written to disk; the
-                    // reader already holds what it needs through [onImage].
-                    val loaded = if (cacheImages) HashMap<String, ByteArray>() else null
-                    bookImageLoader.loadImages(cachedFile, stillMissing) { src, bytes ->
-                        loaded?.put(src, bytes)
-                        onImage(src, bytes)
-                    }
-
-                    if (!loaded.isNullOrEmpty()) {
-                        parseCache.writeImageBlobs(
+                    var wroteBlob = false
+                    fun publish(src: String, bytes: ByteArray) {
+                        if (!pass.isActive) return
+                        val blob = if (cacheImages) parseCache.writeImageBlob(
                             cachedFile.path, cachedFile.size, cachedFile.lastModified,
-                            loaded, maxBytes
-                        )
+                            src, bytes
+                        ) else null
+                        wroteBlob = wroteBlob || blob != null
+                        val file = blob ?: readerImageFiles.write(bookId, src, bytes)
+                        if (file != null) onImage(src, file)
                     }
+
+                    var stillMissing = srcs - fromBlobs.keys
+                    // A fresh parse already read these; spilling them now is what
+                    // lets the reader drop them from memory.
+                    stillMissing.forEach { src -> parsed[src]?.let { publish(src, it) } }
+
+                    stillMissing = stillMissing - parsed.keys
+                    if (stillMissing.isNotEmpty()) {
+                        bookImageLoader.loadImages(cachedFile, stillMissing, ::publish)
+                    }
+
+                    // One cap check for the whole pass, rather than one per image.
+                    if (wroteBlob && pass.isActive) parseCache.trimToSizeKeeping(
+                        cachedFile.path, cachedFile.size, cachedFile.lastModified, maxBytes
+                    )
                 }
+        }
+    }
+
+    override suspend fun clearBookImages(bookId: Int): Result<Unit> = runCatching {
+        withContext(Dispatchers.IO) {
+            readerImageFiles.clear(bookId)
         }
     }
 

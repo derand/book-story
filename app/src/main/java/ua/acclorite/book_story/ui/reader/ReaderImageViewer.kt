@@ -59,7 +59,6 @@ import ua.acclorite.book_story.domain.model.reader.BookImage
 import ua.acclorite.book_story.domain.model.reader.ReaderText
 import ua.acclorite.book_story.ui.common.components.common.StyledText
 import ua.acclorite.book_story.ui.common.helpers.LocalBookImages
-import java.nio.ByteBuffer
 import kotlin.math.abs
 import coil.size.Size as CoilSize
 
@@ -94,13 +93,13 @@ fun ReaderImageViewer(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
-    // Bytes live in the store, exactly as for the in-page image; only a Ready
-    // image is tappable, so they are on hand by the time this opens.
-    val bytes = (LocalBookImages.current[entry.image.src] as? BookImage.Ready)?.bytes
-    val imageRequest = remember(bytes) {
-        bytes?.let {
+    // The file comes from the store, exactly as for the in-page image; only a
+    // Ready image is tappable, so it is on hand by the time this opens.
+    val file = (LocalBookImages.current[entry.image.src] as? BookImage.Ready)?.file
+    val imageRequest = remember(file) {
+        file?.let {
             ImageRequest.Builder(context)
-                .data(ByteBuffer.wrap(it))
+                .data(it)
                 .memoryCacheKey(entry.image.id)
                 .size(CoilSize.ORIGINAL)
                 .build()

@@ -38,7 +38,6 @@ import ua.acclorite.book_story.ui.common.helpers.LocalBookImages
 import ua.acclorite.book_story.ui.common.helpers.noRippleClickable
 import ua.acclorite.book_story.ui.reader.model.FontWithName
 import ua.acclorite.book_story.ui.theme.model.HorizontalAlignment
-import java.nio.ByteBuffer
 
 @Composable
 fun LazyItemScope.ReaderLayoutTextImage(
@@ -71,13 +70,15 @@ fun LazyItemScope.ReaderLayoutTextImage(
     menuVisibility: (ReaderEvent.OnMenuVisibility) -> Unit
 ) {
     val context = LocalContext.current
-    // Bytes come from the store, not from the entry: on a parse-cache hit the
-    // text arrives without them and they are filled in by a background load.
+    // The image comes from the store, not from the entry: the text arrives
+    // without it and a background pass writes it to a file. Coil reads that file
+    // directly, so the only image memory the app holds is Coil's own bounded
+    // cache of decoded bitmaps.
     val image = LocalBookImages.current[entry.image.src]
     val imageRequest = remember(image) {
         (image as? BookImage.Ready)?.let { ready ->
             ImageRequest.Builder(context)
-                .data(ByteBuffer.wrap(ready.bytes))
+                .data(ready.file)
                 .memoryCacheKey(entry.image.id)
                 .crossfade(100)
                 .build()
