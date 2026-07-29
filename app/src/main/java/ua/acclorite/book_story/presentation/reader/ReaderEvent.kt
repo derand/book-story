@@ -7,6 +7,7 @@
 package ua.acclorite.book_story.presentation.reader
 
 import androidx.compose.runtime.Immutable
+import ua.acclorite.book_story.domain.model.reader.ReaderText
 import ua.acclorite.book_story.domain.model.reader.ReaderText.Chapter
 import ua.acclorite.book_story.presentation.reader.model.Checkpoint
 
@@ -78,6 +79,17 @@ sealed class ReaderEvent {
     data class OnOpenNote(
         val tag: String
     ) : ReaderEvent()
+
+    /**
+     * Opens [image] full screen, where it can be zoomed and panned. Dispatched
+     * by a tap on the image itself, and only once its bytes are loaded — there
+     * is nothing to show for a placeholder.
+     */
+    data class OnOpenImage(
+        val image: ReaderText.Image
+    ) : ReaderEvent()
+
+    data object OnDismissImage : ReaderEvent()
 
     data object OnDismissBottomSheet : ReaderEvent()
 

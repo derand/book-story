@@ -109,6 +109,7 @@ fun ReaderScaffold(
     openWebBrowser: (ReaderEvent.OnOpenWebBrowser) -> Unit,
     openTranslator: (ReaderEvent.OnOpenTranslator) -> Unit,
     openNote: (ReaderEvent.OnOpenNote) -> Unit,
+    openImage: (ReaderEvent.OnOpenImage) -> Unit,
     openDictionary: (ReaderEvent.OnOpenDictionary) -> Unit,
     showSettingsBottomSheet: (ReaderEvent.OnShowSettingsBottomSheet) -> Unit,
     showChaptersDrawer: (ReaderEvent.OnShowChaptersDrawer) -> Unit,
@@ -210,6 +211,7 @@ fun ReaderScaffold(
             openWebBrowser = openWebBrowser,
             openTranslator = openTranslator,
             openNote = openNote,
+            openImage = openImage,
             openDictionary = openDictionary
         )
 

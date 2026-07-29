@@ -50,6 +50,7 @@ fun LazyItemScope.ReaderLayoutText(
     toolbarHidden: Boolean,
     openTranslator: (ReaderEvent.OnOpenTranslator) -> Unit,
     openNote: (ReaderEvent.OnOpenNote) -> Unit,
+    openImage: (ReaderEvent.OnOpenImage) -> Unit,
     menuVisibility: (ReaderEvent.OnMenuVisibility) -> Unit
 ) {
     when (entry) {
@@ -80,6 +81,7 @@ fun LazyItemScope.ReaderLayoutText(
                 toolbarHidden = toolbarHidden,
                 openTranslator = openTranslator,
                 openNote = openNote,
+                openImage = openImage,
                 menuVisibility = menuVisibility
             )
         }

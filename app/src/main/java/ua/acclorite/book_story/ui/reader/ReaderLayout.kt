@@ -95,6 +95,7 @@ fun ReaderLayout(
     openWebBrowser: (ReaderEvent.OnOpenWebBrowser) -> Unit,
     openTranslator: (ReaderEvent.OnOpenTranslator) -> Unit,
     openNote: (ReaderEvent.OnOpenNote) -> Unit,
+    openImage: (ReaderEvent.OnOpenImage) -> Unit,
     openDictionary: (ReaderEvent.OnOpenDictionary) -> Unit
 ) {
     val activity = LocalActivity.current
@@ -218,6 +219,7 @@ fun ReaderLayout(
                                     toolbarHidden = toolbarHidden,
                                     openTranslator = openTranslator,
                                     openNote = openNote,
+                                    openImage = openImage,
                                     menuVisibility = menuVisibility
                                 )
                             }
