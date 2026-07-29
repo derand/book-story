@@ -27,6 +27,7 @@ import ua.acclorite.book_story.domain.model.reader.NOTE_LINK_TAG_PREFIX
 import ua.acclorite.book_story.domain.model.reader.ReaderImage
 import ua.acclorite.book_story.domain.model.reader.ReaderText
 import ua.acclorite.book_story.domain.model.reader.ReaderTextRole
+import ua.acclorite.book_story.domain.model.reader.TableAlignment
 import java.io.File
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
@@ -451,9 +452,20 @@ class DocumentParser @Inject constructor(
                 select("table")
                     .filter { table -> table.parents().none { it.tagName() == "table" } }
                     .forEach { table ->
+                        // A column takes its alignment from the first cell that
+                        // states one — usually the header.
+                        val alignments = mutableListOf<TableAlignment>()
                         val rows = table.select("tr").mapNotNull { row ->
                             val cells = row.select("th, td")
                             if (cells.isEmpty()) return@mapNotNull null
+                            cells.forEachIndexed { column, cell ->
+                                while (alignments.size <= column) {
+                                    alignments.add(TableAlignment.Unspecified)
+                                }
+                                if (alignments[column] == TableAlignment.Unspecified) {
+                                    alignments[column] = cell.tableAlignment()
+                                }
+                            }
                             cells.map { cell ->
                                 markdownParser.parse(
                                     cell.wholeText().replace(WHITESPACE_REGEX, " ").trim()
@@ -467,7 +479,7 @@ class DocumentParser @Inject constructor(
 
                         val hasHeader = table.selectFirst("tr")?.selectFirst("th") != null
                         table.replaceWith(TextNode("\n[[[table|${tables.size}]]]\n"))
-                        tables.add(ReaderText.Table(rows, hasHeader))
+                        tables.add(ReaderText.Table(rows, hasHeader, alignments))
                     }
             }.wholeText().lines()
             .let { lines -> extractMarkdownTables(lines, tables) }
@@ -700,8 +712,9 @@ class DocumentParser @Inject constructor(
                 val rows = rowLines.map { row ->
                     splitTableRow(row).map { cell -> markdownParser.parse(cell) }
                 }
+                val alignments = splitTableRow(delimiter).map { it.delimiterAlignment() }
                 result.add("[[[table|${tables.size}]]]")
-                tables.add(ReaderText.Table(rows, hasHeader = true))
+                tables.add(ReaderText.Table(rows, hasHeader = true, alignments = alignments))
                 i = j
             } else {
                 result.add(header)
@@ -709,6 +722,41 @@ class DocumentParser @Inject constructor(
             }
         }
         return result
+    }
+
+    /**
+     * Reads the alignment out of one cell of a markdown delimiter row: a colon
+     * marks the side the text is pulled to — `:---` start, `---:` end, `:--:`
+     * both, i.e. centred. A plain `---` states nothing.
+     */
+    private fun String.delimiterAlignment(): TableAlignment {
+        val cell = trim()
+        val start = cell.startsWith(':')
+        val end = cell.endsWith(':')
+        return when {
+            start && end -> TableAlignment.Center
+            end -> TableAlignment.End
+            start -> TableAlignment.Start
+            else -> TableAlignment.Unspecified
+        }
+    }
+
+    /**
+     * Reads the alignment of an FB2/HTML `<td>`/`<th>`: the `align` attribute
+     * FB2 2.0 defines, falling back to an inline `text-align`, which is how an
+     * EPUB usually says it (`align` has been deprecated HTML since HTML 4).
+     */
+    private fun Element.tableAlignment(): TableAlignment {
+        val stated = attr("align").ifBlank {
+            attr("style").substringAfter("text-align:", "").substringBefore(';')
+        }
+        return when (stated.trim().lowercase()) {
+            "left", "start" -> TableAlignment.Start
+            "center" -> TableAlignment.Center
+            "right", "end" -> TableAlignment.End
+            // Anything else, "justify" included: nothing this renderer can say.
+            else -> TableAlignment.Unspecified
+        }
     }
 
     /** Splits a markdown table row into cells, dropping the outer pipes. */

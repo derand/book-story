@@ -12,6 +12,7 @@ import ua.acclorite.book_story.domain.model.reader.ParsedText
 import ua.acclorite.book_story.domain.model.reader.ReaderImage
 import ua.acclorite.book_story.domain.model.reader.ReaderText
 import ua.acclorite.book_story.domain.model.reader.ReaderTextRole
+import ua.acclorite.book_story.domain.model.reader.TableAlignment
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.DataInput
@@ -34,7 +35,8 @@ import java.util.UUID
  */
 object ParsedTextCodec {
 
-    const val VERSION = 2
+    // 3: tables carry per-column alignment.
+    const val VERSION = 3
 
     private const val TYPE_CHAPTER = 0
     private const val TYPE_TEXT = 1
@@ -115,6 +117,8 @@ object ParsedTextCodec {
                     out.writeInt(row.size)
                     row.forEach { cell -> AnnotatedStringCodec.encode(cell, out) }
                 }
+                out.writeInt(element.alignments.size)
+                element.alignments.forEach { alignment -> out.writeByte(alignment.ordinal) }
             }
 
             is ReaderText.Separator -> out.writeByte(TYPE_SEPARATOR)
@@ -167,7 +171,12 @@ object ParsedTextCodec {
                     repeat(cellCount) { cells.add(AnnotatedStringCodec.decode(input)) }
                     rows.add(cells)
                 }
-                ReaderText.Table(rows = rows, hasHeader = hasHeader)
+                val alignmentCount = input.readInt()
+                val alignments = ArrayList<TableAlignment>(alignmentCount)
+                repeat(alignmentCount) {
+                    alignments.add(TableAlignment.entries[input.readByte().toInt()])
+                }
+                ReaderText.Table(rows = rows, hasHeader = hasHeader, alignments = alignments)
             }
 
             TYPE_SEPARATOR -> ReaderText.Separator

@@ -30,6 +30,23 @@ enum class ReaderTextRole {
     TextAuthor
 }
 
+/**
+ * Horizontal alignment of a table column, as stated by the source: the markdown
+ * delimiter row (`:---`, `:--:`, `---:`) or an `align` attribute — or an inline
+ * `text-align` — on an FB2/HTML `<td>`/`<th>`.
+ *
+ * The sources say "left" and "right", which map to [Start] and [End] rather
+ * than to fixed sides: cells otherwise default to the reading direction, and a
+ * table in a right-to-left book would end up disagreeing with its own text.
+ */
+enum class TableAlignment {
+    /** The source states nothing — the renderer keeps its default. */
+    Unspecified,
+    Start,
+    Center,
+    End
+}
+
 @Immutable
 sealed class ReaderText {
     @Immutable
@@ -67,12 +84,20 @@ sealed class ReaderText {
     /**
      * A table: [rows] of cells, each cell an [AnnotatedString]. The first row
      * is a header when [hasHeader] is set.
+     *
+     * [alignments] holds one entry per column, in column order. It may be
+     * shorter than the widest row — or empty, when the source states nothing —
+     * so read it through [alignmentAt].
      */
     @Immutable
     data class Table(
         val rows: List<List<AnnotatedString>>,
-        val hasHeader: Boolean
-    ) : ReaderText()
+        val hasHeader: Boolean,
+        val alignments: List<TableAlignment> = emptyList()
+    ) : ReaderText() {
+        fun alignmentAt(column: Int): TableAlignment =
+            alignments.getOrElse(column) { TableAlignment.Unspecified }
+    }
 
     @Immutable
     data object Separator : ReaderText()
