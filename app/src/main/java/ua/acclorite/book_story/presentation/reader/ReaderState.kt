@@ -23,6 +23,8 @@ data class ReaderState(
     val text: List<ReaderText> = emptyList(),
     val notes: Map<String, AnnotatedString> = emptyMap(),
     val currentNote: AnnotatedString? = null,
+    /** The image shown in the full-screen viewer; null when it is closed. */
+    val fullscreenImage: ReaderText.Image? = null,
     val listState: LazyListState = LazyListState(),
 
     val currentChapter: Chapter? = null,

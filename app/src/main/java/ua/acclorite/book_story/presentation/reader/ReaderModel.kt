@@ -393,6 +393,24 @@ class ReaderModel @Inject constructor(
                     }
                 }
 
+                is ReaderEvent.OnOpenImage -> {
+                    _state.update {
+                        it.copy(
+                            fullscreenImage = event.image,
+                            bottomSheet = null,
+                            drawer = null
+                        )
+                    }
+                }
+
+                is ReaderEvent.OnDismissImage -> {
+                    _state.update {
+                        it.copy(
+                            fullscreenImage = null
+                        )
+                    }
+                }
+
                 is ReaderEvent.OnDismissBottomSheet -> {
                     _state.update {
                         it.copy(

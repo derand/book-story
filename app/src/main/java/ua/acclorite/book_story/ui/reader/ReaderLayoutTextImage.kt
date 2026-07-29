@@ -35,6 +35,7 @@ import ua.acclorite.book_story.presentation.reader.ReaderEvent
 import ua.acclorite.book_story.presentation.reader.model.ReaderFontThickness
 import ua.acclorite.book_story.presentation.reader.model.ReaderTextAlignment
 import ua.acclorite.book_story.ui.common.helpers.LocalBookImages
+import ua.acclorite.book_story.ui.common.helpers.noRippleClickable
 import ua.acclorite.book_story.ui.reader.model.FontWithName
 import ua.acclorite.book_story.ui.theme.model.HorizontalAlignment
 import java.nio.ByteBuffer
@@ -66,6 +67,7 @@ fun LazyItemScope.ReaderLayoutTextImage(
     toolbarHidden: Boolean,
     openTranslator: (ReaderEvent.OnOpenTranslator) -> Unit,
     openNote: (ReaderEvent.OnOpenNote) -> Unit,
+    openImage: (ReaderEvent.OnOpenImage) -> Unit,
     menuVisibility: (ReaderEvent.OnMenuVisibility) -> Unit
 ) {
     val context = LocalContext.current
@@ -115,8 +117,15 @@ fun LazyItemScope.ReaderLayoutTextImage(
                     missing = image is BookImage.Missing
                 )
 
+                // A tap opens the image full screen; without a clickable of its
+                // own it would fall through to the reader column and merely
+                // toggle the menu. The placeholder keeps doing exactly that —
+                // there is nothing to open until the bytes are in.
                 else -> AsyncImage(
-                    modifier = slot,
+                    modifier = slot.noRippleClickable(
+                        enabled = toolbarHidden,
+                        onClick = { openImage(ReaderEvent.OnOpenImage(entry)) }
+                    ),
                     model = imageRequest,
                     contentDescription = entry.caption?.line?.text,
                     colorFilter = imagesColorEffects,

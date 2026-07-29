@@ -41,6 +41,7 @@ fun ReaderContent(
     bottomSheet: BottomSheet?,
     drawer: Drawer?,
     currentNote: AnnotatedString?,
+    fullscreenImage: ReaderText.Image?,
     listState: LazyListState,
     currentChapter: Chapter?,
     nestedScrollConnection: NestedScrollConnection,
@@ -108,6 +109,8 @@ fun ReaderContent(
     openTranslator: (ReaderEvent.OnOpenTranslator) -> Unit,
     openDictionary: (ReaderEvent.OnOpenDictionary) -> Unit,
     openNote: (ReaderEvent.OnOpenNote) -> Unit,
+    openImage: (ReaderEvent.OnOpenImage) -> Unit,
+    dismissImage: (ReaderEvent.OnDismissImage) -> Unit,
     scrollToChapter: (ReaderEvent.OnScrollToChapter) -> Unit,
     showSettingsBottomSheet: (ReaderEvent.OnShowSettingsBottomSheet) -> Unit,
     dismissBottomSheet: (ReaderEvent.OnDismissBottomSheet) -> Unit,
@@ -192,6 +195,7 @@ fun ReaderContent(
             openWebBrowser = openWebBrowser,
             openTranslator = openTranslator,
             openNote = openNote,
+            openImage = openImage,
             openDictionary = openDictionary,
             showSettingsBottomSheet = showSettingsBottomSheet,
             showChaptersDrawer = showChaptersDrawer,
@@ -220,4 +224,14 @@ fun ReaderContent(
         leave = leave,
         navigateBack = navigateBack
     )
+
+    // Last on purpose, on both counts: it draws over the reader and its menu,
+    // and its back handler has to be registered after [ReaderBackHandler] so
+    // that closing the viewer wins over leaving the book.
+    fullscreenImage?.let { image ->
+        ReaderImageViewer(
+            entry = image,
+            dismiss = { dismissImage(ReaderEvent.OnDismissImage) }
+        )
+    }
 }
