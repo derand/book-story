@@ -214,6 +214,51 @@ class ImageViewerTransformTest {
     }
 
     @Test
+    fun aTransformFromAnotherScreenSizeIsPulledBackIntoBounds() {
+        // Zoomed in and panned to the far corner of a portrait viewer...
+        val strandedByRotation = ViewerTransform(scale = 3f, offset = Offset(1000f, 2000f))
+
+        // ...then rotated. The activity handles the config change itself, so this
+        // exact transform survives into a landscape viewer it does not fit.
+        val landscape = Size(2000f, 1000f)
+        val fitted = fittedSize(landscape, aspectRatio = 0.5f)
+        val reclamped = strandedByRotation.transformedBy(
+            anchor = Offset(landscape.width / 2f, landscape.height / 2f),
+            zoom = 1f,
+            pan = Offset.Zero,
+            fitted = fitted,
+            container = landscape,
+            minScale = FIT_SCALE,
+            maxScale = 5f
+        )
+
+        assertEquals(3f, reclamped.scale, TOLERANCE)
+        // 500x1000 fitted at 3x is 1500x3000: narrower than the viewer, so the
+        // image is pinned horizontally and can only travel 1000 vertically.
+        assertEquals(0f, reclamped.offset.x, TOLERANCE)
+        assertEquals(1000f, reclamped.offset.y, TOLERANCE)
+    }
+
+    @Test
+    fun aScaleAboveTheNewCeilingIsPulledDownToIt() {
+        // A 1:1 that a small screen allowed, re-measured against a bigger one
+        // whose fitted size makes the same image far less magnifiable.
+        val stale = ViewerTransform(scale = 8f)
+
+        val reclamped = stale.transformedBy(
+            anchor = center,
+            zoom = 1f,
+            pan = Offset.Zero,
+            fitted = Size(1000f, 2000f),
+            container = container,
+            minScale = FIT_SCALE,
+            maxScale = 5f
+        )
+
+        assertEquals(5f, reclamped.scale, TOLERANCE)
+    }
+
+    @Test
     fun anUnmeasuredViewerLeavesTheTransformAlone() {
         val transform = ViewerTransform(scale = 2f, offset = Offset(10f, 10f))
 

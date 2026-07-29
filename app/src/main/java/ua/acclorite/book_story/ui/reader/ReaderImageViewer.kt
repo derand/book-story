@@ -28,6 +28,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -127,6 +128,24 @@ fun ReaderImageViewer(
             .coerceIn(0f, 1f)
     }
 
+    // The activity handles orientation changes itself, so a rotation does not
+    // recreate this — the zoom and pan of the *old* screen survive into a viewer
+    // they no longer fit, and would leave the image stranded off-screen until the
+    // next gesture. Re-run the transform against the new geometry: a no-op zoom
+    // about the centre is enough, since that is what clamps the offset and pulls
+    // the scale back inside the new bounds.
+    LaunchedEffect(fitted) {
+        transform = transform.transformedBy(
+            anchor = Offset(containerSize.width / 2f, containerSize.height / 2f),
+            zoom = 1f,
+            pan = Offset.Zero,
+            fitted = fitted,
+            container = containerSize,
+            minScale = minScale,
+            maxScale = maxScale
+        )
+    }
+
     BackHandler { dismiss() }
 
     Box(
@@ -136,7 +155,9 @@ fun ReaderImageViewer(
             .onSizeChanged {
                 containerSize = Size(it.width.toFloat(), it.height.toFloat())
             }
-            .pointerInput(fitted, minScale, maxScale, oneToOne) {
+            // Every bound below is derived from the fitted size, so that alone
+            // says whether the detector needs restarting.
+            .pointerInput(fitted) {
                 detectViewerGestures(
                     onTransform = { centroid, pan, zoom ->
                         val dismissing = zoom == 1f &&
@@ -176,8 +197,8 @@ fun ReaderImageViewer(
                             pan = Offset.Zero,
                             fitted = fitted,
                             container = containerSize,
-                            minScale = minOf(minScale, target),
-                            maxScale = maxOf(maxScale, target)
+                            minScale = minScale,
+                            maxScale = maxScale
                         )
                     }
                 )
