@@ -168,13 +168,18 @@ class CachedFile(
     }
 
     /**
-     * Copies the file to [context].cacheDir and provides [File].
+     * Copies the file into [copiesDir] and provides [File]. A copy is the only way
+     * to hand the file to something that needs a real path rather than a stream —
+     * `ZipFile`, and so every EPUB parser — since the book itself lives behind a
+     * document URI.
      *
      * @return null if the file is directory or failed
      */
     private fun storeInCache(): File? {
         if (isDirectory) return null
-        val cacheFile = File(context.cacheDir, UUID.randomUUID().toString())
+        val dir = copiesDir(context)
+        if (!dir.exists() && !dir.mkdirs()) return null
+        val cacheFile = File(dir, UUID.randomUUID().toString())
 
         try {
             context.contentResolver.openInputStream(uri)?.use { input ->
@@ -298,5 +303,30 @@ class CachedFile(
     private fun getFilePath(): String {
         val tempFile = DocumentFileCompat.fromUri(context, uri)
         return tempFile?.getAbsolutePath(context)?.trimEnd('/') ?: ""
+    }
+
+    companion object {
+
+        /**
+         * Where [rawFile] puts its copies — a directory of their own inside the
+         * cache rather than the cache itself, so that dropping them cannot take
+         * anything else with it. The cache also holds the parse cache and the
+         * reader's image files, which are meant to outlive a book being closed,
+         * and the image loader's own store.
+         */
+        private const val COPIES_DIR_NAME = "raw_copies"
+
+        private fun copiesDir(context: Context): File =
+            File(context.cacheDir, COPIES_DIR_NAME)
+
+        /**
+         * Drops every copy [rawFile] has made. Safe to call at app start — a copy
+         * only lives as long as the [CachedFile] that made it, and nothing has made
+         * one yet — which is where the copies of a killed run get collected, since
+         * nothing runs on the way out of one.
+         */
+        fun clearCopies(context: Context) {
+            copiesDir(context).deleteRecursively()
+        }
     }
 }
