@@ -93,13 +93,13 @@ fun ReaderImageViewer(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
-    // The file comes from the store, exactly as for the in-page image; only a
+    // The image comes from the store, exactly as for the in-page one; only a
     // Ready image is tappable, so it is on hand by the time this opens.
-    val file = (LocalBookImages.current[entry.image.src] as? BookImage.Ready)?.file
-    val imageRequest = remember(file) {
-        file?.let {
+    val image = LocalBookImages.current[entry.image.src] as? BookImage.Ready
+    val imageRequest = remember(image) {
+        image?.let {
             ImageRequest.Builder(context)
-                .data(it)
+                .data(it.imageData())
                 .memoryCacheKey(entry.image.id)
                 .size(CoilSize.ORIGINAL)
                 .build()

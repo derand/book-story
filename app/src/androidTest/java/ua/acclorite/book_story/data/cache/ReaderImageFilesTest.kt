@@ -81,14 +81,65 @@ class ReaderImageFilesTest {
     }
 
     @Test
-    fun clearDropsOneBookAndLeavesTheOther() {
+    fun keepOnlyDropsEveryOtherBook() {
         val kept = files.write(1, "a.jpg", byteArrayOf(1))
         val dropped = files.write(2, "a.jpg", byteArrayOf(2))
+        val alsoDropped = files.write(3, "a.jpg", byteArrayOf(3))
 
-        files.clear(bookId = 2)
+        files.keepOnly(bookId = 1)
 
         assertTrue(kept!!.exists())
         assertFalse(dropped!!.exists())
+        assertFalse(alsoDropped!!.exists())
+    }
+
+    @Test
+    fun keepOnlyAnUnknownBookLeavesNothingBehind() {
+        val written = files.write(1, "a.jpg", byteArrayOf(1))
+
+        files.keepOnly(bookId = 7)
+
+        assertFalse(written!!.exists())
+    }
+
+    @Test
+    fun existingFindsWhatWasWrittenForTheBook() {
+        files.write(1, "a.jpg", byteArrayOf(1))
+        files.write(1, "b.jpg", byteArrayOf(2))
+        files.write(2, "c.jpg", byteArrayOf(3))
+
+        val found = files.existing(bookId = 1, srcs = setOf("a.jpg", "b.jpg", "c.jpg", "d.jpg"))
+
+        assertEquals(setOf("a.jpg", "b.jpg"), found.keys)
+        assertArrayEquals(byteArrayOf(1), found.getValue("a.jpg").readBytes())
+    }
+
+    @Test
+    fun existingIsEmptyForABookThatWroteNothing() {
+        files.write(1, "a.jpg", byteArrayOf(1))
+
+        assertTrue(files.existing(bookId = 2, srcs = setOf("a.jpg")).isEmpty())
+    }
+
+    @Test
+    fun existingIgnoresAnEmptyFile() {
+        val file = files.write(1, "a.jpg", byteArrayOf(1))!!
+        file.writeBytes(ByteArray(0))
+
+        assertTrue(files.existing(bookId = 1, srcs = setOf("a.jpg")).isEmpty())
+    }
+
+    @Test
+    fun aReopenedBookFindsTheFilesItLeftBehind() {
+        // What leaving and re-entering a book looks like from here: nothing is
+        // dropped on the way out, and on the way back in its own files survive.
+        val written = files.write(1, "a.jpg", byteArrayOf(1, 2, 3))
+        files.keepOnly(bookId = 1)
+
+        val found = files.existing(1, setOf("a.jpg"))
+
+        assertEquals(written, found["a.jpg"])
+        assertArrayEquals(byteArrayOf(1, 2, 3), found.getValue("a.jpg").readBytes())
     }
 
     @Test

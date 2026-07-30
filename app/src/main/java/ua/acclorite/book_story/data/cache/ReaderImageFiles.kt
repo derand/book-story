@@ -32,9 +32,10 @@ private const val TAG = "ReaderImageFiles"
  *
  * - **per session** (one directory per process) so [sweep] can delete what other
  *   runs left behind without ever racing a live one;
- * - **per book** so closing one book cannot delete another's files — and so that
- *   two books using the same src name ("images/cover.jpg" is not exotic) never
- *   collide.
+ * - **per book** so opening one book can drop every *other* book's files in one
+ *   step ([keepOnly]) while a reopened book still finds its own ([existing]) —
+ *   and so that two books using the same src name ("images/cover.jpg" is not
+ *   exotic) never collide.
  *
  * Everything here is best-effort: a file that cannot be written just leaves the
  * image unresolved, exactly like one missing from the book.
@@ -71,9 +72,38 @@ class ReaderImageFiles @Inject constructor(application: Application) {
         }
     }
 
-    /** Drops every image file of [bookId]; call when its reader closes. */
-    fun clear(bookId: Int) {
-        File(session, bookId.toString()).deleteRecursively()
+    /**
+     * The files of [bookId] this session already holds, keyed by src — what an
+     * earlier open of the same book wrote. Reusing them is the whole point of
+     * [keepOnly] retaining them; without this the pass would extract the images
+     * again and overwrite identical files.
+     */
+    fun existing(bookId: Int, srcs: Set<String>): Map<String, File> {
+        val dir = File(session, bookId.toString())
+        if (!dir.isDirectory) return emptyMap()
+        return srcs.mapNotNull { src ->
+            val file = File(dir, sha256Hex(src))
+            // A missing file measures 0 too, so this covers existence as well;
+            // a half-written one cannot be seen (write renames into place).
+            if (file.length() > 0) src to file else null
+        }.toMap()
+    }
+
+    /**
+     * Drops the files of every book except [bookId]; call when a reader *opens*.
+     *
+     * Closing a book deliberately keeps its files. Leaving and re-entering one is
+     * an ordinary thing to do — the back gesture is easy to hit by accident — and
+     * on an image-heavy book each re-entry would otherwise extract and rewrite
+     * tens of megabytes that were on disk all along. They still never outlive the
+     * process: the next book taking over drops them, and [sweep] catches the case
+     * where the process was killed instead.
+     */
+    fun keepOnly(bookId: Int) {
+        val keep = bookId.toString()
+        session.listFiles()
+            ?.filter { it.name != keep }
+            ?.forEach { it.deleteRecursively() }
     }
 
     /**

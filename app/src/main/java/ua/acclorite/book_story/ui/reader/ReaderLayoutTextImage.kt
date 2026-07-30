@@ -71,14 +71,14 @@ fun LazyItemScope.ReaderLayoutTextImage(
 ) {
     val context = LocalContext.current
     // The image comes from the store, not from the entry: the text arrives
-    // without it and a background pass writes it to a file. Coil reads that file
-    // directly, so the only image memory the app holds is Coil's own bounded
-    // cache of decoded bitmaps.
+    // without it and a background pass resolves it, to a file or (for a bounded
+    // few) to bytes. Either way the encoded image is held once, and the decoded
+    // bitmap only in Coil's own bounded cache.
     val image = LocalBookImages.current[entry.image.src]
     val imageRequest = remember(image) {
         (image as? BookImage.Ready)?.let { ready ->
             ImageRequest.Builder(context)
-                .data(ready.file)
+                .data(ready.imageData())
                 .memoryCacheKey(entry.image.id)
                 .crossfade(100)
                 .build()

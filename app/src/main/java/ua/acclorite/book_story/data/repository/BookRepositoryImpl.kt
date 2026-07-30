@@ -10,6 +10,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.job
 import kotlinx.coroutines.withContext
 import ua.acclorite.book_story.core.CoverImage
+import ua.acclorite.book_story.data.cache.ImageMemoryBudget
 import ua.acclorite.book_story.data.cache.ParseCache
 import ua.acclorite.book_story.data.cache.ReaderImageFiles
 import ua.acclorite.book_story.data.local.room.BookDatabase
@@ -21,6 +22,7 @@ import ua.acclorite.book_story.data.parser.image.BookImageLoader
 import ua.acclorite.book_story.data.parser.text.TextParser
 import ua.acclorite.book_story.domain.model.file.File
 import ua.acclorite.book_story.domain.model.library.Book
+import ua.acclorite.book_story.domain.model.reader.BookImage
 import ua.acclorite.book_story.domain.model.reader.ParsedText
 import ua.acclorite.book_story.domain.model.reader.ReaderText
 import ua.acclorite.book_story.domain.repository.BookRepository
@@ -107,16 +109,18 @@ class BookRepositoryImpl @Inject constructor(
     }
 
     /**
-     * Resolves [srcs] to files, reporting each through [onImage] as soon as it
-     * is available, cheapest source first:
+     * Resolves [srcs], reporting each through [onImage] as soon as it is
+     * available, cheapest source first:
      *
      * 1. cached blobs — already on disk, so nothing is read or written;
-     * 2. [parsed] bytes a fresh parse just produced;
-     * 3. a scan of the source book file for whatever is left.
+     * 2. session files an earlier open of this book left behind — likewise;
+     * 3. [parsed] bytes a fresh parse just produced;
+     * 4. a scan of the source book file for whatever is left.
      *
-     * Bytes from 2 and 3 are written as parse-cache blobs when image caching is
-     * on (so the next open lands in 1), otherwise to the transient session
-     * directory. Either way the reader is handed a file and holds no bytes.
+     * Bytes from 3 and 4 have to be put somewhere: a parse-cache blob when image
+     * caching is on (so the next open lands in 1), memory while the budget lasts,
+     * a session file after that (so the next open lands in 2). Only the budgeted
+     * few are bytes; the rest of the book is files.
      *
      * Runs off the reader's critical path — the text is already on screen.
      */
@@ -124,7 +128,7 @@ class BookRepositoryImpl @Inject constructor(
         bookId: Int,
         srcs: Set<String>,
         parsed: Map<String, ByteArray>,
-        onImage: (src: String, file: java.io.File) -> Unit
+        onImage: (src: String, image: BookImage.Ready) -> Unit
     ): Result<Unit> {
         if (srcs.isEmpty()) return Result.success(Unit)
         return withContext(Dispatchers.IO) {
@@ -143,8 +147,17 @@ class BookRepositoryImpl @Inject constructor(
                     val fromBlobs = if (capMb > 0) parseCache.imageBlobFiles(
                         cachedFile.path, cachedFile.size, cachedFile.lastModified, srcs
                     ) else emptyMap()
-                    fromBlobs.forEach { (src, file) -> onImage(src, file) }
+                    fromBlobs.forEach { (src, file) -> onImage(src, BookImage.Ready.InFile(file)) }
 
+                    // Written while this book was open earlier in the session and
+                    // kept on purpose; re-extracting them would only overwrite
+                    // identical files.
+                    val fromSession = readerImageFiles.existing(bookId, srcs - fromBlobs.keys)
+                    fromSession.forEach { (src, file) ->
+                        onImage(src, BookImage.Ready.InFile(file))
+                    }
+
+                    val budget = ImageMemoryBudget()
                     var wroteBlob = false
                     fun publish(src: String, bytes: ByteArray) {
                         if (!pass.isActive) return
@@ -153,13 +166,20 @@ class BookRepositoryImpl @Inject constructor(
                             src, bytes
                         ) else null
                         wroteBlob = wroteBlob || blob != null
-                        val file = blob ?: readerImageFiles.write(bookId, src, bytes)
-                        if (file != null) onImage(src, file)
+                        when {
+                            // A blob is written for the sake of the *next* session,
+                            // so the budget has nothing to save here.
+                            blob != null -> onImage(src, BookImage.Ready.InFile(blob))
+                            budget.claim(bytes.size) ->
+                                onImage(src, BookImage.Ready.InMemory(bytes))
+                            else -> readerImageFiles.write(bookId, src, bytes)
+                                ?.let { onImage(src, BookImage.Ready.InFile(it)) }
+                        }
                     }
 
-                    var stillMissing = srcs - fromBlobs.keys
-                    // A fresh parse already read these; spilling them now is what
-                    // lets the reader drop them from memory.
+                    var stillMissing = srcs - fromBlobs.keys - fromSession.keys
+                    // A fresh parse already read these; handing them over now is
+                    // what lets the reader drop them from the text.
                     stillMissing.forEach { src -> parsed[src]?.let { publish(src, it) } }
 
                     stillMissing = stillMissing - parsed.keys
@@ -175,9 +195,9 @@ class BookRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun clearBookImages(bookId: Int): Result<Unit> = runCatching {
+    override suspend fun keepOnlyBookImages(bookId: Int): Result<Unit> = runCatching {
         withContext(Dispatchers.IO) {
-            readerImageFiles.clear(bookId)
+            readerImageFiles.keepOnly(bookId)
         }
     }
 

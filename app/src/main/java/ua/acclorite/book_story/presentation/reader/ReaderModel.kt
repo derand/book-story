@@ -35,10 +35,10 @@ import ua.acclorite.book_story.core.ui.UIText
 import ua.acclorite.book_story.domain.model.reader.BookImageStore
 import ua.acclorite.book_story.domain.model.reader.ReaderText
 import ua.acclorite.book_story.domain.model.reader.ReaderText.Chapter
-import ua.acclorite.book_story.domain.use_case.book.ClearBookImagesUseCase
 import ua.acclorite.book_story.domain.use_case.book.GetBookUseCase
 import ua.acclorite.book_story.domain.use_case.book.GetChapterProgressUseCase
 import ua.acclorite.book_story.domain.use_case.book.GetTextUseCase
+import ua.acclorite.book_story.domain.use_case.book.KeepOnlyBookImagesUseCase
 import ua.acclorite.book_story.domain.use_case.book.LoadBookImagesUseCase
 import ua.acclorite.book_story.domain.use_case.book.UpdateBookUseCase
 import ua.acclorite.book_story.domain.use_case.history.GetHistoryForBookUseCase
@@ -57,7 +57,7 @@ class ReaderModel @Inject constructor(
     private val getHistoryForBookUseCase: GetHistoryForBookUseCase,
     private val getChapterProgressUseCase: GetChapterProgressUseCase,
     private val loadBookImagesUseCase: LoadBookImagesUseCase,
-    private val clearBookImagesUseCase: ClearBookImagesUseCase
+    private val keepOnlyBookImagesUseCase: KeepOnlyBookImagesUseCase
 ) : ViewModel() {
 
     private val mutex = Mutex()
@@ -66,7 +66,7 @@ class ReaderModel @Inject constructor(
     val state = _state.asStateFlow()
 
     /**
-     * Bytes of the open book's images. Kept out of [state] on purpose: it is
+     * Where the open book's images live. Kept out of [state] on purpose: it is
      * observable on its own, so filling an image in repaints just that image
      * instead of pushing a new text list through the whole reader.
      */
@@ -75,7 +75,7 @@ class ReaderModel @Inject constructor(
 
     /**
      * Image bytes a fresh parse produced, held only until [ReaderEvent.OnLoadImages]
-     * has written them out. Kept off [state] so they are not pinned for the whole
+     * has handed them over. Kept off [state] so they are not pinned for the whole
      * session by the text that no longer needs them.
      */
     private var parsedImageBytes: Map<String, ByteArray> = emptyMap()
@@ -113,9 +113,10 @@ class ReaderModel @Inject constructor(
                         // A freshly parsed book carries its image bytes, one
                         // restored from the cache carries metadata only. Either
                         // way the bytes are kept out of the state: [OnLoadImages]
-                        // writes them to disk in the background and the reader
-                        // renders from the file. Holding them here as well would
-                        // pin tens of megabytes for the whole session.
+                        // hands them to the store in the background, which holds
+                        // a bounded few and puts the rest on disk. Holding them
+                        // here as well would pin tens of megabytes for the whole
+                        // session.
                         val bytes = HashMap<String, ByteArray>()
                         val strippedText = text.map { entry ->
                             when {
@@ -163,8 +164,8 @@ class ReaderModel @Inject constructor(
                     val bookId = _state.value.book.id
                     val parsed = parsedImageBytes
                     imageJob = viewModelScope.launch(Dispatchers.IO) {
-                        loadBookImagesUseCase(bookId, pending, parsed) { src, file ->
-                            imageStore.put(src, file)
+                        loadBookImagesUseCase(bookId, pending, parsed) { src, image ->
+                            imageStore.put(src, image)
                         }
                         // Written out, so the last reference to them can go.
                         parsedImageBytes = emptyMap()
@@ -484,6 +485,10 @@ class ReaderModel @Inject constructor(
             }
 
             clear()
+            // Here rather than when the previous reader closed: a book keeps its
+            // image files so that reopening it needs no work, and this is the
+            // point where they stop being the ones worth keeping.
+            keepOnlyBookImagesUseCase(bookId)
 
             _state.update {
                 ReaderState(
@@ -500,7 +505,6 @@ class ReaderModel @Inject constructor(
     }
 
     suspend fun clear() {
-        val bookId = _state.value.book.id
         eventStack.forEach { job ->
             job.cancel()
             job.join()
@@ -508,16 +512,16 @@ class ReaderModel @Inject constructor(
         eventStack.clear()
 
         // Joined, not just cancelled: the image pass ends in blocking file I/O
-        // that cancellation cannot interrupt, so letting go of the files below
-        // has to wait for it to actually stop writing them.
+        // that cancellation cannot interrupt, and it must not still be publishing
+        // into the store that is emptied below.
         imageJob?.cancelAndJoin()
 
-        // Lets go of the book's images: the store, the bytes still waiting to be
-        // written, and the files written for this session. Parse-cache blobs are
-        // a different thing and outlive the reader on purpose.
+        // Releases every byte the reader held: the budgeted images in the store
+        // and whatever a fresh parse was still waiting to hand over. The files
+        // stay — dropping them is the next book's business
+        // ([KeepOnlyBookImagesUseCase]), because this book may well be reopened.
         imageStore.reset()
         parsedImageBytes = emptyMap()
-        clearBookImagesUseCase(bookId)
 
         _state.update { ReaderState() }
     }
