@@ -23,6 +23,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.collections.immutable.persistentListOf
 import ua.acclorite.book_story.R
+import ua.acclorite.book_story.data.model.file.CachedFile
 import ua.acclorite.book_story.data.settings.SettingsManager
 import ua.acclorite.book_story.presentation.browse.BrowseModel
 import ua.acclorite.book_story.presentation.browse.BrowseScreen
@@ -180,7 +181,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
-        cacheDir.deleteRecursively()
+        // Only the copies made to hand books to parsers that need a real path, not
+        // the whole cache: the parse cache and the reader's image files live there
+        // too, and they are meant to survive a book being closed.
+        CachedFile.clearCopies(this)
         super.onDestroy()
     }
 }

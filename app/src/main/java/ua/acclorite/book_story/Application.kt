@@ -13,6 +13,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import ua.acclorite.book_story.core.crash.CrashHandler
 import ua.acclorite.book_story.data.cache.ReaderImageFiles
+import ua.acclorite.book_story.data.model.file.CachedFile
 import javax.inject.Inject
 
 @HiltAndroidApp
@@ -25,9 +26,13 @@ class Application : Application() {
         super.onCreate()
         Thread.setDefaultUncaughtExceptionHandler(CrashHandler(this))
 
-        // Reader image files of runs that never got to clean up after themselves
-        // — being killed, or swiped away from the recents list, is an ordinary
-        // way to leave a book, so app start is the only reliable place for this.
-        CoroutineScope(Dispatchers.IO).launch { readerImageFiles.sweep() }
+        // Reader image files and book copies of runs that never got to clean up
+        // after themselves — being killed, or swiped away from the recents list, is
+        // an ordinary way to leave a book, so app start is the only reliable place
+        // for this.
+        CoroutineScope(Dispatchers.IO).launch {
+            readerImageFiles.sweep()
+            CachedFile.clearCopies(this@Application)
+        }
     }
 }
