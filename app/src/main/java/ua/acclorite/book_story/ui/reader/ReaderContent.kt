@@ -26,6 +26,7 @@ import androidx.compose.ui.text.AnnotatedString
 import ua.acclorite.book_story.domain.model.reader.ReaderText
 import ua.acclorite.book_story.domain.model.reader.ReaderText.Chapter
 import ua.acclorite.book_story.presentation.reader.ReaderEvent
+import ua.acclorite.book_story.presentation.reader.ReaderScreen
 import ua.acclorite.book_story.presentation.reader.model.Checkpoint
 import ua.acclorite.book_story.presentation.reader.model.ReaderFontThickness
 import ua.acclorite.book_story.presentation.reader.model.ReaderHorizontalGesture
@@ -122,7 +123,6 @@ fun ReaderContent(
     ReaderBottomSheet(
         bottomSheet = bottomSheet,
         currentNote = currentNote,
-        menuVisibility = menuVisibility,
         dismissBottomSheet = dismissBottomSheet
     )
 
@@ -147,6 +147,7 @@ fun ReaderContent(
             isLoading = isLoading,
             checkpoints = checkpoints,
             showMenu = showMenu,
+            coveredByBottomSheet = bottomSheet == ReaderScreen.SETTINGS_BOTTOM_SHEET,
             lockMenu = lockMenu,
             contentPadding = contentPadding,
             verticalPadding = verticalPadding,

@@ -6,21 +6,15 @@
 
 package ua.acclorite.book_story.ui.reader
 
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -43,41 +37,37 @@ import ua.acclorite.book_story.ui.settings.reader.translator.TranslatorSubcatego
 
 private var initialPage = 0
 
+/**
+ * Share of the screen the sheet takes. The rest of it is the page being read —
+ * kept the same on every tab, because a sheet that resizes as you move between
+ * them is a jump in the one place the eye is trying to compare a before and an
+ * after.
+ */
+private const val HEIGHT_FRACTION = 0.65f
+
+/**
+ * The reader's settings, over the page they change.
+ *
+ * The scrim is transparent and the reader's own bars are hidden while this is
+ * open (see [ReaderScaffold]), so the strip above the sheet shows the book as the
+ * settings being touched will leave it — not only for colors, but for margins,
+ * font and image width just as much.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ReaderSettingsBottomSheet(
-    menuVisibility: (ReaderEvent.OnMenuVisibility) -> Unit,
     dismissBottomSheet: (ReaderEvent.OnDismissBottomSheet) -> Unit
 ) {
     val scope = rememberCoroutineScope()
     val pagerState = rememberPagerState(initialPage) { 3 }
     DisposableEffect(Unit) { onDispose { initialPage = pagerState.currentPage } }
 
-    val animatedScrimColor by animateColorAsState(
-        targetValue = if (pagerState.currentPage == 2) Color.Transparent
-        else BottomSheetDefaults.ScrimColor,
-        animationSpec = tween(300)
-    )
-    val animatedHeight by animateFloatAsState(
-        targetValue = if (pagerState.currentPage == 2) 0.6f else 0.7f,
-        animationSpec = tween(300)
-    )
-
-    LaunchedEffect(pagerState.currentPage) {
-        menuVisibility(
-            ReaderEvent.OnMenuVisibility(
-                show = pagerState.currentPage != 2,
-                saveCheckpoint = false
-            )
-        )
-    }
-
     ModalBottomSheet(
         hasFixedHeight = true,
-        scrimColor = animatedScrimColor,
+        scrimColor = Color.Transparent,
         modifier = Modifier
             .fillMaxWidth()
-            .fillMaxHeight(animatedHeight),
+            .fillMaxHeight(HEIGHT_FRACTION),
         dragHandle = {},
         onDismissRequest = {
             dismissBottomSheet(ReaderEvent.OnDismissBottomSheet)
