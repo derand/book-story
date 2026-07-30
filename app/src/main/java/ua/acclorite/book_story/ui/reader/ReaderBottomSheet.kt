@@ -16,13 +16,11 @@ import ua.acclorite.book_story.presentation.reader.ReaderScreen
 fun ReaderBottomSheet(
     bottomSheet: BottomSheet?,
     currentNote: AnnotatedString?,
-    menuVisibility: (ReaderEvent.OnMenuVisibility) -> Unit,
     dismissBottomSheet: (ReaderEvent.OnDismissBottomSheet) -> Unit
 ) {
     when (bottomSheet) {
         ReaderScreen.SETTINGS_BOTTOM_SHEET -> {
             ReaderSettingsBottomSheet(
-                menuVisibility = menuVisibility,
                 dismissBottomSheet = dismissBottomSheet
             )
         }

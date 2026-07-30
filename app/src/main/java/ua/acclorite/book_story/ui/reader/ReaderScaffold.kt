@@ -61,6 +61,7 @@ fun ReaderScaffold(
     isLoading: Boolean,
     checkpoints: List<Checkpoint>,
     showMenu: Boolean,
+    coveredByBottomSheet: Boolean,
     lockMenu: Boolean,
     contentPadding: PaddingValues,
     verticalPadding: Dp,
@@ -122,8 +123,13 @@ fun ReaderScaffold(
             .nestedScroll(nestedScrollConnection),
         containerColor = MaterialTheme.colorScheme.surface,
         topBar = {
+            // Hidden while a sheet covers the screen, rather than switched off:
+            // the bars under it cannot be reached anyway, but [showMenu] is what
+            // the page tap toggles and what drives the system bars, so clearing it
+            // here would both leave the reader menu gone once the sheet closes and
+            // move the insets — resizing the sheet as it opens.
             AnimatedVisibility(
-                visible = showMenu,
+                visible = showMenu && !coveredByBottomSheet,
                 enter = slideInVertically { -it },
                 exit = slideOutVertically { -it }
             ) {
@@ -146,7 +152,7 @@ fun ReaderScaffold(
         bottomBar = {
             AnimatedVisibility(
                 modifier = Modifier.fillMaxWidth(),
-                visible = showMenu,
+                visible = showMenu && !coveredByBottomSheet,
                 enter = slideInVertically { it },
                 exit = slideOutVertically { it }
             ) {
