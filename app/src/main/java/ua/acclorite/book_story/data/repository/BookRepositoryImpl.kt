@@ -10,6 +10,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.job
 import kotlinx.coroutines.withContext
 import ua.acclorite.book_story.core.CoverImage
+import ua.acclorite.book_story.core.log.bookTimingNote
+import ua.acclorite.book_story.core.log.timed
 import ua.acclorite.book_story.data.cache.ImageMemoryBudget
 import ua.acclorite.book_story.data.cache.ParseCache
 import ua.acclorite.book_story.data.cache.ReaderImageFiles
@@ -71,36 +73,53 @@ class BookRepositoryImpl @Inject constructor(
                     val maxBytes = capMb.toLong() * 1024 * 1024
                     val cacheImages = settings.cacheImagesInBooks.lastValue
 
-                    val cached = if (cachingEnabled) parseCache.read(
-                        cachedFile.path, cachedFile.size, cachedFile.lastModified
-                    ) else null
+                    timed("getText", describe = { it.describeForTiming() }) {
+                        val cached = if (cachingEnabled) parseCache.read(
+                            cachedFile.path, cachedFile.size, cachedFile.lastModified
+                        ) else null
 
-                    if (cached != null) {
-                        // Hit: the stored text carries image metadata only. Its
-                        // bytes are loaded in the background (see [loadBookImages])
-                        // so the reader can show the text right away; the layout
-                        // is unaffected, image slots are sized from the cached
-                        // width/height.
-                        cached
-                    } else {
-                        // With images off the reader never renders them, so the
-                        // parse keeps their size (the cached text is the same
-                        // either way) but not their bytes — on an image-heavy
-                        // book that is tens of MB held for the whole session.
-                        textParser.parse(
-                            cachedFile,
-                            keepImageBytes = settings.images.lastValue
-                        ).also { fresh ->
-                            // Best-effort caching; skip empty/failed parses.
-                            if (cachingEnabled && fresh.text.isNotEmpty()) {
-                                parseCache.write(
-                                    cachedFile.path,
-                                    cachedFile.size,
-                                    cachedFile.lastModified,
-                                    fresh,
-                                    maxBytes = maxBytes,
-                                    images = if (cacheImages) fresh.collectImageBytes() else null
+                        bookTimingNote {
+                            val state = when {
+                                !cachingEnabled -> "cache off"
+                                cached != null -> "cache HIT"
+                                else -> "cache MISS"
+                            }
+                            "$state — ${cachedFile.name}, ${cachedFile.size / 1024} KB"
+                        }
+
+                        if (cached != null) {
+                            // Hit: the stored text carries image metadata only. Its
+                            // bytes are loaded in the background (see [loadBookImages])
+                            // so the reader can show the text right away; the layout
+                            // is unaffected, image slots are sized from the cached
+                            // width/height.
+                            cached
+                        } else {
+                            // With images off the reader never renders them, so the
+                            // parse keeps their size (the cached text is the same
+                            // either way) but not their bytes — on an image-heavy
+                            // book that is tens of MB held for the whole session.
+                            timed("  parse", describe = { it.describeForTiming() }) {
+                                textParser.parse(
+                                    cachedFile,
+                                    keepImageBytes = settings.images.lastValue
                                 )
+                            }.also { fresh ->
+                                // Best-effort caching; skip empty/failed parses.
+                                if (cachingEnabled && fresh.text.isNotEmpty()) {
+                                    timed("  cache write") {
+                                        parseCache.write(
+                                            cachedFile.path,
+                                            cachedFile.size,
+                                            cachedFile.lastModified,
+                                            fresh,
+                                            maxBytes = maxBytes,
+                                            images = if (cacheImages) {
+                                                fresh.collectImageBytes()
+                                            } else null
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
@@ -199,6 +218,14 @@ class BookRepositoryImpl @Inject constructor(
         withContext(Dispatchers.IO) {
             readerImageFiles.keepOnly(bookId)
         }
+    }
+
+    /** What the timing log says about a parsed book: how much text, how many images. */
+    private fun ParsedText.describeForTiming(): String {
+        val images = text.filterIsInstance<ReaderText.Image>()
+        val chars = text.filterIsInstance<ReaderText.Text>().sumOf { it.line.length }
+        return "chars=$chars images=${images.size} " +
+                "imageBytes=${images.sumOf { it.image.bytes.size } / 1024} KB"
     }
 
     /** Encoded bytes of every image that has them, keyed by src. */
