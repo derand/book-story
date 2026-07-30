@@ -12,6 +12,7 @@ import android.provider.DocumentsContract
 import androidx.compose.runtime.Immutable
 import com.anggrayudi.storage.file.DocumentFileCompat
 import com.anggrayudi.storage.file.getAbsolutePath
+import ua.acclorite.book_story.core.log.timed
 import java.io.BufferedOutputStream
 import java.io.File
 import java.io.FileOutputStream
@@ -175,10 +176,13 @@ class CachedFile(
      *
      * @return null if the file is directory or failed
      */
-    private fun storeInCache(): File? {
-        if (isDirectory) return null
+    private fun storeInCache(): File? = timed(
+        "    copy book",
+        describe = { file -> "${(file?.length() ?: 0) / 1024} KB" }
+    ) {
+        if (isDirectory) return@timed null
         val dir = copiesDir(context)
-        if (!dir.exists() && !dir.mkdirs()) return null
+        if (!dir.exists() && !dir.mkdirs()) return@timed null
         val cacheFile = File(dir, UUID.randomUUID().toString())
 
         try {
@@ -189,10 +193,10 @@ class CachedFile(
             } ?: throw IllegalStateException("Failed to open InputStream.")
         } catch (e: Exception) {
             e.printStackTrace()
-            return null
+            return@timed null
         }
 
-        return cacheFile
+        cacheFile
     }
 
     private fun getFileQueryParams(): QueryParams {

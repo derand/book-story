@@ -45,13 +45,20 @@ android {
 
     // Build types configuration
     buildTypes {
+        // BOOK_TIMING logs how long opening a book takes, phase by phase, under
+        // the "BookTiming" tag. Off in release; on in release-debug as well as
+        // debug, because release-debug is the variant performance is measured on —
+        // a debug build runs several times slower, so its timings are only ever
+        // comparable with each other.
         getByName("debug") {
             applicationIdSuffix = ".debug"
+            buildConfigField("boolean", "BOOK_TIMING", "true")
         }
 
         getByName("release") {
             isMinifyEnabled = true
             isShrinkResources = false
+            buildConfigField("boolean", "BOOK_TIMING", "false")
 
             proguardFiles("proguard-rules.pro")
         }
@@ -60,6 +67,7 @@ android {
             initWith(getByName("release"))
             applicationIdSuffix = ".release.debug"
             signingConfig = signingConfigs.getByName("debug")
+            buildConfigField("boolean", "BOOK_TIMING", "true")
         }
     }
 

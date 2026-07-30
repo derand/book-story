@@ -13,6 +13,7 @@ import org.jsoup.nodes.TextNode
 import org.jsoup.parser.Parser
 import ua.acclorite.book_story.core.log.logE
 import ua.acclorite.book_story.core.log.logI
+import ua.acclorite.book_story.core.log.timed
 import ua.acclorite.book_story.data.model.file.CachedFile
 import ua.acclorite.book_story.data.parser.document.DocumentParser
 import androidx.compose.ui.text.AnnotatedString
@@ -61,7 +62,9 @@ class XmlTextParser @Inject constructor(
         return try {
             val notes = mutableMapOf<String, AnnotatedString>()
             val readerText = cachedFile.openInputStream()?.use { stream ->
-                val document = Jsoup.parse(stream, null, "", Parser.xmlParser())
+                val document = timed("    jsoup") {
+                    Jsoup.parse(stream, null, "", Parser.xmlParser())
+                }
 
                 // FB2 stores images as Base64 <binary id="...">, referenced by <image>
                 val base64Images = document.select("binary").associate { binary ->
@@ -93,11 +96,13 @@ class XmlTextParser @Inject constructor(
                     }
                 }
 
-                documentParser.parseDocument(
-                    document = document,
-                    base64Images = base64Images,
-                    keepImageBytes = keepImageBytes
-                )
+                timed("    parseDoc") {
+                    documentParser.parseDocument(
+                        document = document,
+                        base64Images = base64Images,
+                        keepImageBytes = keepImageBytes
+                    )
+                }
             }
 
             yield()
