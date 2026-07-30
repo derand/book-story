@@ -11,20 +11,22 @@ import ua.acclorite.book_story.core.log.logE
 import ua.acclorite.book_story.domain.repository.BookRepository
 import javax.inject.Inject
 
-private const val TAG = "ClearBookImages"
+private const val TAG = "KeepOnlyBookImages"
 
 /**
- * Drops the transient image files written for a book while it was open. The
- * persistent parse-cache blobs are a different thing and are left alone.
+ * Drops the transient image files of every book except the one being opened, whose
+ * own files are kept — reopening a book should not have to extract its images all
+ * over again. The persistent parse-cache blobs are a different thing and are left
+ * alone.
  */
-class ClearBookImagesUseCase @Inject constructor(
+class KeepOnlyBookImagesUseCase @Inject constructor(
     private val bookRepository: BookRepository
 ) {
 
     suspend operator fun invoke(bookId: Int) {
         if (bookId == -1) return
-        bookRepository.clearBookImages(bookId).onFailure {
-            logE(TAG, "Could not clear images of [$bookId]: ${it.message}")
+        bookRepository.keepOnlyBookImages(bookId).onFailure {
+            logE(TAG, "Could not drop images of books other than [$bookId]: ${it.message}")
         }
     }
 }

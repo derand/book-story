@@ -22,14 +22,28 @@ sealed interface BookImage {
     data object Loading : BookImage
 
     /**
-     * The encoded (JPEG/PNG/GIF) image, as a local file ready to be rendered.
+     * The encoded (JPEG/PNG/GIF) image, ready to be rendered.
      *
-     * A file rather than a `ByteArray` on purpose: the image loader reads a local
-     * file directly, without copying it into a cache of its own, and holds only
-     * the *decoded* bitmap — in a memory cache that is bounded and trims itself.
-     * Encoded bytes held here would be a second, unbounded cache next to it.
+     * Most of a book's images are handed over as *files*: the image loader reads a
+     * local file directly, without copying it into a cache of its own, and holds
+     * only the *decoded* bitmap — in a memory cache that is bounded and trims
+     * itself. Every encoded image held here instead would be a second, unbounded
+     * cache next to that one.
+     *
+     * A small, fixed budget of them is nevertheless kept in memory
+     * ([ua.acclorite.book_story.data.cache.ImageMemoryBudget]), because a book
+     * whose images all fit in it never has to touch the disk at all — and writing
+     * files that are deleted minutes later is work worth skipping when the amount
+     * held is bounded either way.
      */
-    class Ready(val file: File) : BookImage
+    sealed interface Ready : BookImage {
+
+        /** Held in memory, within the budget. */
+        class InMemory(val bytes: ByteArray) : Ready
+
+        /** Written to disk — a parse-cache blob, or a transient session file. */
+        class InFile(val file: File) : Ready
+    }
 
     /**
      * The load pass finished without resolving the image: the source book file
@@ -69,9 +83,9 @@ class BookImageStore {
         srcs.forEach { src -> entries[src] = BookImage.Loading }
     }
 
-    /** Publishes the [file] holding the image [src] to the reader. */
-    fun put(src: String, file: File) {
-        entries[src] = BookImage.Ready(file)
+    /** Publishes the resolved [image] for [src] to the reader. */
+    fun put(src: String, image: BookImage.Ready) {
+        entries[src] = image
     }
 
     /** The srcs that are still not available, i.e. worth (re)loading. */

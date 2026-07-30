@@ -8,6 +8,7 @@
 package ua.acclorite.book_story.domain.model.reader
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -42,18 +43,29 @@ class BookImageStoreTest {
     @Test
     fun putPublishesTheFileAndClearsPending() {
         store.reset(listOf("a.jpg", "b.jpg"))
-        store.put("a.jpg", File("/tmp/a"))
+        store.put("a.jpg", BookImage.Ready.InFile(File("/tmp/a")))
 
         val image = store["a.jpg"]
-        assertTrue(image is BookImage.Ready)
-        assertEquals(File("/tmp/a"), (image as BookImage.Ready).file)
+        assertTrue(image is BookImage.Ready.InFile)
+        assertEquals(File("/tmp/a"), (image as BookImage.Ready.InFile).file)
         assertEquals(setOf("b.jpg"), store.pending())
+    }
+
+    @Test
+    fun anInMemoryImageCountsAsReadyToo() {
+        store.reset(listOf("a.jpg"))
+        store.put("a.jpg", BookImage.Ready.InMemory(byteArrayOf(1, 2, 3)))
+
+        val image = store["a.jpg"]
+        assertTrue(image is BookImage.Ready.InMemory)
+        assertArrayEquals(byteArrayOf(1, 2, 3), (image as BookImage.Ready.InMemory).bytes)
+        assertTrue(store.pending().isEmpty())
     }
 
     @Test
     fun finishMarksUnresolvedAsMissing() {
         store.reset(listOf("a.jpg", "b.jpg"))
-        store.put("a.jpg", File("/tmp/a"))
+        store.put("a.jpg", BookImage.Ready.InFile(File("/tmp/a")))
 
         store.finish()
 
@@ -72,7 +84,7 @@ class BookImageStoreTest {
     @Test
     fun resetDiscardsThePreviousBook() {
         store.reset(listOf("a.jpg"))
-        store.put("a.jpg", File("/tmp/a"))
+        store.put("a.jpg", BookImage.Ready.InFile(File("/tmp/a")))
 
         store.reset(listOf("c.jpg"))
 
