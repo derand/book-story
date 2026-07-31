@@ -255,6 +255,7 @@ class ParseCache @Inject constructor(application: Application) {
          */
         // 4: tables carry per-column alignment (ParsedTextCodec format 3).
         // 5: literal "*"/"_" of the book's text are no longer stripped.
-        const val VERSION = 5
+        // 6: <i> is italicised, <s>/<del>/<strike> struck through.
+        const val VERSION = 6
     }
 }
