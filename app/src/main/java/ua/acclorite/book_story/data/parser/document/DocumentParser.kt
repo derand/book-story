@@ -371,7 +371,11 @@ class DocumentParser @Inject constructor(
                 select("h2").append(BOLD_MARK).prepend(BOLD_MARK)
                 select("h3").append(BOLD_MARK).prepend(BOLD_MARK)
                 select("strong").append(BOLD_MARK).prepend(BOLD_MARK)
-                select("em").prepend(ITALIC_MARK).append(ITALIC_MARK)
+                // <i> as well as <em>: EPUBs converted from print use it for
+                // most of their italics, and the distinction between semantic
+                // emphasis and typographic italic is one this renderer cannot
+                // act on anyway.
+                select("em, i").prepend(ITALIC_MARK).append(ITALIC_MARK)
 
                 // FB2 inline: <emphasis> is the italic tag (FB2 has no <em>).
                 // Wrapped in a sentinel rather than "_": a mark styles intra-word
@@ -423,8 +427,10 @@ class DocumentParser @Inject constructor(
 
                 // FB2 inline: <code> as a monospace backtick code span
                 select("code").prepend("`").append("`")
-                // <strikethrough> wrapped in a sentinel, styled by MarkdownParser
-                select("strikethrough").prepend(STRIKETHROUGH_MARK).append(STRIKETHROUGH_MARK)
+                // <strikethrough> wrapped in a sentinel, styled by MarkdownParser.
+                // FB2 spells it out; HTML/EPUB use <s>, <del> or the old <strike>.
+                select("strikethrough, s, del, strike")
+                    .prepend(STRIKETHROUGH_MARK).append(STRIKETHROUGH_MARK)
                 // <sub>/<sup> wrapped in sentinels, styled by MarkdownParser
                 select("sub").prepend(SUBSCRIPT_MARK).append(SUBSCRIPT_MARK)
                 select("sup").prepend(SUPERSCRIPT_MARK).append(SUPERSCRIPT_MARK)
@@ -734,8 +740,9 @@ class DocumentParser @Inject constructor(
         clone.stripInlineMarks()
 
         clone.select("strong, b").prepend(BOLD_MARK).append(BOLD_MARK)
-        clone.select("emphasis, em").prepend(ITALIC_MARK).append(ITALIC_MARK)
-        clone.select("strikethrough").prepend(STRIKETHROUGH_MARK).append(STRIKETHROUGH_MARK)
+        clone.select("emphasis, em, i").prepend(ITALIC_MARK).append(ITALIC_MARK)
+        clone.select("strikethrough, s, del, strike")
+            .prepend(STRIKETHROUGH_MARK).append(STRIKETHROUGH_MARK)
         clone.select("sub").prepend(SUBSCRIPT_MARK).append(SUBSCRIPT_MARK)
         clone.select("sup").prepend(SUPERSCRIPT_MARK).append(SUPERSCRIPT_MARK)
         clone.select("p").forEach { paragraph ->
