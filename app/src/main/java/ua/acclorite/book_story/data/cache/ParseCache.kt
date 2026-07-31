@@ -254,6 +254,7 @@ class ParseCache @Inject constructor(application: Application) {
          * stale entries are ignored instead of rendering outdated text.
          */
         // 4: tables carry per-column alignment (ParsedTextCodec format 3).
-        const val VERSION = 4
+        // 5: literal "*"/"_" of the book's text are no longer stripped.
+        const val VERSION = 5
     }
 }

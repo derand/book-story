@@ -20,8 +20,6 @@ import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
 import org.jsoup.nodes.Node
 import org.jsoup.nodes.TextNode
-import ua.acclorite.book_story.core.helpers.clearAllMarkdown
-import ua.acclorite.book_story.core.helpers.clearMarkdown
 import ua.acclorite.book_story.core.helpers.containsVisibleText
 import ua.acclorite.book_story.domain.model.reader.NOTE_LINK_TAG_PREFIX
 import ua.acclorite.book_story.domain.model.reader.ReaderImage
@@ -51,6 +49,23 @@ const val TITLE_ROLE_MARKER = "[[[role-title]]]"
 const val EPIGRAPH_ROLE_MARKER = "[[[role-epigraph]]]"
 const val AUTHOR_ROLE_MARKER = "[[[role-author]]]"
 
+/*
+ * Inline styling travels from the DOM to [MarkdownParser] as private-use
+ * sentinels rather than as markdown "**"/"_".
+ *
+ * The DOM is flattened into one flat string here, so a style has to be encoded
+ * into the characters of that string — and markdown's delimiters are ordinary
+ * punctuation an author may well have typed. Once ours and theirs are mixed no
+ * later pass can tell them apart, which is how "(*)" used to render as "()".
+ * The private-use area is reserved by Unicode for exactly this kind of private
+ * agreement, so a sentinel cannot collide with the book's own text (whatever
+ * the book itself brings in is dropped by [stripInlineMarks] on the way in).
+ *
+ * Sentinels are also stronger than delimiters: [MarkdownParser] treats each as
+ * a toggle, so they compose freely, ignore CommonMark's flanking rules — which
+ * is what makes intra-word emphasis work — and need no balancing.
+ */
+
 /**
  * Private-use sentinel wrapping FB2 <strikethrough> content. [MarkdownParser]
  * turns the enclosed text into a real strike-through span, which — unlike a
@@ -71,15 +86,13 @@ const val SUPERSCRIPT_MARK = "\uE013"
  * turns the enclosed text into an italic span. Unlike a markdown `_`, the mark
  * also styles intra-word emphasis: CommonMark disables `_` emphasis inside a
  * word, so a single stressed letter \u2014 \u00AB\u0431_\u043E_\u043B\u044C\u0448\u0438\u043D\u0441\u0442\u0432\u043E\u00BB \u2014 would otherwise be
- * dropped (clearMarkdown() strips the underscores, leaving plain text).
+ * dropped, leaving plain text.
  */
 const val ITALIC_MARK = "\uE018"
 
 /**
- * Private-use sentinel wrapping a flattened <title> (of an FB2 <poem>/
- * <epigraph>/<cite>). A mark rather than "**", because the title keeps its own
- * inline markup, which may itself carry "**" from a <strong>: nested asterisks
- * would fuse into one malformed emphasis run.
+ * Private-use sentinel for bold: <b>/<strong>/<h1..h3> and a flattened <title>
+ * (of an FB2 <poem>/<epigraph>/<cite>).
  */
 const val BOLD_MARK = "\uE019"
 
@@ -96,6 +109,58 @@ const val ANCHOR_REF_MARK = "\uE017"
 const val REF_SEPARATOR = "\uE015"
 const val REF_END_MARK = "\uE016"
 
+/**
+ * The private-use block every sentinel above lives in. A new mark only has to
+ * stay inside this range for [stripInlineMarks] to keep covering it.
+ */
+private val MARK_RANGE = '\uE011'..'\uE019'
+
+/**
+ * Drops the sentinel characters the string itself carries, so nothing in the
+ * book can be mistaken for a mark this parser injected. Unicode reserves the
+ * private-use area for private agreement — but someone else may have made one:
+ * Apple's logo sits at U+F8FF and legacy CJK fonts use the area too.
+ */
+private fun String.stripInlineMarks(): String =
+    if (none { char -> char in MARK_RANGE }) this
+    else filterNot { char -> char in MARK_RANGE }
+
+/** Applies [stripInlineMarks] to every text node of the subtree. */
+private fun Node.stripInlineMarks() {
+    childNodes().forEach { child ->
+        if (child !is TextNode) {
+            child.stripInlineMarks()
+            return@forEach
+        }
+
+        val text = child.wholeText
+        val stripped = text.stripInlineMarks()
+        if (stripped !== text) child.text(stripped)
+    }
+}
+
+/** Every inline styling sentinel, as a character class. */
+private val INLINE_MARKS_REGEX = Regex(
+    "[$STRIKETHROUGH_MARK$SUBSCRIPT_MARK$SUPERSCRIPT_MARK$ITALIC_MARK$BOLD_MARK]"
+)
+
+/** A whole reference run: "<mark><hex id><separator><display text><end>". */
+private val REFERENCE_RUN_REGEX = Regex(
+    "[$NOTE_REF_MARK$ANCHOR_REF_MARK][^$REF_SEPARATOR$REF_END_MARK]*" +
+            "$REF_SEPARATOR([^$REF_END_MARK]*)$REF_END_MARK"
+)
+
+/**
+ * Drops the inline sentinels, keeping the text they wrap \u2014 for the places that
+ * need plain text instead of a styled [AnnotatedString]. Unlike
+ * [ua.acclorite.book_story.core.helpers.clearMarkdown] it touches only the
+ * marks this parser injected, so the author's own asterisks and underscores
+ * survive.
+ */
+internal fun String.clearInlineMarks(): String =
+    replace(REFERENCE_RUN_REGEX) { match -> match.groupValues[1] }
+        .replace(INLINE_MARKS_REGEX, "")
+
 /** A GFM table delimiter row, e.g. "| --- | :--: |". */
 private val TABLE_DELIMITER_REGEX =
     Regex("""^\s*\|?\s*:?-{1,}:?\s*(\|\s*:?-{1,}:?\s*)*\|?\s*$""")
@@ -103,9 +168,6 @@ private val TABLE_DELIMITER_REGEX =
 // Compiled once — all of these run in the per-line hot loop over the whole book
 // (parseDocument), so per-line Regex() compilation added up to a large share of
 // parse time. Kept at file scope like TABLE_DELIMITER_REGEX above.
-private val BOLD_ITALIC_NORMALIZE_REGEX = Regex("""\*\*\*\s*(.*?)\s*\*\*\*""")
-private val BOLD_NORMALIZE_REGEX = Regex("""\*\*\s*(.*?)\s*\*\*""")
-private val ITALIC_NORMALIZE_REGEX = Regex("""_\s*(.*?)\s*_""")
 private val IMAGE_LINE_REGEX = Regex("""\[\[(.*?)\|(.*?)]]""")
 private val CHAPTER_LINE_REGEX = Regex("""\[\[\[chapter\|(\d+)\|(.*)]]]""")
 private val TABLE_LINE_REGEX = Regex("""\[\[\[table\|(\d+)]]]""")
@@ -260,6 +322,10 @@ class DocumentParser @Inject constructor(
         document.selectFirst("body")
             .run { this ?: document.body() }
             .apply {
+                // Before anything is injected: the book's own text must not be
+                // able to pass itself off as one of our sentinels
+                stripInlineMarks()
+
                 // Remove manual line breaks from all <p>, <a>. Setting .html()
                 // re-parses the fragment, so skip it when there is no newline —
                 // most paragraphs in a non-pretty-printed file have none.
@@ -297,11 +363,14 @@ class DocumentParser @Inject constructor(
 
                 // Markdown
                 select("hr").append("\n$SEPARATOR_MARKER\n")
-                select("b").append("**").prepend("**")
-                select("h1").append("**").prepend("**")
-                select("h2").append("**").prepend("**")
-                select("h3").append("**").prepend("**")
-                select("strong").append("**").prepend("**")
+                // Bold/italic go in as sentinels, never as "**"/"_": a literal
+                // asterisk or underscore of the author's would be
+                // indistinguishable from one of ours (see BOLD_MARK).
+                select("b").append(BOLD_MARK).prepend(BOLD_MARK)
+                select("h1").append(BOLD_MARK).prepend(BOLD_MARK)
+                select("h2").append(BOLD_MARK).prepend(BOLD_MARK)
+                select("h3").append(BOLD_MARK).prepend(BOLD_MARK)
+                select("strong").append(BOLD_MARK).prepend(BOLD_MARK)
                 select("em").prepend(ITALIC_MARK).append(ITALIC_MARK)
 
                 // FB2 inline: <emphasis> is the italic tag (FB2 has no <em>).
@@ -320,7 +389,8 @@ class DocumentParser @Inject constructor(
                     if (text.matches(SEPARATOR_TEXT_REGEX)) {
                         subtitle.replaceWith(TextNode("\n$text\n"))
                     } else {
-                        subtitle.prepend("\n_**").append("**_\n") // bold + italic
+                        subtitle.prepend("\n$ITALIC_MARK$BOLD_MARK") // bold + italic
+                            .append("$BOLD_MARK$ITALIC_MARK\n")
                     }
                 }
                 select("poem").prepend("\n$POEM_BEGIN_MARKER\n").append("\n$POEM_END_MARKER\n")
@@ -334,15 +404,16 @@ class DocumentParser @Inject constructor(
                     }
                 }
                 select("v").append("\n") // verse line
-                select("text-author").prepend("\n${AUTHOR_ROLE_MARKER}_").append("_\n")
+                select("text-author")
+                    .prepend("\n$AUTHOR_ROLE_MARKER$ITALIC_MARK").append("$ITALIC_MARK\n")
 
                 // FB2 <epigraph>/<cite> are conventionally set in italic. The "\n"
                 // that the loop above appended to each <p> is its last child, so the
-                // closing underscore is inserted just before it, not after.
+                // closing mark is inserted just before it, not after.
                 select("epigraph > p, cite > p").forEach { paragraph ->
-                    paragraph.prepend("_")
+                    paragraph.prepend(ITALIC_MARK)
                     paragraph.childNode(paragraph.childNodeSize() - 1)
-                        .before(TextNode("_"))
+                        .before(TextNode(ITALIC_MARK))
                 }
                 // Prepended after the italic wrapping, so the marker ends up
                 // first on the line
@@ -405,8 +476,9 @@ class DocumentParser @Inject constructor(
                             } == true
                         } ?: return@forEach
 
-                    val alt = element.attr("alt").trim().takeIf {
-                        it.clearMarkdown().containsVisibleText()
+                    // An attribute is not a text node, so it needs its own pass
+                    val alt = element.attr("alt").trim().stripInlineMarks().takeIf {
+                        it.containsVisibleText()
                     } ?: ""
 
                     imageJobs.getOrPut(src) {
@@ -486,16 +558,11 @@ class DocumentParser @Inject constructor(
             .forEach { line ->
                 yield()
 
-                val formattedLine = line.replace(
-                    // Tabs are not rendered and would glue the surrounding words together
-                    "\t", " "
-                ).replace(
-                    BOLD_ITALIC_NORMALIZE_REGEX, "_**$1**_"
-                ).replace(
-                    BOLD_NORMALIZE_REGEX, "**$1**"
-                ).replace(
-                    ITALIC_NORMALIZE_REGEX, "_$1_"
-                ).trim()
+                // Tabs are not rendered and would glue the surrounding words
+                // together. Nothing else is rewritten: all emphasis this parser
+                // adds is carried by sentinels, so any "*"/"_" left on the line
+                // is the author's own text and must reach the reader intact.
+                val formattedLine = line.replace("\t", " ").trim()
 
                 // Role marker prefix (from FB2 <title>/<epigraph>/<text-author>)
                 val (role, styledLine) = when {
@@ -588,9 +655,13 @@ class DocumentParser @Inject constructor(
                                 ReaderText.Image(
                                     image = image,
                                     caption = alt.takeIf { caption ->
-                                        caption.clearMarkdown().containsVisibleText()
+                                        caption.containsVisibleText()
                                     }?.let { caption -> // Alternative text (caption) for image
-                                        ReaderText.Text(markdownParser.parse("_${caption}_"))
+                                        ReaderText.Text(
+                                            markdownParser.parse(
+                                                "$ITALIC_MARK$caption$ITALIC_MARK"
+                                            )
+                                        )
                                     }
                                 )
                             )
@@ -599,8 +670,7 @@ class DocumentParser @Inject constructor(
                         // A line of separator characters ("* * *", "---") is the
                         // author's literal scene-break text, kept visible as-is.
                         // Without this branch markdownParser.parse() would swallow
-                        // it as a thematic break, and the clearMarkdown() gate
-                        // below would drop the line entirely.
+                        // it as a thematic break and drop the line entirely.
                         separatorRegex.matches(formattedLine) -> {
                             readerText.add(
                                 ReaderText.Text(
@@ -610,20 +680,24 @@ class DocumentParser @Inject constructor(
                         }
 
                         else -> {
+                            // Plain text of the line: only the sentinels go,
+                            // so punctuation the author wrote survives both the
+                            // visibility gate and the chapter list.
+                            val plainLine = styledLine.clearInlineMarks()
                             if (
                                 !chapterAdded &&
                                 poemLines == null &&
-                                styledLine.clearAllMarkdown().containsVisibleText() &&
+                                plainLine.containsVisibleText() &&
                                 includeChapter
                             ) {
                                 readerText.add(
                                     0, ReaderText.Chapter(
-                                        title = styledLine.clearAllMarkdown()
+                                        title = plainLine.trim()
                                     )
                                 )
                                 chapterAdded = true
                             } else if (
-                                styledLine.clearMarkdown().containsVisibleText()
+                                plainLine.containsVisibleText()
                             ) {
                                 val text = ReaderText.Text(
                                     line = markdownParser.parse(styledLine),
@@ -657,8 +731,9 @@ class DocumentParser @Inject constructor(
     fun parseNote(section: org.jsoup.nodes.Element): AnnotatedString {
         val clone = section.clone()
         clone.select("title").remove()
+        clone.stripInlineMarks()
 
-        clone.select("strong, b").prepend("**").append("**")
+        clone.select("strong, b").prepend(BOLD_MARK).append(BOLD_MARK)
         clone.select("emphasis, em").prepend(ITALIC_MARK).append(ITALIC_MARK)
         clone.select("strikethrough").prepend(STRIKETHROUGH_MARK).append(STRIKETHROUGH_MARK)
         clone.select("sub").prepend(SUBSCRIPT_MARK).append(SUBSCRIPT_MARK)
