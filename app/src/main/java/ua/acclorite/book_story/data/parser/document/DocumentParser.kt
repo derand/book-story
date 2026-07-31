@@ -58,7 +58,8 @@ const val AUTHOR_ROLE_MARKER = "[[[role-author]]]"
  * punctuation an author may well have typed. Once ours and theirs are mixed no
  * later pass can tell them apart, which is how "(*)" used to render as "()".
  * The private-use area is reserved by Unicode for exactly this kind of private
- * agreement, so a sentinel cannot collide with the book's own text.
+ * agreement, so a sentinel cannot collide with the book's own text (whatever
+ * the book itself brings in is dropped by [stripInlineMarks] on the way in).
  *
  * Sentinels are also stronger than delimiters: [MarkdownParser] treats each as
  * a toggle, so they compose freely, ignore CommonMark's flanking rules — which
@@ -107,6 +108,36 @@ const val NOTE_REF_MARK = "\uE014"
 const val ANCHOR_REF_MARK = "\uE017"
 const val REF_SEPARATOR = "\uE015"
 const val REF_END_MARK = "\uE016"
+
+/**
+ * The private-use block every sentinel above lives in. A new mark only has to
+ * stay inside this range for [stripInlineMarks] to keep covering it.
+ */
+private val MARK_RANGE = '\uE011'..'\uE019'
+
+/**
+ * Drops the sentinel characters the string itself carries, so nothing in the
+ * book can be mistaken for a mark this parser injected. Unicode reserves the
+ * private-use area for private agreement — but someone else may have made one:
+ * Apple's logo sits at U+F8FF and legacy CJK fonts use the area too.
+ */
+private fun String.stripInlineMarks(): String =
+    if (none { char -> char in MARK_RANGE }) this
+    else filterNot { char -> char in MARK_RANGE }
+
+/** Applies [stripInlineMarks] to every text node of the subtree. */
+private fun Node.stripInlineMarks() {
+    childNodes().forEach { child ->
+        if (child !is TextNode) {
+            child.stripInlineMarks()
+            return@forEach
+        }
+
+        val text = child.wholeText
+        val stripped = text.stripInlineMarks()
+        if (stripped !== text) child.text(stripped)
+    }
+}
 
 /** Every inline styling sentinel, as a character class. */
 private val INLINE_MARKS_REGEX = Regex(
@@ -291,6 +322,10 @@ class DocumentParser @Inject constructor(
         document.selectFirst("body")
             .run { this ?: document.body() }
             .apply {
+                // Before anything is injected: the book's own text must not be
+                // able to pass itself off as one of our sentinels
+                stripInlineMarks()
+
                 // Remove manual line breaks from all <p>, <a>. Setting .html()
                 // re-parses the fragment, so skip it when there is no newline —
                 // most paragraphs in a non-pretty-printed file have none.
@@ -441,7 +476,8 @@ class DocumentParser @Inject constructor(
                             } == true
                         } ?: return@forEach
 
-                    val alt = element.attr("alt").trim().takeIf {
+                    // An attribute is not a text node, so it needs its own pass
+                    val alt = element.attr("alt").trim().stripInlineMarks().takeIf {
                         it.containsVisibleText()
                     } ?: ""
 
@@ -695,6 +731,7 @@ class DocumentParser @Inject constructor(
     fun parseNote(section: org.jsoup.nodes.Element): AnnotatedString {
         val clone = section.clone()
         clone.select("title").remove()
+        clone.stripInlineMarks()
 
         clone.select("strong, b").prepend(BOLD_MARK).append(BOLD_MARK)
         clone.select("emphasis, em").prepend(ITALIC_MARK).append(ITALIC_MARK)
