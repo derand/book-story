@@ -27,7 +27,6 @@ import org.commonmark.node.Node
 import org.commonmark.node.StrongEmphasis
 import org.commonmark.node.Text
 import org.commonmark.parser.Parser
-import ua.acclorite.book_story.core.helpers.clearMarkdown
 import ua.acclorite.book_story.domain.model.reader.ANCHOR_LINK_TAG_PREFIX
 import ua.acclorite.book_story.domain.model.reader.NOTE_LINK_TAG_PREFIX
 import javax.inject.Inject
@@ -117,7 +116,10 @@ class MarkdownParser @Inject constructor(
             }
 
             is Text -> {
-                scanner.append(node.literal.clearMarkdown())
+                // Appended verbatim: commonmark has already consumed every
+                // "*"/"_" that was real markup, so whatever is left is the
+                // author's own punctuation — "(*)" must not become "()".
+                scanner.append(node.literal)
                 parseChildren(node, scanner)
             }
 
@@ -204,10 +206,10 @@ private class MarkScanner(private val builder: AnnotatedString.Builder) {
         } catch (e: Exception) {
             refId.toString()
         }
-        // The reference text may carry inline markers (e.g. a note number
-        // wrapped in <strong> becomes "**[3]**"); strip them so no literal
-        // asterisks/underscores show in the tiny marker.
-        val text = refText.toString().clearMarkdown()
+        // The reference text may carry inline sentinels (e.g. a note number
+        // wrapped in <strong>); the run is appended as one plain span, so
+        // strip them rather than let private-use characters reach the marker.
+        val text = refText.toString().clearInlineMarks()
         if (text.isBlank()) return
 
         val (tag, style) = if (mark == NOTE_REF_CHAR) {
