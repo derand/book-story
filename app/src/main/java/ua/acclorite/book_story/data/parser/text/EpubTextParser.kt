@@ -88,7 +88,7 @@ class EpubTextParser @Inject constructor(
             yield()
 
             if (
-                readerText.filterIsInstance<ReaderText.Text>().isEmpty() ||
+                readerText.isEmpty() ||
                 readerText.filterIsInstance<ReaderText.Chapter>().isEmpty()
             ) {
                 logE(TAG, "Could not extract text from EPUB.")
@@ -208,8 +208,10 @@ class EpubTextParser @Inject constructor(
             )
         }
 
+        // A chapter that yielded nothing beyond its own title is empty; one
+        // holding only an image (a cover page) is not.
         if (
-            readerText.filterIsInstance<ReaderText.Text>().isEmpty() ||
+            readerText.none { line -> line !is ReaderText.Chapter } ||
             readerText.filterIsInstance<ReaderText.Chapter>().isEmpty()
         ) {
             logW(TAG, "Could not extract text from [${entry.name}].")
