@@ -718,8 +718,11 @@ class DocumentParser @Inject constructor(
 
         yield()
 
+        // "Did this document yield anything", not "does it have text": a page
+        // holding only an image — every Calibre-made cover is exactly that — is
+        // not an empty document, and dropping it takes the image with it.
         if (
-            readerText.filterIsInstance<ReaderText.Text>().isEmpty() ||
+            readerText.isEmpty() ||
             (includeChapter && readerText.filterIsInstance<ReaderText.Chapter>().isEmpty())
         ) {
             return@coroutineScope emptyList()

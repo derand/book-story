@@ -109,7 +109,6 @@ class XmlTextParser @Inject constructor(
 
             if (
                 readerText.isNullOrEmpty() ||
-                readerText.filterIsInstance<ReaderText.Text>().isEmpty() ||
                 readerText.filterIsInstance<ReaderText.Chapter>().isEmpty()
             ) {
                 logE(TAG, "Could not extract text from XML.")
