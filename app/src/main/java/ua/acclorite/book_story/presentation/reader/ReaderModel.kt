@@ -31,6 +31,8 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import ua.acclorite.book_story.R
 import ua.acclorite.book_story.core.helpers.coerceAndPreventNaN
+import ua.acclorite.book_story.core.log.BookOpenTrace
+import ua.acclorite.book_story.core.log.timed
 import ua.acclorite.book_story.core.ui.UIText
 import ua.acclorite.book_story.domain.model.reader.BookImageStore
 import ua.acclorite.book_story.domain.model.reader.ReaderText
@@ -93,6 +95,7 @@ class ReaderModel @Inject constructor(
                     withContext(Dispatchers.Default) {
                         val parsedText = getTextUseCase(_state.value.book.id)
                         val text = parsedText.text
+                        BookOpenTrace.mark("text parsed")
                         ensureActive()
 
                         if (text.isEmpty()) {
@@ -145,6 +148,7 @@ class ReaderModel @Inject constructor(
                                 notes = parsedText.notes
                             )
                         }
+                        BookOpenTrace.mark("text in state")
                         ensureActive()
 
                         updateBookUseCase(_state.value.book)
@@ -477,18 +481,18 @@ class ReaderModel @Inject constructor(
 
     fun init(bookId: Int) {
         viewModelScope.launch(Dispatchers.Default) {
-            val book = getBookUseCase(bookId)
+            val book = timed("  init: book row") { getBookUseCase(bookId) }
 
             if (book == null) {
                 _effects.emit(ReaderEffect.OnNavigateBack)
                 return@launch
             }
 
-            clear()
+            timed("  init: clear previous") { clear() }
             // Here rather than when the previous reader closed: a book keeps its
             // image files so that reopening it needs no work, and this is the
             // point where they stop being the ones worth keeping.
-            keepOnlyBookImagesUseCase(bookId)
+            timed("  init: drop other images") { keepOnlyBookImagesUseCase(bookId) }
 
             _state.update {
                 ReaderState(

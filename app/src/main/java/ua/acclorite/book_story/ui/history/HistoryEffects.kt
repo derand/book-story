@@ -14,6 +14,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.flow.SharedFlow
 import ua.acclorite.book_story.R
+import ua.acclorite.book_story.core.log.BookOpenTrace
 import ua.acclorite.book_story.presentation.book_info.BookInfoScreen
 import ua.acclorite.book_story.presentation.history.HistoryEffect
 import ua.acclorite.book_story.presentation.history.HistoryEvent
@@ -69,6 +70,7 @@ fun HistoryEffects(
                 }
 
                 is HistoryEffect.OnNavigateToReader -> {
+                    BookOpenTrace.start("book ${effect.bookId} from history")
                     insertHistoryChannel.trySend(effect.bookId)
                     navigator.push(ReaderScreen(bookId = effect.bookId))
                 }

@@ -99,6 +99,7 @@ fun ReaderLayout(
     openDictionary: (ReaderEvent.OnOpenDictionary) -> Unit
 ) {
     val activity = LocalActivity.current
+    ReaderFirstFrameTrace(hasText = text.isNotEmpty())
     SelectionContainer(
         onCopyRequested = {
             if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.S_V2) {
