@@ -15,6 +15,8 @@ import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.job
 import kotlinx.coroutines.yield
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
@@ -34,6 +36,7 @@ import java.util.zip.CRC32
 import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
 import javax.inject.Inject
+import kotlin.coroutines.coroutineContext
 
 /** Marker standing in for FB2 <empty-line/>, resolved to a blank line. */
 const val EMPTY_LINE_MARKER = "[[[emptyline]]]"
@@ -158,9 +161,15 @@ private val REFERENCE_RUN_REGEX = Regex(
  * marks this parser injected, so the author's own asterisks and underscores
  * survive.
  */
-internal fun String.clearInlineMarks(): String =
-    replace(REFERENCE_RUN_REGEX) { match -> match.groupValues[1] }
+internal fun String.clearInlineMarks(): String {
+    // Nothing to clear on the overwhelming majority of lines, and scanning for
+    // one character beats running two regexes over the whole string — the same
+    // shape [stripInlineMarks] already uses.
+    if (none { char -> char in MARK_RANGE }) return this
+
+    return replace(REFERENCE_RUN_REGEX) { match -> match.groupValues[1] }
         .replace(INLINE_MARKS_REGEX, "")
+}
 
 /** A GFM table delimiter row, e.g. "| --- | :--: |". */
 private val TABLE_DELIMITER_REGEX =
@@ -174,6 +183,18 @@ private val CHAPTER_LINE_REGEX = Regex("""\[\[\[chapter\|(\d+)\|(.*)]]]""")
 private val TABLE_LINE_REGEX = Regex("""\[\[\[table\|(\d+)]]]""")
 /** Separator-like text: "---", "***", "___", also spaced out ("* * *"). */
 private val SEPARATOR_TEXT_REGEX = Regex("""^([-*_])(\s*\1){2,}$""")
+/**
+ * How many items of a phase run between two [yield] calls.
+ *
+ * Yielding once per line cost a quarter of the whole parse (#39): the work
+ * itself is microseconds and the round-trip through the dispatcher is ~166 µs,
+ * moving the coroutine between worker threads each time. Cancellation is not
+ * what paid for that — [ensureActive] still runs on every item and throws just
+ * as promptly; a yield only lets *other* coroutines in, and at 64 items that is
+ * still well under 50 ms of work between turns.
+ */
+private const val YIELD_INTERVAL = 64
+
 private val NEWLINES_REGEX = Regex("\\n+")
 private val WHITESPACE_REGEX = Regex("\\s+")
 
@@ -326,247 +347,265 @@ class DocumentParser @Inject constructor(
         // happens once per line, which is where a per-call log would drown.
         markdownParser.resetTiming()
 
+        // Cancellation is checked on every item, so a parse the reader walked
+        // away from still stops at once; the dispatcher round-trip that lets
+        // other coroutines run is what happens only every [YIELD_INTERVAL].
+        val job = coroutineContext.job
+        var sinceYield = 0
+        suspend fun pace() {
+            job.ensureActive()
+            if (++sinceYield < YIELD_INTERVAL) return
+            sinceYield = 0
+            yield()
+        }
+
         val body = document.selectFirst("body").run { this ?: document.body() }
 
         timed("      dom phase") {
             body.apply {
-                // Before anything is injected: the book's own text must not be
-                // able to pass itself off as one of our sentinels
-                stripInlineMarks()
+                timed("        strip + newlines") {
+                    // Before anything is injected: the book's own text must not be
+                    // able to pass itself off as one of our sentinels
+                    stripInlineMarks()
 
-                // Remove manual line breaks from all <p>, <a>. Setting .html()
-                // re-parses the fragment, so skip it when there is no newline —
-                // most paragraphs in a non-pretty-printed file have none.
-                select("p").forEach { element ->
-                    yield()
-                    val html = element.html()
-                    if (html.indexOf('\n') >= 0) {
-                        element.html(html.replace(NEWLINES_REGEX, " "))
-                    }
-                    element.append("\n")
-                }
-                select("a").forEach { element ->
-                    yield()
-                    val html = element.html()
-                    if (html.indexOf('\n') >= 0) {
-                        element.html(html.replace(NEWLINES_REGEX, ""))
-                    }
-                }
-
-                // Section/body titles are already turned into chapter markers
-                // upstream; the titles left here belong to FB2 <poem>/<epigraph>/
-                // <cite>. Flatten them into a bold line instead of dropping them,
-                // keeping the inline markup for the transforms below.
-                select("title").forEach { title ->
-                    if (title.wholeText().isBlank()) {
-                        title.remove()
-                        return@forEach
-                    }
-
-                    title.flattenTitleToInline()
-                    title.before(TextNode("\n$TITLE_ROLE_MARKER$BOLD_MARK"))
-                    title.after(TextNode("$BOLD_MARK\n"))
-                    title.unwrap()
-                }
-
-                // Markdown
-                select("hr").append("\n$SEPARATOR_MARKER\n")
-                // Bold/italic go in as sentinels, never as "**"/"_": a literal
-                // asterisk or underscore of the author's would be
-                // indistinguishable from one of ours (see BOLD_MARK).
-                select("b").append(BOLD_MARK).prepend(BOLD_MARK)
-                select("h1").append(BOLD_MARK).prepend(BOLD_MARK)
-                select("h2").append(BOLD_MARK).prepend(BOLD_MARK)
-                select("h3").append(BOLD_MARK).prepend(BOLD_MARK)
-                select("strong").append(BOLD_MARK).prepend(BOLD_MARK)
-                // <i> as well as <em>: EPUBs converted from print use it for
-                // most of their italics, and the distinction between semantic
-                // emphasis and typographic italic is one this renderer cannot
-                // act on anyway.
-                select("em, i").prepend(ITALIC_MARK).append(ITALIC_MARK)
-
-                // FB2 inline: <emphasis> is the italic tag (FB2 has no <em>).
-                // Wrapped in a sentinel rather than "_": a mark styles intra-word
-                // emphasis too, which markdown underscores cannot (see ITALIC_MARK).
-                select("emphasis").prepend(ITALIC_MARK).append(ITALIC_MARK)
-
-                // FB2 block-level tags carry no line break of their own, so in
-                // files without pretty-printing they glue to surrounding text.
-                // A separator-only subtitle ("* * *", "---") is a scene break,
-                // not a heading: keep it as literal text on its own line rather
-                // than wrapping it in emphasis, which would fuse the marks into
-                // the markdown and drop the line entirely. Others get bold+italic.
-                select("subtitle").forEach { subtitle ->
-                    val text = subtitle.wholeText().trim()
-                    if (text.matches(SEPARATOR_TEXT_REGEX)) {
-                        subtitle.replaceWith(TextNode("\n$text\n"))
-                    } else {
-                        subtitle.prepend("\n$ITALIC_MARK$BOLD_MARK") // bold + italic
-                            .append("$BOLD_MARK$ITALIC_MARK\n")
-                    }
-                }
-                select("poem").prepend("\n$POEM_BEGIN_MARKER\n").append("\n$POEM_END_MARKER\n")
-                select("epigraph").prepend("\n").append("\n")
-                // Blank line between stanzas, but not after the last one
-                select("stanza").forEach { stanza ->
-                    if (stanza.nextElementSibling()?.tagName() == "stanza") {
-                        stanza.append("\n$EMPTY_LINE_MARKER\n")
-                    } else {
-                        stanza.append("\n")
-                    }
-                }
-                select("v").append("\n") // verse line
-                select("text-author")
-                    .prepend("\n$AUTHOR_ROLE_MARKER$ITALIC_MARK").append("$ITALIC_MARK\n")
-
-                // FB2 <epigraph>/<cite> are conventionally set in italic. The "\n"
-                // that the loop above appended to each <p> is its last child, so the
-                // closing mark is inserted just before it, not after.
-                select("epigraph > p, cite > p").forEach { paragraph ->
-                    paragraph.prepend(ITALIC_MARK)
-                    paragraph.childNode(paragraph.childNodeSize() - 1)
-                        .before(TextNode(ITALIC_MARK))
-                }
-                // Prepended after the italic wrapping, so the marker ends up
-                // first on the line
-                select("epigraph > p").forEach { paragraph ->
-                    paragraph.prepend(EPIGRAPH_ROLE_MARKER)
-                }
-
-                // FB2 inline: <code> as a monospace backtick code span
-                select("code").prepend("`").append("`")
-                // <strikethrough> wrapped in a sentinel, styled by MarkdownParser.
-                // FB2 spells it out; HTML/EPUB use <s>, <del> or the old <strike>.
-                select("strikethrough, s, del, strike")
-                    .prepend(STRIKETHROUGH_MARK).append(STRIKETHROUGH_MARK)
-                // <sub>/<sup> wrapped in sentinels, styled by MarkdownParser
-                select("sub").prepend(SUBSCRIPT_MARK).append(SUBSCRIPT_MARK)
-                select("sup").prepend(SUPERSCRIPT_MARK).append(SUPERSCRIPT_MARK)
-                select("a").forEach { element ->
-                    // FB2 links the href through the XLink namespace
-                    var link = element.attr("xlink:href")
-                        .ifBlank { element.attr("l:href") }
-                        .ifBlank { element.attr("href") }
-                        .trim()
-                    if (element.wholeText().isBlank()) return@forEach
-
-                    when {
-                        link.startsWith("http") -> {
-                            if (link.startsWith("http://")) {
-                                link = link.replaceFirst("http://", "https://")
-                            }
-
-                            element.prepend("[")
-                            element.append("]($link)")
+                    // Remove manual line breaks from all <p>, <a>. Setting .html()
+                    // re-parses the fragment, so skip it when there is no newline —
+                    // most paragraphs in a non-pretty-printed file have none.
+                    select("p").forEach { element ->
+                        pace()
+                        val html = element.html()
+                        if (html.indexOf('\n') >= 0) {
+                            element.html(html.replace(NEWLINES_REGEX, " "))
                         }
-
-                        // Internal reference: a footnote (<a type="note">) or
-                        // a plain anchor link
-                        link.startsWith("#") -> {
-                            val id = link.removePrefix("#").trim().lowercase()
-                                .encodeReferenceId()
-                            val mark = if (element.attr("type") == "note") {
-                                NOTE_REF_MARK
-                            } else {
-                                ANCHOR_REF_MARK
-                            }
-
-                            element.prepend("$mark$id$REF_SEPARATOR")
-                            element.append(REF_END_MARK)
-                        }
+                        element.append("\n")
                     }
+                    select("a").forEach { element ->
+                        pace()
+                        val html = element.html()
+                        if (html.indexOf('\n') >= 0) {
+                            element.html(html.replace(NEWLINES_REGEX, ""))
+                        }
+                }
                 }
 
-                // Image (<img>)
-                select("img").forEach { element ->
-                    val src = element.attr("src")
-                        .trim()
-                        .substringAfterLast(File.separator)
-                        .lowercase()
-                        .let { src -> URLDecoder.decode(src, StandardCharsets.UTF_8.name()) }
-                        .takeIf {
-                            it.containsVisibleText() && imageEntries?.any { image ->
-                                it == image.name.substringAfterLast(File.separator).lowercase()
-                            } == true
-                        } ?: return@forEach
-
-                    // An attribute is not a text node, so it needs its own pass
-                    val alt = element.attr("alt").trim().stripInlineMarks().takeIf {
-                        it.containsVisibleText()
-                    } ?: ""
-
-                    imageJobs.getOrPut(src) {
-                        async(Dispatchers.Default) {
-                            loadImage(src, zipFile, imageEntries, base64Images, keepImageBytes)
-                        }
-                    }
-                    element.append("\n[[$src|$alt]]\n")
-                }
-
-                // Image (<image>, FB2 references <binary> by id)
-                select("image").forEach { element ->
-                    val src = element.attr("xlink:href")
-                        .ifBlank { element.attr("l:href") }
-                        .ifBlank { element.attr("href") }
-                        .trim()
-                        .removePrefix("#")
-                        .substringAfterLast(File.separator)
-                        .lowercase()
-                        .let { src -> URLDecoder.decode(src, StandardCharsets.UTF_8.name()) }
-                        .takeIf {
-                            it.containsVisibleText() && (
-                                    base64Images?.containsKey(it) == true ||
-                                            imageEntries?.any { image ->
-                                                it == image.name.substringAfterLast(File.separator).lowercase()
-                                            } == true
-                                    )
-                        } ?: return@forEach
-
-                    imageJobs.getOrPut(src) {
-                        async(Dispatchers.Default) {
-                            loadImage(src, zipFile, imageEntries, base64Images, keepImageBytes)
-                        }
-                    }
-                    element.append("\n[[$src|]]\n")
-                }
-
-                // Tables: extracted whole (a table cannot be flattened into the
-                // line stream), replaced by a marker that re-emits the parsed
-                // table. Runs after the inline transforms above, so cell text
-                // already carries its markdown. Nested tables are left to the
-                // outer one.
-                select("table")
-                    .filter { table -> table.parents().none { it.tagName() == "table" } }
-                    .forEach { table ->
-                        // A column takes its alignment from the first cell that
-                        // states one — usually the header.
-                        val alignments = mutableListOf<TableAlignment>()
-                        val rows = table.select("tr").mapNotNull { row ->
-                            val cells = row.select("th, td")
-                            if (cells.isEmpty()) return@mapNotNull null
-                            cells.forEachIndexed { column, cell ->
-                                while (alignments.size <= column) {
-                                    alignments.add(TableAlignment.Unspecified)
-                                }
-                                if (alignments[column] == TableAlignment.Unspecified) {
-                                    alignments[column] = cell.tableAlignment()
-                                }
-                            }
-                            cells.map { cell ->
-                                markdownParser.parse(
-                                    cell.wholeText().replace(WHITESPACE_REGEX, " ").trim()
-                                )
-                            }
-                        }
-                        if (rows.isEmpty()) {
-                            table.remove()
+                timed("        inline marks") {
+                    // Section/body titles are already turned into chapter markers
+                    // upstream; the titles left here belong to FB2 <poem>/<epigraph>/
+                    // <cite>. Flatten them into a bold line instead of dropping them,
+                    // keeping the inline markup for the transforms below.
+                    select("title").forEach { title ->
+                        if (title.wholeText().isBlank()) {
+                            title.remove()
                             return@forEach
                         }
 
-                        val hasHeader = table.selectFirst("tr")?.selectFirst("th") != null
-                        table.replaceWith(TextNode("\n[[[table|${tables.size}]]]\n"))
-                        tables.add(ReaderText.Table(rows, hasHeader, alignments))
+                        title.flattenTitleToInline()
+                        title.before(TextNode("\n$TITLE_ROLE_MARKER$BOLD_MARK"))
+                        title.after(TextNode("$BOLD_MARK\n"))
+                        title.unwrap()
                     }
+
+                    // Markdown
+                    select("hr").append("\n$SEPARATOR_MARKER\n")
+                    // Bold/italic go in as sentinels, never as "**"/"_": a literal
+                    // asterisk or underscore of the author's would be
+                    // indistinguishable from one of ours (see BOLD_MARK).
+                    select("b").append(BOLD_MARK).prepend(BOLD_MARK)
+                    select("h1").append(BOLD_MARK).prepend(BOLD_MARK)
+                    select("h2").append(BOLD_MARK).prepend(BOLD_MARK)
+                    select("h3").append(BOLD_MARK).prepend(BOLD_MARK)
+                    select("strong").append(BOLD_MARK).prepend(BOLD_MARK)
+                    // <i> as well as <em>: EPUBs converted from print use it for
+                    // most of their italics, and the distinction between semantic
+                    // emphasis and typographic italic is one this renderer cannot
+                    // act on anyway.
+                    select("em, i").prepend(ITALIC_MARK).append(ITALIC_MARK)
+
+                    // FB2 inline: <emphasis> is the italic tag (FB2 has no <em>).
+                    // Wrapped in a sentinel rather than "_": a mark styles intra-word
+                    // emphasis too, which markdown underscores cannot (see ITALIC_MARK).
+                    select("emphasis").prepend(ITALIC_MARK).append(ITALIC_MARK)
+
+                    // FB2 block-level tags carry no line break of their own, so in
+                    // files without pretty-printing they glue to surrounding text.
+                    // A separator-only subtitle ("* * *", "---") is a scene break,
+                    // not a heading: keep it as literal text on its own line rather
+                    // than wrapping it in emphasis, which would fuse the marks into
+                    // the markdown and drop the line entirely. Others get bold+italic.
+                    select("subtitle").forEach { subtitle ->
+                        val text = subtitle.wholeText().trim()
+                        if (text.matches(SEPARATOR_TEXT_REGEX)) {
+                            subtitle.replaceWith(TextNode("\n$text\n"))
+                        } else {
+                            subtitle.prepend("\n$ITALIC_MARK$BOLD_MARK") // bold + italic
+                                .append("$BOLD_MARK$ITALIC_MARK\n")
+                        }
+                    }
+                    select("poem").prepend("\n$POEM_BEGIN_MARKER\n").append("\n$POEM_END_MARKER\n")
+                    select("epigraph").prepend("\n").append("\n")
+                    // Blank line between stanzas, but not after the last one
+                    select("stanza").forEach { stanza ->
+                        if (stanza.nextElementSibling()?.tagName() == "stanza") {
+                            stanza.append("\n$EMPTY_LINE_MARKER\n")
+                        } else {
+                            stanza.append("\n")
+                        }
+                    }
+                    select("v").append("\n") // verse line
+                    select("text-author")
+                        .prepend("\n$AUTHOR_ROLE_MARKER$ITALIC_MARK").append("$ITALIC_MARK\n")
+
+                    // FB2 <epigraph>/<cite> are conventionally set in italic. The "\n"
+                    // that the loop above appended to each <p> is its last child, so the
+                    // closing mark is inserted just before it, not after.
+                    select("epigraph > p, cite > p").forEach { paragraph ->
+                        paragraph.prepend(ITALIC_MARK)
+                        paragraph.childNode(paragraph.childNodeSize() - 1)
+                            .before(TextNode(ITALIC_MARK))
+                    }
+                    // Prepended after the italic wrapping, so the marker ends up
+                    // first on the line
+                    select("epigraph > p").forEach { paragraph ->
+                        paragraph.prepend(EPIGRAPH_ROLE_MARKER)
+                    }
+
+                    // FB2 inline: <code> as a monospace backtick code span
+                    select("code").prepend("`").append("`")
+                    // <strikethrough> wrapped in a sentinel, styled by MarkdownParser.
+                    // FB2 spells it out; HTML/EPUB use <s>, <del> or the old <strike>.
+                    select("strikethrough, s, del, strike")
+                        .prepend(STRIKETHROUGH_MARK).append(STRIKETHROUGH_MARK)
+                    // <sub>/<sup> wrapped in sentinels, styled by MarkdownParser
+                    select("sub").prepend(SUBSCRIPT_MARK).append(SUBSCRIPT_MARK)
+                    select("sup").prepend(SUPERSCRIPT_MARK).append(SUPERSCRIPT_MARK)
+                }
+                timed("        links, images, tables") {
+                    select("a").forEach { element ->
+                        // FB2 links the href through the XLink namespace
+                        var link = element.attr("xlink:href")
+                            .ifBlank { element.attr("l:href") }
+                            .ifBlank { element.attr("href") }
+                            .trim()
+                        if (element.wholeText().isBlank()) return@forEach
+
+                        when {
+                            link.startsWith("http") -> {
+                                if (link.startsWith("http://")) {
+                                    link = link.replaceFirst("http://", "https://")
+                                }
+
+                                element.prepend("[")
+                                element.append("]($link)")
+                            }
+
+                            // Internal reference: a footnote (<a type="note">) or
+                            // a plain anchor link
+                            link.startsWith("#") -> {
+                                val id = link.removePrefix("#").trim().lowercase()
+                                    .encodeReferenceId()
+                                val mark = if (element.attr("type") == "note") {
+                                    NOTE_REF_MARK
+                                } else {
+                                    ANCHOR_REF_MARK
+                                }
+
+                                element.prepend("$mark$id$REF_SEPARATOR")
+                                element.append(REF_END_MARK)
+                            }
+                        }
+                    }
+
+                    // Image (<img>)
+                    select("img").forEach { element ->
+                        val src = element.attr("src")
+                            .trim()
+                            .substringAfterLast(File.separator)
+                            .lowercase()
+                            .let { src -> URLDecoder.decode(src, StandardCharsets.UTF_8.name()) }
+                            .takeIf {
+                                it.containsVisibleText() && imageEntries?.any { image ->
+                                    it == image.name.substringAfterLast(File.separator).lowercase()
+                                } == true
+                            } ?: return@forEach
+
+                        // An attribute is not a text node, so it needs its own pass
+                        val alt = element.attr("alt").trim().stripInlineMarks().takeIf {
+                            it.containsVisibleText()
+                        } ?: ""
+
+                        imageJobs.getOrPut(src) {
+                            async(Dispatchers.Default) {
+                                loadImage(src, zipFile, imageEntries, base64Images, keepImageBytes)
+                            }
+                        }
+                        element.append("\n[[$src|$alt]]\n")
+                    }
+
+                    // Image (<image>, FB2 references <binary> by id)
+                    select("image").forEach { element ->
+                        val src = element.attr("xlink:href")
+                            .ifBlank { element.attr("l:href") }
+                            .ifBlank { element.attr("href") }
+                            .trim()
+                            .removePrefix("#")
+                            .substringAfterLast(File.separator)
+                            .lowercase()
+                            .let { src -> URLDecoder.decode(src, StandardCharsets.UTF_8.name()) }
+                            .takeIf {
+                                it.containsVisibleText() && (
+                                        base64Images?.containsKey(it) == true ||
+                                                imageEntries?.any { image ->
+                                                    it == image.name.substringAfterLast(File.separator).lowercase()
+                                                } == true
+                                        )
+                            } ?: return@forEach
+
+                        imageJobs.getOrPut(src) {
+                            async(Dispatchers.Default) {
+                                loadImage(src, zipFile, imageEntries, base64Images, keepImageBytes)
+                            }
+                        }
+                        element.append("\n[[$src|]]\n")
+                    }
+
+                    // Tables: extracted whole (a table cannot be flattened into the
+                    // line stream), replaced by a marker that re-emits the parsed
+                    // table. Runs after the inline transforms above, so cell text
+                    // already carries its markdown. Nested tables are left to the
+                    // outer one.
+                    select("table")
+                        .filter { table -> table.parents().none { it.tagName() == "table" } }
+                        .forEach { table ->
+                            // A column takes its alignment from the first cell that
+                            // states one — usually the header.
+                            val alignments = mutableListOf<TableAlignment>()
+                            val rows = table.select("tr").mapNotNull { row ->
+                                val cells = row.select("th, td")
+                                if (cells.isEmpty()) return@mapNotNull null
+                                cells.forEachIndexed { column, cell ->
+                                    while (alignments.size <= column) {
+                                        alignments.add(TableAlignment.Unspecified)
+                                    }
+                                    if (alignments[column] == TableAlignment.Unspecified) {
+                                        alignments[column] = cell.tableAlignment()
+                                    }
+                                }
+                                cells.map { cell ->
+                                    markdownParser.parse(
+                                        cell.wholeText().replace(WHITESPACE_REGEX, " ").trim()
+                                    )
+                                }
+                            }
+                            if (rows.isEmpty()) {
+                                table.remove()
+                                return@forEach
+                            }
+
+                            val hasHeader = table.selectFirst("tr")?.selectFirst("th") != null
+                            table.replaceWith(TextNode("\n[[[table|${tables.size}]]]\n"))
+                            tables.add(ReaderText.Table(rows, hasHeader, alignments))
+                        }
+                }
             }
         }
 
@@ -578,7 +617,7 @@ class DocumentParser @Inject constructor(
 
         timed("      line loop") {
             lines.forEach { line ->
-                yield()
+                pace()
 
                 // Tabs are not rendered and would glue the surrounding words
                 // together. Nothing else is rewritten: all emphasis this parser
@@ -608,6 +647,11 @@ class DocumentParser @Inject constructor(
                 val tableRegex = TABLE_LINE_REGEX
                 val separatorRegex = SEPARATOR_TEXT_REGEX
 
+                // Every marker line starts "[[", and almost no line of prose
+                // does — so one character check stands in for three whole-string
+                // regex matches over the entire book.
+                val marked = line.startsWith("[[")
+
                 if (line.containsVisibleText()) {
                     val trimmed = line.trim()
                     when {
@@ -630,7 +674,7 @@ class DocumentParser @Inject constructor(
                         }
 
                         // Table marker (from <table>)
-                        tableRegex.matches(line) -> {
+                        marked && tableRegex.matches(line) -> {
                             val index = tableRegex.matchEntire(line)
                                 ?.groupValues?.get(1)?.toIntOrNull() ?: return@forEach
                             tables.getOrNull(index)?.let { readerText.add(it) }
@@ -638,7 +682,7 @@ class DocumentParser @Inject constructor(
 
                         // Chapter marker (from FB2 <title>), checked before
                         // imageRegex as the latter also matches this line
-                        chapterRegex.matches(line) -> {
+                        marked && chapterRegex.matches(line) -> {
                             if (!includeChapter) return@forEach
 
                             val match = chapterRegex.matchEntire(line) ?: return@forEach
@@ -666,7 +710,7 @@ class DocumentParser @Inject constructor(
                             readerText.add(ReaderText.Separator)
                         }
 
-                        imageRegex.matches(line) -> {
+                        marked && imageRegex.matches(line) -> {
                             val trimmedLine = line.removeSurrounding("[[", "]]")
                             val src = trimmedLine.substringBefore("|")
                             val alt = trimmedLine.substringAfter("|")
