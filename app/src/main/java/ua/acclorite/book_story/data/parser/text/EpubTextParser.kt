@@ -20,6 +20,7 @@ import org.jsoup.parser.Parser
 import ua.acclorite.book_story.core.data.ExtensionsData
 import ua.acclorite.book_story.core.helpers.addAll
 import ua.acclorite.book_story.core.helpers.containsVisibleText
+import ua.acclorite.book_story.core.helpers.rethrowIfCancellation
 import ua.acclorite.book_story.core.log.logE
 import ua.acclorite.book_story.core.log.logI
 import ua.acclorite.book_story.core.log.logW
@@ -98,6 +99,7 @@ class EpubTextParser @Inject constructor(
             logI(TAG, "Successfully finished EPUB parsing.")
             ParsedText(readerText)
         } catch (e: Exception) {
+            e.rethrowIfCancellation()
             logE(TAG, "Could not parse text with message: ${e.message}.")
             ParsedText.EMPTY
         }

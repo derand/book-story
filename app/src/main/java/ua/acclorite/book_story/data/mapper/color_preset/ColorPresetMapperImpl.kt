@@ -7,6 +7,7 @@
 package ua.acclorite.book_story.data.mapper.color_preset
 
 import androidx.compose.ui.graphics.Color
+import ua.acclorite.book_story.core.helpers.runCatchingCancellable
 import ua.acclorite.book_story.data.local.dto.ColorPresetEntity
 import ua.acclorite.book_story.domain.model.reader.ColorPreset
 import ua.acclorite.book_story.domain.model.reader.ColorPresetType
@@ -36,7 +37,7 @@ class ColorPresetMapperImpl @Inject constructor() : ColorPresetMapper {
             backgroundColor = Color(colorPresetEntity.backgroundColor.toULong()),
             fontColor = Color(colorPresetEntity.fontColor.toULong()),
             isSelected = colorPresetEntity.isSelected,
-            type = runCatching {
+            type = runCatchingCancellable {
                 ColorPresetType.valueOf(colorPresetEntity.type)
             }.getOrDefault(ColorPresetType.CUSTOM)
         )

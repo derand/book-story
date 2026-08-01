@@ -6,6 +6,7 @@
 
 package ua.acclorite.book_story.domain.use_case.history
 
+import ua.acclorite.book_story.core.helpers.runCatchingCancellable
 import ua.acclorite.book_story.core.log.logE
 import ua.acclorite.book_story.core.log.logI
 import ua.acclorite.book_story.domain.model.history.History
@@ -48,7 +49,7 @@ class GetHistoryUseCase @Inject constructor(
         }
 
         val query = query.lowercase().trim()
-        return runCatching {
+        return runCatchingCancellable {
             historyRepository.getHistory().getOrThrow()
                 .filter { history -> history.book.title.lowercase().trim().contains(query) }
                 .sortedByDescending { history -> history.time }

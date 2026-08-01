@@ -6,6 +6,7 @@
 
 package ua.acclorite.book_story.domain.use_case.book
 
+import ua.acclorite.book_story.core.helpers.mapCatchingCancellable
 import ua.acclorite.book_story.core.log.logE
 import ua.acclorite.book_story.core.log.logI
 import ua.acclorite.book_story.domain.model.reader.ParsedText
@@ -23,7 +24,7 @@ class GetTextUseCase @Inject constructor(
         logI(TAG, "Getting text from: [$bookId].")
         if (bookId == -1) return ParsedText.EMPTY
 
-        bookRepository.getText(bookId).mapCatching { parsedText ->
+        bookRepository.getText(bookId).mapCatchingCancellable { parsedText ->
             if (
                 parsedText.text.filterIsInstance<ReaderText.Text>().isEmpty() ||
                 parsedText.text.filterIsInstance<ReaderText.Chapter>().isEmpty()

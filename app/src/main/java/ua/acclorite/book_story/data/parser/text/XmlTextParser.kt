@@ -11,6 +11,7 @@ import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.TextNode
 import org.jsoup.parser.Parser
+import ua.acclorite.book_story.core.helpers.rethrowIfCancellation
 import ua.acclorite.book_story.core.log.logE
 import ua.acclorite.book_story.core.log.logI
 import ua.acclorite.book_story.core.log.timed
@@ -119,6 +120,7 @@ class XmlTextParser @Inject constructor(
 
             ParsedText(readerText, notes)
         } catch (e: Exception) {
+            e.rethrowIfCancellation()
             logE(TAG, "Could not parse text with message: ${e.message}.")
             ParsedText.EMPTY
         }

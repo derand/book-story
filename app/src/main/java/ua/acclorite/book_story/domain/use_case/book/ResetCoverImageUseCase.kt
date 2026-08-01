@@ -7,6 +7,7 @@
 package ua.acclorite.book_story.domain.use_case.book
 
 import androidx.core.net.toUri
+import ua.acclorite.book_story.core.helpers.mapCatchingCancellable
 import ua.acclorite.book_story.core.log.logE
 import ua.acclorite.book_story.core.log.logI
 import ua.acclorite.book_story.core.log.logW
@@ -24,7 +25,7 @@ class ResetCoverImageUseCase @Inject constructor(
     suspend operator fun invoke(bookId: Int): Boolean {
         logI(TAG, "Resetting cover image of [$bookId].")
 
-        bookRepository.getBook(bookId).mapCatching { book ->
+        bookRepository.getBook(bookId).mapCatchingCancellable { book ->
             // Getting default cover image
             val defaultCoverImage = bookRepository.getDefaultCover(book).getOrThrow()
                 ?: throw NoSuchElementException("Could not find default cover image")
@@ -40,7 +41,7 @@ class ResetCoverImageUseCase @Inject constructor(
             }
 
             book.copy(coverImage = newCoverImage.toUri())
-        }.mapCatching { newBook ->
+        }.mapCatchingCancellable { newBook ->
             bookRepository.updateBook(newBook).getOrThrow()
         }.fold(
             onSuccess = {

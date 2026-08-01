@@ -7,6 +7,7 @@
 package ua.acclorite.book_story.domain.use_case.file_system
 
 import ua.acclorite.book_story.core.helpers.compareByWithOrder
+import ua.acclorite.book_story.core.helpers.runCatchingCancellable
 import ua.acclorite.book_story.core.log.logE
 import ua.acclorite.book_story.core.log.logI
 import ua.acclorite.book_story.data.settings.SettingsManager
@@ -55,7 +56,7 @@ class GetFilesUseCase @Inject constructor(
             )
         }
 
-        return runCatching {
+        return runCatchingCancellable {
             fileSystemRepository.searchFiles(query)
                 .getOrThrow()
                 .filterFiles()

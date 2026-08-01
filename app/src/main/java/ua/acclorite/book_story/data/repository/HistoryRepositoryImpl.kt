@@ -8,6 +8,7 @@ package ua.acclorite.book_story.data.repository
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import ua.acclorite.book_story.core.helpers.runCatchingCancellable
 import ua.acclorite.book_story.data.local.room.BookDatabase
 import ua.acclorite.book_story.data.mapper.history.HistoryMapper
 import ua.acclorite.book_story.domain.model.history.History
@@ -21,7 +22,7 @@ class HistoryRepositoryImpl @Inject constructor(
     private val historyMapper: HistoryMapper
 ) : HistoryRepository {
 
-    override suspend fun getHistoryForBook(bookId: Int): Result<History> = runCatching {
+    override suspend fun getHistoryForBook(bookId: Int): Result<History> = runCatchingCancellable {
         withContext(Dispatchers.IO) {
             database.historyDao.getHistoryForBook(bookId).let {
                 if (it == null) throw NoSuchElementException("Could not get history from [$bookId].")
@@ -30,19 +31,19 @@ class HistoryRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun addHistory(history: History): Result<Unit> = runCatching {
+    override suspend fun addHistory(history: History): Result<Unit> = runCatchingCancellable {
         withContext(Dispatchers.IO) {
             database.historyDao.insertHistory(historyMapper.toHistoryEntity(history))
         }
     }
 
-    override suspend fun getHistory(): Result<List<History>> = runCatching {
+    override suspend fun getHistory(): Result<List<History>> = runCatchingCancellable {
         withContext(Dispatchers.IO) {
             database.historyDao.getHistoryWithBook().map { historyMapper.toHistory(it) }
         }
     }
 
-    override suspend fun deleteWholeHistory(): Result<Unit> = runCatching {
+    override suspend fun deleteWholeHistory(): Result<Unit> = runCatchingCancellable {
         withContext(Dispatchers.IO) {
             database.historyDao.deleteWholeHistory().also {
                 if (it == 0) throw Exception("Could not delete whole history in database.")
@@ -50,7 +51,7 @@ class HistoryRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun deleteHistoryForBook(bookId: Int): Result<Unit> = runCatching {
+    override suspend fun deleteHistoryForBook(bookId: Int): Result<Unit> = runCatchingCancellable {
         withContext(Dispatchers.IO) {
             database.historyDao.deleteHistoryForBook(bookId = bookId).also {
                 if (it == 0) throw Exception("Could not delete history for book [$bookId] in database.")
@@ -58,7 +59,7 @@ class HistoryRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun deleteHistory(history: History): Result<Unit> = runCatching {
+    override suspend fun deleteHistory(history: History): Result<Unit> = runCatchingCancellable {
         withContext(Dispatchers.IO) {
             database.historyDao.deleteHistory(historyMapper.toHistoryEntity(history)).also {
                 if (it == 0) throw Exception("Could not delete history in database.")

@@ -11,6 +11,7 @@ import kotlinx.coroutines.withContext
 import org.jsoup.Jsoup
 import org.jsoup.parser.Parser
 import ua.acclorite.book_story.R
+import ua.acclorite.book_story.core.helpers.rethrowIfCancellation
 import ua.acclorite.book_story.core.log.logE
 import ua.acclorite.book_story.core.ui.UIText
 import ua.acclorite.book_story.data.model.file.CachedFile
@@ -79,6 +80,7 @@ class EpubFileParser @Inject constructor() : FileParser {
             }
             book
         } catch (e: Exception) {
+            e.rethrowIfCancellation()
             logE(TAG, "Could not parse file with message: ${e.message}.")
             null
         }

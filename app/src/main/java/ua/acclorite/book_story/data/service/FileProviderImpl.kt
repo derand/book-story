@@ -7,6 +7,7 @@
 package ua.acclorite.book_story.data.service
 
 import android.app.Application
+import ua.acclorite.book_story.core.helpers.runCatchingCancellable
 import ua.acclorite.book_story.data.model.file.CachedFile
 import ua.acclorite.book_story.data.model.file.CachedFileCompat
 import ua.acclorite.book_story.domain.model.library.Book
@@ -17,7 +18,7 @@ class FileProviderImpl @Inject constructor(
     private val application: Application
 ) : FileProvider {
 
-    override fun getFileFromBook(book: Book): Result<CachedFile> = runCatching {
+    override fun getFileFromBook(book: Book): Result<CachedFile> = runCatchingCancellable {
         application.contentResolver.persistedUriPermissions.forEach { storage ->
             val storageFile = CachedFileCompat.fromUri(
                 application,
@@ -29,7 +30,7 @@ class FileProviderImpl @Inject constructor(
 
             storageFile.walk().forEach { file ->
                 if (book.filePath.equals(file.path, ignoreCase = true)) {
-                    return@runCatching file
+                    return@runCatchingCancellable file
                 }
             }
         }
@@ -37,7 +38,7 @@ class FileProviderImpl @Inject constructor(
         throw NoSuchElementException("Could not find file from book.")
     }
 
-    override fun getStorageFiles(): Result<List<CachedFile>> = runCatching {
+    override fun getStorageFiles(): Result<List<CachedFile>> = runCatchingCancellable {
         application.contentResolver.persistedUriPermissions.mapNotNull { permission ->
             val storage = CachedFileCompat.fromUri(
                 application,

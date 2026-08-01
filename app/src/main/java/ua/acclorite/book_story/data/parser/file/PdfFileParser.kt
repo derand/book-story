@@ -10,6 +10,7 @@ import android.app.Application
 import com.tom_roush.pdfbox.android.PDFBoxResourceLoader
 import com.tom_roush.pdfbox.pdmodel.PDDocument
 import ua.acclorite.book_story.R
+import ua.acclorite.book_story.core.helpers.rethrowIfCancellation
 import ua.acclorite.book_story.core.log.logE
 import ua.acclorite.book_story.core.ui.UIText
 import ua.acclorite.book_story.data.model.file.CachedFile
@@ -50,6 +51,7 @@ class PdfFileParser @Inject constructor(
                 coverImage = null
             )
         } catch (e: Exception) {
+            e.rethrowIfCancellation()
             logE(TAG, "Could not parse file with message: ${e.message}.")
             null
         }

@@ -14,6 +14,7 @@ import androidx.core.net.toFile
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import ua.acclorite.book_story.core.CoverImage
+import ua.acclorite.book_story.core.helpers.runCatchingCancellable
 import ua.acclorite.book_story.domain.service.CoverImageHandler
 import java.io.BufferedOutputStream
 import java.io.ByteArrayOutputStream
@@ -29,7 +30,7 @@ class CoverImageHandlerImpl @Inject constructor(
     private val filesDir: File = application.filesDir
     private val coversDir = File(filesDir, "covers")
 
-    override suspend fun saveCover(coverImage: CoverImage): Result<File> = runCatching {
+    override suspend fun saveCover(coverImage: CoverImage): Result<File> = runCatchingCancellable {
         if (!coversDir.exists()) {
             coversDir.mkdirs()
         }
@@ -52,13 +53,13 @@ class CoverImageHandlerImpl @Inject constructor(
         cover
     }
 
-    override suspend fun deleteCover(coverImage: Uri): Result<Unit> = runCatching {
+    override suspend fun deleteCover(coverImage: Uri): Result<Unit> = runCatchingCancellable {
         coverImage.toFile().apply {
             if (exists() && !delete()) throw Exception("Couldn't delete cover image.")
         }
     }
 
-    override suspend fun compressCover(coverImage: CoverImage): Result<CoverImage> = runCatching {
+    override suspend fun compressCover(coverImage: CoverImage): Result<CoverImage> = runCatchingCancellable {
         val stream = ByteArrayOutputStream()
         coverImage.copy(Bitmap.Config.RGB_565, false)
             .compress(Bitmap.CompressFormat.WEBP, 20, stream)

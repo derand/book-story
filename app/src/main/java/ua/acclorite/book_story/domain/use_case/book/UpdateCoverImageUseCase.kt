@@ -8,6 +8,7 @@ package ua.acclorite.book_story.domain.use_case.book
 
 import androidx.core.net.toUri
 import ua.acclorite.book_story.core.CoverImage
+import ua.acclorite.book_story.core.helpers.mapCatchingCancellable
 import ua.acclorite.book_story.core.log.logE
 import ua.acclorite.book_story.core.log.logI
 import ua.acclorite.book_story.core.log.logW
@@ -25,7 +26,7 @@ class UpdateCoverImageUseCase @Inject constructor(
     suspend operator fun invoke(bookId: Int, coverImage: CoverImage?) {
         logI(TAG, "Updating cover image of [$bookId].")
 
-        bookRepository.getBook(bookId).mapCatching { book ->
+        bookRepository.getBook(bookId).mapCatchingCancellable { book ->
             if (book.coverImage == coverImage) return
 
             // Deleting old cover
@@ -39,7 +40,7 @@ class UpdateCoverImageUseCase @Inject constructor(
             }
 
             book.copy(coverImage = newCoverImage?.toUri())
-        }.mapCatching { newBook ->
+        }.mapCatchingCancellable { newBook ->
             bookRepository.updateBook(newBook).getOrThrow()
         }.fold(
             onSuccess = {

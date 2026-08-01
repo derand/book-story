@@ -8,6 +8,7 @@ package ua.acclorite.book_story.data.repository
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import ua.acclorite.book_story.core.helpers.runCatchingCancellable
 import ua.acclorite.book_story.data.local.room.BookDatabase
 import ua.acclorite.book_story.data.mapper.color_preset.ColorPresetMapper
 import ua.acclorite.book_story.domain.model.reader.ColorPreset
@@ -21,7 +22,7 @@ class ColorPresetRepositoryImpl @Inject constructor(
     private val colorPresetMapper: ColorPresetMapper
 ) : ColorPresetRepository {
 
-    override suspend fun getColorPresets(): Result<List<ColorPreset>> = runCatching {
+    override suspend fun getColorPresets(): Result<List<ColorPreset>> = runCatchingCancellable {
         withContext(Dispatchers.IO) {
             database.colorPresetDao.getColorPresets().map {
                 colorPresetMapper.toColorPreset(it)
@@ -31,7 +32,7 @@ class ColorPresetRepositoryImpl @Inject constructor(
 
     override suspend fun updateColorPreset(
         colorPreset: ColorPreset
-    ): Result<Unit> = runCatching {
+    ): Result<Unit> = runCatchingCancellable {
         withContext(Dispatchers.IO) {
             database.colorPresetDao.updateColorPreset(
                 colorPresetMapper.toColorPresetEntity(
@@ -46,7 +47,7 @@ class ColorPresetRepositoryImpl @Inject constructor(
 
     override suspend fun selectColorPreset(
         colorPreset: ColorPreset
-    ): Result<Unit> = runCatching {
+    ): Result<Unit> = runCatchingCancellable {
         withContext(Dispatchers.IO) {
             database.colorPresetDao.getColorPresets().map {
                 it.copy(isSelected = it.id == colorPreset.id)
@@ -58,7 +59,7 @@ class ColorPresetRepositoryImpl @Inject constructor(
 
     override suspend fun reorderColorPresets(
         colorPresets: List<ColorPreset>
-    ): Result<Unit> = runCatching {
+    ): Result<Unit> = runCatchingCancellable {
         withContext(Dispatchers.IO) {
             database.colorPresetDao.deleteColorPresets()
             colorPresets.forEachIndexed { index, colorPreset ->
@@ -71,7 +72,7 @@ class ColorPresetRepositoryImpl @Inject constructor(
 
     override suspend fun deleteColorPreset(
         colorPreset: ColorPreset
-    ): Result<Unit> = runCatching {
+    ): Result<Unit> = runCatchingCancellable {
         withContext(Dispatchers.IO) {
             database.colorPresetDao.deleteColorPreset(
                 colorPresetMapper.toColorPresetEntity(
