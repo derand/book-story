@@ -48,3 +48,43 @@ inline fun <T> timed(
 inline fun bookTimingNote(note: () -> String) {
     if (BOOK_TIMING) logI(TAG, note())
 }
+
+/**
+ * A [timed] for work that happens a great many times: it adds up instead of
+ * logging, so a step running once per line of the book yields one line of log
+ * rather than one per line of book.
+ *
+ * Not reentrant, and not safe across threads — a sum belongs to one parse, and
+ * a parse is one coroutine. Costs nothing when [BOOK_TIMING] is off beyond the
+ * call itself, which is why [add] takes a plain lambda: at 2.9M characters the
+ * allocation is noise next to what is being measured, and inlining it would put
+ * the counters in the hot path of every build.
+ */
+class TimingSum(private val label: String) {
+
+    private var ns = 0L
+    private var calls = 0
+
+    fun <T> add(block: () -> T): T {
+        if (!BOOK_TIMING) return block()
+
+        val start = System.nanoTime()
+        try {
+            return block()
+        } finally {
+            ns += System.nanoTime() - start
+            calls++
+        }
+    }
+
+    fun reset() {
+        ns = 0
+        calls = 0
+    }
+
+    /** Logs the total, or nothing at all if the step never ran. */
+    fun log(indent: String = "      ") {
+        if (!BOOK_TIMING || calls == 0) return
+        logI(TAG, "$indent$label: ${ns / 1_000_000} ms, $calls calls")
+    }
+}
