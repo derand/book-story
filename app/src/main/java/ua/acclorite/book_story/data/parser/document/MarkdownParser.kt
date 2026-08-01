@@ -27,6 +27,7 @@ import org.commonmark.node.Node
 import org.commonmark.node.StrongEmphasis
 import org.commonmark.node.Text
 import org.commonmark.parser.Parser
+import ua.acclorite.book_story.core.helpers.rethrowIfCancellation
 import ua.acclorite.book_story.core.log.TimingSum
 import ua.acclorite.book_story.domain.model.reader.ANCHOR_LINK_TAG_PREFIX
 import ua.acclorite.book_story.domain.model.reader.NOTE_LINK_TAG_PREFIX
@@ -94,6 +95,7 @@ class MarkdownParser @Inject constructor(
 
             annotatedString
         } catch (e: Exception) {
+            e.rethrowIfCancellation()
             e.printStackTrace()
             buildAnnotatedString { append(markdown) }
         }

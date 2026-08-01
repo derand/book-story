@@ -23,6 +23,7 @@ import org.jsoup.nodes.Element
 import org.jsoup.nodes.Node
 import org.jsoup.nodes.TextNode
 import ua.acclorite.book_story.core.helpers.containsVisibleText
+import ua.acclorite.book_story.core.helpers.rethrowIfCancellation
 import ua.acclorite.book_story.core.log.timed
 import ua.acclorite.book_story.domain.model.reader.NOTE_LINK_TAG_PREFIX
 import ua.acclorite.book_story.domain.model.reader.ReaderImage
@@ -956,6 +957,7 @@ class DocumentParser @Inject constructor(
                 height = bounds.outHeight
             )
         } catch (e: Exception) {
+            e.rethrowIfCancellation()
             e.printStackTrace()
             null
         }

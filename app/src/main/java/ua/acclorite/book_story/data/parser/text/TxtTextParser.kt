@@ -10,6 +10,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
 import ua.acclorite.book_story.core.helpers.clearAllMarkdown
+import ua.acclorite.book_story.core.helpers.rethrowIfCancellation
 import ua.acclorite.book_story.core.log.logE
 import ua.acclorite.book_story.core.log.logI
 import ua.acclorite.book_story.data.model.file.CachedFile
@@ -75,6 +76,7 @@ class TxtTextParser @Inject constructor(
             logI(TAG, "Successfully finished TXT parsing.")
             ParsedText(readerText)
         } catch (e: Exception) {
+            e.rethrowIfCancellation()
             logE(TAG, "Could not parse text with message: ${e.message}.")
             ParsedText.EMPTY
         }

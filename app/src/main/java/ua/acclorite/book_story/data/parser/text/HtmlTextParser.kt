@@ -9,6 +9,7 @@ package ua.acclorite.book_story.data.parser.text
 import kotlinx.coroutines.yield
 import org.jsoup.Jsoup
 import org.jsoup.parser.Parser
+import ua.acclorite.book_story.core.helpers.rethrowIfCancellation
 import ua.acclorite.book_story.core.log.logE
 import ua.acclorite.book_story.core.log.logI
 import ua.acclorite.book_story.data.model.file.CachedFile
@@ -47,6 +48,7 @@ class HtmlTextParser @Inject constructor(
             logI(TAG, "Successfully finished HTML parsing.")
             ParsedText(readerText)
         } catch (e: Exception) {
+            e.rethrowIfCancellation()
             logE(TAG, "Could not parse text with message: ${e.message}.")
             ParsedText.EMPTY
         }

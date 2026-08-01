@@ -10,6 +10,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import ua.acclorite.book_story.core.CoverImage
 import ua.acclorite.book_story.core.data.ExtensionsData
+import ua.acclorite.book_story.core.helpers.mapCatchingCancellable
+import ua.acclorite.book_story.core.helpers.runCatchingCancellable
 import ua.acclorite.book_story.data.local.room.BookDatabase
 import ua.acclorite.book_story.data.mapper.file.FileMapper
 import ua.acclorite.book_story.data.model.file.CachedFile
@@ -33,7 +35,7 @@ class FileSystemRepositoryImpl @Inject constructor(
 
     override suspend fun searchFiles(query: String): Result<List<File>> {
         return withContext(Dispatchers.IO) {
-            fileProvider.getStorageFiles().mapCatching { storages ->
+            fileProvider.getStorageFiles().mapCatchingCancellable { storages ->
                 val existingFiles = database.bookDao.searchBooks("").map { it.filePath }
 
                 storages.map { storage ->
@@ -77,7 +79,7 @@ class FileSystemRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getBookFromFile(file: File): Result<Pair<Book, CoverImage?>> =
-        runCatching {
+        runCatchingCancellable {
             withContext(Dispatchers.IO) {
                 val cachedFile = fileMapper.toCachedFile(file)
 

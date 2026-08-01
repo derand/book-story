@@ -10,6 +10,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.job
 import kotlinx.coroutines.withContext
 import ua.acclorite.book_story.core.CoverImage
+import ua.acclorite.book_story.core.helpers.mapCatchingCancellable
+import ua.acclorite.book_story.core.helpers.runCatchingCancellable
 import ua.acclorite.book_story.core.log.bookTimingNote
 import ua.acclorite.book_story.core.log.timed
 import ua.acclorite.book_story.data.cache.ImageMemoryBudget
@@ -47,13 +49,13 @@ class BookRepositoryImpl @Inject constructor(
     private val settings: SettingsManager
 ) : BookRepository {
 
-    override suspend fun searchBooks(query: String): Result<List<Book>> = runCatching {
+    override suspend fun searchBooks(query: String): Result<List<Book>> = runCatchingCancellable {
         withContext(Dispatchers.IO) {
             database.bookDao.searchBooks(query).map { bookMapper.toBook(it) }
         }
     }
 
-    override suspend fun getBook(bookId: Int): Result<Book> = runCatching {
+    override suspend fun getBook(bookId: Int): Result<Book> = runCatchingCancellable {
         withContext(Dispatchers.IO) {
             database.bookDao.findBookById(bookId).let {
                 if (it == null) throw NoSuchElementException("Couldn't get book [$bookId].")
@@ -65,14 +67,14 @@ class BookRepositoryImpl @Inject constructor(
     override suspend fun getText(bookId: Int): Result<ParsedText> {
         return withContext(Dispatchers.IO) {
             timed("  open: book row") { getBook(bookId) }
-                .mapCatching { book ->
+                .mapCatchingCancellable { book ->
                     // Walks every persisted SAF tree looking for the book's path,
                     // a ContentResolver query per directory — hence timed on its own.
                     timed("  open: find file") {
                         fileProvider.getFileFromBook(book).getOrThrow()
                     }
                 }
-                .mapCatching { cachedFile ->
+                .mapCatchingCancellable { cachedFile ->
                     // A size-cap of 0 means the parse cache is disabled entirely.
                     val capMb = settings.parseCacheSizeMb.lastValue
                     val cachingEnabled = capMb > 0
@@ -174,8 +176,8 @@ class BookRepositoryImpl @Inject constructor(
             // directory the closing reader has just deleted.
             val pass = coroutineContext.job
             getBook(bookId)
-                .mapCatching { fileProvider.getFileFromBook(it).getOrThrow() }
-                .mapCatching { cachedFile ->
+                .mapCatchingCancellable { fileProvider.getFileFromBook(it).getOrThrow() }
+                .mapCatchingCancellable { cachedFile ->
                     val capMb = settings.parseCacheSizeMb.lastValue
                     val maxBytes = capMb.toLong() * 1024 * 1024
                     val cacheImages = capMb > 0 && settings.cacheImagesInBooks.lastValue
@@ -231,7 +233,7 @@ class BookRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun keepOnlyBookImages(bookId: Int): Result<Unit> = runCatching {
+    override suspend fun keepOnlyBookImages(bookId: Int): Result<Unit> = runCatchingCancellable {
         withContext(Dispatchers.IO) {
             readerImageFiles.keepOnly(bookId)
         }
@@ -256,18 +258,18 @@ class BookRepositoryImpl @Inject constructor(
     override suspend fun getFileFromBook(bookId: Int): Result<File> {
         return withContext(Dispatchers.IO) {
             getBook(bookId)
-                .mapCatching { fileProvider.getFileFromBook(it).getOrThrow() }
-                .mapCatching { fileMapper.toFile(it) }
+                .mapCatchingCancellable { fileProvider.getFileFromBook(it).getOrThrow() }
+                .mapCatchingCancellable { fileMapper.toFile(it) }
         }
     }
 
-    override suspend fun addBook(book: Book): Result<Unit> = runCatching {
+    override suspend fun addBook(book: Book): Result<Unit> = runCatchingCancellable {
         withContext(Dispatchers.IO) {
             database.bookDao.insertBook(bookMapper.toBookEntity(book))
         }
     }
 
-    override suspend fun updateBook(book: Book): Result<Unit> = runCatching {
+    override suspend fun updateBook(book: Book): Result<Unit> = runCatchingCancellable {
         withContext(Dispatchers.IO) {
             database.bookDao.updateBook(bookMapper.toBookEntity(book)).also {
                 if (it == 0) throw Exception("Could not update book in database.")
@@ -275,7 +277,7 @@ class BookRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun deleteBook(book: Book): Result<Unit> = runCatching {
+    override suspend fun deleteBook(book: Book): Result<Unit> = runCatchingCancellable {
         withContext(Dispatchers.IO) {
             database.bookDao.deleteBook(bookMapper.toBookEntity(book)).also {
                 if (it == 0) throw Exception("Could not delete book in database.")
@@ -283,9 +285,9 @@ class BookRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun getDefaultCover(book: Book): Result<CoverImage?> = runCatching {
+    override suspend fun getDefaultCover(book: Book): Result<CoverImage?> = runCatchingCancellable {
         return withContext(Dispatchers.IO) {
-            fileProvider.getFileFromBook(book).mapCatching {
+            fileProvider.getFileFromBook(book).mapCatchingCancellable {
                 coverParser.parse(it)
             }
         }

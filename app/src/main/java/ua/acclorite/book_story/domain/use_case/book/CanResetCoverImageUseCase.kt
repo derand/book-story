@@ -8,6 +8,7 @@ package ua.acclorite.book_story.domain.use_case.book
 
 import android.app.Application
 import android.graphics.BitmapFactory
+import ua.acclorite.book_story.core.helpers.mapCatchingCancellable
 import ua.acclorite.book_story.core.log.logE
 import ua.acclorite.book_story.core.log.logI
 import ua.acclorite.book_story.domain.repository.BookRepository
@@ -25,14 +26,14 @@ class CanResetCoverImageUseCase @Inject constructor(
     suspend operator fun invoke(bookId: Int): Boolean {
         logI(TAG, "Checking if can reset cover image of [$bookId].")
 
-        bookRepository.getBook(bookId).mapCatching { book ->
+        bookRepository.getBook(bookId).mapCatchingCancellable { book ->
             // Getting default cover image
             val defaultCoverImage = bookRepository.getDefaultCover(book).getOrThrow()
-                ?: return@mapCatching false
+                ?: return@mapCatchingCancellable false
 
             // Return true if current cover is null (and default is not)
             if (book.coverImage == null) {
-                return@mapCatching true
+                return@mapCatchingCancellable true
             }
 
             // Getting compressed cover images

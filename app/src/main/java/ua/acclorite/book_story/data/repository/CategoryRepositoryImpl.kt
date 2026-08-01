@@ -8,6 +8,7 @@ package ua.acclorite.book_story.data.repository
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import ua.acclorite.book_story.core.helpers.runCatchingCancellable
 import ua.acclorite.book_story.data.local.room.BookDatabase
 import ua.acclorite.book_story.data.mapper.category.CategoryMapper
 import ua.acclorite.book_story.domain.model.library.Category
@@ -21,7 +22,7 @@ class CategoryRepositoryImpl @Inject constructor(
     private val categoryMapper: CategoryMapper
 ) : CategoryRepository {
 
-    override suspend fun addCategory(category: Category): Result<Unit> = runCatching {
+    override suspend fun addCategory(category: Category): Result<Unit> = runCatchingCancellable {
         withContext(Dispatchers.IO) {
             database.categoryDao.insertCategory(
                 categoryMapper.toCategoryEntity(
@@ -33,13 +34,13 @@ class CategoryRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun getCategories(): Result<List<Category>> = runCatching {
+    override suspend fun getCategories(): Result<List<Category>> = runCatchingCancellable {
         withContext(Dispatchers.IO) {
             database.categoryDao.getCategories().map { categoryMapper.toCategory(it) }
         }
     }
 
-    override suspend fun updateCategory(category: Category): Result<Unit> = runCatching {
+    override suspend fun updateCategory(category: Category): Result<Unit> = runCatchingCancellable {
         withContext(Dispatchers.IO) {
             database.categoryDao.updateCategory(
                 category = categoryMapper.toCategoryEntity(
@@ -53,7 +54,7 @@ class CategoryRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun updateOrder(categories: List<Category>): Result<Unit> = runCatching {
+    override suspend fun updateOrder(categories: List<Category>): Result<Unit> = runCatchingCancellable {
         withContext(Dispatchers.IO) {
             categories.forEachIndexed { index, category ->
                 if (category.id == -1) return@forEachIndexed
@@ -66,7 +67,7 @@ class CategoryRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun deleteCategory(category: Category): Result<Unit> = runCatching {
+    override suspend fun deleteCategory(category: Category): Result<Unit> = runCatchingCancellable {
         withContext(Dispatchers.IO) {
             if (category.id == -1) throw IllegalArgumentException("Id should not be -1.")
             database.categoryDao.deleteCategory(categoryMapper.toCategoryEntity(category))
