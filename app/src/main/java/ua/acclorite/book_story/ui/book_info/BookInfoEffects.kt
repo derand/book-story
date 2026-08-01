@@ -11,6 +11,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.flow.SharedFlow
 import ua.acclorite.book_story.R
+import ua.acclorite.book_story.core.log.BookOpenTrace
 import ua.acclorite.book_story.domain.model.library.Book
 import ua.acclorite.book_story.presentation.book_info.BookInfoEffect
 import ua.acclorite.book_story.presentation.history.HistoryScreen
@@ -87,6 +88,7 @@ fun BookInfoEffects(effects: SharedFlow<BookInfoEffect>, book: Book) {
 
                 is BookInfoEffect.OnNavigateToReader -> {
                     if (book.id != -1) {
+                        BookOpenTrace.start("book ${book.id} from book info")
                         HistoryScreen.insertHistoryChannel.trySend(book.id)
                         navigator.push(ReaderScreen(book.id))
                     }

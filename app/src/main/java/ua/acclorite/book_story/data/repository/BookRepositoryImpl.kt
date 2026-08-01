@@ -64,8 +64,14 @@ class BookRepositoryImpl @Inject constructor(
 
     override suspend fun getText(bookId: Int): Result<ParsedText> {
         return withContext(Dispatchers.IO) {
-            getBook(bookId)
-                .mapCatching { fileProvider.getFileFromBook(it).getOrThrow() }
+            timed("  open: book row") { getBook(bookId) }
+                .mapCatching { book ->
+                    // Walks every persisted SAF tree looking for the book's path,
+                    // a ContentResolver query per directory — hence timed on its own.
+                    timed("  open: find file") {
+                        fileProvider.getFileFromBook(book).getOrThrow()
+                    }
+                }
                 .mapCatching { cachedFile ->
                     // A size-cap of 0 means the parse cache is disabled entirely.
                     val capMb = settings.parseCacheSizeMb.lastValue
@@ -73,9 +79,20 @@ class BookRepositoryImpl @Inject constructor(
                     val maxBytes = capMb.toLong() * 1024 * 1024
                     val cacheImages = settings.cacheImagesInBooks.lastValue
 
+                    // The parse-cache key, resolved before the cache is consulted
+                    // so its cost is not counted as cache time. Each of the three
+                    // is a lazy property that may be a ContentResolver round-trip
+                    // against the document URI; `size` and `lastModified` share
+                    // one query, so whichever is asked for first pays for both.
+                    val path = timed("  open: key path") { cachedFile.path }
+                    val size = timed("  open: key size") { cachedFile.size }
+                    val lastModified = timed("  open: key modified") {
+                        cachedFile.lastModified
+                    }
+
                     timed("getText", describe = { it.describeForTiming() }) {
                         val cached = if (cachingEnabled) parseCache.read(
-                            cachedFile.path, cachedFile.size, cachedFile.lastModified
+                            path, size, lastModified
                         ) else null
 
                         bookTimingNote {
@@ -84,7 +101,7 @@ class BookRepositoryImpl @Inject constructor(
                                 cached != null -> "cache HIT"
                                 else -> "cache MISS"
                             }
-                            "$state — ${cachedFile.name}, ${cachedFile.size / 1024} KB"
+                            "$state — ${cachedFile.name}, ${size / 1024} KB"
                         }
 
                         if (cached != null) {
@@ -109,9 +126,9 @@ class BookRepositoryImpl @Inject constructor(
                                 if (cachingEnabled && fresh.text.isNotEmpty()) {
                                     timed("  cache write") {
                                         parseCache.write(
-                                            cachedFile.path,
-                                            cachedFile.size,
-                                            cachedFile.lastModified,
+                                            path,
+                                            size,
+                                            lastModified,
                                             fresh,
                                             maxBytes = maxBytes,
                                             images = if (cacheImages) {

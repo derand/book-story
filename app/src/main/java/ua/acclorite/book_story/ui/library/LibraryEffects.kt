@@ -12,6 +12,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.flow.SharedFlow
 import ua.acclorite.book_story.R
+import ua.acclorite.book_story.core.log.BookOpenTrace
 import ua.acclorite.book_story.presentation.book_info.BookInfoScreen
 import ua.acclorite.book_story.presentation.browse.BrowseScreen
 import ua.acclorite.book_story.presentation.history.HistoryScreen
@@ -56,6 +57,7 @@ fun LibraryEffects(effects: SharedFlow<LibraryEffect>, focusRequester: FocusRequ
                 }
 
                 is LibraryEffect.OnNavigateToReader -> {
+                    BookOpenTrace.start("book ${effect.id} from library")
                     HistoryScreen.insertHistoryChannel.trySend(effect.id)
                     navigator.push(ReaderScreen(effect.id))
                 }

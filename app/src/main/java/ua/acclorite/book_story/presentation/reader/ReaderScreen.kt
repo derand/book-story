@@ -45,6 +45,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.parcelize.Parcelize
 import ua.acclorite.book_story.core.helpers.calculateProgress
+import ua.acclorite.book_story.core.log.BookOpenTrace
 import ua.acclorite.book_story.presentation.navigator.Screen
 import ua.acclorite.book_story.presentation.reader.model.ReaderColorEffects
 import ua.acclorite.book_story.presentation.reader.model.ReaderProgressCount
@@ -342,6 +343,7 @@ data class ReaderScreen(val bookId: Int) : Screen, Parcelable {
         }
 
         LaunchedEffect(Unit) {
+            BookOpenTrace.mark("reader screen composed")
             screenModel.init(bookId = bookId)
         }
         LaunchedEffect(settings.fullscreen.value) {
