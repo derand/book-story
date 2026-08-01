@@ -21,6 +21,7 @@ import org.jsoup.nodes.Element
 import org.jsoup.nodes.Node
 import org.jsoup.nodes.TextNode
 import ua.acclorite.book_story.core.helpers.containsVisibleText
+import ua.acclorite.book_story.core.log.timed
 import ua.acclorite.book_story.domain.model.reader.NOTE_LINK_TAG_PREFIX
 import ua.acclorite.book_story.domain.model.reader.ReaderImage
 import ua.acclorite.book_story.domain.model.reader.ReaderText
@@ -319,9 +320,16 @@ class DocumentParser @Inject constructor(
         // Tables extracted in the DOM phase, re-emitted by their marker line
         val tables = mutableListOf<ReaderText.Table>()
 
-        document.selectFirst("body")
-            .run { this ?: document.body() }
-            .apply {
+        // Issue #26: this function is ~98 % of a first open, and until now
+        // nothing said which of its phases that is. The chain below is written
+        // out step by step so each can be timed; the sums cover the work that
+        // happens once per line, which is where a per-call log would drown.
+        markdownParser.resetTiming()
+
+        val body = document.selectFirst("body").run { this ?: document.body() }
+
+        timed("      dom phase") {
+            body.apply {
                 // Before anything is injected: the book's own text must not be
                 // able to pass itself off as one of our sentinels
                 stripInlineMarks()
@@ -559,9 +567,17 @@ class DocumentParser @Inject constructor(
                         table.replaceWith(TextNode("\n[[[table|${tables.size}]]]\n"))
                         tables.add(ReaderText.Table(rows, hasHeader, alignments))
                     }
-            }.wholeText().lines()
-            .let { lines -> extractMarkdownTables(lines, tables) }
-            .forEach { line ->
+            }
+        }
+
+        val flat = timed("      wholeText", describe = { "${it.length} chars" }) {
+            body.wholeText()
+        }
+        val rawLines = timed("      lines", describe = { "${it.size} lines" }) { flat.lines() }
+        val lines = timed("      md tables") { extractMarkdownTables(rawLines, tables) }
+
+        timed("      line loop") {
+            lines.forEach { line ->
                 yield()
 
                 // Tabs are not rendered and would glue the surrounding words
@@ -715,6 +731,12 @@ class DocumentParser @Inject constructor(
                     }
                 }
             }
+        }
+
+        // Nested inside the loop above, so both are already counted in it; what
+        // the three do not account for is the per-line string and regex work.
+        markdownParser.commonmarkSum.log()
+        markdownParser.annotateSum.log()
 
         yield()
 

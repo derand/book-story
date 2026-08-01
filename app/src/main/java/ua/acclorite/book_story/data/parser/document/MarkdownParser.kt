@@ -27,6 +27,7 @@ import org.commonmark.node.Node
 import org.commonmark.node.StrongEmphasis
 import org.commonmark.node.Text
 import org.commonmark.parser.Parser
+import ua.acclorite.book_story.core.log.TimingSum
 import ua.acclorite.book_story.domain.model.reader.ANCHOR_LINK_TAG_PREFIX
 import ua.acclorite.book_story.domain.model.reader.NOTE_LINK_TAG_PREFIX
 import javax.inject.Inject
@@ -62,16 +63,34 @@ class MarkdownParser @Inject constructor(
     private val commonmarkParser: Parser
 ) {
     /**
+     * How the per-line cost of [parse] divides — commonmark building its own
+     * tree, against walking that tree into an [AnnotatedString]. The caller owns
+     * the sums, because only it knows what one document is: see
+     * [DocumentParser.parseDocument], which runs [parse] once per line of the
+     * book and is where the numbers behind issue #26 come from.
+     */
+    val commonmarkSum = TimingSum("commonmark")
+    val annotateSum = TimingSum("annotate")
+
+    fun resetTiming() {
+        commonmarkSum.reset()
+        annotateSum.reset()
+    }
+
+    /**
      * Parses markdown text to [AnnotatedString].
      *
      * @return Parsed annotated string.
      */
     fun parse(markdown: String): AnnotatedString {
         return try {
-            val annotatedString = buildAnnotatedString {
-                parseNode(commonmarkParser.parse(markdown), MarkScanner(this))
-            }.ifBlank { buildAnnotatedString { append(markdown) } }
-                .trim() as AnnotatedString
+            val document = commonmarkSum.add { commonmarkParser.parse(markdown) }
+            val annotatedString = annotateSum.add {
+                buildAnnotatedString {
+                    parseNode(document, MarkScanner(this))
+                }.ifBlank { buildAnnotatedString { append(markdown) } }
+                    .trim() as AnnotatedString
+            }
 
             annotatedString
         } catch (e: Exception) {
