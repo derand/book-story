@@ -41,8 +41,43 @@ jobs:
       - name: Assemble optimized APK (release-debug)
         run: ./gradlew ":app:assembleRelease-debug" --stacktrace
 
+      # Robolectric downloads its ~81 MB "android-all" jar at test time, into
+      # ~/.m2 rather than the Gradle caches, so setup-gradle does not cover it.
+      # The level it fetches is pinned in app/src/test/resources.
+      - name: Cache the Robolectric android-all jar
+        uses: actions/cache@v6
+        with:
+          path: ~/.m2/repository/org/robolectric
+          key: robolectric-${{ hashFiles('app/src/test/resources/robolectric.properties', 'app/build.gradle.kts') }}
+          restore-keys: robolectric-
+
       - name: Unit tests
         run: ./gradlew :app:testDebugUnitTest --stacktrace
+
+      # The step above fails the build on a failing test, but it is just as
+      # green when it runs *no* tests — which is what it did for months, because
+      # there was no app/src/test at all (#43). Count what actually ran.
+      - name: Verify the unit tests actually ran
+        shell: python3 {0}
+        run: |
+          import glob, sys, xml.etree.ElementTree as ET
+
+          reports = glob.glob("app/build/test-results/testDebugUnitTest/TEST-*.xml")
+          total = sum(int(ET.parse(f).getroot().get("tests", "0")) for f in reports)
+          print(f"{total} unit tests in {len(reports)} classes")
+          if total == 0:
+              print("::error::the unit test step ran zero tests")
+              sys.exit(1)
+
+      - name: Upload test report
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: unit-test-report
+          path: |
+            app/build/reports/tests/testDebugUnitTest
+            app/build/test-results/testDebugUnitTest
+          if-no-files-found: ignore
 
       - name: Lint
         run: ./gradlew :app:lintDebug --stacktrace

@@ -20,17 +20,14 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withLink
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.em
-import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Assert.assertEquals
 import org.junit.Test
-import org.junit.runner.RunWith
 
 /**
  * Round-trips every span/link shape the parser emits through
  * [AnnotatedStringCodec] and asserts the result equals the original. The styles
  * below mirror [ua.acclorite.book_story.data.parser.document.MarkdownParser].
  */
-@RunWith(AndroidJUnit4::class)
 class AnnotatedStringCodecTest {
 
     private fun roundTrip(value: AnnotatedString) {

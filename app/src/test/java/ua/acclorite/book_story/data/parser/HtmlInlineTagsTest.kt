@@ -10,7 +10,6 @@ package ua.acclorite.book_story.data.parser
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
-import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.runBlocking
 import org.commonmark.parser.Parser as CommonmarkParser
 import org.jsoup.Jsoup
@@ -18,6 +17,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
 import ua.acclorite.book_story.data.parser.document.DocumentParser
 import ua.acclorite.book_story.data.parser.document.MarkdownParser
 import ua.acclorite.book_story.domain.model.reader.ReaderText
@@ -27,7 +27,7 @@ import ua.acclorite.book_story.domain.model.reader.ReaderText
  * parser only knew `<em>` and FB2's `<emphasis>` — so an EPUB converted from
  * print lost nearly all of its italics.
  */
-@RunWith(AndroidJUnit4::class)
+@RunWith(RobolectricTestRunner::class)
 class HtmlInlineTagsTest {
 
     private val documentParser = DocumentParser(

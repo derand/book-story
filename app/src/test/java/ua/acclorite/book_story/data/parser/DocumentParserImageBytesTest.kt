@@ -7,7 +7,6 @@
 
 package ua.acclorite.book_story.data.parser
 
-import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.runBlocking
 import org.commonmark.parser.Parser as CommonmarkParser
 import org.jsoup.Jsoup
@@ -16,6 +15,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
 import ua.acclorite.book_story.data.parser.document.DocumentParser
 import ua.acclorite.book_story.data.parser.document.MarkdownParser
 import ua.acclorite.book_story.domain.model.reader.ReaderText
@@ -26,7 +26,7 @@ import ua.acclorite.book_story.domain.model.reader.ReaderText
  * is cached and reused once images are turned back on) but must not hold on to
  * the encoded bytes, which are tens of MB on an image-heavy book.
  */
-@RunWith(AndroidJUnit4::class)
+@RunWith(RobolectricTestRunner::class)
 class DocumentParserImageBytesTest {
 
     private val documentParser = DocumentParser(

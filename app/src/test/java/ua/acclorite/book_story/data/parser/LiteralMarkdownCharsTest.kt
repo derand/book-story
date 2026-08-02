@@ -9,7 +9,6 @@ package ua.acclorite.book_story.data.parser
 
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.runBlocking
 import org.commonmark.parser.Parser as CommonmarkParser
 import org.jsoup.Jsoup
@@ -18,6 +17,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
 import ua.acclorite.book_story.data.parser.document.DocumentParser
 import ua.acclorite.book_story.data.parser.document.MarkdownParser
 import ua.acclorite.book_story.data.parser.text.markChapterTitles
@@ -29,7 +29,7 @@ import ua.acclorite.book_story.domain.model.reader.ReaderText
  * the text, which deleted the book's own asterisks and underscores along with
  * its own leftovers — "(*)" came out as "()".
  */
-@RunWith(AndroidJUnit4::class)
+@RunWith(RobolectricTestRunner::class)
 class LiteralMarkdownCharsTest {
 
     // The default builder enables every block type, while the app narrows them

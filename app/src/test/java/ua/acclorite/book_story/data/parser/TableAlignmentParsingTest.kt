@@ -6,7 +6,6 @@
 
 package ua.acclorite.book_story.data.parser
 
-import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.runBlocking
 import org.commonmark.parser.Parser as CommonmarkParser
 import org.jsoup.Jsoup
@@ -14,6 +13,7 @@ import org.jsoup.parser.Parser
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
 import ua.acclorite.book_story.data.parser.document.DocumentParser
 import ua.acclorite.book_story.data.parser.document.MarkdownParser
 import ua.acclorite.book_story.domain.model.reader.ReaderText
@@ -23,7 +23,7 @@ import ua.acclorite.book_story.domain.model.reader.TableAlignment
  * Per-column table alignment reaches the model from both sources: the markdown
  * delimiter row and the `align`/`text-align` of an FB2/HTML cell.
  */
-@RunWith(AndroidJUnit4::class)
+@RunWith(RobolectricTestRunner::class)
 class TableAlignmentParsingTest {
 
     private val documentParser = DocumentParser(

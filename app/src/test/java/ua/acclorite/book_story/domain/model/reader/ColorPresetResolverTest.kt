@@ -8,13 +8,10 @@
 package ua.acclorite.book_story.domain.model.reader
 
 import androidx.compose.ui.graphics.Color
-import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Assert.assertEquals
 import org.junit.Test
-import org.junit.runner.RunWith
 
 /** Unit-style checks for [activeColorPreset] (the theme-aware resolver). */
-@RunWith(AndroidJUnit4::class)
 class ColorPresetResolverTest {
 
     private val dark = ColorPreset(

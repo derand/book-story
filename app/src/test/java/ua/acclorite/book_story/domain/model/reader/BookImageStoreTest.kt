@@ -7,16 +7,13 @@
 
 package ua.acclorite.book_story.domain.model.reader
 
-import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
-import org.junit.runner.RunWith
 import java.io.File
 
-@RunWith(AndroidJUnit4::class)
 class BookImageStoreTest {
 
     private lateinit var store: BookImageStore
