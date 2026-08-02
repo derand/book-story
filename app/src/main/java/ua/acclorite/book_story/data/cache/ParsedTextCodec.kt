@@ -45,6 +45,21 @@ object ParsedTextCodec {
     private const val TYPE_SEPARATOR = 4
     private const val TYPE_IMAGE = 5
 
+    // Roles and alignments go on the wire as these codes, NOT as `ordinal`:
+    // the enums live in the domain layer, which has no reason to know that
+    // reordering its members would reinterpret every cached book. Codes are
+    // frozen — a new member takes the next free number, and the `when`s below
+    // stop compiling until it gets one.
+    private const val ROLE_PARAGRAPH = 0
+    private const val ROLE_TITLE = 1
+    private const val ROLE_EPIGRAPH = 2
+    private const val ROLE_TEXT_AUTHOR = 3
+
+    private const val ALIGN_UNSPECIFIED = 0
+    private const val ALIGN_START = 1
+    private const val ALIGN_CENTER = 2
+    private const val ALIGN_END = 3
+
     fun encode(parsed: ParsedText, out: DataOutput) {
         out.writeInt(VERSION)
 
@@ -118,7 +133,9 @@ object ParsedTextCodec {
                     row.forEach { cell -> AnnotatedStringCodec.encode(cell, out) }
                 }
                 out.writeInt(element.alignments.size)
-                element.alignments.forEach { alignment -> out.writeByte(alignment.ordinal) }
+                element.alignments.forEach { alignment ->
+                    out.writeByte(alignmentCode(alignment))
+                }
             }
 
             is ReaderText.Separator -> out.writeByte(TYPE_SEPARATOR)
@@ -174,7 +191,7 @@ object ParsedTextCodec {
                 val alignmentCount = input.readInt()
                 val alignments = ArrayList<TableAlignment>(alignmentCount)
                 repeat(alignmentCount) {
-                    alignments.add(TableAlignment.entries[input.readByte().toInt()])
+                    alignments.add(alignmentOf(input.readByte().toInt()))
                 }
                 ReaderText.Table(rows = rows, hasHeader = hasHeader, alignments = alignments)
             }
@@ -205,12 +222,42 @@ object ParsedTextCodec {
     }
 
     private fun encodeText(text: ReaderText.Text, out: DataOutput) {
-        out.writeByte(text.role.ordinal)
+        out.writeByte(roleCode(text.role))
         AnnotatedStringCodec.encode(text.line, out)
     }
 
     private fun decodeText(input: DataInput): ReaderText.Text {
-        val role = ReaderTextRole.entries[input.readByte().toInt()]
+        val role = roleOf(input.readByte().toInt())
         return ReaderText.Text(line = AnnotatedStringCodec.decode(input), role = role)
+    }
+
+    private fun roleCode(role: ReaderTextRole): Int = when (role) {
+        ReaderTextRole.Paragraph -> ROLE_PARAGRAPH
+        ReaderTextRole.Title -> ROLE_TITLE
+        ReaderTextRole.Epigraph -> ROLE_EPIGRAPH
+        ReaderTextRole.TextAuthor -> ROLE_TEXT_AUTHOR
+    }
+
+    private fun roleOf(code: Int): ReaderTextRole = when (code) {
+        ROLE_PARAGRAPH -> ReaderTextRole.Paragraph
+        ROLE_TITLE -> ReaderTextRole.Title
+        ROLE_EPIGRAPH -> ReaderTextRole.Epigraph
+        ROLE_TEXT_AUTHOR -> ReaderTextRole.TextAuthor
+        else -> throw IllegalArgumentException("Unknown ReaderTextRole code: $code")
+    }
+
+    private fun alignmentCode(alignment: TableAlignment): Int = when (alignment) {
+        TableAlignment.Unspecified -> ALIGN_UNSPECIFIED
+        TableAlignment.Start -> ALIGN_START
+        TableAlignment.Center -> ALIGN_CENTER
+        TableAlignment.End -> ALIGN_END
+    }
+
+    private fun alignmentOf(code: Int): TableAlignment = when (code) {
+        ALIGN_UNSPECIFIED -> TableAlignment.Unspecified
+        ALIGN_START -> TableAlignment.Start
+        ALIGN_CENTER -> TableAlignment.Center
+        ALIGN_END -> TableAlignment.End
+        else -> throw IllegalArgumentException("Unknown TableAlignment code: $code")
     }
 }

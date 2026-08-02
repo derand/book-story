@@ -20,12 +20,14 @@ import androidx.compose.ui.text.withLink
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.em
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertThrows
 import org.junit.Test
 import ua.acclorite.book_story.domain.model.reader.ParsedText
 import ua.acclorite.book_story.domain.model.reader.ReaderImage
 import ua.acclorite.book_story.domain.model.reader.ReaderText
 import ua.acclorite.book_story.domain.model.reader.ReaderTextRole
 import ua.acclorite.book_story.domain.model.reader.TableAlignment
+import java.util.UUID
 
 class ParsedTextCodecTest {
 
@@ -150,6 +152,163 @@ class ParsedTextCodecTest {
 
         roundTrip(parsed)
     }
+
+    // --- the enum codes on the wire ---
+    //
+    // A round trip cannot defend these: it encodes and decodes with the same
+    // enum in the same process, so `Title` -> 1 -> `Title` holds however the
+    // members are ordered. The damage only appears across a version boundary —
+    // bytes written by yesterday's build, read by today's — which is why the
+    // format is pinned below rather than merely round-tripped.
+
+    @Test
+    fun everyRoleRoundTrips() {
+        // Iterates `entries`, so a role added later is covered without an edit.
+        ReaderTextRole.entries.forEach { role ->
+            val parsed = ParsedText(
+                text = listOf(ReaderText.Text(AnnotatedString("x"), role)),
+                notes = emptyMap()
+            )
+            val restored = ParsedTextCodec.decodeFromBytes(ParsedTextCodec.encodeToBytes(parsed))
+            assertEquals(role, (restored.text.single() as ReaderText.Text).role)
+        }
+    }
+
+    @Test
+    fun everyAlignmentRoundTrips() {
+        val parsed = ParsedText(
+            text = listOf(
+                ReaderText.Table(
+                    rows = emptyList(),
+                    hasHeader = false,
+                    alignments = TableAlignment.entries
+                )
+            ),
+            notes = emptyMap()
+        )
+        val restored = ParsedTextCodec.decodeFromBytes(ParsedTextCodec.encodeToBytes(parsed))
+        assertEquals(TableAlignment.entries, (restored.text.single() as ReaderText.Table).alignments)
+    }
+
+    /**
+     * The whole wire format, frozen. Guards the element type bytes, the field
+     * order and — the reason this test exists — the numeric code of every role
+     * and alignment, none of which any round trip can see.
+     *
+     * **If this fails and you changed the format on purpose:** bump
+     * `ParsedTextCodec.VERSION` *and* `ParseCache.VERSION` so stale entries are
+     * ignored rather than misread, then paste the new bytes in below.
+     */
+    @Test
+    fun theWireFormatIsFrozen() {
+        val expected = (
+            "000000030000000a006cca978a00004000800000000000000100016300000001" +
+                "0100000001730000000000000000010000000001700000000000000000010100" +
+                "0000017400000000000000000102000000016500000000000000000103000000" +
+                "0161000000000000000004020000000100000000017600000000000000000301" +
+                "0000000100000002000000013100000000000000000000000132000000000000" +
+                "00000000000400010203050001690005692e706e670000000300000002010000" +
+                "0000016b00000000000000000500016a00056a2e706e67000000010000000100" +
+                "0000000100016e000000046e6f74650000000000000000"
+            )
+
+        val actual = ParsedTextCodec.encodeToBytes(wireFixture())
+            .joinToString("") { byte -> "%02x".format(byte) }
+
+        assertEquals("wire format changed — see this test's doc comment", expected, actual)
+        // And the bytes still mean what they say.
+        assertParsedTextEquals(wireFixture(), ParsedTextCodec.decodeFromBytes(actual.hexToBytes()))
+    }
+
+    @Test
+    fun anUnknownRoleCodeIsRejected() {
+        // VERSION (4 bytes) + element count (4) + the TYPE_TEXT tag (1).
+        val bytes = ParsedTextCodec.encodeToBytes(
+            ParsedText(
+                text = listOf(ReaderText.Text(AnnotatedString("x"), ReaderTextRole.Title)),
+                notes = emptyMap()
+            )
+        )
+        assertEquals("role byte offset", 1, bytes[9].toInt())
+
+        bytes[9] = 99
+        // Must throw rather than return something plausible: ParseCache.read
+        // turns an exception into a clean miss, and a wrong role into a book
+        // that renders wrong.
+        assertThrows(IllegalArgumentException::class.java) {
+            ParsedTextCodec.decodeFromBytes(bytes)
+        }
+    }
+
+    @Test
+    fun anUnknownAlignmentCodeIsRejected() {
+        // ... + hasHeader (1) + row count (4) + alignment count (4).
+        val bytes = ParsedTextCodec.encodeToBytes(
+            ParsedText(
+                text = listOf(
+                    ReaderText.Table(
+                        rows = emptyList(),
+                        hasHeader = false,
+                        alignments = listOf(TableAlignment.Start)
+                    )
+                ),
+                notes = emptyMap()
+            )
+        )
+        assertEquals("alignment byte offset", 1, bytes[18].toInt())
+
+        bytes[18] = 99
+        assertThrows(IllegalArgumentException::class.java) {
+            ParsedTextCodec.decodeFromBytes(bytes)
+        }
+    }
+
+    /**
+     * Every element type, role and alignment exactly once, and nothing that
+     * could drift: plain [AnnotatedString]s, a fixed chapter id.
+     *
+     * Members are listed by hand rather than read from `entries` on purpose —
+     * **appending** an enum member is backwards compatible and must not disturb
+     * the frozen bytes. The two round-trip tests above cover a new member.
+     */
+    private fun wireFixture() = ParsedText(
+        text = listOf(
+            ReaderText.Chapter(
+                id = UUID.fromString("6cca978a-0000-4000-8000-000000000001"),
+                title = "c",
+                depth = 1,
+                styledTitle = AnnotatedString("s")
+            ),
+            ReaderText.Text(AnnotatedString("p"), ReaderTextRole.Paragraph),
+            ReaderText.Text(AnnotatedString("t"), ReaderTextRole.Title),
+            ReaderText.Text(AnnotatedString("e"), ReaderTextRole.Epigraph),
+            ReaderText.Text(AnnotatedString("a"), ReaderTextRole.TextAuthor),
+            ReaderText.Separator,
+            ReaderText.Poem(lines = listOf(ReaderText.Text(AnnotatedString("v")))),
+            ReaderText.Table(
+                rows = listOf(listOf(AnnotatedString("1"), AnnotatedString("2"))),
+                hasHeader = true,
+                alignments = listOf(
+                    TableAlignment.Unspecified,
+                    TableAlignment.Start,
+                    TableAlignment.Center,
+                    TableAlignment.End
+                )
+            ),
+            ReaderText.Image(
+                image = ReaderImage(id = "i", src = "i.png", bytes = byteArrayOf(7), width = 3, height = 2),
+                caption = ReaderText.Text(AnnotatedString("k"))
+            ),
+            ReaderText.Image(
+                image = ReaderImage(id = "j", src = "j.png", bytes = ByteArray(0), width = 1, height = 1),
+                caption = null
+            )
+        ),
+        notes = mapOf("n" to AnnotatedString("note"))
+    )
+
+    private fun String.hexToBytes() =
+        ByteArray(length / 2) { i -> substring(i * 2, i * 2 + 2).toInt(16).toByte() }
 
     // --- helpers: compare the render-relevant contract, not order-sensitive equals ---
 
