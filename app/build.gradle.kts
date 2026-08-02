@@ -200,7 +200,17 @@ dependencies {
     // Json
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
 
-    // Instrumented tests
+    // JVM unit tests (app/src/test) — the suite CI runs. Robolectric supplies
+    // the handful of real Android APIs the parser reaches (Log, Base64,
+    // BitmapFactory); deliberately no `unitTests.isReturnDefaultValues`, so an
+    // Android call nothing has thought about still fails loudly instead of
+    // quietly returning null. The level Robolectric runs on is pinned in
+    // app/src/test/resources/robolectric.properties.
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("org.robolectric:robolectric:4.16.1")
+
+    // Instrumented tests (app/src/androidTest) — only what needs a device: real
+    // app storage and a real Context. Run by hand, not in CI.
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
     androidTestImplementation("androidx.test:runner:1.6.2")
     androidTestImplementation("androidx.test:core:1.6.1")

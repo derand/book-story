@@ -8,15 +8,12 @@ package ua.acclorite.book_story.ui.reader
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import org.junit.runner.RunWith
 
 /** Unit-style checks for the full-screen image viewer's zoom/pan geometry. */
-@RunWith(AndroidJUnit4::class)
 class ImageViewerTransformTest {
 
     private val container = Size(1000f, 2000f)

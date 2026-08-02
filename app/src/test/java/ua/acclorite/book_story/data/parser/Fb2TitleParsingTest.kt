@@ -11,7 +11,6 @@ import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.BaselineShift
-import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.runBlocking
 import org.commonmark.parser.Parser as CommonmarkParser
 import org.jsoup.Jsoup
@@ -22,6 +21,7 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
 import ua.acclorite.book_story.data.parser.document.DocumentParser
 import ua.acclorite.book_story.data.parser.document.MarkdownParser
 import ua.acclorite.book_story.data.parser.text.markChapterTitles
@@ -32,7 +32,7 @@ import ua.acclorite.book_story.domain.model.reader.ReaderTextRole
  * FB2 <title> handling: a chapter title keeps its inline markup (and its
  * footnote references), while the chapter list keeps a plain title.
  */
-@RunWith(AndroidJUnit4::class)
+@RunWith(RobolectricTestRunner::class)
 class Fb2TitleParsingTest {
 
     // The default builder enables every block type, while the app narrows them
