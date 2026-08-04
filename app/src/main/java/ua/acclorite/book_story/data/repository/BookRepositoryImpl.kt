@@ -18,6 +18,7 @@ import ua.acclorite.book_story.data.cache.ImageMemoryBudget
 import ua.acclorite.book_story.data.cache.ParseCache
 import ua.acclorite.book_story.data.cache.ReaderImageFiles
 import ua.acclorite.book_story.data.local.room.BookDatabase
+import ua.acclorite.book_story.data.model.file.CachedFile
 import ua.acclorite.book_story.data.settings.SettingsManager
 import ua.acclorite.book_story.data.mapper.book.BookMapper
 import ua.acclorite.book_story.data.mapper.file.FileMapper
@@ -49,6 +50,25 @@ class BookRepositoryImpl @Inject constructor(
     private val settings: SettingsManager
 ) : BookRepository {
 
+    /** The book, and the file [getText] resolved for it. */
+    private data class OpenedBookFile(val bookId: Int, val file: CachedFile)
+
+    /**
+     * What the last [getText] resolved. [loadBookImages] runs a moment later for
+     * the same book, and resolving it again is not free: [FileProvider] finds a
+     * book by walking every persisted SAF tree, a ContentResolver query per
+     * directory and the largest named step of an open, and for EPUB a second
+     * [CachedFile] means a second copy of the whole book, since
+     * [CachedFile.rawFile] is a per-instance `lazy`.
+     *
+     * Deliberately one entry rather than a cache keyed by path. It is read only by
+     * the image pass that follows the open that wrote it, so it cannot serve a
+     * stale grant or a path the user has since edited — the next open overwrites
+     * it, and every other caller still asks [FileProvider].
+     */
+    @Volatile
+    private var lastOpenedFile: OpenedBookFile? = null
+
     override suspend fun searchBooks(query: String): Result<List<Book>> = runCatchingCancellable {
         withContext(Dispatchers.IO) {
             database.bookDao.searchBooks(query).map { bookMapper.toBook(it) }
@@ -72,7 +92,7 @@ class BookRepositoryImpl @Inject constructor(
                     // a ContentResolver query per directory — hence timed on its own.
                     timed("  open: find file") {
                         fileProvider.getFileFromBook(book).getOrThrow()
-                    }
+                    }.also { lastOpenedFile = OpenedBookFile(bookId, it) }
                 }
                 .mapCatchingCancellable { cachedFile ->
                     // A size-cap of 0 means the parse cache is disabled entirely.
@@ -175,8 +195,7 @@ class BookRepositoryImpl @Inject constructor(
             // has to check for itself, or it would keep writing files into a
             // directory the closing reader has just deleted.
             val pass = coroutineContext.job
-            getBook(bookId)
-                .mapCatchingCancellable { fileProvider.getFileFromBook(it).getOrThrow() }
+            resolveOpenedFile(bookId)
                 .mapCatchingCancellable { cachedFile ->
                     val capMb = settings.parseCacheSizeMb.lastValue
                     val maxBytes = capMb.toLong() * 1024 * 1024
@@ -230,6 +249,21 @@ class BookRepositoryImpl @Inject constructor(
                         cachedFile.path, cachedFile.size, cachedFile.lastModified, maxBytes
                     )
                 }
+        }
+    }
+
+    /**
+     * The book's file for the image pass: the one the open resolved a moment ago
+     * when it is the same book, and the ordinary walk otherwise — the reader can be
+     * entered by a restored back stack, which this process never opened.
+     */
+    private suspend fun resolveOpenedFile(bookId: Int): Result<CachedFile> {
+        lastOpenedFile?.takeIf { it.bookId == bookId }?.let { opened ->
+            bookTimingNote { "images: reused the file the open resolved" }
+            return Result.success(opened.file)
+        }
+        return getBook(bookId).mapCatchingCancellable {
+            timed("  images: find file") { fileProvider.getFileFromBook(it).getOrThrow() }
         }
     }
 
