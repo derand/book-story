@@ -23,6 +23,14 @@ class FileProviderImpl @Inject constructor(
         val storages = application.contentResolver.persistedUriPermissions
             .map { permission -> CachedFileCompat.fromUri(application, permission.uri) }
             .filter { it.isDirectory }
+            // Deepest root first. Roots from different providers can be prefixes of
+            // one another — Google Drive reports "/storage" for a Drive folder,
+            // which prefixes every path on the device — and the shallow one then
+            // matches books it does not hold, costing a listing before the tree
+            // that does. For a cloud provider that listing is a network round trip:
+            // measured 379 ms against 101 ms for the same book with the deepest
+            // root tried first.
+            .sortedByDescending { it.path.length }
 
         storages.forEach { storage ->
             val segments = pathSegmentsUnder(storage.path, book.filePath) ?: return@forEach
