@@ -7,9 +7,9 @@
 package ua.acclorite.book_story.ui.theme.model
 
 import androidx.annotation.StringRes
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
 import ua.acclorite.book_story.R
+import ua.acclorite.book_story.ui.theme.systemInDarkTheme
 
 enum class DarkTheme(@StringRes val title: Int) {
     FOLLOW_SYSTEM(R.string.dark_theme_follow_system),
@@ -19,7 +19,8 @@ enum class DarkTheme(@StringRes val title: Int) {
     @Composable
     fun isDark(): Boolean {
         return when (this) {
-            FOLLOW_SYSTEM -> isSystemInDarkTheme()
+            // Not isSystemInDarkTheme: its LocalConfiguration goes stale — see #50.
+            FOLLOW_SYSTEM -> systemInDarkTheme()
             ON -> true
             OFF -> false
         }
