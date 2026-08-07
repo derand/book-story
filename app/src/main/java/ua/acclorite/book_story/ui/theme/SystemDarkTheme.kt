@@ -1,6 +1,7 @@
 /*
  * Book's Story — free and open-source Material You eBook reader.
  * Copyright (C) 2026 derand
+ * Copyright (C) 2024-2026 Acclorite
  * SPDX-License-Identifier: GPL-3.0-only
  */
 
@@ -19,6 +20,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
 
 /**
@@ -35,41 +37,59 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
  * composition still resolved dark.
  *
  * So the value is read from the activity's `resources`, which the trace proved
- * correct, and re-read at each of the moments the stale one was missed: every
- * `ON_START`/`ON_RESUME`, and every configuration change Compose *does* see.
- * A missed invalidation then costs one resume rather than lasting until the
- * user happens to rotate the screen.
+ * correct, and re-read by a [SystemNightModeWatcher] at each of the moments the
+ * stale one was missed: every `ON_START`/`ON_RESUME`, and every configuration
+ * change Compose *does* see. A missed invalidation then costs one resume rather
+ * than lasting until the user happens to rotate the screen.
  */
 @Composable
 fun systemInDarkTheme(): Boolean {
     val resources = LocalContext.current.resources
     val lifecycleOwner = LocalLifecycleOwner.current
 
-    var isDark by remember(resources) { mutableStateOf(resources.isNightMode()) }
+    val watcher = remember(resources) {
+        SystemNightModeWatcher { resources.isNightMode() }
+    }
 
-    // Adding the observer replays the current state, so this also seeds the value.
-    DisposableEffect(lifecycleOwner, resources) {
-        val observer = LifecycleEventObserver { _, event ->
-            when (event) {
-                Lifecycle.Event.ON_START, Lifecycle.Event.ON_RESUME -> {
-                    isDark = resources.isNightMode()
-                }
-
-                else -> Unit
-            }
-        }
-
-        lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    DisposableEffect(lifecycleOwner, watcher) {
+        lifecycleOwner.lifecycle.addObserver(watcher)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(watcher) }
     }
 
     // The path that already worked — a switch while the app is in the foreground.
     val configuration = LocalConfiguration.current
-    LaunchedEffect(configuration, resources) {
-        isDark = resources.isNightMode()
+    LaunchedEffect(configuration, watcher) { watcher.refresh() }
+
+    return watcher.isNight
+}
+
+/**
+ * Holds the system's night mode, re-reading [readIsNight] whenever the activity
+ * is started or resumed.
+ *
+ * That re-read is the whole point, and it is not an optimisation to be tidied
+ * away later: the value it guards against is one that changed while the app was
+ * in the background and that nothing else will announce. Writing the same value
+ * back costs nothing — snapshot state only invalidates on a real change — so
+ * this does not recompose the app on every resume.
+ */
+internal class SystemNightModeWatcher(
+    private val readIsNight: () -> Boolean
+) : LifecycleEventObserver {
+
+    var isNight by mutableStateOf(readIsNight())
+        private set
+
+    override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
+        when (event) {
+            Lifecycle.Event.ON_START, Lifecycle.Event.ON_RESUME -> refresh()
+            else -> Unit
+        }
     }
 
-    return isDark
+    fun refresh() {
+        isNight = readIsNight()
+    }
 }
 
 private fun Resources.isNightMode(): Boolean {
