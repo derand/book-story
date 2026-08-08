@@ -131,9 +131,15 @@ class ReaderModel @Inject constructor(
     private var sessionWords = 0
 
     /**
-     * Set when the reader moves the list itself. The settled position that
-     * follows is where a jump landed, not something that was read — otherwise
-     * dragging the progress slider would credit every screen it paused on.
+     * Set while dragging the progress slider, whose landings are screens nobody
+     * read — it stops wherever the drag pauses.
+     *
+     * Deliberately *not* set for the other ways the reader moves the list
+     * itself. Restoring the bookmark, opening a chapter and returning to a
+     * checkpoint all land where the reading is about to happen, and that landing
+     * is the only sample that screen will ever get: suppressing it left the
+     * first screen of every book uncredited, so reading one cover to cover
+     * stopped short of 100 % (found in device QA, 2026-08-05).
      */
     private var landingAfterJump = false
 
@@ -250,7 +256,6 @@ class ReaderModel @Inject constructor(
                 is ReaderEvent.OnRestoreScroll -> {
                     snapshotFlow { _state.value.listState.layoutInfo.totalItemsCount }.first { it > 0 }
 
-                    jumpedToPosition()
                     _state.value.listState.requestScrollToItem(
                         index = _state.value.book.scrollIndex,
                         scrollOffset = _state.value.book.scrollOffset
@@ -343,7 +348,6 @@ class ReaderModel @Inject constructor(
                             .takeIf { it != -1 }
                         if (chapterIndex == null) return@withContext
 
-                        jumpedToPosition()
                     _state.value.listState.requestScrollToItem(
                             index = chapterIndex,
                             scrollOffset = 0
@@ -388,7 +392,6 @@ class ReaderModel @Inject constructor(
                             )
                         }
 
-                        jumpedToPosition()
                     _state.value.listState.requestScrollToItem(
                             index = event.checkpoint.index,
                             scrollOffset = event.checkpoint.offset
@@ -667,6 +670,16 @@ class ReaderModel @Inject constructor(
         coveredItems.addAll(stored.covered)
         coveredWords = stored.coveredWords
         coverageReady = true
+
+        // Credit what is already on screen. The scroll flow emits its one
+        // opening sample about 300 ms in and then nothing until something
+        // moves, so on a book big enough for this load to lose that race the
+        // first screen would never be credited at all — which is how a fresh
+        // trilogy ended a whole session with empty coverage (device QA,
+        // 2026-08-05). On Main, where every other credit happens.
+        withContext(Dispatchers.Main) {
+            creditVisible(_state.value.listState.layoutInfo.visibleItemsInfo)
+        }
     }
 
     /** The reader is about to move the list itself; see [landingAfterJump]. */
