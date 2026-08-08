@@ -7,6 +7,7 @@
 
 package ua.acclorite.book_story.domain.repository
 
+import ua.acclorite.book_story.domain.model.statistics.LibraryStatistics
 import ua.acclorite.book_story.domain.model.statistics.ReadBook
 import ua.acclorite.book_story.domain.model.statistics.ReadingCoverage
 import ua.acclorite.book_story.domain.model.statistics.ReadingSession
@@ -56,4 +57,7 @@ interface StatisticsRepository {
     suspend fun getTypicalWordsPerMinute(bookId: Int? = null): Result<Int?>
 
     suspend fun countActiveDays(bookId: Int): Result<Int>
+
+    /** Reading across the whole library, deleted books included. */
+    suspend fun getLibraryStatistics(): Result<LibraryStatistics>
 }

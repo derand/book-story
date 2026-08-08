@@ -17,6 +17,7 @@ import ua.acclorite.book_story.R
 import ua.acclorite.book_story.core.log.BookOpenTrace
 import ua.acclorite.book_story.presentation.book_info.BookInfoScreen
 import ua.acclorite.book_story.presentation.history.HistoryEffect
+import ua.acclorite.book_story.presentation.statistics.StatisticsScreen
 import ua.acclorite.book_story.presentation.history.HistoryEvent
 import ua.acclorite.book_story.presentation.history.HistoryScreen.insertHistoryChannel
 import ua.acclorite.book_story.presentation.library.LibraryScreen
@@ -63,6 +64,10 @@ fun HistoryEffects(
 
                 is HistoryEffect.OnNavigateToLibrary -> {
                     navigator.push(LibraryScreen, saveInBackStack = false)
+                }
+
+                is HistoryEffect.OnNavigateToStatistics -> {
+                    navigator.push(StatisticsScreen)
                 }
 
                 is HistoryEffect.OnNavigateToBookInfo -> {

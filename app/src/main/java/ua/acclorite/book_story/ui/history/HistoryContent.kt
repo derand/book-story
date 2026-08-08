@@ -13,12 +13,14 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.focus.FocusRequester
 import ua.acclorite.book_story.core.Dialog
+import ua.acclorite.book_story.domain.model.statistics.LibraryStatistics
 import ua.acclorite.book_story.presentation.history.HistoryEvent
 import ua.acclorite.book_story.presentation.history.model.GroupedHistory
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun HistoryContent(
+    statistics: LibraryStatistics?,
     refreshState: PullRefreshState,
     snackbarState: SnackbarHostState,
     history: List<GroupedHistory>,
@@ -41,7 +43,8 @@ fun HistoryContent(
     dismissDialog: (HistoryEvent.OnDismissDialog) -> Unit,
     navigateToLibrary: (HistoryEvent.OnNavigateToLibrary) -> Unit,
     navigateToBookInfo: (HistoryEvent.OnNavigateToBookInfo) -> Unit,
-    navigateToReader: (HistoryEvent.OnNavigateToReader) -> Unit
+    navigateToReader: (HistoryEvent.OnNavigateToReader) -> Unit,
+    navigateToStatistics: (HistoryEvent.OnNavigateToStatistics) -> Unit
 ) {
     HistoryDialog(
         dialog = dialog,
@@ -68,7 +71,9 @@ fun HistoryContent(
         deleteHistoryEntry = deleteHistoryEntry,
         showDeleteWholeHistoryDialog = showDeleteWholeHistoryDialog,
         navigateToBookInfo = navigateToBookInfo,
-        navigateToReader = navigateToReader
+        navigateToReader = navigateToReader,
+        statistics = statistics,
+        navigateToStatistics = navigateToStatistics
     )
 
     HistoryBackHandler(

@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import ua.acclorite.book_story.R
+import ua.acclorite.book_story.domain.model.statistics.LibraryStatistics
 import ua.acclorite.book_story.presentation.history.HistoryEvent
 import ua.acclorite.book_story.presentation.history.model.GroupedHistory
 import ua.acclorite.book_story.ui.common.components.common.LazyColumnWithScrollbar
@@ -27,11 +28,13 @@ import ua.acclorite.book_story.ui.theme.DefaultTransition
 fun HistoryLayout(
     listState: LazyListState,
     history: List<GroupedHistory>,
+    statistics: LibraryStatistics?,
     isLoading: Boolean,
     isRefreshing: Boolean,
     deleteHistoryEntry: (HistoryEvent.OnDeleteHistoryEntry) -> Unit,
     navigateToBookInfo: (HistoryEvent.OnNavigateToBookInfo) -> Unit,
     navigateToReader: (HistoryEvent.OnNavigateToReader) -> Unit,
+    navigateToStatistics: (HistoryEvent.OnNavigateToStatistics) -> Unit,
 ) {
     DefaultTransition(visible = !isLoading) {
         LazyColumnWithScrollbar(
@@ -41,6 +44,18 @@ fun HistoryLayout(
         ) {
             item {
                 Spacer(modifier = Modifier.height(12.dp))
+            }
+
+            if (statistics != null && !statistics.isEmpty) {
+                item(key = "statistics") {
+                    HistoryStatisticsCard(
+                        statistics = statistics,
+                        onClick = {
+                            navigateToStatistics(HistoryEvent.OnNavigateToStatistics)
+                        }
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                }
             }
 
             history.forEachIndexed { index, groupedHistory ->

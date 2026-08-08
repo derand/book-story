@@ -15,11 +15,15 @@ import ua.acclorite.book_story.data.local.dto.ReadingCoverageEntity
 import ua.acclorite.book_story.data.local.dto.ReadingSessionEntity
 import ua.acclorite.book_story.data.local.room.BookDatabase
 import ua.acclorite.book_story.domain.model.statistics.CoverageCodec
+import ua.acclorite.book_story.domain.model.statistics.LibraryStatistics
 import ua.acclorite.book_story.domain.model.statistics.ReadBook
+import ua.acclorite.book_story.domain.model.statistics.ReadingDays
 import ua.acclorite.book_story.domain.model.statistics.ReadingPace
 import ua.acclorite.book_story.domain.model.statistics.ReadingCoverage
 import ua.acclorite.book_story.domain.model.statistics.ReadingSession
 import ua.acclorite.book_story.domain.repository.StatisticsRepository
+import java.time.LocalDate
+import java.time.ZoneId
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -200,6 +204,40 @@ class StatisticsRepositoryImpl @Inject constructor(
         runCatchingCancellable {
             withContext(Dispatchers.IO) {
                 database.statisticsDao.countActiveDays(bookId)
+            }
+        }
+
+    override suspend fun getLibraryStatistics(): Result<LibraryStatistics> =
+        runCatchingCancellable {
+            withContext(Dispatchers.IO) {
+                val sessions = database.statisticsDao.getSessionSpans()
+                val zone = ZoneId.systemDefault()
+
+                // Days are counted from the sessions rather than stored, and a
+                // session that runs past midnight lands on both days.
+                val days = mutableSetOf<LocalDate>()
+                var totalTimeMs = 0L
+                var words = 0L
+
+                sessions.forEach { session ->
+                    totalTimeMs += (session.endTime - session.startTime).coerceAtLeast(0)
+                    words += session.wordsRead
+                    ReadingDays.split(session.startTime, session.endTime, zone).forEach {
+                        days.add(it.day)
+                    }
+                }
+
+                LibraryStatistics(
+                    totalTimeMs = totalTimeMs,
+                    wordsRead = words,
+                    wordsPerMinute = ReadingPace.typical(
+                        database.statisticsDao.getSessionPaces().mapNotNull { pace ->
+                            ReadingPace.wordsPerMinute(pace.durationMs, pace.wordsRead)
+                        }
+                    ),
+                    booksRead = database.statisticsDao.countBooksRead(),
+                    daysRead = days.size
+                )
             }
         }
 

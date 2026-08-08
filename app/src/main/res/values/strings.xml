@@ -101,6 +101,23 @@
     <string name="statistics_left_value_by">%1$s, by %2$s</string>
     <string name="statistics_sessions">Sessions</string>
     <string name="statistics_finished">Finished</string>
+    <string name="statistics_none_library">No reading recorded yet.</string>
+    <string name="statistics_total_time">Time read</string>
+    <string name="statistics_words_read">Words read</string>
+    <string name="statistics_your_pace">Your pace</string>
+    <string name="statistics_books_finished">Books finished</string>
+    <string name="statistics_days_read">Days read</string>
+    <string name="statistics_includes_deleted">Includes books no longer in the library.</string>
+    <string name="statistics_card_open">Statistics</string>
+    <string name="statistics_card_summary">%1$s read over %2$s · %3$s</string>
+    <plurals name="statistics_days_plural">
+        <item quantity="one">%d day</item>
+        <item quantity="other">%d days</item>
+    </plurals>
+    <plurals name="statistics_books_finished_plural">
+        <item quantity="one">%d book finished</item>
+        <item quantity="other">%d books finished</item>
+    </plurals>
     <string name="duration_under_a_minute">under a minute</string>
     <string name="duration_minutes">%1$d min</string>
     <string name="duration_hours">%1$d h</string>

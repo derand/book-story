@@ -15,6 +15,7 @@ import ua.acclorite.book_story.data.local.dto.ReadBookEntity
 import ua.acclorite.book_story.data.local.dto.ReadingCoverageEntity
 import ua.acclorite.book_story.data.local.dto.ReadingSessionEntity
 import ua.acclorite.book_story.data.local.dto.SessionPace
+import ua.acclorite.book_story.data.local.dto.SessionSpan
 
 @Dao
 interface StatisticsDao {
@@ -50,6 +51,13 @@ interface StatisticsDao {
         """
     )
     suspend fun getSessionPaces(bookId: Int): List<SessionPace>
+
+    /** Every session's span and words, for figures that need the days too. */
+    @Query("SELECT startTime, endTime, wordsRead FROM ReadingSessionEntity")
+    suspend fun getSessionSpans(): List<SessionSpan>
+
+    @Query("SELECT COUNT(*) FROM ReadBookEntity WHERE finished = 1")
+    suspend fun countBooksRead(): Int
 
     /** Days on which this book was read at all, in the reader's own time zone. */
     @Query(
