@@ -11,6 +11,7 @@ import ua.acclorite.book_story.core.BottomSheet
 import ua.acclorite.book_story.core.Dialog
 import ua.acclorite.book_story.domain.model.file.File
 import ua.acclorite.book_story.domain.model.library.Book
+import ua.acclorite.book_story.domain.model.statistics.BookStatistics
 
 @Immutable
 data class BookInfoState(
@@ -20,6 +21,9 @@ data class BookInfoState(
     val loadingFile: Boolean = true,
 
     val canResetCover: Boolean = false,
+
+    /** Null until read back; [BookStatistics.none] when nothing was ever read. */
+    val statistics: BookStatistics? = null,
 
     val dialog: Dialog? = null,
     val bottomSheet: BottomSheet? = null

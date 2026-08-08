@@ -27,6 +27,11 @@ sealed class BookInfoEvent {
 
     data object OnCheckCoverReset : BookInfoEvent()
 
+    /** The reader saying whether they consider this book read. */
+    data class OnSetFinished(
+        val finished: Boolean
+    ) : BookInfoEvent()
+
     data object OnDismissBottomSheet : BookInfoEvent()
 
     data object OnShowTitleDialog : BookInfoEvent()

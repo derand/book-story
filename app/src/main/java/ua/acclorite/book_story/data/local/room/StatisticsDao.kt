@@ -14,6 +14,7 @@ import androidx.room.Query
 import ua.acclorite.book_story.data.local.dto.ReadBookEntity
 import ua.acclorite.book_story.data.local.dto.ReadingCoverageEntity
 import ua.acclorite.book_story.data.local.dto.ReadingSessionEntity
+import ua.acclorite.book_story.data.local.dto.SessionPace
 
 @Dao
 interface StatisticsDao {
@@ -29,6 +30,36 @@ interface StatisticsDao {
      */
     @Query("UPDATE ReadingSessionEntity SET bookId = NULL WHERE bookId = :bookId")
     suspend fun anonymiseBookSessions(bookId: Int)
+
+    /** Pace of every session that has words to divide, for a typical figure. */
+    @Query(
+        """
+        SELECT (endTime - startTime) AS durationMs, wordsRead AS wordsRead
+        FROM ReadingSessionEntity
+        WHERE wordsRead > 0
+        """
+    )
+    suspend fun getSessionPaces(): List<SessionPace>
+
+    /** The same, for one book. */
+    @Query(
+        """
+        SELECT (endTime - startTime) AS durationMs, wordsRead AS wordsRead
+        FROM ReadingSessionEntity
+        WHERE bookId = :bookId AND wordsRead > 0
+        """
+    )
+    suspend fun getSessionPaces(bookId: Int): List<SessionPace>
+
+    /** Days on which this book was read at all, in the reader's own time zone. */
+    @Query(
+        """
+        SELECT COUNT(DISTINCT date(startTime / 1000, 'unixepoch', 'localtime'))
+        FROM ReadingSessionEntity
+        WHERE bookId = :bookId
+        """
+    )
+    suspend fun countActiveDays(bookId: Int): Int
 
     @Query("SELECT * FROM readingcoverageentity WHERE bookId = :bookId")
     suspend fun getCoverage(bookId: Int): ReadingCoverageEntity?
@@ -85,10 +116,14 @@ interface StatisticsDao {
     suspend fun setFinished(bookId: Int, finished: Boolean): Int
 
     /**
-     * Keeps the record of a deleted book, without the book. It stays on the
-     * shelf, with its time and its dates; a re-import is a new book and starts
-     * a record of its own.
+     * Keeps the record of a deleted book, without the book: its time, dates and
+     * counts stay in the lifetime figures, but it stops being named.
+     *
+     * Deleting a book in this app already means "gone" — the reader's history
+     * for it is deleted too — so a record that went on naming it would quietly
+     * break that promise. What is left is an unnamed row. A re-import is a new
+     * book and starts a record of its own.
      */
-    @Query("UPDATE ReadBookEntity SET bookId = NULL WHERE bookId = :bookId")
+    @Query("UPDATE ReadBookEntity SET bookId = NULL, title = '', author = '' WHERE bookId = :bookId")
     suspend fun unlinkReadBook(bookId: Int)
 }

@@ -16,6 +16,7 @@ import ua.acclorite.book_story.data.local.dto.ReadingSessionEntity
 import ua.acclorite.book_story.data.local.room.BookDatabase
 import ua.acclorite.book_story.domain.model.statistics.CoverageCodec
 import ua.acclorite.book_story.domain.model.statistics.ReadBook
+import ua.acclorite.book_story.domain.model.statistics.ReadingPace
 import ua.acclorite.book_story.domain.model.statistics.ReadingCoverage
 import ua.acclorite.book_story.domain.model.statistics.ReadingSession
 import ua.acclorite.book_story.domain.repository.StatisticsRepository
@@ -179,6 +180,28 @@ class StatisticsRepositoryImpl @Inject constructor(
             )
         }
     }
+
+    override suspend fun getTypicalWordsPerMinute(bookId: Int?): Result<Int?> =
+        runCatchingCancellable {
+            withContext(Dispatchers.IO) {
+                val paces =
+                    if (bookId == null) database.statisticsDao.getSessionPaces()
+                    else database.statisticsDao.getSessionPaces(bookId)
+
+                ReadingPace.typical(
+                    paces.mapNotNull { pace ->
+                        ReadingPace.wordsPerMinute(pace.durationMs, pace.wordsRead)
+                    }
+                )
+            }
+        }
+
+    override suspend fun countActiveDays(bookId: Int): Result<Int> =
+        runCatchingCancellable {
+            withContext(Dispatchers.IO) {
+                database.statisticsDao.countActiveDays(bookId)
+            }
+        }
 
     override suspend fun unlinkReadBook(bookId: Int): Result<Unit> =
         runCatchingCancellable {

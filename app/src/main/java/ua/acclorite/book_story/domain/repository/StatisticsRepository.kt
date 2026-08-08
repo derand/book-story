@@ -47,4 +47,13 @@ interface StatisticsRepository {
 
     /** See [ua.acclorite.book_story.data.local.room.StatisticsDao.unlinkReadBook]. */
     suspend fun unlinkReadBook(bookId: Int): Result<Unit>
+
+    /**
+     * Median words per minute across sessions — of one book when [bookId] is
+     * given, of all reading otherwise. A median because one session spent
+     * flicking through pages is enough to wreck a mean.
+     */
+    suspend fun getTypicalWordsPerMinute(bookId: Int? = null): Result<Int?>
+
+    suspend fun countActiveDays(bookId: Int): Result<Int>
 }

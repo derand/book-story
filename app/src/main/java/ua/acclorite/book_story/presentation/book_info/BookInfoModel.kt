@@ -25,6 +25,8 @@ import ua.acclorite.book_story.domain.use_case.book.DeleteBookUseCase
 import ua.acclorite.book_story.domain.use_case.book.GetBookUseCase
 import ua.acclorite.book_story.domain.use_case.book.GetFileFromBookUseCase
 import ua.acclorite.book_story.domain.use_case.book.ResetCoverImageUseCase
+import ua.acclorite.book_story.domain.use_case.statistics.GetBookStatisticsUseCase
+import ua.acclorite.book_story.domain.use_case.statistics.SetBookFinishedUseCase
 import ua.acclorite.book_story.domain.use_case.book.UpdateBookUseCase
 import ua.acclorite.book_story.domain.use_case.book.UpdateCoverImageUseCase
 import ua.acclorite.book_story.presentation.browse.BrowseScreen
@@ -41,7 +43,9 @@ class BookInfoModel @Inject constructor(
     private val getFileFromBookUseCase: GetFileFromBookUseCase,
     private val deleteBookUseCase: DeleteBookUseCase,
     private val canResetCoverImageUseCase: CanResetCoverImageUseCase,
-    private val resetCoverImageUseCase: ResetCoverImageUseCase
+    private val resetCoverImageUseCase: ResetCoverImageUseCase,
+    private val getBookStatisticsUseCase: GetBookStatisticsUseCase,
+    private val setBookFinishedUseCase: SetBookFinishedUseCase
 ) : ViewModel() {
 
     private val mutex = Mutex()
@@ -152,6 +156,22 @@ class BookInfoModel @Inject constructor(
                         _state.update {
                             it.copy(
                                 canResetCover = canResetCover
+                            )
+                        }
+                    }
+                }
+
+                is BookInfoEvent.OnSetFinished -> {
+                    withContext(Dispatchers.Default) {
+                        if (_state.value.book.id == -1) return@withContext
+
+                        setBookFinishedUseCase(
+                            book = _state.value.book,
+                            finished = event.finished
+                        )
+                        _state.update {
+                            it.copy(
+                                statistics = it.statistics?.copy(finished = event.finished)
                             )
                         }
                     }
@@ -378,6 +398,10 @@ class BookInfoModel @Inject constructor(
 
             if (changePath) onEvent(BookInfoEvent.OnShowPathDialog)
             onEvent(BookInfoEvent.OnCheckCoverReset)
+
+            _state.update {
+                it.copy(statistics = getBookStatisticsUseCase(bookId))
+            }
 
             val file = getFileFromBookUseCase(bookId)
             _state.update {
