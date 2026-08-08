@@ -19,13 +19,15 @@ class ReadingSessionTest {
     private fun session(
         lastActiveTime: Long,
         now: Long,
-        wordsRead: Int = 0
+        wordsRead: Int = 0,
+        overlayMs: Long = 0
     ) = ReadingSession.endedAt(
         bookId = BOOK_ID,
         startTime = START,
         lastActiveTime = lastActiveTime,
         now = now,
-        wordsRead = wordsRead
+        wordsRead = wordsRead,
+        overlayMs = overlayMs
     )
 
     @Test
@@ -86,6 +88,44 @@ class ReadingSessionTest {
         val session = session(lastActiveTime = START - 600_000, now = START - 300_000)
 
         assertNull(session)
+    }
+
+    @Test
+    fun `overlay time is kept in the book's time and taken out of the reading time`() {
+        val session = session(
+            lastActiveTime = START + 20 * 60 * 1000,
+            now = START + 20 * 60 * 1000,
+            overlayMs = 8 * 60 * 1000
+        )
+
+        // Time in the book keeps the whole interval — looking at an
+        // illustration is time spent with the book.
+        assertEquals(20 * 60 * 1000L, session?.durationMs)
+        // The speed divides by the part in which words were possible.
+        assertEquals(12 * 60 * 1000L, session?.readingMs)
+    }
+
+    @Test
+    fun `a session without an overlay reads for the whole of it`() {
+        val session = session(lastActiveTime = START + 30_000, now = START + 30_000)
+
+        assertEquals(session?.durationMs, session?.readingMs)
+    }
+
+    @Test
+    fun `an overlay cannot outlast the session the cap left`() {
+        // Left in the image viewer and never came back: the tail is capped, and
+        // the overlay it was holding is longer than what survives the cap.
+        val lastActive = START + 1_000
+        val session = session(
+            lastActiveTime = lastActive,
+            now = lastActive + 3 * 60 * 60 * 1000,
+            overlayMs = 3 * 60 * 60 * 1000
+        )
+
+        assertEquals(1_000 + ReadingSession.IDLE_CAP_MS, session?.durationMs)
+        assertEquals(1_000 + ReadingSession.IDLE_CAP_MS, session?.overlayMs)
+        assertEquals(0L, session?.readingMs)
     }
 
     @Test

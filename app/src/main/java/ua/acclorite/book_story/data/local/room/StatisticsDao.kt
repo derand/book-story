@@ -32,10 +32,17 @@ interface StatisticsDao {
     @Query("UPDATE ReadingSessionEntity SET bookId = NULL WHERE bookId = :bookId")
     suspend fun anonymiseBookSessions(bookId: Int)
 
-    /** Pace of every session that has words to divide, for a typical figure. */
+    /**
+     * Pace of every session that has words to divide, for a typical figure.
+     *
+     * The duration is the *reading* time: overlay time earns no words, so
+     * leaving it in the denominator would let a few minutes in the image viewer
+     * halve a session's words per minute. Time in the book, days and streaks
+     * still read the interval whole.
+     */
     @Query(
         """
-        SELECT (endTime - startTime) AS durationMs, wordsRead AS wordsRead
+        SELECT (endTime - startTime - overlayMs) AS durationMs, wordsRead AS wordsRead
         FROM ReadingSessionEntity
         WHERE wordsRead > 0
         """
@@ -45,7 +52,7 @@ interface StatisticsDao {
     /** The same, for one book. */
     @Query(
         """
-        SELECT (endTime - startTime) AS durationMs, wordsRead AS wordsRead
+        SELECT (endTime - startTime - overlayMs) AS durationMs, wordsRead AS wordsRead
         FROM ReadingSessionEntity
         WHERE bookId = :bookId AND wordsRead > 0
         """

@@ -25,14 +25,16 @@ class RecordReadingSessionUseCase @Inject constructor(
         startTime: Long,
         lastActiveTime: Long,
         endTime: Long,
-        wordsRead: Int
+        wordsRead: Int,
+        overlayMs: Long
     ): ReadingSession? {
         val session = ReadingSession.endedAt(
             bookId = bookId,
             startTime = startTime,
             lastActiveTime = lastActiveTime,
             now = endTime,
-            wordsRead = wordsRead
+            wordsRead = wordsRead,
+            overlayMs = overlayMs
         )
 
         if (session == null) {

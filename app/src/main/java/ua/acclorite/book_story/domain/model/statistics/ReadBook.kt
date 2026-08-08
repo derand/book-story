@@ -28,19 +28,12 @@ data class ReadBook(
     val lastReadAt: Long,
     val finished: Boolean,
     val coveragePercent: Float
-) {
-    /**
-     * Words per minute over everything ever read of this book. Null until there
-     * is enough to divide by — a first short sitting says nothing about pace.
-     */
-    val wordsPerMinute: Int?
-        get() {
-            if (totalTimeMs < MIN_TIME_FOR_PACE_MS || totalWords <= 0) return null
-            return (totalWords * 60_000.0 / totalTimeMs).toInt()
-        }
+)
 
-    companion object {
-        /** Below this a pace is noise: one page and a distraction. */
-        const val MIN_TIME_FOR_PACE_MS = 60_000L
-    }
-}
+/*
+ * There is deliberately no pace on this row. [totalTimeMs] is time spent with
+ * the book, overlay time included, and this row does not carry the overlay
+ * separately to take it back out — so a pace divided from it would be the one
+ * figure the image viewer could still distort. A book's pace is a median over
+ * its sessions instead, where the overlay is known.
+ */

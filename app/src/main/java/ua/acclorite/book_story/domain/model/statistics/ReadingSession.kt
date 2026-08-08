@@ -20,9 +20,19 @@ data class ReadingSession(
     val startTime: Long,
     val endTime: Long,
     /** Words credited to this session — the volume read, repeats included. */
-    val wordsRead: Int
+    val wordsRead: Int,
+    /** Time of this session with the text covered; see [readingMs]. */
+    val overlayMs: Long = 0
 ) {
     val durationMs: Long get() = (endTime - startTime).coerceAtLeast(0)
+
+    /**
+     * The part of the session in which words could have been earned — the whole
+     * of it, less the time the image viewer, the settings sheet or the chapters
+     * drawer covered the text. This is what a speed divides by; [durationMs] is
+     * what "time in this book" reports, and it keeps the overlay.
+     */
+    val readingMs: Long get() = (durationMs - overlayMs).coerceAtLeast(0)
 
     companion object {
         /** Anything shorter is an open-and-close, not reading. */
@@ -46,7 +56,8 @@ data class ReadingSession(
             startTime: Long,
             lastActiveTime: Long,
             now: Long,
-            wordsRead: Int
+            wordsRead: Int,
+            overlayMs: Long = 0
         ): ReadingSession? {
             val endTime = now
                 .coerceAtMost(lastActiveTime + IDLE_CAP_MS)
@@ -56,7 +67,11 @@ data class ReadingSession(
                 bookId = bookId,
                 startTime = startTime,
                 endTime = endTime,
-                wordsRead = wordsRead
+                wordsRead = wordsRead,
+                // The cap can pull the end back past where an overlay was still
+                // open — left open in the viewer, the whole tail is overlay. It
+                // can never exceed the session it belongs to.
+                overlayMs = overlayMs.coerceIn(0, endTime - startTime)
             ).takeIf { it.durationMs >= MIN_DURATION_MS }
         }
     }

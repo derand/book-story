@@ -7,6 +7,7 @@
 
 package ua.acclorite.book_story.data.local.dto
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
@@ -37,5 +38,21 @@ data class ReadingSessionEntity(
      */
     val endTime: Long,
     /** Words credited to this session — the volume read, repeats included. */
-    val wordsRead: Int
+    val wordsRead: Int,
+    /**
+     * How much of the session the text was covered by something that earns no
+     * words: the full-screen image viewer, the settings sheet, the chapters
+     * drawer. Kept beside the interval rather than subtracted from it, so time
+     * in the book, days and streaks stay readable off `startTime`/`endTime`
+     * while speed can divide by the time in which words were actually possible.
+     *
+     * The note sheet is deliberately not counted here: its words are credited,
+     * so its time belongs in that denominator.
+     *
+     * Rows written before this was measured hold 0, which is the truth about
+     * them rather than an approximation — hence the SQL default, without which
+     * the auto migration has nothing to put in the existing rows.
+     */
+    @ColumnInfo(defaultValue = "0")
+    val overlayMs: Long = 0
 )

@@ -137,6 +137,17 @@ class ReaderModel @Inject constructor(
     private var openNoteId: String? = null
 
     /**
+     * How long the text has been covered this session by something that earns
+     * no words, and when the covering started. The session's interval is left
+     * alone — this is subtracted only where a speed is divided.
+     *
+     * The note sheet does not count: [creditOpenNote] credits its words, so its
+     * time belongs in that denominator.
+     */
+    private var sessionOverlayMs = 0L
+    private var overlayShownAt: Long? = null
+
+    /**
      * Set while dragging the progress slider, whose landings are screens nobody
      * read — it stops wherever the drag pauses.
      *
@@ -491,6 +502,8 @@ class ReaderModel @Inject constructor(
                 }
 
                 is ReaderEvent.OnShowSettingsBottomSheet -> {
+                    creditOpenNote()
+                    overlayShown()
                     _state.update {
                         it.copy(
                             bottomSheet = ReaderScreen.SETTINGS_BOTTOM_SHEET,
@@ -503,7 +516,10 @@ class ReaderModel @Inject constructor(
                     val id = event.tag.substringAfter(':')
                     val note = _state.value.notes[id] ?: return@launch
 
-                    markActive()
+                    // Whatever it replaces stops covering the text, and the
+                    // note sheet itself never counts as an overlay: its words
+                    // are credited, so its time is reading time.
+                    overlayHidden()
                     openNoteId = id
                     _state.update {
                         it.copy(
@@ -515,6 +531,8 @@ class ReaderModel @Inject constructor(
                 }
 
                 is ReaderEvent.OnOpenImage -> {
+                    creditOpenNote()
+                    overlayShown()
                     _state.update {
                         it.copy(
                             fullscreenImage = event.image,
@@ -525,6 +543,7 @@ class ReaderModel @Inject constructor(
                 }
 
                 is ReaderEvent.OnDismissImage -> {
+                    overlayHidden()
                     _state.update {
                         it.copy(
                             fullscreenImage = null
@@ -533,8 +552,8 @@ class ReaderModel @Inject constructor(
                 }
 
                 is ReaderEvent.OnDismissBottomSheet -> {
-                    markActive()
                     creditOpenNote()
+                    overlayHidden()
                     _state.update {
                         it.copy(
                             bottomSheet = null
@@ -543,6 +562,8 @@ class ReaderModel @Inject constructor(
                 }
 
                 is ReaderEvent.OnShowChaptersDrawer -> {
+                    creditOpenNote()
+                    overlayShown()
                     _state.update {
                         it.copy(
                             drawer = ReaderScreen.CHAPTERS_DRAWER,
@@ -552,6 +573,7 @@ class ReaderModel @Inject constructor(
                 }
 
                 is ReaderEvent.OnDismissDrawer -> {
+                    overlayHidden()
                     _state.update {
                         it.copy(
                             drawer = null
@@ -621,14 +643,52 @@ class ReaderModel @Inject constructor(
         val now = System.currentTimeMillis()
         sessionStartTime = now
         sessionLastActive = now
+        sessionOverlayMs = 0
+
+        // Coming back to a text that is still covered — stopped from inside the
+        // image viewer, say. The span the stop closed out resumes here, or the
+        // whole of it would be counted as reading.
+        overlayShownAt = if (isOverlayShowing()) now else null
+    }
+
+    /** Whether something that earns no words is covering the text right now. */
+    private fun isOverlayShowing(): Boolean = with(_state.value) {
+        fullscreenImage != null ||
+                drawer != null ||
+                bottomSheet == ReaderScreen.SETTINGS_BOTTOM_SHEET
+    }
+
+    private fun overlayShown() {
+        markActive()
+        if (overlayShownAt == null) overlayShownAt = System.currentTimeMillis()
+    }
+
+    private fun overlayHidden() {
+        markActive()
+        accrueOverlay()
+    }
+
+    /**
+     * Banks a running overlay span, without touching [sessionLastActive]. The
+     * end of a session goes through here rather than [overlayHidden]: marking
+     * the reader active at that moment would move the last sign of life to
+     * *now* and so lift the idle cap off every session that ends.
+     */
+    private fun accrueOverlay() {
+        val shownAt = overlayShownAt ?: return
+        overlayShownAt = null
+        sessionOverlayMs += (System.currentTimeMillis() - shownAt).coerceAtLeast(0)
     }
 
     private suspend fun endSession() {
         val startTime = sessionStartTime ?: return
 
         // A note still open when the reader is stopped was read like any other:
-        // credit it before the session's words are written.
+        // credit it before the session's words are written. An overlay still up
+        // is closed out for the same reason — being stopped from inside the
+        // image viewer must not lose the time it was holding.
         creditOpenNote()
+        accrueOverlay()
         sessionStartTime = null
 
         if (coverageReady) {
@@ -648,7 +708,8 @@ class ReaderModel @Inject constructor(
             startTime = startTime,
             lastActiveTime = sessionLastActive,
             endTime = System.currentTimeMillis(),
-            wordsRead = sessionWords.total
+            wordsRead = sessionWords.total,
+            overlayMs = sessionOverlayMs
         )
 
         // Only a session the statistics kept: one too short to count must not
@@ -767,6 +828,8 @@ class ReaderModel @Inject constructor(
         coverageBookWords = 0
         landingAfterJump = false
         openNoteId = null
+        sessionOverlayMs = 0
+        overlayShownAt = null
 
         eventStack.forEach { job ->
             job.cancel()

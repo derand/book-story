@@ -42,7 +42,8 @@ class StatisticsRepositoryImpl @Inject constructor(
                         bookId = session.bookId,
                         startTime = session.startTime,
                         endTime = session.endTime,
-                        wordsRead = session.wordsRead
+                        wordsRead = session.wordsRead,
+                        overlayMs = session.overlayMs
                     )
                 )
             }
