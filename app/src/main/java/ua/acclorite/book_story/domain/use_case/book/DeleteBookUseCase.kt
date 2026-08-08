@@ -49,6 +49,11 @@ class DeleteBookUseCase @Inject constructor(
             logW(TAG, "Could not delete coverage of [${book.title}]: ${it.message}")
         }
 
+        // The book's own record stays on the shelf, just without the book.
+        statisticsRepository.unlinkReadBook(bookId = book.id).onFailure {
+            logW(TAG, "Could not unlink record of [${book.title}]: ${it.message}")
+        }
+
         // Deleting book
         bookRepository.deleteBook(book).fold(
             onSuccess = {

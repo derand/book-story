@@ -19,13 +19,14 @@ class RecordReadingSessionUseCase @Inject constructor(
     private val statisticsRepository: StatisticsRepository
 ) {
 
+    /** The session as it was recorded, or null when it was too short to keep. */
     suspend operator fun invoke(
         bookId: Int,
         startTime: Long,
         lastActiveTime: Long,
         endTime: Long,
         wordsRead: Int
-    ) {
+    ): ReadingSession? {
         val session = ReadingSession.endedAt(
             bookId = bookId,
             startTime = startTime,
@@ -36,7 +37,7 @@ class RecordReadingSessionUseCase @Inject constructor(
 
         if (session == null) {
             logI(TAG, "Session for [$bookId] too short to record.")
-            return
+            return null
         }
 
         logI(TAG, "Recording ${session.durationMs}ms session for [$bookId].")
@@ -49,5 +50,7 @@ class RecordReadingSessionUseCase @Inject constructor(
                 logE(TAG, "Could not record session for [$bookId] with error: ${it.message}")
             }
         )
+
+        return session
     }
 }

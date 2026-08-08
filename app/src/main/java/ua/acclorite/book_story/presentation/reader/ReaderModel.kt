@@ -50,6 +50,7 @@ import ua.acclorite.book_story.domain.use_case.history.GetHistoryForBookUseCase
 import ua.acclorite.book_story.domain.use_case.statistics.GetBookCoverageUseCase
 import ua.acclorite.book_story.domain.use_case.statistics.RecordReadingSessionUseCase
 import ua.acclorite.book_story.domain.use_case.statistics.SaveBookCoverageUseCase
+import ua.acclorite.book_story.domain.use_case.statistics.UpdateReadBookUseCase
 import ua.acclorite.book_story.presentation.history.HistoryScreen
 import ua.acclorite.book_story.presentation.library.LibraryScreen
 import ua.acclorite.book_story.presentation.reader.model.Checkpoint
@@ -68,7 +69,8 @@ class ReaderModel @Inject constructor(
     private val keepOnlyBookImagesUseCase: KeepOnlyBookImagesUseCase,
     private val recordReadingSessionUseCase: RecordReadingSessionUseCase,
     private val getBookCoverageUseCase: GetBookCoverageUseCase,
-    private val saveBookCoverageUseCase: SaveBookCoverageUseCase
+    private val saveBookCoverageUseCase: SaveBookCoverageUseCase,
+    private val updateReadBookUseCase: UpdateReadBookUseCase
 ) : ViewModel() {
 
     private val mutex = Mutex()
@@ -134,6 +136,13 @@ class ReaderModel @Inject constructor(
      * dragging the progress slider would credit every screen it paused on.
      */
     private var landingAfterJump = false
+
+    /**
+     * Whether this session got to the end of the book. Carried to the book's
+     * record when the session is written, rather than set the moment it
+     * happens: there may be no record yet to set it on.
+     */
+    private var reachedEnd = false
 
     fun onEvent(event: ReaderEvent) {
         viewModelScope.launch {
@@ -617,7 +626,7 @@ class ReaderModel @Inject constructor(
             )
         }
 
-        recordReadingSessionUseCase(
+        val session = recordReadingSessionUseCase(
             bookId = _state.value.book.id,
             startTime = startTime,
             lastActiveTime = sessionLastActive,
@@ -625,8 +634,23 @@ class ReaderModel @Inject constructor(
             wordsRead = sessionWords
         )
 
+        // Only a session the statistics kept: one too short to count must not
+        // quietly bump the book's totals either.
+        if (session != null) {
+            val book = _state.value.book
+            updateReadBookUseCase(
+                session = session,
+                title = book.title,
+                author = book.author.getAsString() ?: "",
+                coveragePercent = if (coverageItemCount <= 0) 0f
+                else coveredItems.size.toFloat() / coverageItemCount,
+                reachedEnd = reachedEnd
+            )
+        }
+
         sessionSeen.clear()
         sessionWords = 0
+        reachedEnd = false
     }
 
     private suspend fun loadCoverage(text: List<ReaderText>) {
@@ -729,6 +753,8 @@ class ReaderModel @Inject constructor(
             ) return@collectLatest
 
             val progress = calculateProgress(index)
+            if (progress >= 1f) reachedEnd = true
+
             val (currentChapter, currentChapterProgress) = getChapterProgressUseCase(
                 index = index,
                 text = _state.value.text

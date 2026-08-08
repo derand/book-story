@@ -10,10 +10,12 @@ package ua.acclorite.book_story.data.repository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import ua.acclorite.book_story.core.helpers.runCatchingCancellable
+import ua.acclorite.book_story.data.local.dto.ReadBookEntity
 import ua.acclorite.book_story.data.local.dto.ReadingCoverageEntity
 import ua.acclorite.book_story.data.local.dto.ReadingSessionEntity
 import ua.acclorite.book_story.data.local.room.BookDatabase
 import ua.acclorite.book_story.domain.model.statistics.CoverageCodec
+import ua.acclorite.book_story.domain.model.statistics.ReadBook
 import ua.acclorite.book_story.domain.model.statistics.ReadingCoverage
 import ua.acclorite.book_story.domain.model.statistics.ReadingSession
 import ua.acclorite.book_story.domain.repository.StatisticsRepository
@@ -82,6 +84,106 @@ class StatisticsRepositoryImpl @Inject constructor(
         runCatchingCancellable {
             withContext(Dispatchers.IO) {
                 database.statisticsDao.deleteCoverage(bookId = bookId)
+            }
+        }
+
+    override suspend fun getReadBook(bookId: Int): Result<ReadBook?> =
+        runCatchingCancellable {
+            withContext(Dispatchers.IO) {
+                database.statisticsDao.getReadBook(bookId)?.let { entity ->
+                    ReadBook(
+                        id = entity.id,
+                        bookId = entity.bookId,
+                        title = entity.title,
+                        author = entity.author,
+                        totalTimeMs = entity.totalTimeMs,
+                        totalWords = entity.totalWords,
+                        sessions = entity.sessions,
+                        firstReadAt = entity.firstReadAt,
+                        lastReadAt = entity.lastReadAt,
+                        finished = entity.finished,
+                        coveragePercent = entity.coveragePercent
+                    )
+                }
+            }
+        }
+
+    override suspend fun addSessionToReadBook(
+        bookId: Int,
+        title: String,
+        author: String,
+        timeMs: Long,
+        words: Int,
+        endedAt: Long,
+        coveragePercent: Float,
+        reachedEnd: Boolean
+    ): Result<Unit> = runCatchingCancellable {
+        withContext(Dispatchers.IO) {
+            val updated = database.statisticsDao.addSessionToReadBook(
+                bookId = bookId,
+                timeMs = timeMs,
+                words = words,
+                lastReadAt = endedAt,
+                coveragePercent = coveragePercent,
+                reachedEnd = reachedEnd,
+                title = title,
+                author = author
+            )
+            if (updated > 0) return@withContext
+
+            // First session with this book: the record starts here, which is
+            // also the only moment its firstReadAt is knowable.
+            database.statisticsDao.insertReadBook(
+                ReadBookEntity(
+                    bookId = bookId,
+                    title = title,
+                    author = author,
+                    totalTimeMs = timeMs,
+                    totalWords = words,
+                    sessions = 1,
+                    firstReadAt = endedAt - timeMs,
+                    lastReadAt = endedAt,
+                    finished = reachedEnd,
+                    coveragePercent = coveragePercent
+                )
+            )
+        }
+    }
+
+    override suspend fun setFinished(
+        bookId: Int,
+        title: String,
+        author: String,
+        finished: Boolean
+    ): Result<Unit> = runCatchingCancellable {
+        withContext(Dispatchers.IO) {
+            val updated = database.statisticsDao.setFinished(bookId = bookId, finished = finished)
+            if (updated > 0) return@withContext
+
+            // Marked without ever having been read here — an empty record is
+            // still the truthful one.
+            val now = System.currentTimeMillis()
+            database.statisticsDao.insertReadBook(
+                ReadBookEntity(
+                    bookId = bookId,
+                    title = title,
+                    author = author,
+                    totalTimeMs = 0,
+                    totalWords = 0,
+                    sessions = 0,
+                    firstReadAt = now,
+                    lastReadAt = now,
+                    finished = finished,
+                    coveragePercent = 0f
+                )
+            )
+        }
+    }
+
+    override suspend fun unlinkReadBook(bookId: Int): Result<Unit> =
+        runCatchingCancellable {
+            withContext(Dispatchers.IO) {
+                database.statisticsDao.unlinkReadBook(bookId = bookId)
             }
         }
 }
