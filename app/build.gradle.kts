@@ -50,15 +50,21 @@ android {
         // debug, because release-debug is the variant performance is measured on —
         // a debug build runs several times slower, so its timings are only ever
         // comparable with each other.
+        // THEME_TRACE logs the system's night mode as each layer of the process
+        // sees it, under the "ThemeTrace" tag. Same variants as BOOK_TIMING, and
+        // for a stronger reason: the bug it chases takes hours of ordinary
+        // reading to appear, and release-debug is what that reading happens on.
         getByName("debug") {
             applicationIdSuffix = ".debug"
             buildConfigField("boolean", "BOOK_TIMING", "true")
+            buildConfigField("boolean", "THEME_TRACE", "true")
         }
 
         getByName("release") {
             isMinifyEnabled = true
             isShrinkResources = false
             buildConfigField("boolean", "BOOK_TIMING", "false")
+            buildConfigField("boolean", "THEME_TRACE", "false")
 
             proguardFiles("proguard-rules.pro")
         }
@@ -68,6 +74,7 @@ android {
             applicationIdSuffix = ".release.debug"
             signingConfig = signingConfigs.getByName("debug")
             buildConfigField("boolean", "BOOK_TIMING", "true")
+            buildConfigField("boolean", "THEME_TRACE", "true")
         }
     }
 

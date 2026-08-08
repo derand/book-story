@@ -9,6 +9,7 @@
 package ua.acclorite.book_story.presentation.main
 
 import android.annotation.SuppressLint
+import android.content.res.Configuration
 import android.database.CursorWindow
 import android.os.Bundle
 import androidx.activity.compose.setContent
@@ -23,6 +24,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.collections.immutable.persistentListOf
 import ua.acclorite.book_story.R
+import ua.acclorite.book_story.core.log.ThemeTraceComposed
+import ua.acclorite.book_story.core.log.themeTrace
 import ua.acclorite.book_story.data.model.file.CachedFile
 import ua.acclorite.book_story.data.settings.SettingsManager
 import ua.acclorite.book_story.presentation.browse.BrowseModel
@@ -76,6 +79,8 @@ class MainActivity : AppCompatActivity() {
         enableEdgeToEdge()
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
+        themeTrace("onCreate", this)
+
         setContent {
             // Initializing Screen Models
             val libraryModel = hiltViewModel<LibraryModel>()
@@ -114,9 +119,12 @@ class MainActivity : AppCompatActivity() {
                 MainActivityKeyboardManager()
 
                 if (settings.initialized.collectAsStateWithLifecycle().value) {
+                    val isDark = settings.darkTheme.value.isDark()
+                    ThemeTraceComposed(isDark)
+
                     BookStoryTheme(
                         theme = settings.theme.value,
-                        isDark = settings.darkTheme.value.isDark(),
+                        isDark = isDark,
                         isPureDark = settings.pureDark.value.isPureDark(this),
                         themeContrast = settings.themeContrast.value
                     ) {
@@ -178,6 +186,23 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+    }
+
+    // The three moments a lost uiMode change could have been noticed, and was
+    // not — see issue #50. Compile to nothing when THEME_TRACE is off.
+    override fun onStart() {
+        super.onStart()
+        themeTrace("onStart", this)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        themeTrace("onResume", this)
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        themeTrace("onConfigurationChanged", this)
     }
 
     override fun onDestroy() {
