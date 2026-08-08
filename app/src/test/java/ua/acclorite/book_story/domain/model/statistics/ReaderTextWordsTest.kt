@@ -76,6 +76,12 @@ class ReaderTextWordsTest {
     }
 
     @Test
+    fun `a footnote counts its own words`() {
+        assertEquals(5, AnnotatedString("A note on the matter").wordCount())
+        assertEquals(0, AnnotatedString("").wordCount())
+    }
+
+    @Test
     fun `an image counts only its caption`() {
         val plain = ReaderText.Image(image = anImage())
         val captioned = ReaderText.Image(image = anImage(), caption = text("Figure one here"))

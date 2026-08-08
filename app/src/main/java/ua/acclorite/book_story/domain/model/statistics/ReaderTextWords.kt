@@ -7,6 +7,7 @@
 
 package ua.acclorite.book_story.domain.model.statistics
 
+import androidx.compose.ui.text.AnnotatedString
 import ua.acclorite.book_story.domain.model.reader.ReaderText
 
 /**
@@ -22,6 +23,13 @@ fun ReaderText.wordCount(): Int = when (this) {
     is ReaderText.Image -> caption?.line?.text?.countWords() ?: 0
     ReaderText.Separator -> 0
 }
+
+/**
+ * How many words a footnote is worth. Notes live outside the text list, so they
+ * are counted on their own — never as part of the book's total, which is what
+ * coverage is measured against.
+ */
+fun AnnotatedString.wordCount(): Int = text.countWords()
 
 /**
  * Runs of non-whitespace. Deliberately allocation-free: this runs over every

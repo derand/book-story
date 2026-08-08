@@ -39,6 +39,7 @@ import ua.acclorite.book_story.domain.model.reader.BookImageStore
 import ua.acclorite.book_story.domain.model.reader.ReaderText
 import ua.acclorite.book_story.domain.model.reader.ReaderText.Chapter
 import ua.acclorite.book_story.domain.model.statistics.ReadingCoverage
+import ua.acclorite.book_story.domain.model.statistics.SessionWords
 import ua.acclorite.book_story.domain.model.statistics.wordCount
 import ua.acclorite.book_story.domain.use_case.book.GetBookUseCase
 import ua.acclorite.book_story.domain.use_case.book.GetChapterProgressUseCase
@@ -126,9 +127,14 @@ class ReaderModel @Inject constructor(
      */
     private var coverageReady = false
 
-    /** Items credited this session, so a screen re-read now counts once. */
-    private val sessionSeen = mutableSetOf<Int>()
-    private var sessionWords = 0
+    /** What this session has credited, de-duplicated; see [SessionWords]. */
+    private val sessionWords = SessionWords()
+
+    /**
+     * The note the sheet is showing. Credited when it closes rather than when it
+     * opens, so a mis-tap that is dismissed at once counts nothing.
+     */
+    private var openNoteId: String? = null
 
     /**
      * Set while dragging the progress slider, whose landings are screens nobody
@@ -497,6 +503,8 @@ class ReaderModel @Inject constructor(
                     val id = event.tag.substringAfter(':')
                     val note = _state.value.notes[id] ?: return@launch
 
+                    markActive()
+                    openNoteId = id
                     _state.update {
                         it.copy(
                             bottomSheet = ReaderScreen.NOTE_BOTTOM_SHEET,
@@ -525,6 +533,8 @@ class ReaderModel @Inject constructor(
                 }
 
                 is ReaderEvent.OnDismissBottomSheet -> {
+                    markActive()
+                    creditOpenNote()
                     _state.update {
                         it.copy(
                             bottomSheet = null
@@ -615,6 +625,10 @@ class ReaderModel @Inject constructor(
 
     private suspend fun endSession() {
         val startTime = sessionStartTime ?: return
+
+        // A note still open when the reader is stopped was read like any other:
+        // credit it before the session's words are written.
+        creditOpenNote()
         sessionStartTime = null
 
         if (coverageReady) {
@@ -634,7 +648,7 @@ class ReaderModel @Inject constructor(
             startTime = startTime,
             lastActiveTime = sessionLastActive,
             endTime = System.currentTimeMillis(),
-            wordsRead = sessionWords
+            wordsRead = sessionWords.total
         )
 
         // Only a session the statistics kept: one too short to count must not
@@ -651,9 +665,35 @@ class ReaderModel @Inject constructor(
             )
         }
 
-        sessionSeen.clear()
-        sessionWords = 0
+        sessionWords.clear()
         reachedEnd = false
+    }
+
+    /**
+     * Something that is not a scroll but is still the reader at work — opening
+     * or closing a note. Without it the idle cap would measure from the last
+     * scroll, and ten minutes spent in a long note would be cut off the end of
+     * the session as if the device had been put down.
+     */
+    private fun markActive() {
+        sessionLastActive = System.currentTimeMillis()
+    }
+
+    /**
+     * Credits the note the sheet was showing, if any.
+     *
+     * Note words are **volume only**: notes are not items, so they enter neither
+     * [coveredItems] nor [coverageBookWords]. Putting them in the book's total
+     * would mean no book could ever reach 100 % coverage without opening every
+     * note; leaving them out of the session's words leaves the time counted and
+     * the words not, which drags every speed figure down.
+     */
+    private fun creditOpenNote() {
+        val id = openNoteId ?: return
+        openNoteId = null
+
+        if (sessionStartTime == null) return
+        sessionWords.creditNote(id, _state.value.notes[id]?.wordCount() ?: 0)
     }
 
     private suspend fun loadCoverage(text: List<ReaderText>) {
@@ -704,7 +744,7 @@ class ReaderModel @Inject constructor(
             val entry = text.getOrNull(item.index) ?: continue
             val words = entry.wordCount()
 
-            if (sessionSeen.add(item.index)) sessionWords += words
+            sessionWords.creditItem(item.index, words)
             if (coveredItems.add(item.index)) coveredWords += words
         }
     }
@@ -726,6 +766,7 @@ class ReaderModel @Inject constructor(
         coverageItemCount = 0
         coverageBookWords = 0
         landingAfterJump = false
+        openNoteId = null
 
         eventStack.forEach { job ->
             job.cancel()
