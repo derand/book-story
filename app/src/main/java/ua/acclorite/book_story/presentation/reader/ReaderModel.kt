@@ -6,6 +6,7 @@
 
 package ua.acclorite.book_story.presentation.reader
 
+import androidx.compose.foundation.lazy.LazyListItemInfo
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.snapshotFlow
 import androidx.lifecycle.ViewModel
@@ -37,6 +38,8 @@ import ua.acclorite.book_story.core.ui.UIText
 import ua.acclorite.book_story.domain.model.reader.BookImageStore
 import ua.acclorite.book_story.domain.model.reader.ReaderText
 import ua.acclorite.book_story.domain.model.reader.ReaderText.Chapter
+import ua.acclorite.book_story.domain.model.statistics.ReadingCoverage
+import ua.acclorite.book_story.domain.model.statistics.wordCount
 import ua.acclorite.book_story.domain.use_case.book.GetBookUseCase
 import ua.acclorite.book_story.domain.use_case.book.GetChapterProgressUseCase
 import ua.acclorite.book_story.domain.use_case.book.GetTextUseCase
@@ -44,7 +47,9 @@ import ua.acclorite.book_story.domain.use_case.book.KeepOnlyBookImagesUseCase
 import ua.acclorite.book_story.domain.use_case.book.LoadBookImagesUseCase
 import ua.acclorite.book_story.domain.use_case.book.UpdateBookUseCase
 import ua.acclorite.book_story.domain.use_case.history.GetHistoryForBookUseCase
+import ua.acclorite.book_story.domain.use_case.statistics.GetBookCoverageUseCase
 import ua.acclorite.book_story.domain.use_case.statistics.RecordReadingSessionUseCase
+import ua.acclorite.book_story.domain.use_case.statistics.SaveBookCoverageUseCase
 import ua.acclorite.book_story.presentation.history.HistoryScreen
 import ua.acclorite.book_story.presentation.library.LibraryScreen
 import ua.acclorite.book_story.presentation.reader.model.Checkpoint
@@ -61,7 +66,9 @@ class ReaderModel @Inject constructor(
     private val getChapterProgressUseCase: GetChapterProgressUseCase,
     private val loadBookImagesUseCase: LoadBookImagesUseCase,
     private val keepOnlyBookImagesUseCase: KeepOnlyBookImagesUseCase,
-    private val recordReadingSessionUseCase: RecordReadingSessionUseCase
+    private val recordReadingSessionUseCase: RecordReadingSessionUseCase,
+    private val getBookCoverageUseCase: GetBookCoverageUseCase,
+    private val saveBookCoverageUseCase: SaveBookCoverageUseCase
 ) : ViewModel() {
 
     private val mutex = Mutex()
@@ -99,6 +106,34 @@ class ReaderModel @Inject constructor(
      * the middle of a sitting does not.
      */
     private var sessionLastActive: Long = 0L
+
+    /**
+     * What of the open book has been read — item indices, loaded with the text
+     * and saved when the session ends. Held apart from [state] because it
+     * changes on every settled scroll and nothing draws it.
+     */
+    private val coveredItems = mutableSetOf<Int>()
+    private var coveredWords = 0
+    private var coverageItemCount = 0
+    private var coverageBookWords = 0
+    private var coverageJob: Job? = null
+
+    /**
+     * Until the stored coverage has been read back, nothing is credited: the
+     * set is about to be replaced by it.
+     */
+    private var coverageReady = false
+
+    /** Items credited this session, so a screen re-read now counts once. */
+    private val sessionSeen = mutableSetOf<Int>()
+    private var sessionWords = 0
+
+    /**
+     * Set when the reader moves the list itself. The settled position that
+     * follows is where a jump landed, not something that was read — otherwise
+     * dragging the progress slider would credit every screen it paused on.
+     */
+    private var landingAfterJump = false
 
     fun onEvent(event: ReaderEvent) {
         viewModelScope.launch {
@@ -168,6 +203,14 @@ class ReaderModel @Inject constructor(
                         // reading time.
                         startSession()
 
+                        // Separately, because counting every word of the book is
+                        // one pass over all of it and the first frame is still
+                        // ahead — [OnRestoreScroll] below is what ends the
+                        // loading placeholder.
+                        coverageJob = viewModelScope.launch(Dispatchers.Default) {
+                            loadCoverage(strippedText)
+                        }
+
                         updateBookUseCase(_state.value.book)
 
                         LibraryScreen.refreshListChannel.trySend(0)
@@ -198,6 +241,7 @@ class ReaderModel @Inject constructor(
                 is ReaderEvent.OnRestoreScroll -> {
                     snapshotFlow { _state.value.listState.layoutInfo.totalItemsCount }.first { it > 0 }
 
+                    jumpedToPosition()
                     _state.value.listState.requestScrollToItem(
                         index = _state.value.book.scrollIndex,
                         scrollOffset = _state.value.book.scrollOffset
@@ -290,7 +334,8 @@ class ReaderModel @Inject constructor(
                             .takeIf { it != -1 }
                         if (chapterIndex == null) return@withContext
 
-                        _state.value.listState.requestScrollToItem(
+                        jumpedToPosition()
+                    _state.value.listState.requestScrollToItem(
                             index = chapterIndex,
                             scrollOffset = 0
                         )
@@ -313,7 +358,8 @@ class ReaderModel @Inject constructor(
 
                         val scrollTo = (_state.value.text.lastIndex * event.progress).roundToInt()
 
-                        _state.value.listState.requestScrollToItem(
+                        jumpedToPosition()
+                    _state.value.listState.requestScrollToItem(
                             index = scrollTo,
                             scrollOffset = 0
                         )
@@ -333,7 +379,8 @@ class ReaderModel @Inject constructor(
                             )
                         }
 
-                        _state.value.listState.requestScrollToItem(
+                        jumpedToPosition()
+                    _state.value.listState.requestScrollToItem(
                             index = event.checkpoint.index,
                             scrollOffset = event.checkpoint.offset
                         )
@@ -558,15 +605,71 @@ class ReaderModel @Inject constructor(
         val startTime = sessionStartTime ?: return
         sessionStartTime = null
 
+        if (coverageReady) {
+            saveBookCoverageUseCase(
+                ReadingCoverage(
+                    bookId = _state.value.book.id,
+                    itemCount = coverageItemCount,
+                    bookWords = coverageBookWords,
+                    covered = coveredItems.toSet(),
+                    coveredWords = coveredWords
+                )
+            )
+        }
+
         recordReadingSessionUseCase(
             bookId = _state.value.book.id,
             startTime = startTime,
             lastActiveTime = sessionLastActive,
             endTime = System.currentTimeMillis(),
-            // Words are credited from what is on screen; that pass is not
-            // written yet, so every session records zero for now.
-            wordsRead = 0
+            wordsRead = sessionWords
         )
+
+        sessionSeen.clear()
+        sessionWords = 0
+    }
+
+    private suspend fun loadCoverage(text: List<ReaderText>) {
+        val bookWords = text.sumOf { it.wordCount() }
+        val stored = getBookCoverageUseCase(
+            bookId = _state.value.book.id,
+            itemCount = text.size,
+            bookWords = bookWords
+        )
+
+        coverageItemCount = text.size
+        coverageBookWords = bookWords
+        coveredItems.clear()
+        coveredItems.addAll(stored.covered)
+        coveredWords = stored.coveredWords
+        coverageReady = true
+    }
+
+    /** The reader is about to move the list itself; see [landingAfterJump]. */
+    private fun jumpedToPosition() {
+        landingAfterJump = true
+    }
+
+    /**
+     * Marks what is on screen as read. Called only for *settled* positions, so
+     * a fling across half the book credits nothing it flew past: the flow never
+     * emits those in between.
+     */
+    private fun creditVisible(visible: List<LazyListItemInfo>) {
+        if (landingAfterJump) {
+            landingAfterJump = false
+            return
+        }
+        if (!coverageReady) return
+
+        val text = _state.value.text
+        for (item in visible) {
+            val entry = text.getOrNull(item.index) ?: continue
+            val words = entry.wordCount()
+
+            if (sessionSeen.add(item.index)) sessionWords += words
+            if (coveredItems.add(item.index)) coveredWords += words
+        }
     }
 
     fun clearAsync() {
@@ -578,6 +681,14 @@ class ReaderModel @Inject constructor(
         // clears before loading another one, and a session left running would
         // be recorded against the new book.
         endSession()
+
+        coverageJob?.cancelAndJoin()
+        coverageReady = false
+        coveredItems.clear()
+        coveredWords = 0
+        coverageItemCount = 0
+        coverageBookWords = 0
+        landingAfterJump = false
 
         eventStack.forEach { job ->
             job.cancel()
@@ -608,6 +719,7 @@ class ReaderModel @Inject constructor(
             // Every settled position is a sign of life, even one the guard below
             // discards: the reader is being scrolled either way.
             sessionLastActive = System.currentTimeMillis()
+            creditVisible(listState.layoutInfo.visibleItemsInfo)
 
             if (
                 _state.value.isLoading ||

@@ -44,6 +44,11 @@ class DeleteBookUseCase @Inject constructor(
             logW(TAG, "Could not anonymise sessions of [${book.title}]: ${it.message}")
         }
 
+        // Coverage does go: its item indices mean nothing without the text.
+        statisticsRepository.deleteCoverage(bookId = book.id).onFailure {
+            logW(TAG, "Could not delete coverage of [${book.title}]: ${it.message}")
+        }
+
         // Deleting book
         bookRepository.deleteBook(book).fold(
             onSuccess = {

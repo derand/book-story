@@ -7,6 +7,7 @@
 
 package ua.acclorite.book_story.domain.repository
 
+import ua.acclorite.book_story.domain.model.statistics.ReadingCoverage
 import ua.acclorite.book_story.domain.model.statistics.ReadingSession
 
 interface StatisticsRepository {
@@ -15,4 +16,10 @@ interface StatisticsRepository {
 
     /** See [ua.acclorite.book_story.data.local.room.StatisticsDao.anonymiseBookSessions]. */
     suspend fun anonymiseBookSessions(bookId: Int): Result<Unit>
+
+    suspend fun getCoverage(bookId: Int): Result<ReadingCoverage?>
+
+    suspend fun saveCoverage(coverage: ReadingCoverage): Result<Unit>
+
+    suspend fun deleteCoverage(bookId: Int): Result<Unit>
 }

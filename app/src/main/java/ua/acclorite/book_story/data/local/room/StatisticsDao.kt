@@ -9,7 +9,9 @@ package ua.acclorite.book_story.data.local.room
 
 import androidx.room.Dao
 import androidx.room.Insert
+import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import ua.acclorite.book_story.data.local.dto.ReadingCoverageEntity
 import ua.acclorite.book_story.data.local.dto.ReadingSessionEntity
 
 @Dao
@@ -26,4 +28,14 @@ interface StatisticsDao {
      */
     @Query("UPDATE ReadingSessionEntity SET bookId = NULL WHERE bookId = :bookId")
     suspend fun anonymiseBookSessions(bookId: Int)
+
+    @Query("SELECT * FROM readingcoverageentity WHERE bookId = :bookId")
+    suspend fun getCoverage(bookId: Int): ReadingCoverageEntity?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun saveCoverage(coverage: ReadingCoverageEntity)
+
+    /** Unlike sessions, coverage goes: without the text its indices mean nothing. */
+    @Query("DELETE FROM readingcoverageentity WHERE bookId = :bookId")
+    suspend fun deleteCoverage(bookId: Int)
 }

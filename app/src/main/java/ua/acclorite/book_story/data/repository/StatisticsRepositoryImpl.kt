@@ -10,8 +10,11 @@ package ua.acclorite.book_story.data.repository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import ua.acclorite.book_story.core.helpers.runCatchingCancellable
+import ua.acclorite.book_story.data.local.dto.ReadingCoverageEntity
 import ua.acclorite.book_story.data.local.dto.ReadingSessionEntity
 import ua.acclorite.book_story.data.local.room.BookDatabase
+import ua.acclorite.book_story.domain.model.statistics.CoverageCodec
+import ua.acclorite.book_story.domain.model.statistics.ReadingCoverage
 import ua.acclorite.book_story.domain.model.statistics.ReadingSession
 import ua.acclorite.book_story.domain.repository.StatisticsRepository
 import javax.inject.Inject
@@ -42,6 +45,43 @@ class StatisticsRepositoryImpl @Inject constructor(
         runCatchingCancellable {
             withContext(Dispatchers.IO) {
                 database.statisticsDao.anonymiseBookSessions(bookId = bookId)
+            }
+        }
+
+    override suspend fun getCoverage(bookId: Int): Result<ReadingCoverage?> =
+        runCatchingCancellable {
+            withContext(Dispatchers.IO) {
+                database.statisticsDao.getCoverage(bookId)?.let { entity ->
+                    ReadingCoverage(
+                        bookId = entity.bookId,
+                        itemCount = entity.itemCount,
+                        bookWords = entity.bookWords,
+                        covered = CoverageCodec.decode(entity.intervals),
+                        coveredWords = entity.coveredWords
+                    )
+                }
+            }
+        }
+
+    override suspend fun saveCoverage(coverage: ReadingCoverage): Result<Unit> =
+        runCatchingCancellable {
+            withContext(Dispatchers.IO) {
+                database.statisticsDao.saveCoverage(
+                    ReadingCoverageEntity(
+                        bookId = coverage.bookId,
+                        itemCount = coverage.itemCount,
+                        bookWords = coverage.bookWords,
+                        intervals = CoverageCodec.encode(coverage.covered),
+                        coveredWords = coverage.coveredWords
+                    )
+                )
+            }
+        }
+
+    override suspend fun deleteCoverage(bookId: Int): Result<Unit> =
+        runCatchingCancellable {
+            withContext(Dispatchers.IO) {
+                database.statisticsDao.deleteCoverage(bookId = bookId)
             }
         }
 }
