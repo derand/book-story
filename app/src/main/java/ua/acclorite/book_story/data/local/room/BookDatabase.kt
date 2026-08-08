@@ -61,6 +61,7 @@ abstract class BookDatabase : RoomDatabase() {
     abstract val historyDao: HistoryDao
     abstract val colorPresetDao: ColorPresetDao
     abstract val categoryDao: CategoryDao
+    abstract val statisticsDao: StatisticsDao
 }
 
 @Suppress("ClassName")

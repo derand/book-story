@@ -44,6 +44,7 @@ import ua.acclorite.book_story.domain.use_case.book.KeepOnlyBookImagesUseCase
 import ua.acclorite.book_story.domain.use_case.book.LoadBookImagesUseCase
 import ua.acclorite.book_story.domain.use_case.book.UpdateBookUseCase
 import ua.acclorite.book_story.domain.use_case.history.GetHistoryForBookUseCase
+import ua.acclorite.book_story.domain.use_case.statistics.RecordReadingSessionUseCase
 import ua.acclorite.book_story.presentation.history.HistoryScreen
 import ua.acclorite.book_story.presentation.library.LibraryScreen
 import ua.acclorite.book_story.presentation.reader.model.Checkpoint
@@ -59,7 +60,8 @@ class ReaderModel @Inject constructor(
     private val getHistoryForBookUseCase: GetHistoryForBookUseCase,
     private val getChapterProgressUseCase: GetChapterProgressUseCase,
     private val loadBookImagesUseCase: LoadBookImagesUseCase,
-    private val keepOnlyBookImagesUseCase: KeepOnlyBookImagesUseCase
+    private val keepOnlyBookImagesUseCase: KeepOnlyBookImagesUseCase,
+    private val recordReadingSessionUseCase: RecordReadingSessionUseCase
 ) : ViewModel() {
 
     private val mutex = Mutex()
@@ -87,6 +89,16 @@ class ReaderModel @Inject constructor(
 
     private var scrollJob: Job? = null
     private val eventStack = mutableListOf<Job>()
+
+    /** Start of the running reading session, or null when none is running. */
+    private var sessionStartTime: Long? = null
+
+    /**
+     * When the reader last settled on a position. Only the idle *after* it is
+     * capped, so a device left open on a page stops counting while a pause in
+     * the middle of a sitting does not.
+     */
+    private var sessionLastActive: Long = 0L
 
     fun onEvent(event: ReaderEvent) {
         viewModelScope.launch {
@@ -150,6 +162,11 @@ class ReaderModel @Inject constructor(
                         }
                         BookOpenTrace.mark("text in state")
                         ensureActive()
+
+                        // The session starts when there is something to read,
+                        // not when the book was opened: a cold parse is not
+                        // reading time.
+                        startSession()
 
                         updateBookUseCase(_state.value.book)
 
@@ -339,6 +356,11 @@ class ReaderModel @Inject constructor(
                         )
                     }
 
+                    // Before the position-saving block below, which is guarded
+                    // by conditions of its own and must not decide whether a
+                    // session was read.
+                    endSession()
+
                     if (
                         !_state.value.isLoading &&
                         _state.value.listState.layoutInfo.totalItemsCount > 0 &&
@@ -504,11 +526,59 @@ class ReaderModel @Inject constructor(
         }
     }
 
+    /**
+     * The reader became visible. Starts a session if there is text to read —
+     * on the way in the text is not loaded yet and [ReaderEvent.OnLoadText]
+     * starts it instead, but coming back from a call or the home screen lands
+     * here with the book already in memory.
+     */
+    fun onEnterForeground() {
+        startSession()
+    }
+
+    /**
+     * The reader stopped being visible — a call, the home gesture, the screen
+     * going off, another app. All of them mean the reading stopped, and none of
+     * them is a deliberate exit, so nothing else would have recorded it.
+     */
+    fun onLeaveForeground() {
+        viewModelScope.launch { endSession() }
+    }
+
+    private fun startSession() {
+        if (sessionStartTime != null) return
+        if (_state.value.text.isEmpty()) return
+
+        val now = System.currentTimeMillis()
+        sessionStartTime = now
+        sessionLastActive = now
+    }
+
+    private suspend fun endSession() {
+        val startTime = sessionStartTime ?: return
+        sessionStartTime = null
+
+        recordReadingSessionUseCase(
+            bookId = _state.value.book.id,
+            startTime = startTime,
+            lastActiveTime = sessionLastActive,
+            endTime = System.currentTimeMillis(),
+            // Words are credited from what is on screen; that pass is not
+            // written yet, so every session records zero for now.
+            wordsRead = 0
+        )
+    }
+
     fun clearAsync() {
         viewModelScope.launch { clear() }
     }
 
     suspend fun clear() {
+        // First, while the state still names the book it belongs to: [init]
+        // clears before loading another one, and a session left running would
+        // be recorded against the new book.
+        endSession()
+
         eventStack.forEach { job ->
             job.cancel()
             job.join()
@@ -535,6 +605,10 @@ class ReaderModel @Inject constructor(
         snapshotFlow {
             listState.firstVisibleItemIndex to listState.firstVisibleItemScrollOffset
         }.distinctUntilChanged().debounce(300).collectLatest { (index, offset) ->
+            // Every settled position is a sign of life, even one the guard below
+            // discards: the reader is being scrolled either way.
+            sessionLastActive = System.currentTimeMillis()
+
             if (
                 _state.value.isLoading ||
                 listState.layoutInfo.totalItemsCount == 0 ||
