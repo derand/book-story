@@ -34,6 +34,7 @@ import ua.acclorite.book_story.domain.use_case.color_preset.GetColorPresetsUseCa
 import ua.acclorite.book_story.domain.use_case.color_preset.ReorderColorPresetsUseCase
 import ua.acclorite.book_story.domain.use_case.color_preset.SelectColorPresetUseCase
 import ua.acclorite.book_story.domain.use_case.color_preset.UpdateColorPresetUseCase
+import ua.acclorite.book_story.domain.use_case.debug.CopyDatabaseUseCase
 import ua.acclorite.book_story.domain.use_case.permission.GrantPersistableUriPermissionUseCase
 import ua.acclorite.book_story.domain.use_case.permission.ReleasePersistableUriPermissionUseCase
 import ua.acclorite.book_story.domain.use_case.settings.UpdateLanguageUseCase
@@ -57,7 +58,8 @@ class SettingsModel @Inject constructor(
     private val updateCategoriesOrderUseCase: UpdateCategoriesOrderUseCase,
     private val deleteCategoryUseCase: DeleteCategoryUseCase,
     private val getParseCacheSizeUseCase: GetParseCacheSizeUseCase,
-    private val clearParseCacheUseCase: ClearParseCacheUseCase
+    private val clearParseCacheUseCase: ClearParseCacheUseCase,
+    private val copyDatabaseUseCase: CopyDatabaseUseCase
 ) : ViewModel() {
 
     private val mutex = Mutex()
@@ -488,6 +490,16 @@ class SettingsModel @Inject constructor(
                     val size = withContext(Dispatchers.IO) { getParseCacheSizeUseCase() }
                     _state.update {
                         it.copy(parseCacheSizeBytes = size)
+                    }
+                }
+
+                is SettingsEvent.OnCopyDatabase -> {
+                    val result = withContext(Dispatchers.IO) { copyDatabaseUseCase() }
+                    _state.update {
+                        it.copy(
+                            databaseCopyPath = result.getOrNull(),
+                            databaseCopyError = result.exceptionOrNull()?.message
+                        )
                     }
                 }
             }

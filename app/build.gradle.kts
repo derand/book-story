@@ -54,10 +54,16 @@ android {
         // sees it, under the "ThemeTrace" tag. Same variants as BOOK_TIMING, and
         // for a stronger reason: the bug it chases takes hours of ordinary
         // reading to appear, and release-debug is what that reading happens on.
+        // DB_EXPORT puts a "Copy database" row in General settings. The reading
+        // app is release-debug, which is not debuggable on purpose, so `run-as`
+        // cannot reach its database and no question about real reading data can
+        // be answered without it. Off in release: nothing ships a one-tap "put
+        // my reading history where another process can read it" button.
         getByName("debug") {
             applicationIdSuffix = ".debug"
             buildConfigField("boolean", "BOOK_TIMING", "true")
             buildConfigField("boolean", "THEME_TRACE", "true")
+            buildConfigField("boolean", "DB_EXPORT", "true")
         }
 
         getByName("release") {
@@ -65,6 +71,7 @@ android {
             isShrinkResources = false
             buildConfigField("boolean", "BOOK_TIMING", "false")
             buildConfigField("boolean", "THEME_TRACE", "false")
+            buildConfigField("boolean", "DB_EXPORT", "false")
 
             proguardFiles("proguard-rules.pro")
         }
@@ -75,6 +82,7 @@ android {
             signingConfig = signingConfigs.getByName("debug")
             buildConfigField("boolean", "BOOK_TIMING", "true")
             buildConfigField("boolean", "THEME_TRACE", "true")
+            buildConfigField("boolean", "DB_EXPORT", "true")
         }
     }
 

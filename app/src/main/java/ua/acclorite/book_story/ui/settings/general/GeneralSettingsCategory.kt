@@ -19,11 +19,13 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.coerceAtLeast
 import androidx.compose.ui.unit.dp
+import ua.acclorite.book_story.BuildConfig
 import ua.acclorite.book_story.R
 import ua.acclorite.book_story.ui.settings.components.SettingsSubcategory
 import ua.acclorite.book_story.ui.settings.general.components.AppLanguageOption
 import ua.acclorite.book_story.ui.settings.general.components.CacheImagesOption
 import ua.acclorite.book_story.ui.settings.general.components.ClearParseCacheOption
+import ua.acclorite.book_story.ui.settings.general.components.CopyDatabaseOption
 import ua.acclorite.book_story.ui.settings.general.components.DoublePressExitOption
 import ua.acclorite.book_story.ui.settings.general.components.ParseCacheSizeOption
 
@@ -60,6 +62,22 @@ fun LazyListScope.GeneralSettingsCategory(
 
         item {
             ClearParseCacheOption()
+        }
+    }
+
+    // Debugging tools, absent from a release build entirely: the reading app is
+    // release-debug and is not debuggable, so without this its database cannot
+    // be read at all.
+    if (BuildConfig.DB_EXPORT) {
+        SettingsSubcategory(
+            titleColor = titleColor,
+            title = { stringResource(id = R.string.debug_option) },
+            showTitle = true,
+            showDivider = false
+        ) {
+            item {
+                CopyDatabaseOption()
+            }
         }
     }
 

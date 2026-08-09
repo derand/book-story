@@ -20,5 +20,13 @@ data class SettingsState(
 
     val categories: List<Category> = emptyList(),
 
-    val parseCacheSizeBytes: Long = 0L
+    val parseCacheSizeBytes: Long = 0L,
+
+    /**
+     * Where the last "Copy database" landed, or why it did not. Both null until
+     * the row is tapped; a copy that reported nothing would leave the next
+     * question to be answered from a stale file.
+     */
+    val databaseCopyPath: String? = null,
+    val databaseCopyError: String? = null
 )

@@ -193,6 +193,9 @@
     <string name="cache_images_option_desc">Also store image data in the cache so books with images open instantly too. Uses more space.</string>
     <string name="clear_parse_cache_option">Clear cache</string>
     <string name="clear_parse_cache_option_desc">Currently using %1$s</string>
+    <string name="debug_option">Debug</string>
+    <string name="copy_database_option">Copy database</string>
+    <string name="copy_database_option_desc">Copies it where adb can read it, without run-as</string>
     <string name="clear_parse_cache_dialog">Clear parse cache?</string>
     <string name="clear_parse_cache_dialog_desc">This removes all cached parsed books. They will be re-parsed the next time you open them.</string>
 
