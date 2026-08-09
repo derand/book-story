@@ -22,7 +22,12 @@ class GetBookStatisticsUseCase @Inject constructor(
      *
      * "Time left" is worked out from the reader's **typical** pace rather than
      * this book's own, so a book only just started still gets an estimate — and
-     * from the words *not covered*, not from where the bookmark sits.
+     * from the words **ahead of the bookmark**. It is a forecast, so it answers
+     * "how much is still in front of me" and not "how much has this measurement
+     * never seen": a book whose statistics began mid-way has most of itself
+     * uncovered while having almost nothing left, and an omnibus read from its
+     * last part onwards has nothing ahead at all. Coverage answers the other
+     * question, one line above on the same card.
      */
     suspend operator fun invoke(bookId: Int): BookStatistics {
         val record = statisticsRepository.getReadBook(bookId).getOrNull()
@@ -42,8 +47,16 @@ class GetBookStatisticsUseCase @Inject constructor(
         // meant to be compared with.
         val inThisBook = statisticsRepository.getTypicalWordsPerMinute(bookId).getOrNull()
 
-        val wordsLeft = (bookWords - coveredWords).coerceAtLeast(0)
-        val timeLeftMs = ReadingPace.timeForWords(wordsLeft, typical ?: inThisBook)
+        // Null until the book has been read once with the bookmark's word count
+        // recorded. The figure is then left out rather than approximated from
+        // the item-based progress: items carry wildly uneven word counts in an
+        // illustrated book, and mixing the two scales is what this replaces.
+        val timeLeftMs = coverage?.wordsBeforeBookmark?.let { before ->
+            ReadingPace.timeForWords(
+                words = (bookWords - before).coerceAtLeast(0),
+                wordsPerMinute = typical ?: inThisBook
+            )
+        }
 
         return BookStatistics(
             totalTimeMs = totalTimeMs,

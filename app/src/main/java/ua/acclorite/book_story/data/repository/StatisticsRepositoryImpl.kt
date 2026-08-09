@@ -65,7 +65,8 @@ class StatisticsRepositoryImpl @Inject constructor(
                         itemCount = entity.itemCount,
                         bookWords = entity.bookWords,
                         covered = CoverageCodec.decode(entity.intervals),
-                        coveredWords = entity.coveredWords
+                        coveredWords = entity.coveredWords,
+                        wordsBeforeBookmark = entity.wordsBeforeBookmark
                     )
                 }
             }
@@ -80,7 +81,8 @@ class StatisticsRepositoryImpl @Inject constructor(
                         itemCount = coverage.itemCount,
                         bookWords = coverage.bookWords,
                         intervals = CoverageCodec.encode(coverage.covered),
-                        coveredWords = coverage.coveredWords
+                        coveredWords = coverage.coveredWords,
+                        wordsBeforeBookmark = coverage.wordsBeforeBookmark
                     )
                 )
             }

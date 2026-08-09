@@ -29,8 +29,6 @@ data class BookStatistics(
     val timeLeftMs: Long?,
     val finishedBy: Long?
 ) {
-    val wordsLeft: Int get() = (bookWords - coveredWords).coerceAtLeast(0)
-
     /** Nothing has been read here yet, so the card has nothing to say. */
     val isEmpty: Boolean get() = sessions == 0 && totalTimeMs == 0L
 

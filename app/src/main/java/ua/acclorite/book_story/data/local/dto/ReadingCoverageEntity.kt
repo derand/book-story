@@ -35,5 +35,11 @@ data class ReadingCoverageEntity(
     /** Covered item ranges, `"12-480,3900-5200"`. */
     val intervals: String,
     /** Words inside [intervals] — unique, unlike a session's `wordsRead`. */
-    val coveredWords: Int
+    val coveredWords: Int,
+    /**
+     * Words before the bookmark, for "left to read". Nullable rather than
+     * defaulted: a row written before this column existed does not know where
+     * its bookmark stood, and 0 would claim the whole book is still ahead.
+     */
+    val wordsBeforeBookmark: Int?
 )

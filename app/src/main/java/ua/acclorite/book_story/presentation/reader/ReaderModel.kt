@@ -41,6 +41,7 @@ import ua.acclorite.book_story.domain.model.reader.ReaderText.Chapter
 import ua.acclorite.book_story.domain.model.statistics.ReadingCoverage
 import ua.acclorite.book_story.domain.model.statistics.SessionWords
 import ua.acclorite.book_story.domain.model.statistics.wordCount
+import ua.acclorite.book_story.domain.model.statistics.wordPrefixSums
 import ua.acclorite.book_story.domain.use_case.book.GetBookUseCase
 import ua.acclorite.book_story.domain.use_case.book.GetChapterProgressUseCase
 import ua.acclorite.book_story.domain.use_case.book.GetTextUseCase
@@ -120,6 +121,13 @@ class ReaderModel @Inject constructor(
     private var coverageItemCount = 0
     private var coverageBookWords = 0
     private var coverageJob: Job? = null
+
+    /**
+     * Words before each item, built by the pass that counts the book. It is
+     * what makes "left to read" a forecast: the bookmark's index reads straight
+     * out of it, with no second walk over the text.
+     */
+    private var itemWordPrefix: IntArray? = null
 
     /**
      * Until the stored coverage has been read back, nothing is credited: the
@@ -698,7 +706,8 @@ class ReaderModel @Inject constructor(
                     itemCount = coverageItemCount,
                     bookWords = coverageBookWords,
                     covered = coveredItems.toSet(),
-                    coveredWords = coveredWords
+                    coveredWords = coveredWords,
+                    wordsBeforeBookmark = wordsBeforeBookmark()
                 )
             )
         }
@@ -758,7 +767,8 @@ class ReaderModel @Inject constructor(
     }
 
     private suspend fun loadCoverage(text: List<ReaderText>) {
-        val bookWords = text.sumOf { it.wordCount() }
+        val prefix = text.wordPrefixSums()
+        val bookWords = prefix.last()
         val stored = getBookCoverageUseCase(
             bookId = _state.value.book.id,
             itemCount = text.size,
@@ -767,6 +777,7 @@ class ReaderModel @Inject constructor(
 
         coverageItemCount = text.size
         coverageBookWords = bookWords
+        itemWordPrefix = prefix
         coveredItems.clear()
         coveredItems.addAll(stored.covered)
         coveredWords = stored.coveredWords
@@ -810,6 +821,21 @@ class ReaderModel @Inject constructor(
         }
     }
 
+    /**
+     * Words before the bookmark, as the session leaves it. Recorded here rather
+     * than on every settled scroll because the coverage row is written here
+     * anyway, and the position at the end of a session is the one being
+     * described.
+     *
+     * The index is clamped only to keep the lookup in range; a text that has
+     * been reparsed under the bookmark is caught properly by the coverage row's
+     * item count.
+     */
+    private fun wordsBeforeBookmark(): Int? {
+        val prefix = itemWordPrefix ?: return null
+        return prefix[_state.value.book.scrollIndex.coerceIn(0, prefix.lastIndex)]
+    }
+
     fun clearAsync() {
         viewModelScope.launch { clear() }
     }
@@ -826,6 +852,7 @@ class ReaderModel @Inject constructor(
         coveredWords = 0
         coverageItemCount = 0
         coverageBookWords = 0
+        itemWordPrefix = null
         landingAfterJump = false
         openNoteId = null
         sessionOverlayMs = 0

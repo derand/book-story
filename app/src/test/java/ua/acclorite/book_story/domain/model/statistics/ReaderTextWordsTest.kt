@@ -8,6 +8,7 @@
 package ua.acclorite.book_story.domain.model.statistics
 
 import androidx.compose.ui.text.AnnotatedString
+import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import ua.acclorite.book_story.domain.model.reader.ReaderImage
@@ -88,5 +89,44 @@ class ReaderTextWordsTest {
 
         assertEquals(0, plain.wordCount())
         assertEquals(3, captioned.wordCount())
+    }
+
+    @Test
+    fun `prefix sums total the items before each index`() {
+        val prefix = listOf(
+            text("one two"),
+            text("three four five"),
+            text("six")
+        ).wordPrefixSums()
+
+        // Entry i is everything before item i, so the first is always empty and
+        // the last is the whole book.
+        assertArrayEquals(intArrayOf(0, 2, 5, 6), prefix)
+    }
+
+    @Test
+    fun `prefix sums carry wordless items`() {
+        // The case an item-proportional estimate gets wrong: a run of images
+        // and separators is a third of the items and none of the words.
+        val prefix = listOf(
+            text("one two three"),
+            ReaderText.Image(image = anImage()),
+            ReaderText.Separator,
+            text("four")
+        ).wordPrefixSums()
+
+        assertArrayEquals(intArrayOf(0, 3, 3, 3, 4), prefix)
+    }
+
+    @Test
+    fun `an empty text has one entry and no words`() {
+        assertArrayEquals(intArrayOf(0), emptyList<ReaderText>().wordPrefixSums())
+    }
+
+    @Test
+    fun `the last entry is the whole book`() {
+        val text = listOf(text("one two"), ReaderText.Chapter(title = "Part the First"))
+
+        assertEquals(text.sumOf { it.wordCount() }, text.wordPrefixSums().last())
     }
 }

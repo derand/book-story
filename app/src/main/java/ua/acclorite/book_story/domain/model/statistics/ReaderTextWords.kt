@@ -25,6 +25,22 @@ fun ReaderText.wordCount(): Int = when (this) {
 }
 
 /**
+ * Words before each item: entry `i` totals items `0 until i`, so the last entry
+ * is the whole book. Built by the same single pass that produces that total, and
+ * it is what turns a bookmark index into "how much is still ahead of me" — a
+ * different question from how much coverage has never seen.
+ */
+fun List<ReaderText>.wordPrefixSums(): IntArray {
+    val prefix = IntArray(size + 1)
+
+    for (index in indices) {
+        prefix[index + 1] = prefix[index] + this[index].wordCount()
+    }
+
+    return prefix
+}
+
+/**
  * How many words a footnote is worth. Notes live outside the text list, so they
  * are counted on their own — never as part of the book's total, which is what
  * coverage is measured against.
