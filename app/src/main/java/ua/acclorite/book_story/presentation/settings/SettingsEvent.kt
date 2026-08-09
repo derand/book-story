@@ -87,4 +87,6 @@ sealed class SettingsEvent {
     data object OnClearParseCache : SettingsEvent()
 
     data object OnRefreshParseCacheSize : SettingsEvent()
+
+    data object OnDeleteStatistics : SettingsEvent()
 }

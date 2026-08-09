@@ -9,6 +9,7 @@ package ua.acclorite.book_story.domain.use_case.statistics
 
 import ua.acclorite.book_story.core.log.logE
 import ua.acclorite.book_story.core.log.logI
+import ua.acclorite.book_story.data.settings.SettingsManager
 import ua.acclorite.book_story.domain.model.statistics.ReadingSession
 import ua.acclorite.book_story.domain.repository.StatisticsRepository
 import javax.inject.Inject
@@ -16,10 +17,16 @@ import javax.inject.Inject
 private const val TAG = "RecordReadingSession"
 
 class RecordReadingSessionUseCase @Inject constructor(
-    private val statisticsRepository: StatisticsRepository
+    private val statisticsRepository: StatisticsRepository,
+    private val settings: SettingsManager
 ) {
 
-    /** The session as it was recorded, or null when it was too short to keep. */
+    /**
+     * The session as it was recorded, or null when it was too short to keep —
+     * or when statistics are not being collected at all. The caller already
+     * treats null as "nothing was banked", so switching collection off needs no
+     * second path through the reader.
+     */
     suspend operator fun invoke(
         bookId: Int,
         startTime: Long,
@@ -28,6 +35,8 @@ class RecordReadingSessionUseCase @Inject constructor(
         wordsRead: Int,
         overlayMs: Long
     ): ReadingSession? {
+        if (!settings.collectStatistics.lastValue) return null
+
         val session = ReadingSession.endedAt(
             bookId = bookId,
             startTime = startTime,

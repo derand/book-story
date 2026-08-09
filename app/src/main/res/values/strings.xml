@@ -228,6 +228,13 @@
     <string name="cache_images_option_desc">Also store image data in the cache so books with images open instantly too. Uses more space.</string>
     <string name="clear_parse_cache_option">Clear cache</string>
     <string name="clear_parse_cache_option_desc">Currently using %1$s</string>
+    <string name="statistics_option">Statistics</string>
+    <string name="collect_statistics_option">Collect statistics</string>
+    <string name="collect_statistics_option_desc">Measure time, words and how much of each book you have read. Kept on this device and shown only to you: nothing is sent anywhere, and the app holds no internet permission at all. Turning this off keeps what is already recorded.</string>
+    <string name="delete_statistics_option">Delete statistics</string>
+    <string name="delete_statistics_option_desc">Erases everything measured so far</string>
+    <string name="delete_statistics_dialog">Delete all statistics?</string>
+    <string name="delete_statistics_dialog_desc">This removes every reading session, every book\'s record and how much of each book you have read. It cannot be undone.</string>
     <string name="clear_parse_cache_dialog">Clear parse cache?</string>
     <string name="clear_parse_cache_dialog_desc">This removes all cached parsed books. They will be re-parsed the next time you open them.</string>
 

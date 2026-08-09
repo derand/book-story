@@ -60,4 +60,7 @@ interface StatisticsRepository {
 
     /** Reading across the whole library, deleted books included. */
     suspend fun getLibraryStatistics(): Result<LibraryStatistics>
+
+    /** See [ua.acclorite.book_story.data.local.room.StatisticsDao.deleteAllStatistics]. */
+    suspend fun deleteAllStatistics(): Result<Unit>
 }

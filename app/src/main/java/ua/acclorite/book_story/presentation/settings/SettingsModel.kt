@@ -37,6 +37,8 @@ import ua.acclorite.book_story.domain.use_case.color_preset.UpdateColorPresetUse
 import ua.acclorite.book_story.domain.use_case.permission.GrantPersistableUriPermissionUseCase
 import ua.acclorite.book_story.domain.use_case.permission.ReleasePersistableUriPermissionUseCase
 import ua.acclorite.book_story.domain.use_case.settings.UpdateLanguageUseCase
+import ua.acclorite.book_story.domain.use_case.statistics.DeleteStatisticsUseCase
+import ua.acclorite.book_story.presentation.history.HistoryScreen
 import javax.inject.Inject
 import kotlin.coroutines.coroutineContext
 import kotlin.random.Random
@@ -57,7 +59,8 @@ class SettingsModel @Inject constructor(
     private val updateCategoriesOrderUseCase: UpdateCategoriesOrderUseCase,
     private val deleteCategoryUseCase: DeleteCategoryUseCase,
     private val getParseCacheSizeUseCase: GetParseCacheSizeUseCase,
-    private val clearParseCacheUseCase: ClearParseCacheUseCase
+    private val clearParseCacheUseCase: ClearParseCacheUseCase,
+    private val deleteStatisticsUseCase: DeleteStatisticsUseCase
 ) : ViewModel() {
 
     private val mutex = Mutex()
@@ -489,6 +492,14 @@ class SettingsModel @Inject constructor(
                     _state.update {
                         it.copy(parseCacheSizeBytes = size)
                     }
+                }
+
+                is SettingsEvent.OnDeleteStatistics -> {
+                    deleteStatisticsUseCase()
+
+                    // The History card reads its figures once and would go on
+                    // showing the ones just erased.
+                    HistoryScreen.refreshListChannel.trySend(0)
                 }
             }
         }

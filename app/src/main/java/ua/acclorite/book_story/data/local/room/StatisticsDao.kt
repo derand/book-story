@@ -11,6 +11,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
 import ua.acclorite.book_story.data.local.dto.ReadBookEntity
 import ua.acclorite.book_story.data.local.dto.ReadingCoverageEntity
 import ua.acclorite.book_story.data.local.dto.ReadingSessionEntity
@@ -141,4 +142,26 @@ interface StatisticsDao {
      */
     @Query("UPDATE ReadBookEntity SET bookId = NULL, title = '', author = '' WHERE bookId = :bookId")
     suspend fun unlinkReadBook(bookId: Int)
+
+    /**
+     * Erases every measurement. Unlike deleting a book — which anonymises its
+     * sessions so the reading still counts towards the lifetime totals — this
+     * leaves nothing behind anywhere, because that is the only thing it could
+     * honestly mean.
+     */
+    @Transaction
+    suspend fun deleteAllStatistics() {
+        deleteAllSessions()
+        deleteAllReadBooks()
+        deleteAllCoverage()
+    }
+
+    @Query("DELETE FROM ReadingSessionEntity")
+    suspend fun deleteAllSessions()
+
+    @Query("DELETE FROM ReadBookEntity")
+    suspend fun deleteAllReadBooks()
+
+    @Query("DELETE FROM ReadingCoverageEntity")
+    suspend fun deleteAllCoverage()
 }

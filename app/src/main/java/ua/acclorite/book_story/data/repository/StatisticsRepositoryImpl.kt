@@ -88,6 +88,13 @@ class StatisticsRepositoryImpl @Inject constructor(
             }
         }
 
+    override suspend fun deleteAllStatistics(): Result<Unit> =
+        runCatchingCancellable {
+            withContext(Dispatchers.IO) {
+                database.statisticsDao.deleteAllStatistics()
+            }
+        }
+
     override suspend fun deleteCoverage(bookId: Int): Result<Unit> =
         runCatchingCancellable {
             withContext(Dispatchers.IO) {
