@@ -91,13 +91,100 @@ interface StatisticsDao {
     suspend fun getReadBook(bookId: Int): ReadBookEntity?
 
     /**
-     * Folds one finished session into the book's record, in SQL rather than by
-     * reading the row and writing it back — the totals are accumulated where
-     * they live.
+     * Folds one finished session into the book's record, starting that record
+     * on the first session.
+     *
+     * Both halves in one transaction, because the pair is a read-then-write:
+     * the update reports whether a record existed, and between two separate
+     * writes another writer could insert a second record for the same book. The
+     * unique index on `bookId` would reject that insert, so without the
+     * transaction the invariant would be enforced by an exception rather than
+     * held by construction.
+     */
+    @Transaction
+    suspend fun addSessionToBookRecord(
+        bookId: Int,
+        timeMs: Long,
+        words: Int,
+        endedAt: Long,
+        coveragePercent: Float,
+        reachedEnd: Boolean,
+        title: String,
+        author: String
+    ) {
+        val updated = accumulateSessionInReadBook(
+            bookId = bookId,
+            timeMs = timeMs,
+            words = words,
+            lastReadAt = endedAt,
+            coveragePercent = coveragePercent,
+            reachedEnd = reachedEnd,
+            title = title,
+            author = author
+        )
+        if (updated > 0) return
+
+        // First session with this book: the record starts here, which is also
+        // the only moment its firstReadAt is knowable.
+        insertReadBook(
+            ReadBookEntity(
+                bookId = bookId,
+                title = title,
+                author = author,
+                totalTimeMs = timeMs,
+                totalWords = words,
+                sessions = 1,
+                firstReadAt = endedAt - timeMs,
+                lastReadAt = endedAt,
+                finished = reachedEnd,
+                coveragePercent = coveragePercent
+            )
+        )
+    }
+
+    /**
+     * The reader's own statement, set rather than accumulated — and recorded
+     * even for a book this build has never measured, which is every book
+     * already in the library: there is no backfill, so an empty record is the
+     * truthful one. Transactional for the same reason as
+     * [addSessionToBookRecord].
+     */
+    @Transaction
+    suspend fun setBookFinished(
+        bookId: Int,
+        title: String,
+        author: String,
+        finished: Boolean,
+        now: Long
+    ) {
+        val updated = updateFinished(bookId = bookId, finished = finished)
+        if (updated > 0) return
+
+        insertReadBook(
+            ReadBookEntity(
+                bookId = bookId,
+                title = title,
+                author = author,
+                totalTimeMs = 0,
+                totalWords = 0,
+                sessions = 0,
+                firstReadAt = now,
+                lastReadAt = now,
+                finished = finished,
+                coveragePercent = 0f
+            )
+        )
+    }
+
+    /**
+     * Accumulates in SQL rather than by reading the row and writing it back —
+     * the totals are added where they live.
      *
      * `finished` only ever goes up: [reachedEnd] says this session got to the
      * end of the book, and a later session that stops earlier must not take
      * that back. Returns 0 when the book has no record yet.
+     *
+     * Called only from [addSessionToBookRecord], which supplies the transaction.
      */
     @Query(
         """
@@ -113,7 +200,7 @@ interface StatisticsDao {
         WHERE bookId = :bookId
         """
     )
-    suspend fun addSessionToReadBook(
+    suspend fun accumulateSessionInReadBook(
         bookId: Int,
         timeMs: Long,
         words: Int,
@@ -124,12 +211,20 @@ interface StatisticsDao {
         author: String
     ): Int
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    /**
+     * Aborts on a duplicate rather than replacing it. `REPLACE` would delete the
+     * existing record and insert this one, silently discarding the time, words
+     * and sessions already accumulated against that book; aborting costs one
+     * unrecorded update and says so in the log. Both callers hold a transaction
+     * that should make the conflict unreachable — this is what happens if it
+     * ever is not.
+     */
+    @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insertReadBook(readBook: ReadBookEntity)
 
-    /** The reader's own statement, so this one is set rather than accumulated. */
+    /** Called only from [setBookFinished], which supplies the transaction. */
     @Query("UPDATE ReadBookEntity SET finished = :finished WHERE bookId = :bookId")
-    suspend fun setFinished(bookId: Int, finished: Boolean): Int
+    suspend fun updateFinished(bookId: Int, finished: Boolean): Int
 
     /**
      * Keeps the record of a deleted book, without the book: its time, dates and

@@ -10,7 +10,6 @@ package ua.acclorite.book_story.data.repository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import ua.acclorite.book_story.core.helpers.runCatchingCancellable
-import ua.acclorite.book_story.data.local.dto.ReadBookEntity
 import ua.acclorite.book_story.data.local.dto.ReadingCoverageEntity
 import ua.acclorite.book_story.data.local.dto.ReadingSessionEntity
 import ua.acclorite.book_story.data.local.room.BookDatabase
@@ -134,33 +133,17 @@ class StatisticsRepositoryImpl @Inject constructor(
         reachedEnd: Boolean
     ): Result<Unit> = runCatchingCancellable {
         withContext(Dispatchers.IO) {
-            val updated = database.statisticsDao.addSessionToReadBook(
+            // Updating an existing record or starting one is a single
+            // transaction in the DAO: the two halves must not be separable.
+            database.statisticsDao.addSessionToBookRecord(
                 bookId = bookId,
                 timeMs = timeMs,
                 words = words,
-                lastReadAt = endedAt,
+                endedAt = endedAt,
                 coveragePercent = coveragePercent,
                 reachedEnd = reachedEnd,
                 title = title,
                 author = author
-            )
-            if (updated > 0) return@withContext
-
-            // First session with this book: the record starts here, which is
-            // also the only moment its firstReadAt is knowable.
-            database.statisticsDao.insertReadBook(
-                ReadBookEntity(
-                    bookId = bookId,
-                    title = title,
-                    author = author,
-                    totalTimeMs = timeMs,
-                    totalWords = words,
-                    sessions = 1,
-                    firstReadAt = endedAt - timeMs,
-                    lastReadAt = endedAt,
-                    finished = reachedEnd,
-                    coveragePercent = coveragePercent
-                )
             )
         }
     }
@@ -172,25 +155,14 @@ class StatisticsRepositoryImpl @Inject constructor(
         finished: Boolean
     ): Result<Unit> = runCatchingCancellable {
         withContext(Dispatchers.IO) {
-            val updated = database.statisticsDao.setFinished(bookId = bookId, finished = finished)
-            if (updated > 0) return@withContext
-
-            // Marked without ever having been read here — an empty record is
-            // still the truthful one.
-            val now = System.currentTimeMillis()
-            database.statisticsDao.insertReadBook(
-                ReadBookEntity(
-                    bookId = bookId,
-                    title = title,
-                    author = author,
-                    totalTimeMs = 0,
-                    totalWords = 0,
-                    sessions = 0,
-                    firstReadAt = now,
-                    lastReadAt = now,
-                    finished = finished,
-                    coveragePercent = 0f
-                )
+            // Marking a book never read here starts an empty record, in the
+            // same transaction as the update that found none.
+            database.statisticsDao.setBookFinished(
+                bookId = bookId,
+                title = title,
+                author = author,
+                finished = finished,
+                now = System.currentTimeMillis()
             )
         }
     }

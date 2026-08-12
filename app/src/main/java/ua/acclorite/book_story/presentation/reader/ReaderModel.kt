@@ -373,7 +373,7 @@ class ReaderModel @Inject constructor(
                             .takeIf { it != -1 }
                         if (chapterIndex == null) return@withContext
 
-                    _state.value.listState.requestScrollToItem(
+                        _state.value.listState.requestScrollToItem(
                             index = chapterIndex,
                             scrollOffset = 0
                         )
@@ -397,7 +397,7 @@ class ReaderModel @Inject constructor(
                         val scrollTo = (_state.value.text.lastIndex * event.progress).roundToInt()
 
                         jumpedToPosition()
-                    _state.value.listState.requestScrollToItem(
+                        _state.value.listState.requestScrollToItem(
                             index = scrollTo,
                             scrollOffset = 0
                         )
@@ -417,7 +417,7 @@ class ReaderModel @Inject constructor(
                             )
                         }
 
-                    _state.value.listState.requestScrollToItem(
+                        _state.value.listState.requestScrollToItem(
                             index = event.checkpoint.index,
                             scrollOffset = event.checkpoint.offset
                         )
@@ -805,6 +805,13 @@ class ReaderModel @Inject constructor(
      * emits those in between.
      */
     private fun creditVisible(visible: List<LazyListItemInfo>) {
+        // Nothing is credited outside a session, the way a note is not: the
+        // coverage pass finishes on its own thread and can land after the
+        // session that started it has been banked and its ledger cleared — a
+        // book opened and left at once would then pay its last screen into the
+        // *next* book's first session.
+        if (sessionStartTime == null) return
+
         if (landingAfterJump) {
             landingAfterJump = false
             return

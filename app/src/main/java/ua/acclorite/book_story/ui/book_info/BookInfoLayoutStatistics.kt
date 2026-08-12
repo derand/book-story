@@ -57,58 +57,61 @@ fun BookInfoLayoutStatistics(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             )
-            return@Column
-        }
-
-        StatisticsLine(
-            label = stringResource(id = R.string.statistics_time),
-            value = formatDuration(statistics.totalTimeMs)
-        )
-
-        StatisticsLine(
-            label = stringResource(id = R.string.statistics_read),
-            value = stringResource(
-                R.string.statistics_read_value,
-                (statistics.coveragePercent * 100).roundToInt(),
-                statistics.coveredWords
-            )
-        )
-
-        statistics.wordsPerMinute?.let { pace ->
+        } else {
             StatisticsLine(
-                label = stringResource(id = R.string.statistics_pace),
-                value = statistics.typicalWordsPerMinute.let { typical ->
-                    // Only worth comparing once the two can differ meaningfully:
-                    // a dense book reads slower than fiction and that is the
-                    // interesting part, not a 1 wpm gap.
-                    if (typical == null || typical == pace) {
-                        stringResource(R.string.statistics_pace_value, pace)
-                    } else {
-                        stringResource(R.string.statistics_pace_value_compared, pace, typical)
+                label = stringResource(id = R.string.statistics_time),
+                value = formatDuration(statistics.totalTimeMs)
+            )
+
+            StatisticsLine(
+                label = stringResource(id = R.string.statistics_read),
+                value = stringResource(
+                    R.string.statistics_read_value,
+                    (statistics.coveragePercent * 100).roundToInt(),
+                    statistics.coveredWords
+                )
+            )
+
+            statistics.wordsPerMinute?.let { pace ->
+                StatisticsLine(
+                    label = stringResource(id = R.string.statistics_pace),
+                    value = statistics.typicalWordsPerMinute.let { typical ->
+                        // Only worth comparing once the two can differ meaningfully:
+                        // a dense book reads slower than fiction and that is the
+                        // interesting part, not a 1 wpm gap.
+                        if (typical == null || typical == pace) {
+                            stringResource(R.string.statistics_pace_value, pace)
+                        } else {
+                            stringResource(R.string.statistics_pace_value_compared, pace, typical)
+                        }
                     }
-                }
-            )
-        }
+                )
+            }
 
-        statistics.timeLeftMs?.takeIf { !statistics.finished }?.let { left ->
+            statistics.timeLeftMs?.takeIf { !statistics.finished }?.let { left ->
+                StatisticsLine(
+                    label = stringResource(id = R.string.statistics_left),
+                    value = statistics.finishedBy.let { by ->
+                        if (by == null) formatDuration(left)
+                        else stringResource(
+                            R.string.statistics_left_value_by,
+                            formatDuration(left),
+                            DateFormat.getDateInstance(DateFormat.MEDIUM).format(Date(by))
+                        )
+                    }
+                )
+            }
+
             StatisticsLine(
-                label = stringResource(id = R.string.statistics_left),
-                value = statistics.finishedBy.let { by ->
-                    if (by == null) formatDuration(left)
-                    else stringResource(
-                        R.string.statistics_left_value_by,
-                        formatDuration(left),
-                        DateFormat.getDateInstance(DateFormat.MEDIUM).format(Date(by))
-                    )
-                }
+                label = stringResource(id = R.string.statistics_sessions),
+                value = statistics.sessions.toString()
             )
         }
 
-        StatisticsLine(
-            label = stringResource(id = R.string.statistics_sessions),
-            value = statistics.sessions.toString()
-        )
-
+        // Outside the branch above on purpose: "finished" is the reader's own
+        // statement, not one of the measurements, so it has to be available on a
+        // book this build has never measured — which, there being no backfill,
+        // is every book already in the library.
         Row(
             modifier = Modifier
                 .fillMaxWidth()

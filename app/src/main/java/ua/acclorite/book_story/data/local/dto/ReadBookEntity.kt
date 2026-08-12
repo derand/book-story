@@ -23,8 +23,13 @@ import androidx.room.PrimaryKey
  *
  * The per-book totals here duplicate a `SUM` over that book's sessions, which is
  * unavoidable: once those sessions are anonymised, that `SUM` no longer exists.
+ *
+ * The index on [bookId] is **unique**, which states the invariant rather than
+ * trusting every writer to keep it: one record per live book. Deleted books are
+ * exempt by construction — SQLite counts NULLs as distinct, so any number of
+ * anonymised rows sit under it happily, which is exactly the rule wanted.
  */
-@Entity(indices = [Index("bookId")])
+@Entity(indices = [Index(value = ["bookId"], unique = true)])
 data class ReadBookEntity(
     @PrimaryKey(true)
     val id: Int = 0,

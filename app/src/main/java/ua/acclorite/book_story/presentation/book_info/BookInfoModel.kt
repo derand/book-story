@@ -25,10 +25,10 @@ import ua.acclorite.book_story.domain.use_case.book.DeleteBookUseCase
 import ua.acclorite.book_story.domain.use_case.book.GetBookUseCase
 import ua.acclorite.book_story.domain.use_case.book.GetFileFromBookUseCase
 import ua.acclorite.book_story.domain.use_case.book.ResetCoverImageUseCase
-import ua.acclorite.book_story.domain.use_case.statistics.GetBookStatisticsUseCase
-import ua.acclorite.book_story.domain.use_case.statistics.SetBookFinishedUseCase
 import ua.acclorite.book_story.domain.use_case.book.UpdateBookUseCase
 import ua.acclorite.book_story.domain.use_case.book.UpdateCoverImageUseCase
+import ua.acclorite.book_story.domain.use_case.statistics.GetBookStatisticsUseCase
+import ua.acclorite.book_story.domain.use_case.statistics.SetBookFinishedUseCase
 import ua.acclorite.book_story.presentation.browse.BrowseScreen
 import ua.acclorite.book_story.presentation.history.HistoryScreen
 import ua.acclorite.book_story.presentation.library.LibraryScreen
