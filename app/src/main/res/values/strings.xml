@@ -87,6 +87,41 @@
     <string name="add_book">Add a book</string>
     <string name="move">Move</string>
     <string name="delete">Delete</string>
+
+    <!-- Reading statistics -->
+    <string name="statistics">Statistics</string>
+    <string name="statistics_none">Nothing read here yet.</string>
+    <string name="statistics_time">Time in this book</string>
+    <string name="statistics_read">Read</string>
+    <string name="statistics_read_value">%1$d%% (%2$d words)</string>
+    <string name="statistics_pace">Your pace here</string>
+    <string name="statistics_pace_value">%1$d wpm</string>
+    <string name="statistics_pace_value_compared">%1$d wpm (usually %2$d)</string>
+    <string name="statistics_left">Left to read</string>
+    <string name="statistics_left_value_by">%1$s, by %2$s</string>
+    <string name="statistics_sessions">Sessions</string>
+    <string name="statistics_finished">Finished</string>
+    <string name="statistics_none_library">No reading recorded yet.</string>
+    <string name="statistics_total_time">Time read</string>
+    <string name="statistics_words_read">Words read</string>
+    <string name="statistics_your_pace">Your pace</string>
+    <string name="statistics_books_finished">Books finished</string>
+    <string name="statistics_days_read">Days read</string>
+    <string name="statistics_includes_deleted">Includes books no longer in the library.</string>
+    <string name="statistics_card_open">Statistics</string>
+    <string name="statistics_card_summary">%1$s read over %2$s · %3$s</string>
+    <plurals name="statistics_days_plural">
+        <item quantity="one">%d day</item>
+        <item quantity="other">%d days</item>
+    </plurals>
+    <plurals name="statistics_books_finished_plural">
+        <item quantity="one">%d book finished</item>
+        <item quantity="other">%d books finished</item>
+    </plurals>
+    <string name="duration_under_a_minute">under a minute</string>
+    <string name="duration_minutes">%1$d min</string>
+    <string name="duration_hours">%1$d h</string>
+    <string name="duration_hours_minutes">%1$d h %2$d min</string>
     <string name="never">Never</string>
     <string name="undo">Undo</string>
     <string name="copy">Copy</string>
@@ -193,6 +228,13 @@
     <string name="cache_images_option_desc">Also store image data in the cache so books with images open instantly too. Uses more space.</string>
     <string name="clear_parse_cache_option">Clear cache</string>
     <string name="clear_parse_cache_option_desc">Currently using %1$s</string>
+    <string name="statistics_option">Statistics</string>
+    <string name="collect_statistics_option">Collect statistics</string>
+    <string name="collect_statistics_option_desc">Measure time, words and how much of each book you have read. Kept on this device and shown only to you: nothing is sent anywhere, and the app holds no internet permission at all. Turning this off keeps what is already recorded.</string>
+    <string name="delete_statistics_option">Delete statistics</string>
+    <string name="delete_statistics_option_desc">Erases everything measured so far</string>
+    <string name="delete_statistics_dialog">Delete all statistics?</string>
+    <string name="delete_statistics_dialog_desc">This removes every reading session, every book\'s record and how much of each book you have read. It cannot be undone.</string>
     <string name="clear_parse_cache_dialog">Clear parse cache?</string>
     <string name="clear_parse_cache_dialog_desc">This removes all cached parsed books. They will be re-parsed the next time you open them.</string>
 

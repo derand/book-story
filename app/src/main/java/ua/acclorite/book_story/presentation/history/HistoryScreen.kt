@@ -87,6 +87,7 @@ object HistoryScreen : Screen, Parcelable {
             snackbarState = snackbarState,
             listState = listState,
             history = state.value.history,
+            statistics = state.value.statistics,
             dialog = state.value.dialog,
             canScrollBackward = listState.canScrollBackward,
             showSearch = state.value.showSearch,
@@ -105,7 +106,8 @@ object HistoryScreen : Screen, Parcelable {
             dismissDialog = screenModel::onEvent,
             navigateToLibrary = screenModel::onEvent,
             navigateToBookInfo = screenModel::onEvent,
-            navigateToReader = screenModel::onEvent
+            navigateToReader = screenModel::onEvent,
+            navigateToStatistics = screenModel::onEvent
         )
     }
 }

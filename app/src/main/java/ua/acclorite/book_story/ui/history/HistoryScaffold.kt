@@ -19,6 +19,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
+import ua.acclorite.book_story.domain.model.statistics.LibraryStatistics
 import ua.acclorite.book_story.presentation.history.HistoryEvent
 import ua.acclorite.book_story.presentation.history.model.GroupedHistory
 import ua.acclorite.book_story.ui.common.components.common.Snackbar
@@ -27,6 +28,7 @@ import ua.acclorite.book_story.ui.common.components.common.Snackbar
 @Composable
 fun HistoryScaffold(
     refreshState: PullRefreshState,
+    statistics: LibraryStatistics?,
     snackbarState: SnackbarHostState,
     history: List<GroupedHistory>,
     listState: LazyListState,
@@ -44,7 +46,8 @@ fun HistoryScaffold(
     showDeleteWholeHistoryDialog: (HistoryEvent.OnShowDeleteWholeHistoryDialog) -> Unit,
     search: (HistoryEvent.OnSearch) -> Unit,
     navigateToBookInfo: (HistoryEvent.OnNavigateToBookInfo) -> Unit,
-    navigateToReader: (HistoryEvent.OnNavigateToReader) -> Unit
+    navigateToReader: (HistoryEvent.OnNavigateToReader) -> Unit,
+    navigateToStatistics: (HistoryEvent.OnNavigateToStatistics) -> Unit
 ) {
     Scaffold(
         Modifier
@@ -77,6 +80,8 @@ fun HistoryScaffold(
                 .padding(top = paddingValues.calculateTopPadding())
         ) {
             HistoryLayout(
+                statistics = statistics,
+                navigateToStatistics = navigateToStatistics,
                 listState = listState,
                 history = history,
                 isLoading = isLoading,

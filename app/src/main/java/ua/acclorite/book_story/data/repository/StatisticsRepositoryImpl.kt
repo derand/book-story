@@ -1,0 +1,232 @@
+/*
+ * Book's Story — free and open-source Material You eBook reader.
+ * Copyright (C) 2026 derand
+ * Copyright (C) 2024-2026 Acclorite
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
+
+package ua.acclorite.book_story.data.repository
+
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import ua.acclorite.book_story.core.helpers.runCatchingCancellable
+import ua.acclorite.book_story.data.local.dto.ReadingCoverageEntity
+import ua.acclorite.book_story.data.local.dto.ReadingSessionEntity
+import ua.acclorite.book_story.data.local.room.BookDatabase
+import ua.acclorite.book_story.domain.model.statistics.CoverageCodec
+import ua.acclorite.book_story.domain.model.statistics.LibraryStatistics
+import ua.acclorite.book_story.domain.model.statistics.ReadBook
+import ua.acclorite.book_story.domain.model.statistics.ReadingDays
+import ua.acclorite.book_story.domain.model.statistics.ReadingPace
+import ua.acclorite.book_story.domain.model.statistics.ReadingCoverage
+import ua.acclorite.book_story.domain.model.statistics.ReadingSession
+import ua.acclorite.book_story.domain.repository.StatisticsRepository
+import java.time.LocalDate
+import java.time.ZoneId
+import javax.inject.Inject
+import javax.inject.Singleton
+
+@Singleton
+class StatisticsRepositoryImpl @Inject constructor(
+    private val database: BookDatabase
+) : StatisticsRepository {
+
+    // Mapped here rather than through a Mapper class: the row is the model, with
+    // nothing to join and no UI type to build.
+    override suspend fun addSession(session: ReadingSession): Result<Unit> =
+        runCatchingCancellable {
+            withContext(Dispatchers.IO) {
+                database.statisticsDao.insertSession(
+                    ReadingSessionEntity(
+                        bookId = session.bookId,
+                        startTime = session.startTime,
+                        endTime = session.endTime,
+                        wordsRead = session.wordsRead,
+                        overlayMs = session.overlayMs
+                    )
+                )
+            }
+        }
+
+    override suspend fun anonymiseBookSessions(bookId: Int): Result<Unit> =
+        runCatchingCancellable {
+            withContext(Dispatchers.IO) {
+                database.statisticsDao.anonymiseBookSessions(bookId = bookId)
+            }
+        }
+
+    override suspend fun getCoverage(bookId: Int): Result<ReadingCoverage?> =
+        runCatchingCancellable {
+            withContext(Dispatchers.IO) {
+                database.statisticsDao.getCoverage(bookId)?.let { entity ->
+                    ReadingCoverage(
+                        bookId = entity.bookId,
+                        itemCount = entity.itemCount,
+                        bookWords = entity.bookWords,
+                        covered = CoverageCodec.decode(entity.intervals),
+                        coveredWords = entity.coveredWords,
+                        wordsBeforeBookmark = entity.wordsBeforeBookmark
+                    )
+                }
+            }
+        }
+
+    override suspend fun saveCoverage(coverage: ReadingCoverage): Result<Unit> =
+        runCatchingCancellable {
+            withContext(Dispatchers.IO) {
+                database.statisticsDao.saveCoverage(
+                    ReadingCoverageEntity(
+                        bookId = coverage.bookId,
+                        itemCount = coverage.itemCount,
+                        bookWords = coverage.bookWords,
+                        intervals = CoverageCodec.encode(coverage.covered),
+                        coveredWords = coverage.coveredWords,
+                        wordsBeforeBookmark = coverage.wordsBeforeBookmark
+                    )
+                )
+            }
+        }
+
+    override suspend fun deleteAllStatistics(): Result<Unit> =
+        runCatchingCancellable {
+            withContext(Dispatchers.IO) {
+                database.statisticsDao.deleteAllStatistics()
+            }
+        }
+
+    override suspend fun deleteCoverage(bookId: Int): Result<Unit> =
+        runCatchingCancellable {
+            withContext(Dispatchers.IO) {
+                database.statisticsDao.deleteCoverage(bookId = bookId)
+            }
+        }
+
+    override suspend fun getReadBook(bookId: Int): Result<ReadBook?> =
+        runCatchingCancellable {
+            withContext(Dispatchers.IO) {
+                database.statisticsDao.getReadBook(bookId)?.let { entity ->
+                    ReadBook(
+                        id = entity.id,
+                        bookId = entity.bookId,
+                        title = entity.title,
+                        author = entity.author,
+                        totalTimeMs = entity.totalTimeMs,
+                        totalWords = entity.totalWords,
+                        sessions = entity.sessions,
+                        firstReadAt = entity.firstReadAt,
+                        lastReadAt = entity.lastReadAt,
+                        finished = entity.finished,
+                        coveragePercent = entity.coveragePercent
+                    )
+                }
+            }
+        }
+
+    override suspend fun addSessionToReadBook(
+        bookId: Int,
+        title: String,
+        author: String,
+        timeMs: Long,
+        words: Int,
+        endedAt: Long,
+        coveragePercent: Float,
+        reachedEnd: Boolean
+    ): Result<Unit> = runCatchingCancellable {
+        withContext(Dispatchers.IO) {
+            // Updating an existing record or starting one is a single
+            // transaction in the DAO: the two halves must not be separable.
+            database.statisticsDao.addSessionToBookRecord(
+                bookId = bookId,
+                timeMs = timeMs,
+                words = words,
+                endedAt = endedAt,
+                coveragePercent = coveragePercent,
+                reachedEnd = reachedEnd,
+                title = title,
+                author = author
+            )
+        }
+    }
+
+    override suspend fun setFinished(
+        bookId: Int,
+        title: String,
+        author: String,
+        finished: Boolean
+    ): Result<Unit> = runCatchingCancellable {
+        withContext(Dispatchers.IO) {
+            // Marking a book never read here starts an empty record, in the
+            // same transaction as the update that found none.
+            database.statisticsDao.setBookFinished(
+                bookId = bookId,
+                title = title,
+                author = author,
+                finished = finished,
+                now = System.currentTimeMillis()
+            )
+        }
+    }
+
+    override suspend fun getTypicalWordsPerMinute(bookId: Int?): Result<Int?> =
+        runCatchingCancellable {
+            withContext(Dispatchers.IO) {
+                val paces =
+                    if (bookId == null) database.statisticsDao.getSessionPaces()
+                    else database.statisticsDao.getSessionPaces(bookId)
+
+                ReadingPace.typical(
+                    paces.mapNotNull { pace ->
+                        ReadingPace.wordsPerMinute(pace.durationMs, pace.wordsRead)
+                    }
+                )
+            }
+        }
+
+    override suspend fun countActiveDays(bookId: Int): Result<Int> =
+        runCatchingCancellable {
+            withContext(Dispatchers.IO) {
+                database.statisticsDao.countActiveDays(bookId)
+            }
+        }
+
+    override suspend fun getLibraryStatistics(): Result<LibraryStatistics> =
+        runCatchingCancellable {
+            withContext(Dispatchers.IO) {
+                val sessions = database.statisticsDao.getSessionSpans()
+                val zone = ZoneId.systemDefault()
+
+                // Days are counted from the sessions rather than stored, and a
+                // session that runs past midnight lands on both days.
+                val days = mutableSetOf<LocalDate>()
+                var totalTimeMs = 0L
+                var words = 0L
+
+                sessions.forEach { session ->
+                    totalTimeMs += (session.endTime - session.startTime).coerceAtLeast(0)
+                    words += session.wordsRead
+                    ReadingDays.split(session.startTime, session.endTime, zone).forEach {
+                        days.add(it.day)
+                    }
+                }
+
+                LibraryStatistics(
+                    totalTimeMs = totalTimeMs,
+                    wordsRead = words,
+                    wordsPerMinute = ReadingPace.typical(
+                        database.statisticsDao.getSessionPaces().mapNotNull { pace ->
+                            ReadingPace.wordsPerMinute(pace.durationMs, pace.wordsRead)
+                        }
+                    ),
+                    booksRead = database.statisticsDao.countBooksRead(),
+                    daysRead = days.size
+                )
+            }
+        }
+
+    override suspend fun unlinkReadBook(bookId: Int): Result<Unit> =
+        runCatchingCancellable {
+            withContext(Dispatchers.IO) {
+                database.statisticsDao.unlinkReadBook(bookId = bookId)
+            }
+        }
+}

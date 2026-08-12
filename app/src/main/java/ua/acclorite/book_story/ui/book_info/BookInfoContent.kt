@@ -12,12 +12,14 @@ import ua.acclorite.book_story.core.BottomSheet
 import ua.acclorite.book_story.core.Dialog
 import ua.acclorite.book_story.domain.model.file.File
 import ua.acclorite.book_story.domain.model.library.Book
+import ua.acclorite.book_story.domain.model.statistics.BookStatistics
 import ua.acclorite.book_story.domain.model.library.Category
 import ua.acclorite.book_story.presentation.book_info.BookInfoEvent
 
 @Composable
 fun BookInfoContent(
     book: Book,
+    statistics: BookStatistics?,
     file: File?,
     loadingFile: Boolean,
     categories: List<Category>,
@@ -37,6 +39,7 @@ fun BookInfoContent(
     actionPathDialog: (BookInfoEvent.OnActionPathDialog) -> Unit,
     showMoveDialog: (BookInfoEvent.OnShowMoveDialog) -> Unit,
     showDeleteDialog: (BookInfoEvent.OnShowDeleteDialog) -> Unit,
+    setFinished: (BookInfoEvent.OnSetFinished) -> Unit,
     actionDeleteDialog: (BookInfoEvent.OnActionDeleteDialog) -> Unit,
     actionMoveDialog: (BookInfoEvent.OnActionMoveDialog) -> Unit,
     changeCover: (BookInfoEvent.OnChangeCover) -> Unit,
@@ -79,6 +82,7 @@ fun BookInfoContent(
 
     BookInfoScaffold(
         book = book,
+        statistics = statistics,
         listState = listState,
         showTitleDialog = showTitleDialog,
         showAuthorDialog = showAuthorDialog,
@@ -87,6 +91,7 @@ fun BookInfoContent(
         showDetailsBottomSheet = showDetailsBottomSheet,
         showMoveDialog = showMoveDialog,
         showDeleteDialog = showDeleteDialog,
+        setFinished = setFinished,
         navigateToReader = navigateToReader,
         navigateBack = navigateBack
     )
