@@ -413,7 +413,7 @@ data class ReaderScreen(val bookId: Int) : Screen, Parcelable {
 
         DisposableEffect(Unit) {
             onDispose {
-                screenModel.clearAsync()
+                screenModel.clearAsync(bookId = bookId)
                 WindowCompat.getInsetsController(
                     activity.window,
                     activity.window.decorView

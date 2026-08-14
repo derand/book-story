@@ -50,6 +50,9 @@ sealed class ReaderEffect {
 
     data object OnAddedToLibrary : ReaderEffect()
 
+    /** The book being opened is no longer in the database. */
+    data object OnBookGone : ReaderEffect()
+
     /** The file could not be read, so there was nothing to keep. */
     data object OnCannotAddToLibrary : ReaderEffect()
 }

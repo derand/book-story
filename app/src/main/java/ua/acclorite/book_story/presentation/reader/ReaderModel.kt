@@ -626,6 +626,11 @@ class ReaderModel @Inject constructor(
             val book = timed("  init: book row") { getBookUseCase(bookId) }
 
             if (book == null) {
+                // The commonest way to arrive here is a preview that did not
+                // survive the process: the start-up sweep took its row, and the
+                // navigator restored a screen pointing at it. Leaving silently
+                // looks like the app closing itself for no reason.
+                _effects.emit(ReaderEffect.OnBookGone)
                 _effects.emit(ReaderEffect.OnNavigateBack)
                 return@launch
             }
@@ -926,7 +931,17 @@ class ReaderModel @Inject constructor(
         return prefix[_state.value.book.scrollIndex.coerceIn(0, prefix.lastIndex)]
     }
 
-    fun clearAsync() {
+    /**
+     * Clears up after the reader of [bookId] — and does nothing if the model has
+     * since moved on to another book.
+     *
+     * The check is the point. There is one model for the whole activity, and a
+     * screen being replaced is disposed *after* its replacement has composed:
+     * closing a book to open another one had the outgoing reader cancel the
+     * incoming one's work, and the new book sat at its loading spinner forever.
+     */
+    fun clearAsync(bookId: Int) {
+        if (_state.value.book.id != bookId) return
         viewModelScope.launch { clear() }
     }
 

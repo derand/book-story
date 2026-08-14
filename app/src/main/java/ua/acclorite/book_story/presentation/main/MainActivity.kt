@@ -83,7 +83,13 @@ class MainActivity : AppCompatActivity() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
         themeTrace("onCreate", this)
-        receiveFile(intent)
+
+        // Only on a fresh launch. The activity keeps the intent that started it,
+        // so every recreation would otherwise open the same file again — and
+        // after the process was killed that re-open fails anyway, since the
+        // grant died with the task, turning a file that opened fine into an
+        // error the user did nothing to cause.
+        if (savedInstanceState == null) receiveFile(intent)
 
         setContent {
             // Initializing Screen Models
@@ -154,15 +160,13 @@ class MainActivity : AppCompatActivity() {
                                     else -> it
                                 }
                             },
-                            backHandlerEnabled = { it != StartScreen }
+                            backHandlerEnabled = { it != StartScreen },
+                            // Over the screens rather than inside one: opening a
+                            // book replaces the reader, and anything living in a
+                            // screen's own content is disposed as that screen
+                            // goes — cancelling the very job doing the replacing.
+                            overlay = { MainFileOpenEffects(mainModel = mainModel) }
                         ) { screen ->
-                            // Inside the navigator's content because that is
-                            // where LocalNavigator exists. During a screen
-                            // transition two of these collect at once, which is
-                            // safe: the model hands the outcome over a channel,
-                            // so exactly one of them receives it.
-                            MainFileOpenEffects(mainModel = mainModel)
-
                             when (screen) {
                                 LibraryScreen, HistoryScreen, BrowseScreen -> {
                                     NavigatorTabs(

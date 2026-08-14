@@ -19,6 +19,7 @@ import kotlinx.coroutines.launch
 import ua.acclorite.book_story.domain.use_case.book.DiscardPreviewsUseCase
 import ua.acclorite.book_story.domain.use_case.book.OpenBookFromUriUseCase
 import javax.inject.Inject
+import kotlin.coroutines.coroutineContext
 
 /**
  * Books arriving from outside the app: a file tapped in a file manager, handed
@@ -60,11 +61,18 @@ class MainModel @Inject constructor(
      */
     private val sweep: Job = viewModelScope.launch { discardPreviewsUseCase.sweep() }
 
+    private var openJob: Job? = null
+
+    /**
+     * The last file wins. A first parse takes seconds, which is long enough to
+     * tap a second book, and the second tap is the one that says what the user
+     * wants open now — dropping it would be a tap that did nothing.
+     */
     fun onFileReceived(uri: String) {
-        if (_openingFile.value) return
+        openJob?.cancel()
 
         _openingFile.value = true
-        viewModelScope.launch {
+        openJob = viewModelScope.launch {
             sweep.join()
             try {
                 val result = openBookFromUriUseCase(uri)
@@ -75,7 +83,11 @@ class MainModel @Inject constructor(
                     }
                 )
             } finally {
-                _openingFile.value = false
+                // Only the open that is still the current one clears the flag: a
+                // cancelled one runs its finally *after* its replacement has
+                // already raised it, and would take the spinner down over an
+                // open that is still going.
+                if (openJob === coroutineContext[Job]) _openingFile.value = false
             }
         }
     }

@@ -52,7 +52,11 @@ class Navigator @AssistedInject constructor(
         popping: Boolean = false,
         saveInBackStack: Boolean = true
     ) {
-        if (lastItem.value::class == targetScreen::class) return
+        // Read from [items] rather than [lastItem]: the latter is a `map` on a
+        // `stateIn`, so it lags a frame behind. A pop followed by a push in the
+        // same frame — which is how one book replaces another — saw the screen
+        // that had just been popped, and refused to push anything at all.
+        if (items.value.lastOrNull()?.let { it::class == targetScreen::class } == true) return
         if (!saveInBackStack) items.removeLast()
 
         changeStackEvent(

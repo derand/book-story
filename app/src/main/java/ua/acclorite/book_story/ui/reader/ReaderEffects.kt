@@ -221,6 +221,11 @@ fun ReaderEffects(
                     folderPicker.launch(initial)
                 }
 
+                is ReaderEffect.OnBookGone -> {
+                    activity.getString(R.string.book_gone)
+                        .showToast(context = activity, longToast = true)
+                }
+
                 is ReaderEffect.OnAddedToLibrary -> {
                     activity.getString(R.string.add_to_library_added)
                         .showToast(context = activity, longToast = false)
