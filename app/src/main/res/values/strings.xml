@@ -246,6 +246,7 @@
     <string name="open_file_unreadable">Could not read that file.</string>
     <string name="add_to_library_content_desc">Add to library</string>
     <string name="preview_bar_title">Preview</string>
+    <string name="book_gone">That book is no longer here. A preview lasts only as long as the app is open — open the file again to read it.</string>
     <string name="add_to_library_added">Added to your library.</string>
     <string name="add_to_library_grant_folder">Choose the folder this book is in, so it can be opened again later.</string>
     <string name="add_to_library_no_path">This file has no location on the device, so it cannot be kept.</string>

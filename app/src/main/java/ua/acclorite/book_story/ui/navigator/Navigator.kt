@@ -45,6 +45,14 @@ fun Navigator(
     transitionSpec: AnimatedContentTransitionScope<Screen>.(lastEvent: StackEvent) -> ContentTransform,
     contentKey: (Screen) -> Any? = { it },
     backHandlerEnabled: (Screen) -> Boolean = { true },
+    /**
+     * Drawn over every screen and composed once, outside the animation.
+     *
+     * For work that has to outlive a navigation: anything inside [content] is
+     * disposed the moment its screen is replaced, taking its effects with it, so
+     * a job that navigates cannot live there — it would cancel itself halfway.
+     */
+    overlay: @Composable () -> Unit = {},
     content: @Composable (currentScreen: Screen) -> Unit
 ) {
     val navigator = rememberNavigator(initialScreen = initialScreen)
@@ -67,6 +75,8 @@ fun Navigator(
             contentKey = contentKey,
             content = { content(it) }
         )
+
+        overlay()
     }
 
     BackHandler(enabled = backHandlerEnabled.invoke(currentScreen.value)) {
