@@ -44,6 +44,8 @@ sealed class HistoryEvent {
 
     data object OnNavigateToLibrary : HistoryEvent()
 
+    data object OnNavigateToStatistics : HistoryEvent()
+
     data class OnNavigateToBookInfo(
         val bookId: Int
     ) : HistoryEvent()

@@ -120,6 +120,16 @@ class SettingsManager @Inject constructor(
         key = booleanPreferencesKey("cache_images_in_books"), default = false
     )
 
+    /**
+     * Whether reading is measured at all. Gates the *writes* only — turning it
+     * off stops new sessions and coverage from being recorded, and leaves
+     * everything already recorded alone, which is what "stop collecting" means.
+     * Erasing is a separate, explicit action.
+     */
+    val collectStatistics = setting<Boolean, Boolean>(
+        key = booleanPreferencesKey("collect_statistics"), default = true
+    )
+
     /* ------ Reader ----------------------------- */
     val fontFamily = setting<FontWithName, String>(
         key = stringPreferencesKey("font"), default = ReaderData.fonts[0],

@@ -18,6 +18,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import ua.acclorite.book_story.domain.model.library.Book
+import ua.acclorite.book_story.domain.model.statistics.BookStatistics
 import ua.acclorite.book_story.presentation.book_info.BookInfoEvent
 import ua.acclorite.book_story.ui.common.components.common.LazyColumnWithScrollbar
 import ua.acclorite.book_story.ui.common.data.ScrollbarData
@@ -25,6 +26,7 @@ import ua.acclorite.book_story.ui.common.data.ScrollbarData
 @Composable
 fun BookInfoLayout(
     book: Book,
+    statistics: BookStatistics?,
     listState: LazyListState,
     paddingValues: PaddingValues,
     showChangeCoverBottomSheet: (BookInfoEvent.OnShowChangeCoverBottomSheet) -> Unit,
@@ -33,6 +35,7 @@ fun BookInfoLayout(
     showDescriptionDialog: (BookInfoEvent.OnShowDescriptionDialog) -> Unit,
     showMoveDialog: (BookInfoEvent.OnShowMoveDialog) -> Unit,
     showDeleteDialog: (BookInfoEvent.OnShowDeleteDialog) -> Unit,
+    setFinished: (BookInfoEvent.OnSetFinished) -> Unit,
     navigateToReader: (BookInfoEvent.OnNavigateToReader) -> Unit
 ) {
     LazyColumnWithScrollbar(
@@ -76,6 +79,16 @@ fun BookInfoLayout(
                 book = book,
                 showDescriptionDialog = showDescriptionDialog
             )
+        }
+
+        if (statistics != null) {
+            item {
+                Spacer(Modifier.height(18.dp))
+                BookInfoLayoutStatistics(
+                    statistics = statistics,
+                    setFinished = setFinished
+                )
+            }
         }
 
         item {

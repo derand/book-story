@@ -12,6 +12,7 @@ import ua.acclorite.book_story.core.log.logW
 import ua.acclorite.book_story.domain.model.library.Book
 import ua.acclorite.book_story.domain.repository.BookRepository
 import ua.acclorite.book_story.domain.repository.HistoryRepository
+import ua.acclorite.book_story.domain.repository.StatisticsRepository
 import ua.acclorite.book_story.domain.service.CoverImageHandler
 import javax.inject.Inject
 
@@ -20,6 +21,7 @@ private const val TAG = "DeleteBook"
 class DeleteBookUseCase @Inject constructor(
     private val bookRepository: BookRepository,
     private val historyRepository: HistoryRepository,
+    private val statisticsRepository: StatisticsRepository,
     private val coverImageHandler: CoverImageHandler
 ) {
 
@@ -34,6 +36,22 @@ class DeleteBookUseCase @Inject constructor(
         // Deleting history
         historyRepository.deleteHistoryForBook(bookId = book.id).onFailure {
             logW(TAG, "Could not delete history for [${book.title}] with error: ${it.message}")
+        }
+
+        // Unlinking, not deleting: the book's reading sessions stay in the
+        // lifetime statistics, they just stop being attributable to it.
+        statisticsRepository.anonymiseBookSessions(bookId = book.id).onFailure {
+            logW(TAG, "Could not anonymise sessions of [${book.title}]: ${it.message}")
+        }
+
+        // Coverage does go: its item indices mean nothing without the text.
+        statisticsRepository.deleteCoverage(bookId = book.id).onFailure {
+            logW(TAG, "Could not delete coverage of [${book.title}]: ${it.message}")
+        }
+
+        // The book's own record stays on the shelf, just without the book.
+        statisticsRepository.unlinkReadBook(bookId = book.id).onFailure {
+            logW(TAG, "Could not unlink record of [${book.title}]: ${it.message}")
         }
 
         // Deleting book

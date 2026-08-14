@@ -21,6 +21,8 @@ sealed class HistoryEffect {
 
     data object OnNavigateToLibrary : HistoryEffect()
 
+    data object OnNavigateToStatistics : HistoryEffect()
+
     data class OnNavigateToBookInfo(
         val bookId: Int
     ) : HistoryEffect()

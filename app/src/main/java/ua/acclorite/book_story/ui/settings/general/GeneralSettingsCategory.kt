@@ -25,7 +25,9 @@ import ua.acclorite.book_story.ui.settings.components.SettingsSubcategory
 import ua.acclorite.book_story.ui.settings.general.components.AppLanguageOption
 import ua.acclorite.book_story.ui.settings.general.components.CacheImagesOption
 import ua.acclorite.book_story.ui.settings.general.components.ClearParseCacheOption
+import ua.acclorite.book_story.ui.settings.general.components.CollectStatisticsOption
 import ua.acclorite.book_story.ui.settings.general.components.CopyDatabaseOption
+import ua.acclorite.book_story.ui.settings.general.components.DeleteStatisticsOption
 import ua.acclorite.book_story.ui.settings.general.components.DoublePressExitOption
 import ua.acclorite.book_story.ui.settings.general.components.ParseCacheSizeOption
 
@@ -62,6 +64,21 @@ fun LazyListScope.GeneralSettingsCategory(
 
         item {
             ClearParseCacheOption()
+        }
+    }
+
+    SettingsSubcategory(
+        titleColor = titleColor,
+        title = { stringResource(id = R.string.statistics_option) },
+        showTitle = true,
+        showDivider = false
+    ) {
+        item {
+            CollectStatisticsOption()
+        }
+
+        item {
+            DeleteStatisticsOption()
         }
     }
 

@@ -19,6 +19,9 @@ import ua.acclorite.book_story.data.local.dto.BookEntity
 import ua.acclorite.book_story.data.local.dto.CategoryEntity
 import ua.acclorite.book_story.data.local.dto.ColorPresetEntity
 import ua.acclorite.book_story.data.local.dto.HistoryEntity
+import ua.acclorite.book_story.data.local.dto.ReadBookEntity
+import ua.acclorite.book_story.data.local.dto.ReadingCoverageEntity
+import ua.acclorite.book_story.data.local.dto.ReadingSessionEntity
 import java.io.File
 
 @Database(
@@ -26,9 +29,12 @@ import java.io.File
         BookEntity::class,
         HistoryEntity::class,
         ColorPresetEntity::class,
-        CategoryEntity::class
+        CategoryEntity::class,
+        ReadingSessionEntity::class,
+        ReadBookEntity::class,
+        ReadingCoverageEntity::class
     ],
-    version = 17,
+    version = 21,
     autoMigrations = [
         AutoMigration(1, 2),
         AutoMigration(2, 3),
@@ -46,6 +52,10 @@ import java.io.File
         AutoMigration(14, 15),
         AutoMigration(15, 16, spec = DatabaseHelper.AUTO_MIGRATION_15_16::class),
         AutoMigration(16, 17), // ColorPresetEntity.type (default CUSTOM)
+        AutoMigration(17, 18), // reading statistics: sessions, read books, coverage
+        AutoMigration(18, 19), // ReadingSessionEntity.overlayMs (default 0)
+        AutoMigration(19, 20), // ReadingCoverageEntity.wordsBeforeBookmark (nullable)
+        AutoMigration(20, 21), // ReadBookEntity.bookId is unique (one record per book)
     ],
     exportSchema = true
 )
@@ -54,6 +64,7 @@ abstract class BookDatabase : RoomDatabase() {
     abstract val historyDao: HistoryDao
     abstract val colorPresetDao: ColorPresetDao
     abstract val categoryDao: CategoryDao
+    abstract val statisticsDao: StatisticsDao
 }
 
 @Suppress("ClassName")

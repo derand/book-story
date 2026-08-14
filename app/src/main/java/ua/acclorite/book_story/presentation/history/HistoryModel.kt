@@ -29,6 +29,7 @@ import ua.acclorite.book_story.domain.use_case.history.AddHistoryUseCase
 import ua.acclorite.book_story.domain.use_case.history.DeleteHistoryUseCase
 import ua.acclorite.book_story.domain.use_case.history.DeleteWholeHistoryUseCase
 import ua.acclorite.book_story.domain.use_case.history.GetHistoryUseCase
+import ua.acclorite.book_story.domain.use_case.statistics.GetLibraryStatisticsUseCase
 import ua.acclorite.book_story.presentation.library.LibraryScreen
 import java.util.Date
 import javax.inject.Inject
@@ -38,6 +39,7 @@ import kotlin.coroutines.coroutineContext
 class HistoryModel @Inject constructor(
     private val getHistoryUseCase: GetHistoryUseCase,
     private val addHistoryUseCase: AddHistoryUseCase,
+    private val getLibraryStatisticsUseCase: GetLibraryStatisticsUseCase,
     private val deleteHistoryUseCase: DeleteHistoryUseCase,
     private val deleteWholeHistoryUseCase: DeleteWholeHistoryUseCase,
     private val getBookUseCase: GetBookUseCase
@@ -120,9 +122,14 @@ class HistoryModel @Inject constructor(
                             if (_state.value.showSearch) _state.value.searchQuery
                             else ""
                         )
+                        // Alongside the list, because the same refresh follows
+                        // every session: leaving the reader is exactly when
+                        // these figures have changed.
+                        val statistics = getLibraryStatisticsUseCase()
                         _state.update {
                             it.copy(
                                 history = history,
+                                statistics = statistics,
                                 isLoading = false
                             )
                         }
@@ -260,6 +267,10 @@ class HistoryModel @Inject constructor(
 
                 is HistoryEvent.OnNavigateToLibrary -> {
                     _effects.emit(HistoryEffect.OnNavigateToLibrary)
+                }
+
+                is HistoryEvent.OnNavigateToStatistics -> {
+                    _effects.emit(HistoryEffect.OnNavigateToStatistics)
                 }
 
                 is HistoryEvent.OnNavigateToBookInfo -> {

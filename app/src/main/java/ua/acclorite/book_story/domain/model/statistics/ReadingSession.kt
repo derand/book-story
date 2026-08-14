@@ -1,0 +1,78 @@
+/*
+ * Book's Story — free and open-source Material You eBook reader.
+ * Copyright (C) 2026 derand
+ * Copyright (C) 2024-2026 Acclorite
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
+
+package ua.acclorite.book_story.domain.model.statistics
+
+import androidx.compose.runtime.Immutable
+
+/**
+ * One stretch of reading: from the text becoming visible to the reader being
+ * left or stopped. Built through [endedAt], which is where the two rules about
+ * what counts live.
+ */
+@Immutable
+data class ReadingSession(
+    val bookId: Int,
+    val startTime: Long,
+    val endTime: Long,
+    /** Words credited to this session — the volume read, repeats included. */
+    val wordsRead: Int,
+    /** Time of this session with the text covered; see [readingMs]. */
+    val overlayMs: Long = 0
+) {
+    val durationMs: Long get() = (endTime - startTime).coerceAtLeast(0)
+
+    /**
+     * The part of the session in which words could have been earned — the whole
+     * of it, less the time the image viewer, the settings sheet or the chapters
+     * drawer covered the text. This is what a speed divides by; [durationMs] is
+     * what "time in this book" reports, and it keeps the overlay.
+     */
+    val readingMs: Long get() = (durationMs - overlayMs).coerceAtLeast(0)
+
+    companion object {
+        /** Anything shorter is an open-and-close, not reading. */
+        const val MIN_DURATION_MS = 5_000L
+
+        /**
+         * How much idle is kept after the last sign of life. Only the *tail* is
+         * capped: a book left open overnight stops counting five minutes after
+         * the last scroll, while a pause in the middle of a sitting is counted
+         * in full — staring at one page for a while is still reading.
+         */
+        const val IDLE_CAP_MS = 5 * 60 * 1000L
+
+        /**
+         * The session that ran from [startTime] to [now], or null if it is too
+         * short to mean anything. [lastActiveTime] is when the reader last
+         * settled on a position; it caps the trailing idle.
+         */
+        fun endedAt(
+            bookId: Int,
+            startTime: Long,
+            lastActiveTime: Long,
+            now: Long,
+            wordsRead: Int,
+            overlayMs: Long = 0
+        ): ReadingSession? {
+            val endTime = now
+                .coerceAtMost(lastActiveTime + IDLE_CAP_MS)
+                .coerceAtLeast(startTime)
+
+            return ReadingSession(
+                bookId = bookId,
+                startTime = startTime,
+                endTime = endTime,
+                wordsRead = wordsRead,
+                // The cap can pull the end back past where an overlay was still
+                // open — left open in the viewer, the whole tail is overlay. It
+                // can never exceed the session it belongs to.
+                overlayMs = overlayMs.coerceIn(0, endTime - startTime)
+            ).takeIf { it.durationMs >= MIN_DURATION_MS }
+        }
+    }
+}

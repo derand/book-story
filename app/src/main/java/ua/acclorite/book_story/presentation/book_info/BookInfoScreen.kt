@@ -78,6 +78,7 @@ data class BookInfoScreen(val bookId: Int) : Screen, Parcelable {
         if (state.value.book.id == bookId) {
             BookInfoContent(
                 book = state.value.book,
+                statistics = state.value.statistics,
                 file = state.value.file,
                 loadingFile = state.value.loadingFile,
                 categories = categories,
@@ -104,6 +105,7 @@ data class BookInfoScreen(val bookId: Int) : Screen, Parcelable {
                 showMoveDialog = screenModel::onEvent,
                 actionMoveDialog = screenModel::onEvent,
                 showDeleteDialog = screenModel::onEvent,
+                setFinished = screenModel::onEvent,
                 actionDeleteDialog = screenModel::onEvent,
                 navigateToReader = screenModel::onEvent,
                 navigateToLibrarySettings = screenModel::onEvent,

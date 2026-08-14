@@ -42,6 +42,9 @@ import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.parcelize.Parcelize
 import ua.acclorite.book_story.core.helpers.calculateProgress
@@ -80,6 +83,7 @@ data class ReaderScreen(val bookId: Int) : Screen, Parcelable {
         val settingsState = settingsModel.state.collectAsStateWithLifecycle()
 
         val activity = LocalActivity.current
+        val lifecycleOwner = LocalLifecycleOwner.current
         val density = LocalDensity.current
         val listState = rememberSaveable(
             state.value.listState,
@@ -362,6 +366,20 @@ data class ReaderScreen(val bookId: Int) : Screen, Parcelable {
         // reader turns them back on mid-book.
         LaunchedEffect(settings.images.value, state.value.text) {
             if (settings.images.lastValue) screenModel.onEvent(ReaderEvent.OnLoadImages)
+        }
+
+        // The only place that notices the reading stopping without the reader
+        // being left: a call, the home gesture, the screen going off.
+        DisposableEffect(lifecycleOwner) {
+            val observer = LifecycleEventObserver { _, event ->
+                when (event) {
+                    Lifecycle.Event.ON_START -> screenModel.onEnterForeground()
+                    Lifecycle.Event.ON_STOP -> screenModel.onLeaveForeground()
+                    else -> Unit
+                }
+            }
+            lifecycleOwner.lifecycle.addObserver(observer)
+            onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
         }
 
         DisposableEffect(settings.screenOrientation.value) {
