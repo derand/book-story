@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.outlined.LibraryAdd
 import androidx.compose.material.icons.rounded.Menu
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -52,6 +53,7 @@ fun ReaderTopBar(
     switchColorPreset: (SettingsEvent.OnSwitchColorPreset) -> Unit,
     showSettingsBottomSheet: (ReaderEvent.OnShowSettingsBottomSheet) -> Unit,
     showChaptersDrawer: (ReaderEvent.OnShowChaptersDrawer) -> Unit,
+    addToLibrary: (ReaderEvent.OnAddToLibrary) -> Unit,
     navigateToBookInfo: (ReaderEvent.OnNavigateToBookInfo) -> Unit,
     navigateBack: (ReaderEvent.OnNavigateBack) -> Unit
 ) {
@@ -92,7 +94,10 @@ fun ReaderTopBar(
                     modifier = Modifier
                         .padding(end = 8.dp)
                         .noRippleClickable(
-                            enabled = !lockMenu,
+                            // A previewed book has no book info worth showing:
+                            // it is not in the library, and that screen is built
+                            // around books that are.
+                            enabled = !lockMenu && book.inLibrary,
                             onClick = {
                                 leave(
                                     ReaderEvent.OnLeave(
@@ -127,6 +132,20 @@ fun ReaderTopBar(
                 )
             },
             actions = {
+                // Only while the book is a preview: it is the one thing the user
+                // came here to decide, so it sits in the bar rather than behind
+                // the settings sheet.
+                if (!book.inLibrary) {
+                    IconButton(
+                        icon = Icons.Outlined.LibraryAdd,
+                        contentDescription = R.string.add_to_library_content_desc,
+                        disableOnClick = false,
+                        enabled = !lockMenu
+                    ) {
+                        addToLibrary(ReaderEvent.OnAddToLibrary)
+                    }
+                }
+
                 if (currentChapter != null) {
                     IconButton(
                         icon = Icons.Rounded.Menu,

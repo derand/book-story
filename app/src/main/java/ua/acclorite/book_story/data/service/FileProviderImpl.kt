@@ -7,19 +7,42 @@
 package ua.acclorite.book_story.data.service
 
 import android.app.Application
+import androidx.core.net.toUri
 import ua.acclorite.book_story.core.helpers.runCatchingCancellable
 import ua.acclorite.book_story.core.log.bookTimingNote
 import ua.acclorite.book_story.data.model.file.CachedFile
 import ua.acclorite.book_story.data.model.file.CachedFileCompat
+import ua.acclorite.book_story.data.storage.OwnedBookFiles
 import ua.acclorite.book_story.domain.model.library.Book
 import ua.acclorite.book_story.domain.service.FileProvider
 import javax.inject.Inject
 
 class FileProviderImpl @Inject constructor(
-    private val application: Application
+    private val application: Application,
+    private val ownedBookFiles: OwnedBookFiles
 ) : FileProvider {
 
     override fun getFileFromBook(book: Book): Result<CachedFile> = runCatchingCancellable {
+        // A book being previewed is reached by the URI another app handed over,
+        // not by descending a granted tree: there is no grant, and that is the
+        // whole reason it is a preview. The URI is good for as long as the task
+        // holding the intent, which is exactly as long as the preview itself —
+        // a killed process takes both, and the start-up sweep clears the row.
+        book.previewUri?.let { uri ->
+            val file = CachedFileCompat.fromUri(application, uri.toUri())
+            if (file.canAccess()) return@runCatchingCancellable file
+            throw IllegalStateException("The preview's grant on $uri is gone.")
+        }
+
+        // A book the app holds a copy of, because the app that handed it over
+        // exposed no location to remember. Nothing is granted and nothing is
+        // descended: the path is a real path, in our own directory.
+        if (ownedBookFiles.owns(book.filePath)) {
+            val file = CachedFileCompat.fromFile(application, java.io.File(book.filePath))
+            if (file.canAccess()) return@runCatchingCancellable file
+            throw NoSuchElementException("The stored copy of ${book.title} is gone.")
+        }
+
         val storages = application.contentResolver.persistedUriPermissions
             .map { permission -> CachedFileCompat.fromUri(application, permission.uri) }
             .filter { it.isDirectory }

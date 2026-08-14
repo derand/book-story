@@ -30,6 +30,18 @@ object CachedFileCompat {
         )
     }
 
+    /**
+     * A book the app owns, held as a plain file. No provider is involved, so
+     * none of the URI machinery is: see [CachedFile]'s `localFile`.
+     */
+    fun fromFile(context: Context, file: java.io.File): CachedFile {
+        return CachedFile(
+            context = context,
+            uri = Uri.fromFile(file),
+            localFile = file
+        )
+    }
+
     fun build(
         name: String? = null,
         path: String? = null,

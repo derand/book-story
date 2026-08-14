@@ -241,6 +241,14 @@
     <string name="clear_parse_cache_dialog">Clear parse cache?</string>
     <string name="clear_parse_cache_dialog_desc">This removes all cached parsed books. They will be re-parsed the next time you open them.</string>
 
+    <!-- Opening a book from a file manager -->
+    <string name="open_file_unsupported">That file is not a book this app can open.</string>
+    <string name="open_file_unreadable">Could not read that file.</string>
+    <string name="add_to_library_content_desc">Add to library</string>
+    <string name="add_to_library_added">Added to your library.</string>
+    <string name="add_to_library_grant_folder">Choose the folder this book is in, so it can be opened again later.</string>
+    <string name="add_to_library_no_path">This file has no location on the device, so it cannot be kept.</string>
+
     <!-- Reader -->
     <string name="font_family_option">Font family</string>
     <string name="font_thickness_option">Font thickness</string>

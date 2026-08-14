@@ -23,7 +23,8 @@ class AddBookUseCase @Inject constructor(
     private val coverImageHandler: CoverImageHandler
 ) {
 
-    suspend operator fun invoke(book: Book, coverImage: CoverImage?) {
+    /** The id of the inserted row, or null if it could not be inserted. */
+    suspend operator fun invoke(book: Book, coverImage: CoverImage?): Int? {
         logI(TAG, "Inserting [${book.title}].")
 
         val coverImageUri = coverImage?.let { coverImage ->
@@ -39,12 +40,14 @@ class AddBookUseCase @Inject constructor(
             )
         }
 
-        bookRepository.addBook(book = book.copy(coverImage = coverImageUri)).fold(
-            onSuccess = {
+        return bookRepository.addBook(book = book.copy(coverImage = coverImageUri)).fold(
+            onSuccess = { id ->
                 logI(TAG, "Successfully inserted [${book.title}].")
+                id
             },
             onFailure = {
                 logE(TAG, "Could not insert [${book.title}] with error: ${it.message}")
+                null
             }
         )
     }

@@ -29,7 +29,17 @@ data class Book(
     val progress: Float,
 
     val lastOpened: Long?,
-    val categories: List<Int>
+    val categories: List<Int>,
+
+    /**
+     * False while the book is only being previewed from a file manager. The
+     * reader treats such a book as a book in every way but two: it records no
+     * statistics for it, and it offers to add it.
+     */
+    val inLibrary: Boolean = true,
+
+    /** How a preview reaches its file; see the entity of the same name. */
+    val previewUri: String? = null
 ) : Parcelable {
     companion object {
         val default = Book(

@@ -8,6 +8,9 @@ package ua.acclorite.book_story.ui.reader
 
 import android.app.SearchManager
 import android.content.Intent
+import android.provider.DocumentsContract
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.core.net.toUri
@@ -19,20 +22,32 @@ import ua.acclorite.book_story.R
 import ua.acclorite.book_story.domain.model.library.Book
 import ua.acclorite.book_story.presentation.book_info.BookInfoScreen
 import ua.acclorite.book_story.presentation.reader.ReaderEffect
+import ua.acclorite.book_story.presentation.reader.ReaderEvent
 import ua.acclorite.book_story.ui.common.helpers.LocalActivity
 import ua.acclorite.book_story.ui.common.helpers.launchActivity
 import ua.acclorite.book_story.ui.common.helpers.setBrightness
 import ua.acclorite.book_story.ui.common.helpers.showToast
 import ua.acclorite.book_story.ui.navigator.LocalNavigator
 
+private const val EXTERNAL_STORAGE_AUTHORITY = "com.android.externalstorage.documents"
+private const val PRIMARY_STORAGE = "/storage/emulated/0"
+
 @Composable
 fun ReaderEffects(
     effects: SharedFlow<ReaderEffect>,
     book: Book,
-    fullscreen: Boolean
+    fullscreen: Boolean,
+    grantFolder: (ReaderEvent.OnGrantFolder) -> Unit
 ) {
     val navigator = LocalNavigator.current
     val activity = LocalActivity.current
+
+    val folderPicker = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocumentTree()
+    ) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        grantFolder(ReaderEvent.OnGrantFolder(uri = uri.toString()))
+    }
 
     LaunchedEffect(effects, book, fullscreen) {
         effects.collect { effect ->
@@ -182,6 +197,38 @@ fun ReaderEffects(
                         popping = true,
                         saveInBackStack = false
                     )
+                }
+
+                is ReaderEffect.OnRequestFolderGrant -> {
+                    // The book's own folder as the picker's starting point, so
+                    // the user confirms rather than navigates. Only external
+                    // storage composes a document id this way; any other
+                    // provider ignores the hint and opens where it likes, which
+                    // is why nothing depends on it.
+                    val initial = effect.initialFolder
+                        ?.substringAfter(PRIMARY_STORAGE, missingDelimiterValue = "")
+                        ?.trim('/')
+                        ?.takeIf { it.isNotBlank() }
+                        ?.let { relative ->
+                            DocumentsContract.buildDocumentUri(
+                                EXTERNAL_STORAGE_AUTHORITY,
+                                "primary:$relative"
+                            )
+                        }
+
+                    activity.getString(R.string.add_to_library_grant_folder)
+                        .showToast(context = activity, longToast = true)
+                    folderPicker.launch(initial)
+                }
+
+                is ReaderEffect.OnAddedToLibrary -> {
+                    activity.getString(R.string.add_to_library_added)
+                        .showToast(context = activity, longToast = false)
+                }
+
+                is ReaderEffect.OnCannotAddToLibrary -> {
+                    activity.getString(R.string.add_to_library_no_path)
+                        .showToast(context = activity, longToast = true)
                 }
             }
         }

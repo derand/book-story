@@ -102,4 +102,15 @@ sealed class ReaderEvent {
     data class OnNavigateToBookInfo(
         val changePath: Boolean
     ) : ReaderEvent()
+
+    /** Keep the book being previewed; see `AddPreviewToLibraryUseCase`. */
+    data object OnAddToLibrary : ReaderEvent()
+
+    /**
+     * A folder the user has just granted, in answer to
+     * [ReaderEffect.OnRequestFolderGrant]. Adding is retried with it.
+     */
+    data class OnGrantFolder(
+        val uri: String
+    ) : ReaderEvent()
 }

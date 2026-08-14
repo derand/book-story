@@ -9,6 +9,7 @@
 package ua.acclorite.book_story.presentation.main
 
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.content.res.Configuration
 import android.database.CursorWindow
 import android.os.Bundle
@@ -42,6 +43,7 @@ import ua.acclorite.book_story.ui.common.components.navigation_bar.NavigationBar
 import ua.acclorite.book_story.ui.common.components.navigation_rail.NavigationRail
 import ua.acclorite.book_story.ui.common.helpers.ProvideSettings
 import ua.acclorite.book_story.ui.main.MainActivityKeyboardManager
+import ua.acclorite.book_story.ui.main.MainFileOpenEffects
 import ua.acclorite.book_story.ui.navigator.Navigator
 import ua.acclorite.book_story.ui.navigator.NavigatorTabs
 import ua.acclorite.book_story.ui.settings.SettingsEffects
@@ -58,6 +60,7 @@ class MainActivity : AppCompatActivity() {
     @Inject
     lateinit var settings: SettingsManager
     private val settingsModel: SettingsModel by viewModels()
+    private val mainModel: MainModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen().setKeepOnScreenCondition {
@@ -80,6 +83,7 @@ class MainActivity : AppCompatActivity() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
         themeTrace("onCreate", this)
+        receiveFile(intent)
 
         setContent {
             // Initializing Screen Models
@@ -152,6 +156,13 @@ class MainActivity : AppCompatActivity() {
                             },
                             backHandlerEnabled = { it != StartScreen }
                         ) { screen ->
+                            // Inside the navigator's content because that is
+                            // where LocalNavigator exists. During a screen
+                            // transition two of these collect at once, which is
+                            // safe: the model hands the outcome over a channel,
+                            // so exactly one of them receives it.
+                            MainFileOpenEffects(mainModel = mainModel)
+
                             when (screen) {
                                 LibraryScreen, HistoryScreen, BrowseScreen -> {
                                     NavigatorTabs(
@@ -186,6 +197,28 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+    }
+
+    /**
+     * A book tapped in a file manager. The activity is `singleTask`-less and
+     * ordinary, so the same file can arrive either as the intent that started
+     * the activity or, when it is already running, through [onNewIntent].
+     *
+     * The read permission carried by the intent is transient — it lasts as long
+     * as the task holding it and cannot be persisted, because a file manager
+     * does not offer it as persistable. That is what makes this a preview rather
+     * than an import.
+     */
+    private fun receiveFile(intent: Intent?) {
+        if (intent?.action != Intent.ACTION_VIEW) return
+        val uri = intent.data ?: return
+        mainModel.onFileReceived(uri.toString())
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        receiveFile(intent)
     }
 
     // The three moments a lost uiMode change could have been noticed, and was

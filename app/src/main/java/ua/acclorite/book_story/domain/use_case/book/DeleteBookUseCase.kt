@@ -54,6 +54,13 @@ class DeleteBookUseCase @Inject constructor(
             logW(TAG, "Could not unlink record of [${book.title}]: ${it.message}")
         }
 
+        // The app's own copy of the file, for a book that was kept by keeping
+        // it. Nothing else refers to it, so it would otherwise sit in filesDir
+        // for the life of the install.
+        bookRepository.deleteBookFile(bookId = book.id).onFailure {
+            logW(TAG, "Could not delete the stored file of [${book.title}]: ${it.message}")
+        }
+
         // Deleting book
         bookRepository.deleteBook(book).fold(
             onSuccess = {

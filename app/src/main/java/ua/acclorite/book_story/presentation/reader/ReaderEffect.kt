@@ -38,4 +38,18 @@ sealed class ReaderEffect {
     data class OnNavigateToBookInfo(
         val changePath: Boolean
     ) : ReaderEffect()
+
+    /**
+     * Nothing persisted reaches the previewed book's file, so it cannot be kept
+     * until the user grants the folder holding it. [initialFolder] is where the
+     * picker should open, when a path was recoverable.
+     */
+    data class OnRequestFolderGrant(
+        val initialFolder: String?
+    ) : ReaderEffect()
+
+    data object OnAddedToLibrary : ReaderEffect()
+
+    /** The file could not be read, so there was nothing to keep. */
+    data object OnCannotAddToLibrary : ReaderEffect()
 }
