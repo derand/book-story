@@ -6,6 +6,7 @@
 
 package ua.acclorite.book_story.domain.use_case.file_system
 
+import ua.acclorite.book_story.core.data.ExtensionsData
 import ua.acclorite.book_story.core.helpers.compareByWithOrder
 import ua.acclorite.book_story.core.helpers.runCatchingCancellable
 import ua.acclorite.book_story.core.log.logE
@@ -43,10 +44,11 @@ class GetFilesUseCase @Inject constructor(
                     when (settings.browseSortOrder.lastValue) {
                         BrowseSortOrder.NAME -> file.name.trim()
 
-                        BrowseSortOrder.FILE_FORMAT -> file.path
-                            .substringAfterLast(".")
-                            .lowercase()
-                            .trimEnd()
+                        // The format the file will actually be read as, so a
+                        // book named `*.fb2.xml` sorts with the other FB2s
+                        // rather than under "xml".
+                        BrowseSortOrder.FILE_FORMAT ->
+                            ExtensionsData.formatOf(file.name).orEmpty()
 
                         BrowseSortOrder.FILE_SIZE -> file.size
 

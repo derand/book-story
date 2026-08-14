@@ -56,14 +56,10 @@ class FileSystemRepositoryImpl @Inject constructor(
         query: String,
         existingFiles: List<String>
     ): Boolean {
-        if (
-            ExtensionsData.fileExtensions.none {
-                name.endsWith(
-                    it,
-                    ignoreCase = true
-                )
-            }
-        ) return false
+        // The same question the parsers ask, so the listing cannot offer a file
+        // that then refuses to open — and so a book named the way Drive names
+        // one is visible here too.
+        if (ExtensionsData.formatOf(name) == null) return false
         if (query.isNotBlank() && !name.contains(query.trim(), ignoreCase = true)) return false
         if (existingFiles.any { it.equals(path, ignoreCase = true) }) return false
         return true

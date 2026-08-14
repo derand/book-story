@@ -8,6 +8,7 @@
 package ua.acclorite.book_story.data.parser.image
 
 import android.util.Base64
+import ua.acclorite.book_story.core.data.ExtensionsData
 import ua.acclorite.book_story.core.log.logE
 import ua.acclorite.book_story.data.model.file.CachedFile
 import java.io.ByteArrayOutputStream
@@ -53,7 +54,7 @@ class BookImageLoader @Inject constructor() {
         onImage: (src: String, bytes: ByteArray) -> Unit
     ) {
         if (srcs.isEmpty()) return
-        val format = ".${cachedFile.name.substringAfterLast(".")}".lowercase().trim()
+        val format = ExtensionsData.formatOf(cachedFile.name)
         when (format) {
             ".fb2" -> loadFromFb2(cachedFile, srcs, onImage)
             ".epub" -> loadFromEpub(cachedFile, srcs, onImage)

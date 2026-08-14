@@ -8,6 +8,7 @@ package ua.acclorite.book_story.data.parser.text
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import ua.acclorite.book_story.core.data.ExtensionsData
 import ua.acclorite.book_story.core.log.logE
 import ua.acclorite.book_story.data.model.file.CachedFile
 import ua.acclorite.book_story.domain.model.reader.ParsedText
@@ -32,7 +33,7 @@ class TextParserImpl @Inject constructor(
             return ParsedText.EMPTY
         }
 
-        val fileFormat = ".${cachedFile.name.substringAfterLast(".")}".lowercase().trim()
+        val fileFormat = ExtensionsData.formatOf(cachedFile.name)
         return withContext(Dispatchers.IO) {
             when (fileFormat) {
                 ".pdf" -> {
