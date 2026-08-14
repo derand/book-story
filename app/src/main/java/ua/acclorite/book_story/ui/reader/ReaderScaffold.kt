@@ -9,15 +9,23 @@ package ua.acclorite.book_story.ui.reader
 import android.annotation.SuppressLint
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
@@ -25,6 +33,7 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.TextUnit
 import ua.acclorite.book_story.domain.model.library.Book
 import ua.acclorite.book_story.domain.model.reader.ReaderText
@@ -118,6 +127,11 @@ fun ReaderScaffold(
     navigateToBookInfo: (ReaderEvent.OnNavigateToBookInfo) -> Unit,
     navigateBack: (ReaderEvent.OnNavigateBack) -> Unit
 ) {
+    // How much of the page the preview bar is taking, so the text can end above
+    // it. Zero for a book in the library, which has no such bar.
+    var previewBarHeight by remember { mutableStateOf(0.dp) }
+    val layoutDirection = LocalLayoutDirection.current
+
     Scaffold(
         Modifier
             .fillMaxSize()
@@ -145,38 +159,55 @@ fun ReaderScaffold(
                     switchColorPreset = switchColorPreset,
                     showSettingsBottomSheet = showSettingsBottomSheet,
                     showChaptersDrawer = showChaptersDrawer,
-                    addToLibrary = addToLibrary,
                     navigateBack = navigateBack,
                     navigateToBookInfo = navigateToBookInfo
                 )
             }
         },
         bottomBar = {
-            AnimatedVisibility(
-                modifier = Modifier.fillMaxWidth(),
-                visible = showMenu && !coveredByBottomSheet,
-                enter = slideInVertically { it },
-                exit = slideOutVertically { it }
-            ) {
-                ReaderBottomBar(
-                    book = book,
-                    progress = progress,
-                    text = text,
-                    listState = listState,
-                    lockMenu = lockMenu,
-                    checkpoints = checkpoints,
-                    bottomBarPadding = bottomBarPadding,
-                    restoreCheckpoint = restoreCheckpoint,
-                    scroll = scroll,
-                    changeProgress = changeProgress
-                )
+            // A Column, because the slot holds two bars for a previewed book and
+            // Scaffold measures its bottom bar as one: the preview bar sits below
+            // the menu's rather than replacing it, so a previewed book is read
+            // like any other and the progress slider stays where it always is.
+            Column {
+                AnimatedVisibility(
+                    modifier = Modifier.fillMaxWidth(),
+                    visible = showMenu && !coveredByBottomSheet,
+                    enter = slideInVertically { it },
+                    exit = slideOutVertically { it }
+                ) {
+                    ReaderBottomBar(
+                        book = book,
+                        progress = progress,
+                        text = text,
+                        listState = listState,
+                        lockMenu = lockMenu,
+                        checkpoints = checkpoints,
+                        bottomBarPadding = bottomBarPadding,
+                        restoreCheckpoint = restoreCheckpoint,
+                        scroll = scroll,
+                        changeProgress = changeProgress
+                    )
+                }
+
+                if (!book.inLibrary && !coveredByBottomSheet) {
+                    ReaderPreviewBar(
+                        addToLibrary = addToLibrary,
+                        onHeightChanged = { previewBarHeight = it }
+                    )
+                }
             }
         }
     ) {
         ReaderLayout(
             text = text,
             listState = listState,
-            contentPadding = contentPadding,
+            contentPadding = if (book.inLibrary) contentPadding else PaddingValues(
+                top = contentPadding.calculateTopPadding(),
+                start = contentPadding.calculateStartPadding(layoutDirection),
+                end = contentPadding.calculateEndPadding(layoutDirection),
+                bottom = contentPadding.calculateBottomPadding() + previewBarHeight
+            ),
             verticalPadding = verticalPadding,
             horizontalGesture = horizontalGesture,
             horizontalGestureScroll = horizontalGestureScroll,
