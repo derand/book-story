@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Book's Story — free and open-source Material You eBook reader.
+  Copyright (C) 2026 derand
+  SPDX-License-Identifier: GPL-3.0-only
+
+  The debug build's own name. Three variants can be installed side by side, and
+  since the app now offers itself in "Open with", two of them would otherwise
+  appear there under the same name with no way to tell which is which. Only the
+  debug build is renamed: release-debug is the one actually read on, so it keeps
+  the real name.
+-->
+<resources>
+    <string name="app_name">Book Story DEV</string>
+</resources>

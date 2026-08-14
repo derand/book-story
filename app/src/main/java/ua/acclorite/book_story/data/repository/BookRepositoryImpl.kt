@@ -20,6 +20,7 @@ import ua.acclorite.book_story.data.cache.ReaderImageFiles
 import ua.acclorite.book_story.data.local.room.BookDatabase
 import ua.acclorite.book_story.data.model.file.CachedFile
 import ua.acclorite.book_story.data.settings.SettingsManager
+import ua.acclorite.book_story.data.storage.OwnedBookFiles
 import ua.acclorite.book_story.data.mapper.book.BookMapper
 import ua.acclorite.book_story.data.mapper.file.FileMapper
 import ua.acclorite.book_story.data.parser.cover.CoverParser
@@ -27,6 +28,7 @@ import ua.acclorite.book_story.data.parser.image.BookImageLoader
 import ua.acclorite.book_story.data.parser.text.TextParser
 import ua.acclorite.book_story.domain.model.file.File
 import ua.acclorite.book_story.domain.model.library.Book
+import ua.acclorite.book_story.domain.model.library.findForFile
 import ua.acclorite.book_story.domain.model.reader.BookImage
 import ua.acclorite.book_story.domain.model.reader.ParsedText
 import ua.acclorite.book_story.domain.model.reader.ReaderText
@@ -46,6 +48,7 @@ class BookRepositoryImpl @Inject constructor(
     private val fileProvider: FileProvider,
     private val parseCache: ParseCache,
     private val readerImageFiles: ReaderImageFiles,
+    private val ownedBookFiles: OwnedBookFiles,
     private val bookImageLoader: BookImageLoader,
     private val settings: SettingsManager
 ) : BookRepository {
@@ -106,7 +109,7 @@ class BookRepositoryImpl @Inject constructor(
                     // is a lazy property that may be a ContentResolver round-trip
                     // against the document URI; `size` and `lastModified` share
                     // one query, so whichever is asked for first pays for both.
-                    val path = timed("  open: key path") { cachedFile.path }
+                    val path = timed("  open: key path") { cachedFile.cacheKeyPath }
                     val size = timed("  open: key size") { cachedFile.size }
                     val lastModified = timed("  open: key modified") {
                         cachedFile.lastModified
@@ -273,6 +276,43 @@ class BookRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun dropBookImages(bookId: Int): Result<Unit> = runCatchingCancellable {
+        withContext(Dispatchers.IO) {
+            readerImageFiles.drop(bookId)
+        }
+    }
+
+    override suspend fun storeBookFile(book: Book): Result<String> = runCatchingCancellable {
+        withContext(Dispatchers.IO) {
+            val source = fileProvider.getFileFromBook(book).getOrThrow()
+            val sourcePath = source.cacheKeyPath
+            val size = source.size
+            val lastModified = source.lastModified
+
+            val stored = ownedBookFiles.store(source, book.id)
+                ?: throw IllegalStateException("Could not store ${source.name}.")
+
+            // The preview parsed this book a moment ago and cached the result
+            // under the path it had then. Moving the entry is what keeps the
+            // second open instant; without it the book is parsed again to
+            // produce exactly the same text.
+            parseCache.rekey(
+                fromPath = sourcePath,
+                toPath = stored.absolutePath,
+                size = size,
+                lastModified = lastModified
+            )
+
+            stored.absolutePath
+        }
+    }
+
+    override suspend fun deleteBookFile(bookId: Int): Result<Unit> = runCatchingCancellable {
+        withContext(Dispatchers.IO) {
+            ownedBookFiles.delete(bookId)
+        }
+    }
+
     /** What the timing log says about a parsed book: how much text, how many images. */
     private fun ParsedText.describeForTiming(): String {
         val images = text.filterIsInstance<ReaderText.Image>()
@@ -297,9 +337,29 @@ class BookRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun addBook(book: Book): Result<Unit> = runCatchingCancellable {
+    override suspend fun addBook(book: Book): Result<Int> = runCatchingCancellable {
         withContext(Dispatchers.IO) {
-            database.bookDao.insertBook(bookMapper.toBookEntity(book))
+            database.bookDao.insertBook(bookMapper.toBookEntity(book)).toInt()
+        }
+    }
+
+    override suspend fun findLibraryBookForFile(
+        filePath: String,
+        fileName: String
+    ): Result<Book?> = runCatchingCancellable {
+        withContext(Dispatchers.IO) {
+            // Matched in Kotlin rather than in SQL: a LIKE over the path would
+            // treat '%' and '_' in a file name as wildcards, and the library is
+            // the same handful of rows every other screen already reads whole.
+            database.bookDao.searchBooks("")
+                .map(bookMapper::toBook)
+                .findForFile(filePath = filePath, fileName = fileName)
+        }
+    }
+
+    override suspend fun findPreviews(): Result<List<Book>> = runCatchingCancellable {
+        withContext(Dispatchers.IO) {
+            database.bookDao.findPreviews().map(bookMapper::toBook)
         }
     }
 

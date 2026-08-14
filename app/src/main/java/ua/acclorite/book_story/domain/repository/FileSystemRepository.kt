@@ -18,4 +18,13 @@ interface FileSystemRepository {
     suspend fun getBookFromFile(
         file: File
     ): Result<Pair<Book, CoverImage?>>
+
+    /**
+     * The file behind a URI handed over by another app. Its [File.path] is empty
+     * when the providing app exposes no real path — which is not a failure, only
+     * a file that cannot be matched against the library or added to it.
+     */
+    suspend fun getFileFromUri(
+        uri: String
+    ): Result<File>
 }

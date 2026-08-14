@@ -29,7 +29,17 @@ import java.util.UUID
 class CachedFile(
     private val context: Context,
     val uri: Uri,
-    private val builder: CachedFileBuilder? = null
+    private val builder: CachedFileBuilder? = null,
+    /**
+     * The file itself, when the app owns it rather than reaching it through a
+     * provider — a book copied into the app's own storage because the app that
+     * handed it over exposed no location for it.
+     *
+     * Everything a provider would be asked for is read straight off the file
+     * instead, and [rawFile] hands it over as it is: there is nothing to copy,
+     * the copy is what this is.
+     */
+    private val localFile: File? = null
 ) {
     @Immutable
     private data class QueryParams(
@@ -43,6 +53,18 @@ class CachedFile(
         getFileQueryParams()
     }
     val path: String by lazy { builder?.path ?: getFilePath() }
+
+    /**
+     * What identifies this file to the parse cache.
+     *
+     * Normally the path. A provider that exposes no location leaves it empty,
+     * and an empty path is not an identity: two such books whose size and
+     * modification time also went unreported would share one cache entry, and
+     * the second would open showing the first one's text. The URI is unique per
+     * document, which is exactly what is needed until the book is kept and
+     * gains a real path of its own.
+     */
+    val cacheKeyPath: String get() = path.ifBlank { uri.toString() }
     val rawFile: File? by lazy { storeInCache() }
 
     val name: String get() = builder?.name ?: queryParams.name
@@ -51,6 +73,8 @@ class CachedFile(
     val isDirectory: Boolean get() = builder?.isDirectory ?: queryParams.isDirectory
 
     fun canAccess(): Boolean {
+        localFile?.let { return it.exists() && it.canRead() }
+
         return try {
             context.contentResolver.query(uri, null, null, null, null)?.let {
                 it.close()
@@ -63,6 +87,15 @@ class CachedFile(
     }
 
     fun openInputStream(): InputStream? {
+        localFile?.let {
+            return try {
+                it.inputStream()
+            } catch (e: Exception) {
+                e.printStackTrace()
+                null
+            }
+        }
+
         return try {
             context.contentResolver.openInputStream(uri)
                 ?: throw Exception("Failed to open InputStream for URI: $uri")
@@ -176,7 +209,7 @@ class CachedFile(
      *
      * @return null if the file is directory or failed
      */
-    private fun storeInCache(): File? = timed(
+    private fun storeInCache(): File? = localFile ?: timed(
         "    copy book",
         describe = { file -> "${(file?.length() ?: 0) / 1024} KB" }
     ) {
@@ -200,96 +233,74 @@ class CachedFile(
     }
 
     private fun getFileQueryParams(): QueryParams {
-        val nameColumn = DocumentsContract.Document.COLUMN_DISPLAY_NAME
-        val sizeColumn = DocumentsContract.Document.COLUMN_SIZE
-        val lastModifiedColumn = DocumentsContract.Document.COLUMN_LAST_MODIFIED
-        val isDirectoryColumn = DocumentsContract.Document.COLUMN_MIME_TYPE
-
-        val projection = mutableListOf<String>().apply {
-            if (builder?.name == null) add(nameColumn)
-            if (builder?.size == null) add(sizeColumn)
-            if (builder?.lastModified == null) add(lastModifiedColumn)
-            if (builder?.isDirectory == null) add(isDirectoryColumn)
-        }
-
-        if (projection.isEmpty() && builder != null) {
+        localFile?.let {
             return QueryParams(
-                name = builder.name!!,
-                size = builder.size!!,
-                lastModified = builder.lastModified!!,
-                isDirectory = builder.isDirectory!!
+                name = it.name,
+                size = it.length(),
+                lastModified = it.lastModified(),
+                isDirectory = it.isDirectory
             )
         }
 
+        val nameColumn = DocumentsContract.Document.COLUMN_DISPLAY_NAME
+        val sizeColumn = DocumentsContract.Document.COLUMN_SIZE
+        val lastModifiedColumn = DocumentsContract.Document.COLUMN_LAST_MODIFIED
+        val mimeTypeColumn = DocumentsContract.Document.COLUMN_MIME_TYPE
+
+        if (
+            builder?.name != null &&
+            builder.size != null &&
+            builder.lastModified != null &&
+            builder.isDirectory != null
+        ) {
+            return QueryParams(
+                name = builder.name,
+                size = builder.size,
+                lastModified = builder.lastModified,
+                isDirectory = builder.isDirectory
+            )
+        }
+
+        // A null projection, and every column read by name and tolerated when
+        // absent, rather than asking for the four DocumentsContract columns.
+        // Those names belong to a documents provider, and a URI arriving from
+        // another app need not come from one: MediaStore — what a chat app or a
+        // mail client shares — rejects the query outright with "Invalid column
+        // last_modified", so a book that opens everywhere else would not open
+        // when it arrived that way.
         context.contentResolver.query(
             uri,
-            projection.toTypedArray(),
-            null, null, null
+            null, null, null, null
         )?.use { cursor ->
             try {
                 if (cursor.moveToFirst()) {
-                    val queryResult = mutableMapOf<String, Any?>()
+                    fun stringOf(column: String): String? = cursor
+                        .getColumnIndex(column)
+                        .takeIf { it >= 0 && !cursor.isNull(it) }
+                        ?.let { cursor.getString(it) }
 
-                    projection.forEach { column ->
-                        when (column) {
-                            nameColumn -> {
-                                if (builder?.name == null) {
-                                    queryResult[column] = cursor.getString(
-                                        cursor.getColumnIndexOrThrow(column)
-                                    )
-                                }
-                            }
+                    fun longOf(column: String): Long? = cursor
+                        .getColumnIndex(column)
+                        .takeIf { it >= 0 && !cursor.isNull(it) }
+                        ?.let { cursor.getLong(it) }
 
-                            sizeColumn -> {
-                                if (builder?.size == null) {
-                                    queryResult[column] = cursor.getLong(
-                                        cursor.getColumnIndexOrThrow(column)
-                                    )
-                                }
-                            }
+                    val name = builder?.name ?: stringOf(nameColumn)
+                    val mimeType = stringOf(mimeTypeColumn)
 
-                            lastModifiedColumn -> {
-                                if (builder?.lastModified == null) {
-                                    queryResult[column] = cursor.getLong(
-                                        cursor.getColumnIndexOrThrow(column)
-                                    )
-                                }
+                    if (name != null) {
+                        return QueryParams(
+                            name = name,
+                            size = builder?.size ?: longOf(sizeColumn) ?: 0,
+                            lastModified = builder?.lastModified
+                                ?: longOf(lastModifiedColumn)
+                                ?: longOf(MEDIA_STORE_DATE_MODIFIED)?.times(1000)
+                                ?: 0,
+                            isDirectory = when (mimeType) {
+                                null -> builder?.isDirectory ?: false
+                                else -> mimeType == DocumentsContract.Document.MIME_TYPE_DIR
                             }
-
-                            isDirectoryColumn -> {
-                                if (builder?.isDirectory == null) {
-                                    queryResult[column] = cursor.getString(
-                                        cursor.getColumnIndexOrThrow(column)
-                                    )
-                                }
-                            }
-                        }
+                        )
                     }
-
-                    val nameQuery = queryResult.getOrElse(nameColumn) {
-                        builder?.name
-                    } as String
-
-                    val sizeQuery = queryResult.getOrElse(sizeColumn) {
-                        builder?.size
-                    } as Long
-
-                    val lastModifiedQuery = queryResult.getOrElse(lastModifiedColumn) {
-                        builder?.lastModified
-                    } as Long
-
-                    val isDirectoryQuery = when (queryResult[isDirectoryColumn]) {
-                        DocumentsContract.Document.MIME_TYPE_DIR -> true
-                        null -> builder?.isDirectory!!
-                        else -> false
-                    }
-
-                    return QueryParams(
-                        name = nameQuery,
-                        size = sizeQuery,
-                        lastModified = lastModifiedQuery,
-                        isDirectory = isDirectoryQuery
-                    )
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -305,6 +316,8 @@ class CachedFile(
     }
 
     private fun getFilePath(): String {
+        localFile?.let { return it.absolutePath }
+
         val tempFile = DocumentFileCompat.fromUri(context, uri)
         return tempFile?.getAbsolutePath(context)?.trimEnd('/') ?: ""
     }
@@ -319,6 +332,9 @@ class CachedFile(
          * and the image loader's own store.
          */
         private const val COPIES_DIR_NAME = "raw_copies"
+
+        /** MediaStore's own spelling of the modification time, in seconds. */
+        private const val MEDIA_STORE_DATE_MODIFIED = "date_modified"
 
         private fun copiesDir(context: Context): File =
             File(context.cacheDir, COPIES_DIR_NAME)

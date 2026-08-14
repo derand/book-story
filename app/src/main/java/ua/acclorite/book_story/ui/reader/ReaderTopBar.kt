@@ -92,7 +92,10 @@ fun ReaderTopBar(
                     modifier = Modifier
                         .padding(end = 8.dp)
                         .noRippleClickable(
-                            enabled = !lockMenu,
+                            // A previewed book has no book info worth showing:
+                            // it is not in the library, and that screen is built
+                            // around books that are.
+                            enabled = !lockMenu && book.inLibrary,
                             onClick = {
                                 leave(
                                     ReaderEvent.OnLeave(

@@ -35,16 +35,108 @@
         tools:ignore="DataExtractionRules"
         tools:targetApi="tiramisu">
 
-        <!-- Main activity -->
+        <!--
+            Main activity. singleTask because of the file filters below.
+
+            A file manager starts the viewer inside *its own* task rather than
+            ours, so every "Open with" produced another whole copy of the app —
+            measured on a tablet: seventeen entries in the recents list, each a
+            DocumentsUI task with a Book's Story activity sitting on top of it,
+            each with its own navigator and its own idea of where the reader is.
+            singleTop cannot help with that; it only reuses an instance already
+            at the top of the same task. singleTask keeps the app to one task and
+            one instance, and routes every later file through onNewIntent.
+
+            documentLaunchMode="never" refuses the other half of it: opening two
+            books must not leave two entries in recents, one per document.
+        -->
         <activity
             android:name=".presentation.main.MainActivity"
             android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|locale|density|uiMode"
+            android:documentLaunchMode="never"
             android:exported="true"
+            android:launchMode="singleTask"
             android:theme="@style/Splash"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+            <!--
+                Opening a book from a file manager. Two filters, because the two
+                schemes are matched on different things.
+
+                For content:// the path is the provider's document id and almost
+                never ends in the file's extension, so a pathPattern would match
+                nothing; only the MIME type is usable. The types listed are the
+                ones the seven supported extensions actually arrive as.
+
+                application/octet-stream is deliberately absent. Several file
+                managers send it for FB2, which has no registered MIME type, but
+                accepting it would offer this app for every unknown binary on the
+                device. Start narrow and widen on evidence.
+
+                Note that declaring a type here only gets the app offered: what
+                it can actually open is decided by the file's extension, so a
+                book arriving as text/xml under a name ending ".xml" is offered
+                and then refused. See issue #62.
+            -->
+            <intent-filter tools:ignore="AppLinkUrlError">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data android:scheme="content" />
+
+                <data android:mimeType="application/epub+zip" />
+                <data android:mimeType="application/pdf" />
+                <data android:mimeType="application/x-fictionbook+xml" />
+                <data android:mimeType="application/xml" />
+                <data android:mimeType="text/xml" />
+                <data android:mimeType="text/plain" />
+                <data android:mimeType="text/html" />
+                <data android:mimeType="text/markdown" />
+            </intent-filter>
+
+            <!--
+                For file:// the path really is the file's path, so the extension
+                can be matched. Android's matcher has no case folding and its
+                ".*" does not cross a literal dot, hence a lower-case and an
+                upper-case pattern for every extension, plus a doubled variant
+                for names that contain a dot of their own. Mixed case (".Fb2")
+                is not covered and would need a pattern each; content:// does
+                not go through here at all.
+            -->
+            <intent-filter tools:ignore="AppLinkUrlError">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data android:scheme="file" />
+                <data android:mimeType="*/*" />
+
+                <data android:pathPattern=".*\\.epub" />
+                <data android:pathPattern=".*\\..*\\.epub" />
+                <data android:pathPattern=".*\\.EPUB" />
+                <data android:pathPattern=".*\\.pdf" />
+                <data android:pathPattern=".*\\..*\\.pdf" />
+                <data android:pathPattern=".*\\.PDF" />
+                <data android:pathPattern=".*\\.fb2" />
+                <data android:pathPattern=".*\\..*\\.fb2" />
+                <data android:pathPattern=".*\\.FB2" />
+                <data android:pathPattern=".*\\.txt" />
+                <data android:pathPattern=".*\\..*\\.txt" />
+                <data android:pathPattern=".*\\.TXT" />
+                <data android:pathPattern=".*\\.html" />
+                <data android:pathPattern=".*\\..*\\.html" />
+                <data android:pathPattern=".*\\.HTML" />
+                <data android:pathPattern=".*\\.htm" />
+                <data android:pathPattern=".*\\..*\\.htm" />
+                <data android:pathPattern=".*\\.HTM" />
+                <data android:pathPattern=".*\\.md" />
+                <data android:pathPattern=".*\\..*\\.md" />
+                <data android:pathPattern=".*\\.MD" />
             </intent-filter>
         </activity>
 

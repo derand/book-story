@@ -6,6 +6,8 @@
 
 package ua.acclorite.book_story.data.repository
 
+import android.app.Application
+import androidx.core.net.toUri
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import ua.acclorite.book_story.core.CoverImage
@@ -15,6 +17,7 @@ import ua.acclorite.book_story.core.helpers.runCatchingCancellable
 import ua.acclorite.book_story.data.local.room.BookDatabase
 import ua.acclorite.book_story.data.mapper.file.FileMapper
 import ua.acclorite.book_story.data.model.file.CachedFile
+import ua.acclorite.book_story.data.model.file.CachedFileCompat
 import ua.acclorite.book_story.data.parser.cover.CoverParser
 import ua.acclorite.book_story.data.parser.file.FileParser
 import ua.acclorite.book_story.domain.model.file.File
@@ -26,6 +29,7 @@ import javax.inject.Singleton
 
 @Singleton
 class FileSystemRepositoryImpl @Inject constructor(
+    private val application: Application,
     private val database: BookDatabase,
     private val fileMapper: FileMapper,
     private val fileParser: FileParser,
@@ -91,4 +95,18 @@ class FileSystemRepositoryImpl @Inject constructor(
                 return@withContext book to coverImage
             }
         }
+
+    override suspend fun getFileFromUri(uri: String): Result<File> = runCatchingCancellable {
+        withContext(Dispatchers.IO) {
+            val cachedFile = CachedFileCompat.fromUri(application, uri.toUri())
+            if (!cachedFile.canAccess()) {
+                throw IllegalStateException("No read access to $uri.")
+            }
+
+            // `path` is deliberately not required: a provider that exposes no
+            // real location still gives a readable book, it just gives one that
+            // cannot be kept.
+            fileMapper.toFile(cachedFile)
+        }
+    }
 }

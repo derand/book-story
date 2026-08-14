@@ -65,6 +65,34 @@ class ParseCache @Inject constructor(application: Application) {
     }
 
     /**
+     * Moves an entry from one source to another, keeping the parsed book.
+     *
+     * The key is a hash of the path, so a book that changes where it lives loses
+     * its entry even though the bytes are identical. That happens on purpose
+     * when a previewed book is kept: the app copies the file into its own
+     * storage, and the copy has a different path. Re-parsing a book that was
+     * just parsed, to produce the very same result, is the only alternative.
+     *
+     * The other two parts of the key have to match already — a copy is byte for
+     * byte, and its modification time is set from the original.
+     */
+    fun rekey(
+        fromPath: String,
+        toPath: String,
+        size: Long,
+        lastModified: Long
+    ): Boolean {
+        val from = entryDir(fromPath, size, lastModified)
+        if (!textFile(from).exists()) return false
+
+        val to = entryDir(toPath, size, lastModified)
+        to.deleteRecursively()
+        return from.renameTo(to).also {
+            if (!it) logE(TAG, "Could not move the cache entry to its new path.")
+        }
+    }
+
+    /**
      * Stores [parsed] (and, if given, its [images] blobs) for this source,
      * overwriting any existing entry, then evicts least-recently-used books so
      * the total stays within [maxBytes] (the entry just written is never

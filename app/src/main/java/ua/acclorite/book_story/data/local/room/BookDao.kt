@@ -16,21 +16,35 @@ import ua.acclorite.book_story.data.local.dto.BookEntity
 
 @Dao
 interface BookDao {
+    /** Returns the new row id, which is how a freshly parsed preview is opened. */
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertBook(
         book: BookEntity
-    )
+    ): Long
 
+    /**
+     * Every list of books in the app comes from here — the library, the history
+     * and the search — so this is the one place a preview has to be kept out of.
+     */
     @Query(
         """
         SELECT * FROM bookentity
-        WHERE LOWER(title) LIKE '%' || LOWER(:query) || '%'
+        WHERE inLibrary = 1 AND LOWER(title) LIKE '%' || LOWER(:query) || '%'
     """
     )
     suspend fun searchBooks(query: String): List<BookEntity>
 
+    /**
+     * Deliberately **not** filtered by [BookEntity.inLibrary]: this is how the
+     * reader loads the book it was asked for, and a preview is exactly the book
+     * that needs loading.
+     */
     @Query("SELECT * FROM bookentity WHERE id=:id")
     suspend fun findBookById(id: Int): BookEntity?
+
+    /** Previews left behind, which by design means "left behind by a crash". */
+    @Query("SELECT * FROM bookentity WHERE inLibrary = 0")
+    suspend fun findPreviews(): List<BookEntity>
 
     @Delete
     suspend fun deleteBook(book: BookEntity): Int

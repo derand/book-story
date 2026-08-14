@@ -42,12 +42,15 @@ import ua.acclorite.book_story.domain.model.statistics.ReadingCoverage
 import ua.acclorite.book_story.domain.model.statistics.SessionWords
 import ua.acclorite.book_story.domain.model.statistics.wordCount
 import ua.acclorite.book_story.domain.model.statistics.wordPrefixSums
+import ua.acclorite.book_story.domain.use_case.book.AddPreviewToLibraryUseCase
+import ua.acclorite.book_story.domain.use_case.book.DiscardPreviewsUseCase
 import ua.acclorite.book_story.domain.use_case.book.GetBookUseCase
 import ua.acclorite.book_story.domain.use_case.book.GetChapterProgressUseCase
 import ua.acclorite.book_story.domain.use_case.book.GetTextUseCase
 import ua.acclorite.book_story.domain.use_case.book.KeepOnlyBookImagesUseCase
 import ua.acclorite.book_story.domain.use_case.book.LoadBookImagesUseCase
 import ua.acclorite.book_story.domain.use_case.book.UpdateBookUseCase
+import ua.acclorite.book_story.domain.use_case.permission.GrantPersistableUriPermissionUseCase
 import ua.acclorite.book_story.domain.use_case.history.GetHistoryForBookUseCase
 import ua.acclorite.book_story.domain.use_case.statistics.GetBookCoverageUseCase
 import ua.acclorite.book_story.domain.use_case.statistics.RecordReadingSessionUseCase
@@ -72,7 +75,10 @@ class ReaderModel @Inject constructor(
     private val recordReadingSessionUseCase: RecordReadingSessionUseCase,
     private val getBookCoverageUseCase: GetBookCoverageUseCase,
     private val saveBookCoverageUseCase: SaveBookCoverageUseCase,
-    private val updateReadBookUseCase: UpdateReadBookUseCase
+    private val updateReadBookUseCase: UpdateReadBookUseCase,
+    private val addPreviewToLibraryUseCase: AddPreviewToLibraryUseCase,
+    private val discardPreviewsUseCase: DiscardPreviewsUseCase,
+    private val grantPersistableUriPermissionUseCase: GrantPersistableUriPermissionUseCase
 ) : ViewModel() {
 
     private val mutex = Mutex()
@@ -467,6 +473,12 @@ class ReaderModel @Inject constructor(
                         HistoryScreen.refreshListChannel.trySend(0)
                     }
 
+                    // Leaving a book that was only being previewed is the user
+                    // declining it. Nothing about it is kept — the row, the
+                    // cover and the image files all go, and the statistics never
+                    // held anything to begin with.
+                    discardPreviewsUseCase.discard(_state.value.book)
+
                     _effects.emit(
                         ReaderEffect.OnSystemBarsVisibility(
                             show = true
@@ -474,6 +486,15 @@ class ReaderModel @Inject constructor(
                     )
                     _effects.emit(ReaderEffect.OnResetBrightness)
                     event.navigate()
+                }
+
+                is ReaderEvent.OnAddToLibrary -> {
+                    addToLibrary()
+                }
+
+                is ReaderEvent.OnGrantFolder -> {
+                    grantPersistableUriPermissionUseCase(event.uri)
+                    addToLibrary()
                 }
 
                 is ReaderEvent.OnOpenTranslator -> {
@@ -644,9 +665,67 @@ class ReaderModel @Inject constructor(
         viewModelScope.launch { endSession() }
     }
 
+    /**
+     * Keeps the book being previewed, and starts measuring it.
+     *
+     * Statistics begin here rather than at the open: the minutes spent deciding
+     * whether the book was worth reading are not credited retroactively, which
+     * is the same statement as not recording them in the first place. Coverage
+     * has to be loaded now for the same reason — the pass at open time declined
+     * to, so without this the session would bank time and no words.
+     */
+    private suspend fun addToLibrary() {
+        val book = _state.value.book
+        if (book.inLibrary) return
+
+        when (val result = addPreviewToLibraryUseCase(book)) {
+            is AddPreviewToLibraryUseCase.Result.Added -> {
+                // Everything the promotion changed, and nothing else: progress
+                // may have moved while the copy was being made, and [updateProgress]
+                // writes this row whole on every settled scroll — a stale path or
+                // preview URI here would be written straight back over the row
+                // that was just promoted, leaving the book unopenable.
+                _state.update {
+                    it.copy(
+                        book = it.book.copy(
+                            inLibrary = true,
+                            previewUri = null,
+                            filePath = result.book.filePath
+                        )
+                    )
+                }
+
+                startSession()
+                coverageJob = viewModelScope.launch(Dispatchers.Default) {
+                    loadCoverage(_state.value.text)
+                }
+
+                LibraryScreen.refreshListChannel.trySend(0)
+                HistoryScreen.refreshListChannel.trySend(0)
+                _effects.emit(ReaderEffect.OnAddedToLibrary)
+            }
+
+            is AddPreviewToLibraryUseCase.Result.NeedsGrant -> {
+                _effects.emit(ReaderEffect.OnRequestFolderGrant(result.folder))
+            }
+
+            is AddPreviewToLibraryUseCase.Result.Failed -> {
+                _effects.emit(ReaderEffect.OnCannotAddToLibrary)
+            }
+        }
+    }
+
     private fun startSession() {
         if (sessionStartTime != null) return
         if (_state.value.text.isEmpty()) return
+
+        // A book being previewed from a file manager records nothing. Skimming a
+        // book to decide whether to read it is not reading it, and a speed
+        // measured over that skim would be a lie about the only thing a speed is
+        // good for. Leaving the session unstarted is the whole guard: notes,
+        // coverage and the end of a session are all already conditioned on one
+        // being open.
+        if (!_state.value.book.inLibrary) return
 
         val now = System.currentTimeMillis()
         sessionStartTime = now
@@ -767,6 +846,10 @@ class ReaderModel @Inject constructor(
     }
 
     private suspend fun loadCoverage(text: List<ReaderText>) {
+        // The one statistics step that does not hang off an open session, so it
+        // needs the preview guard of its own; see [startSession].
+        if (!_state.value.book.inLibrary) return
+
         val prefix = text.wordPrefixSums()
         val bookWords = prefix.last()
         val stored = getBookCoverageUseCase(

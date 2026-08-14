@@ -107,6 +107,15 @@ class ReaderImageFiles @Inject constructor(application: Application) {
     }
 
     /**
+     * Drops one book's files. Unlike closing a book, which keeps them on
+     * purpose, this is for a book that is going away: a preview the user looked
+     * at and did not keep has no next open to save work for.
+     */
+    fun drop(bookId: Int) {
+        File(session, bookId.toString()).deleteRecursively()
+    }
+
+    /**
      * Deletes the leftovers of previous runs. Nothing runs when the process is
      * killed — and swiping the app away from the recents list is an ordinary way
      * to leave a book — so leftovers are the rule rather than an edge case, and

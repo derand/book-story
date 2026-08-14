@@ -424,7 +424,8 @@ data class ReaderScreen(val bookId: Int) : Screen, Parcelable {
         ReaderEffects(
             effects = screenModel.effects,
             book = state.value.book,
-            fullscreen = settings.fullscreen.value
+            fullscreen = settings.fullscreen.value,
+            grantFolder = screenModel::onEvent
         )
 
         ProvideBookImages(screenModel.imageStore) {
@@ -508,6 +509,7 @@ data class ReaderScreen(val bookId: Int) : Screen, Parcelable {
                 showSettingsBottomSheet = screenModel::onEvent,
                 dismissBottomSheet = screenModel::onEvent,
                 showChaptersDrawer = screenModel::onEvent,
+                addToLibrary = screenModel::onEvent,
                 dismissDrawer = screenModel::onEvent,
                 navigateBack = screenModel::onEvent,
                 navigateToBookInfo = screenModel::onEvent
