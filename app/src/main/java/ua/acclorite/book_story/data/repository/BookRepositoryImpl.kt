@@ -285,8 +285,23 @@ class BookRepositoryImpl @Inject constructor(
     override suspend fun storeBookFile(book: Book): Result<String> = runCatchingCancellable {
         withContext(Dispatchers.IO) {
             val source = fileProvider.getFileFromBook(book).getOrThrow()
+            val sourcePath = source.path
+            val size = source.size
+            val lastModified = source.lastModified
+
             val stored = ownedBookFiles.store(source, book.id)
                 ?: throw IllegalStateException("Could not store ${source.name}.")
+
+            // The preview parsed this book a moment ago and cached the result
+            // under the path it had then. Moving the entry is what keeps the
+            // second open instant; without it the book is parsed again to
+            // produce exactly the same text.
+            parseCache.rekey(
+                fromPath = sourcePath,
+                toPath = stored.absolutePath,
+                size = size,
+                lastModified = lastModified
+            )
 
             stored.absolutePath
         }

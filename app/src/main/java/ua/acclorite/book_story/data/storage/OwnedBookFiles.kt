@@ -82,6 +82,12 @@ class OwnedBookFiles @Inject constructor(
             return null
         }
 
+        // The parse cache is keyed on path, size and modification time. Two of
+        // the three already match — a copy is byte for byte — so carrying the
+        // third across lets the entry the preview just wrote be moved to the
+        // copy instead of the book being parsed a second time.
+        destination.setLastModified(source.lastModified)
+
         logI(TAG, "Stored ${destination.length()} bytes for [$bookId].")
         return destination
     }
