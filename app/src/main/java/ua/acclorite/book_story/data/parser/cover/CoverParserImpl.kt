@@ -6,6 +6,7 @@
 
 package ua.acclorite.book_story.data.parser.cover
 
+import ua.acclorite.book_story.core.data.ExtensionsData
 import ua.acclorite.book_story.core.CoverImage
 import ua.acclorite.book_story.core.log.logE
 import ua.acclorite.book_story.data.model.file.CachedFile
@@ -27,7 +28,7 @@ class CoverParserImpl @Inject constructor(
             return null
         }
 
-        val fileFormat = ".${cachedFile.name.substringAfterLast(".")}".lowercase().trim()
+        val fileFormat = ExtensionsData.formatOf(cachedFile.name)
         return when (fileFormat) {
             ".pdf" -> {
                 pdfCoverParser.parse(cachedFile)

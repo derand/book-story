@@ -6,6 +6,7 @@
 
 package ua.acclorite.book_story.data.parser.file
 
+import ua.acclorite.book_story.core.data.ExtensionsData
 import ua.acclorite.book_story.core.log.logE
 import ua.acclorite.book_story.data.model.file.CachedFile
 import ua.acclorite.book_story.domain.model.library.Book
@@ -27,7 +28,7 @@ class FileParserImpl @Inject constructor(
             return null
         }
 
-        val fileFormat = ".${cachedFile.name.substringAfterLast(".")}".lowercase().trim()
+        val fileFormat = ExtensionsData.formatOf(cachedFile.name)
         return when (fileFormat) {
             ".pdf" -> {
                 pdfFileParser.parse(cachedFile)
