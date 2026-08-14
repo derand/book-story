@@ -30,8 +30,13 @@ class AddPreviewToLibraryUseCase @Inject constructor(
 ) {
 
     sealed interface Result {
-        /** The book is in the library and will open like any other. */
-        data object Added : Result
+        /**
+         * The book is in the library and will open like any other. Carries the
+         * row as written, because promoting changes more than a flag — the
+         * caller's copy is stale the moment this returns, and the reader writes
+         * its whole book row back on every settled scroll.
+         */
+        data class Added(val book: Book) : Result
 
         /**
          * Nothing reaches the file yet. [folder] is where the picker should
@@ -69,13 +74,14 @@ class AddPreviewToLibraryUseCase @Inject constructor(
         // The URI goes with the promotion: keeping it would leave the book
         // reachable by a route that stops working the moment the app is killed,
         // hiding a broken path until the next restart.
-        bookRepository.updateBook(book.copy(inLibrary = true, previewUri = null)).onFailure {
+        val promoted = book.copy(inLibrary = true, previewUri = null)
+        bookRepository.updateBook(promoted).onFailure {
             logW(TAG, "Could not add [${book.title}]: ${it.message}")
-            return Result.NeedsGrant(null)
+            return Result.Failed
         }
 
         logI(TAG, "Added [${book.title}] to the library.")
-        return Result.Added
+        return Result.Added(promoted)
     }
 
     /**
@@ -94,15 +100,14 @@ class AddPreviewToLibraryUseCase @Inject constructor(
             return Result.Failed
         }
 
-        bookRepository.updateBook(
-            book.copy(inLibrary = true, previewUri = null, filePath = path)
-        ).onFailure {
+        val promoted = book.copy(inLibrary = true, previewUri = null, filePath = path)
+        bookRepository.updateBook(promoted).onFailure {
             logW(TAG, "Could not add [${book.title}]: ${it.message}")
             bookRepository.deleteBookFile(book.id)
             return Result.Failed
         }
 
         logI(TAG, "Added [${book.title}] to the library, holding its file.")
-        return Result.Added
+        return Result.Added(promoted)
     }
 }

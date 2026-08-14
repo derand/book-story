@@ -17,6 +17,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ua.acclorite.book_story.R
@@ -61,6 +62,9 @@ fun MainFileOpenEffects(mainModel: MainModel) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
+                // Swallows taps as well as covering: a first parse takes
+                // seconds, and the library underneath is still live otherwise.
+                .pointerInput(Unit) { awaitPointerEventScope { while (true) awaitPointerEvent() } }
                 .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.32f)),
             contentAlignment = Alignment.Center
         ) {

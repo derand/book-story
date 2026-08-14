@@ -53,6 +53,18 @@ class CachedFile(
         getFileQueryParams()
     }
     val path: String by lazy { builder?.path ?: getFilePath() }
+
+    /**
+     * What identifies this file to the parse cache.
+     *
+     * Normally the path. A provider that exposes no location leaves it empty,
+     * and an empty path is not an identity: two such books whose size and
+     * modification time also went unreported would share one cache entry, and
+     * the second would open showing the first one's text. The URI is unique per
+     * document, which is exactly what is needed until the book is kept and
+     * gains a real path of its own.
+     */
+    val cacheKeyPath: String get() = path.ifBlank { uri.toString() }
     val rawFile: File? by lazy { storeInCache() }
 
     val name: String get() = builder?.name ?: queryParams.name

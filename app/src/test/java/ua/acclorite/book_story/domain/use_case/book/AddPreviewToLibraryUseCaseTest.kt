@@ -59,9 +59,14 @@ class AddPreviewToLibraryUseCaseTest {
 
         val result = useCase(preview)
 
-        assertEquals(AddPreviewToLibraryUseCase.Result.Added, result)
+        assertTrue(result is AddPreviewToLibraryUseCase.Result.Added)
         assertEquals(true, repository.updated?.inLibrary)
         assertEquals(7, repository.updated?.id)
+        // What was written comes back, so the reader can adopt it: it writes the
+        // whole book row on every settled scroll, and a stale copy would undo
+        // the promotion at the next one.
+        assertEquals(repository.updated, (result as AddPreviewToLibraryUseCase.Result.Added).book)
+        assertNull(result.book.previewUri)
     }
 
     @Test
@@ -86,7 +91,8 @@ class AddPreviewToLibraryUseCaseTest {
 
         val result = useCase(preview.copy(filePath = ""))
 
-        assertEquals(AddPreviewToLibraryUseCase.Result.Added, result)
+        assertTrue(result is AddPreviewToLibraryUseCase.Result.Added)
+        assertEquals(repository.updated, (result as AddPreviewToLibraryUseCase.Result.Added).book)
         // The copy becomes the book's location, and the transient URI goes.
         assertEquals("/data/books/7/Solaris.fb2", repository.updated?.filePath)
         assertEquals(true, repository.updated?.inLibrary)

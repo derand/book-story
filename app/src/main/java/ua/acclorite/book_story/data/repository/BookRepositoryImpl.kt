@@ -109,7 +109,7 @@ class BookRepositoryImpl @Inject constructor(
                     // is a lazy property that may be a ContentResolver round-trip
                     // against the document URI; `size` and `lastModified` share
                     // one query, so whichever is asked for first pays for both.
-                    val path = timed("  open: key path") { cachedFile.path }
+                    val path = timed("  open: key path") { cachedFile.cacheKeyPath }
                     val size = timed("  open: key size") { cachedFile.size }
                     val lastModified = timed("  open: key modified") {
                         cachedFile.lastModified
@@ -285,7 +285,7 @@ class BookRepositoryImpl @Inject constructor(
     override suspend fun storeBookFile(book: Book): Result<String> = runCatchingCancellable {
         withContext(Dispatchers.IO) {
             val source = fileProvider.getFileFromBook(book).getOrThrow()
-            val sourcePath = source.path
+            val sourcePath = source.cacheKeyPath
             val size = source.size
             val lastModified = source.lastModified
 

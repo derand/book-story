@@ -200,9 +200,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * A book tapped in a file manager. The activity is `singleTask`-less and
-     * ordinary, so the same file can arrive either as the intent that started
-     * the activity or, when it is already running, through [onNewIntent].
+     * A book tapped in a file manager. The activity is `singleTask`, so a file
+     * arriving while the app runs reaches the one instance through
+     * [onNewIntent]; the first one arrives as the intent that started it.
      *
      * The read permission carried by the intent is transient — it lasts as long
      * as the task holding it and cannot be persisted, because a file manager

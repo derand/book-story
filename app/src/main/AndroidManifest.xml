@@ -75,8 +75,12 @@
                 application/octet-stream is deliberately absent. Several file
                 managers send it for FB2, which has no registered MIME type, but
                 accepting it would offer this app for every unknown binary on the
-                device. Start narrow and widen on evidence. Whatever is declared,
-                the format is decided by the file's content.
+                device. Start narrow and widen on evidence.
+
+                Note that declaring a type here only gets the app offered: what
+                it can actually open is decided by the file's extension, so a
+                book arriving as text/xml under a name ending ".xml" is offered
+                and then refused. See issue #62.
             -->
             <intent-filter tools:ignore="AppLinkUrlError">
                 <action android:name="android.intent.action.VIEW" />
@@ -98,8 +102,11 @@
             <!--
                 For file:// the path really is the file's path, so the extension
                 can be matched. Android's matcher has no case folding and its
-                ".*" does not cross a literal dot, hence both cases of every
-                extension and the doubled variants for names containing dots.
+                ".*" does not cross a literal dot, hence a lower-case and an
+                upper-case pattern for every extension, plus a doubled variant
+                for names that contain a dot of their own. Mixed case (".Fb2")
+                is not covered and would need a pattern each; content:// does
+                not go through here at all.
             -->
             <intent-filter tools:ignore="AppLinkUrlError">
                 <action android:name="android.intent.action.VIEW" />
@@ -123,10 +130,13 @@
                 <data android:pathPattern=".*\\.TXT" />
                 <data android:pathPattern=".*\\.html" />
                 <data android:pathPattern=".*\\..*\\.html" />
+                <data android:pathPattern=".*\\.HTML" />
                 <data android:pathPattern=".*\\.htm" />
                 <data android:pathPattern=".*\\..*\\.htm" />
+                <data android:pathPattern=".*\\.HTM" />
                 <data android:pathPattern=".*\\.md" />
                 <data android:pathPattern=".*\\..*\\.md" />
+                <data android:pathPattern=".*\\.MD" />
             </intent-filter>
         </activity>
 

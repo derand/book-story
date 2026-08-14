@@ -680,7 +680,20 @@ class ReaderModel @Inject constructor(
 
         when (val result = addPreviewToLibraryUseCase(book)) {
             is AddPreviewToLibraryUseCase.Result.Added -> {
-                _state.update { it.copy(book = it.book.copy(inLibrary = true)) }
+                // Everything the promotion changed, and nothing else: progress
+                // may have moved while the copy was being made, and [updateProgress]
+                // writes this row whole on every settled scroll — a stale path or
+                // preview URI here would be written straight back over the row
+                // that was just promoted, leaving the book unopenable.
+                _state.update {
+                    it.copy(
+                        book = it.book.copy(
+                            inLibrary = true,
+                            previewUri = null,
+                            filePath = result.book.filePath
+                        )
+                    )
+                }
 
                 startSession()
                 coverageJob = viewModelScope.launch(Dispatchers.Default) {
