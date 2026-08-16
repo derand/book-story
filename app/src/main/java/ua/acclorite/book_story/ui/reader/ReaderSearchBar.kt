@@ -17,6 +17,7 @@ import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material.icons.rounded.KeyboardArrowUp
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.TextButton
@@ -145,6 +146,10 @@ fun ReaderSearchBar(
             icon = Icons.Rounded.KeyboardArrowUp,
             contentDescription = R.string.search_previous_match_content_desc,
             enabled = canStepBack,
+            // Dimmed by hand: the shared button tints its icon the same whether
+            // it is enabled or not, so "there is nothing behind you" would be
+            // said by a button that looks exactly like a working one.
+            color = arrowColor(enabled = canStepBack),
             disableOnClick = false
         ) {
             searchStep(ReaderEvent.OnSearchStep(forward = false))
@@ -153,6 +158,7 @@ fun ReaderSearchBar(
             icon = Icons.Rounded.KeyboardArrowDown,
             contentDescription = R.string.search_next_match_content_desc,
             enabled = canStepForward,
+            color = arrowColor(enabled = canStepForward),
             disableOnClick = false
         ) {
             searchStep(ReaderEvent.OnSearchStep(forward = true))
@@ -167,6 +173,15 @@ fun ReaderSearchBar(
             )
         }
     }
+}
+
+/** Material's disabled alpha, applied to the icon the shared button leaves lit. */
+private const val DISABLED_ARROW_ALPHA = 0.38f
+
+@Composable
+private fun arrowColor(enabled: Boolean): Color = when (enabled) {
+    true -> LocalContentColor.current
+    false -> LocalContentColor.current.copy(alpha = DISABLED_ARROW_ALPHA)
 }
 
 /**
@@ -187,8 +202,10 @@ private fun searchStatus(
         SearchPosition.None -> return stringResource(id = R.string.search_no_matches)
         is SearchPosition.At -> "${position.ordinal} / $total"
         is SearchPosition.Between -> when {
-            position.before <= 0 -> "…1 / $total"
-            position.before >= total -> "$total… / $total"
+            // Outside the run of matches entirely, which "…1" read as a
+            // truncation rather than as a direction.
+            position.before <= 0 -> "<1 / $total"
+            position.before >= total -> "$total> / $total"
             else -> "${position.before}…${position.before + 1} / $total"
         }
     }

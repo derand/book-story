@@ -75,21 +75,30 @@ fun searchPosition(
 /**
  * The match an arrow lands on, or null when there is none in that direction.
  *
- * Stepping from a match is per *match*, so two occurrences in one paragraph are
- * two stops. Entering from reading is per *screen*: the arrows leave what is
- * already in front of the reader and go to the closest match beyond it.
+ * Derived from [searchPosition] rather than from the screen, so the arrows can
+ * never disagree with the counter: whatever "34 / 57" claims is where the next
+ * step counts from. With five matches on one screen the counter names the first
+ * of them, and "next" is the second — not the first one past the screen.
+ *
+ * Stepping is therefore always per *match*, which also makes two occurrences in
+ * one paragraph two stops.
  */
 fun ReaderSearch.stepTarget(forward: Boolean, visible: IntRange): Int? {
-    if (matches.isEmpty()) return null
+    val next = when (val position = searchPosition(matches, current, visible)) {
+        SearchPosition.None -> return null
 
-    if (matches.getOrNull(current) != null) {
-        val next = if (forward) current + 1 else current - 1
-        return next.takeIf { it in matches.indices }
-    }
+        // On a match: one along from it.
+        is SearchPosition.At -> when (forward) {
+            true -> position.ordinal
+            false -> position.ordinal - 2
+        }
 
-    val target = when (forward) {
-        true -> matches.indexOfFirst { it.itemIndex > visible.last }
-        false -> matches.indexOfLast { it.itemIndex < visible.first }
+        // Between two of them: [before] matches are behind, so that ordinal is
+        // the closest one ahead — and one less is the closest one behind.
+        is SearchPosition.Between -> when (forward) {
+            true -> position.before
+            false -> position.before - 1
+        }
     }
-    return target.takeIf { it != -1 }
+    return next.takeIf { it in matches.indices }
 }

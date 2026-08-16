@@ -73,6 +73,14 @@ import kotlin.math.roundToInt
  */
 private const val SEARCH_DEBOUNCE = 300L
 
+/**
+ * How far down the screen a match is put. Landing it at the very top hides it
+ * under the search bar — the text is drawn behind the bars — and landing it much
+ * lower would put it under the keyboard. A share of the viewport is the only
+ * measurement this layer has: the bar's height belongs to the composition.
+ */
+private const val SEARCH_LANDING_FRACTION = 0.3f
+
 @HiltViewModel
 class ReaderModel @Inject constructor(
     private val updateBookUseCase: UpdateBookUseCase,
@@ -493,6 +501,12 @@ class ReaderModel @Inject constructor(
                 is ReaderEvent.OnSearchQueryChange -> {
                     searchJob?.cancel()
 
+                    // Typing is the reader at work, like opening a note: without
+                    // this, time spent composing a query and reading the count
+                    // would be measured from the last scroll and cut off the end
+                    // of the session by the idle cap.
+                    markActive()
+
                     val query = event.query
                     val searchable = query.trim().length >= SEARCH_MIN_QUERY_LENGTH
                     _state.update {
@@ -550,7 +564,9 @@ class ReaderModel @Inject constructor(
                         jumpedToPosition()
                         _state.value.listState.requestScrollToItem(
                             index = match.itemIndex,
-                            scrollOffset = 0
+                            // Negative: the item is pushed *down* the screen,
+                            // out from under the bar that was used to find it.
+                            scrollOffset = searchLandingOffset()
                         )
                         // No [OnChangeProgress] on purpose: searching must not
                         // move the position the book is reopened at.
@@ -1219,6 +1235,14 @@ class ReaderModel @Inject constructor(
             return index..index
         }
         return visible.first().index..visible.last().index
+    }
+
+    /** Where a match lands when jumped to; see [SEARCH_LANDING_FRACTION]. */
+    private fun searchLandingOffset(): Int {
+        val info = _state.value.listState.layoutInfo
+        val viewport = info.viewportEndOffset - info.viewportStartOffset
+        if (viewport <= 0) return 0
+        return -(viewport * SEARCH_LANDING_FRACTION).toInt()
     }
 
     /**

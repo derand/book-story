@@ -90,10 +90,28 @@ class ReaderSearchTest {
     }
 
     @Test
-    fun `a match already on screen is not somewhere to go`() {
-        // Item 20 is in front of the reader: back goes to 10, forward to 30.
+    fun `the arrows step from the match the counter names`() {
+        // Item 20 is in front of the reader and counted as 2 / 3.
         assertEquals(0, search().stepTarget(forward = false, visible = 18..22))
         assertEquals(2, search().stepTarget(forward = true, visible = 18..22))
+    }
+
+    @Test
+    fun `with a screenful of matches, next is the next one on it`() {
+        // Five matches in view, counted from the first: "next" must be the
+        // second, not the first one past the screen. Mixing the arrows with
+        // scrolling used to skip everything in between.
+        val crowded = ReaderSearch(
+            active = true,
+            query = "lamp",
+            matches = (10..14).map { index ->
+                SearchMatch(itemIndex = index, start = 0, end = 4)
+            }
+        )
+
+        assertEquals(SearchPosition.At(1), searchPosition(crowded.matches, -1, 10..14))
+        assertEquals(1, crowded.stepTarget(forward = true, visible = 10..14))
+        assertNull(crowded.stepTarget(forward = false, visible = 10..14))
     }
 
     @Test
