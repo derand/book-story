@@ -30,6 +30,7 @@ import ua.acclorite.book_story.presentation.reader.ReaderScreen
 import ua.acclorite.book_story.presentation.reader.model.Checkpoint
 import ua.acclorite.book_story.presentation.reader.model.ReaderFontThickness
 import ua.acclorite.book_story.presentation.reader.model.ReaderHorizontalGesture
+import ua.acclorite.book_story.presentation.reader.model.ReaderSearch
 import ua.acclorite.book_story.presentation.reader.model.ReaderTextAlignment
 import ua.acclorite.book_story.presentation.settings.SettingsEvent
 import ua.acclorite.book_story.ui.reader.model.FontWithName
@@ -60,6 +61,7 @@ fun ReaderContent(
     isLoading: Boolean,
     errorMessage: UIText?,
     checkpoints: List<Checkpoint>,
+    search: ReaderSearch,
     showMenu: Boolean,
     lockMenu: Boolean,
     contentPadding: PaddingValues,
@@ -116,6 +118,10 @@ fun ReaderContent(
     showSettingsBottomSheet: (ReaderEvent.OnShowSettingsBottomSheet) -> Unit,
     dismissBottomSheet: (ReaderEvent.OnDismissBottomSheet) -> Unit,
     showChaptersDrawer: (ReaderEvent.OnShowChaptersDrawer) -> Unit,
+    searchVisibility: (ReaderEvent.OnSearchVisibility) -> Unit,
+    searchQueryChange: (ReaderEvent.OnSearchQueryChange) -> Unit,
+    searchStep: (ReaderEvent.OnSearchStep) -> Unit,
+    searchReturn: (ReaderEvent.OnSearchReturn) -> Unit,
     addToLibrary: (ReaderEvent.OnAddToLibrary) -> Unit,
     dismissDrawer: (ReaderEvent.OnDismissDrawer) -> Unit,
     navigateToBookInfo: (ReaderEvent.OnNavigateToBookInfo) -> Unit,
@@ -147,6 +153,7 @@ fun ReaderContent(
             currentChapterProgress = currentChapterProgress,
             isLoading = isLoading,
             checkpoints = checkpoints,
+            search = search,
             showMenu = showMenu,
             coveredByBottomSheet = bottomSheet == ReaderScreen.SETTINGS_BOTTOM_SHEET,
             lockMenu = lockMenu,
@@ -201,6 +208,10 @@ fun ReaderContent(
             openDictionary = openDictionary,
             showSettingsBottomSheet = showSettingsBottomSheet,
             showChaptersDrawer = showChaptersDrawer,
+            searchVisibility = searchVisibility,
+            searchQueryChange = searchQueryChange,
+            searchStep = searchStep,
+            searchReturn = searchReturn,
             addToLibrary = addToLibrary,
             navigateBack = navigateBack,
             navigateToBookInfo = navigateToBookInfo
@@ -224,6 +235,8 @@ fun ReaderContent(
     )
 
     ReaderBackHandler(
+        searchActive = search.active,
+        searchReturn = searchReturn,
         leave = leave,
         navigateBack = navigateBack
     )

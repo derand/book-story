@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -34,6 +35,7 @@ import androidx.compose.ui.unit.coerceAtLeast
 import androidx.compose.ui.unit.dp
 import ua.acclorite.book_story.R
 import ua.acclorite.book_story.domain.model.reader.ReaderText
+import ua.acclorite.book_story.domain.model.reader.SearchMatch
 import ua.acclorite.book_story.presentation.reader.ReaderEvent
 import ua.acclorite.book_story.presentation.reader.model.ReaderFontThickness
 import ua.acclorite.book_story.presentation.reader.model.ReaderHorizontalGesture
@@ -88,6 +90,8 @@ fun ReaderLayout(
     letterSpacing: TextUnit,
     paragraphIndentation: TextUnit,
     doubleClickTranslation: Boolean,
+    searchMatches: List<SearchMatch>,
+    currentSearchMatch: SearchMatch?,
     isLoading: Boolean,
     showMenu: Boolean,
     menuVisibility: (ReaderEvent.OnMenuVisibility) -> Unit,
@@ -99,6 +103,14 @@ fun ReaderLayout(
     openDictionary: (ReaderEvent.OnOpenDictionary) -> Unit
 ) {
     val activity = LocalActivity.current
+
+    // Grouped once rather than filtered per item: a book of tens of thousands
+    // of paragraphs would otherwise walk the whole match list for every one of
+    // the dozen on screen.
+    val matchesByItem = remember(searchMatches) {
+        searchMatches.groupBy { match -> match.itemIndex }
+    }
+
     ReaderFirstFrameTrace(hasText = text.isNotEmpty())
     SelectionContainer(
         onCopyRequested = {
@@ -196,6 +208,8 @@ fun ReaderLayout(
                                 ReaderLayoutText(
                                     showMenu = showMenu,
                                     entry = entry,
+                                    searchMatches = matchesByItem[index].orEmpty(),
+                                    currentSearchMatch = currentSearchMatch,
                                     imagesCornersRoundness = imagesCornersRoundness,
                                     imagesAlignment = imagesAlignment,
                                     imagesWidth = imagesWidth,

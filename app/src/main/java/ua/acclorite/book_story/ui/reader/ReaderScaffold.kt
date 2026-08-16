@@ -41,6 +41,7 @@ import ua.acclorite.book_story.domain.model.reader.ReaderText.Chapter
 import ua.acclorite.book_story.presentation.reader.ReaderEvent
 import ua.acclorite.book_story.presentation.reader.model.Checkpoint
 import ua.acclorite.book_story.presentation.reader.model.ReaderFontThickness
+import ua.acclorite.book_story.presentation.reader.model.ReaderSearch
 import ua.acclorite.book_story.presentation.reader.model.ReaderHorizontalGesture
 import ua.acclorite.book_story.presentation.reader.model.ReaderTextAlignment
 import ua.acclorite.book_story.presentation.settings.SettingsEvent
@@ -69,6 +70,7 @@ fun ReaderScaffold(
     currentChapterProgress: Float,
     isLoading: Boolean,
     checkpoints: List<Checkpoint>,
+    search: ReaderSearch,
     showMenu: Boolean,
     coveredByBottomSheet: Boolean,
     lockMenu: Boolean,
@@ -123,6 +125,10 @@ fun ReaderScaffold(
     openDictionary: (ReaderEvent.OnOpenDictionary) -> Unit,
     showSettingsBottomSheet: (ReaderEvent.OnShowSettingsBottomSheet) -> Unit,
     showChaptersDrawer: (ReaderEvent.OnShowChaptersDrawer) -> Unit,
+    searchVisibility: (ReaderEvent.OnSearchVisibility) -> Unit,
+    searchQueryChange: (ReaderEvent.OnSearchQueryChange) -> Unit,
+    searchStep: (ReaderEvent.OnSearchStep) -> Unit,
+    searchReturn: (ReaderEvent.OnSearchReturn) -> Unit,
     addToLibrary: (ReaderEvent.OnAddToLibrary) -> Unit,
     navigateToBookInfo: (ReaderEvent.OnNavigateToBookInfo) -> Unit,
     navigateBack: (ReaderEvent.OnNavigateBack) -> Unit
@@ -155,10 +161,16 @@ fun ReaderScaffold(
                     currentChapterProgress = currentChapterProgress,
                     isLoading = isLoading,
                     lockMenu = lockMenu,
+                    search = search,
+                    listState = listState,
                     leave = leave,
                     switchColorPreset = switchColorPreset,
                     showSettingsBottomSheet = showSettingsBottomSheet,
                     showChaptersDrawer = showChaptersDrawer,
+                    searchVisibility = searchVisibility,
+                    searchQueryChange = searchQueryChange,
+                    searchStep = searchStep,
+                    searchReturn = searchReturn,
                     navigateBack = navigateBack,
                     navigateToBookInfo = navigateToBookInfo
                 )
@@ -243,6 +255,8 @@ fun ReaderScaffold(
             letterSpacing = letterSpacing,
             paragraphIndentation = paragraphIndentation,
             doubleClickTranslation = doubleClickTranslation,
+            searchMatches = search.matches,
+            currentSearchMatch = search.currentMatch,
             isLoading = isLoading,
             showMenu = showMenu,
             menuVisibility = menuVisibility,

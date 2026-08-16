@@ -13,7 +13,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.rounded.Menu
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -32,6 +34,7 @@ import ua.acclorite.book_story.R
 import ua.acclorite.book_story.domain.model.library.Book
 import ua.acclorite.book_story.domain.model.reader.ReaderText.Chapter
 import ua.acclorite.book_story.presentation.reader.ReaderEvent
+import ua.acclorite.book_story.presentation.reader.model.ReaderSearch
 import ua.acclorite.book_story.presentation.settings.SettingsEvent
 import ua.acclorite.book_story.ui.common.components.common.IconButton
 import ua.acclorite.book_story.ui.common.components.common.StyledText
@@ -48,10 +51,16 @@ fun ReaderTopBar(
     currentChapterProgress: Float,
     isLoading: Boolean,
     lockMenu: Boolean,
+    search: ReaderSearch,
+    listState: LazyListState,
     leave: (ReaderEvent.OnLeave) -> Unit,
     switchColorPreset: (SettingsEvent.OnSwitchColorPreset) -> Unit,
     showSettingsBottomSheet: (ReaderEvent.OnShowSettingsBottomSheet) -> Unit,
     showChaptersDrawer: (ReaderEvent.OnShowChaptersDrawer) -> Unit,
+    searchVisibility: (ReaderEvent.OnSearchVisibility) -> Unit,
+    searchQueryChange: (ReaderEvent.OnSearchQueryChange) -> Unit,
+    searchStep: (ReaderEvent.OnSearchStep) -> Unit,
+    searchReturn: (ReaderEvent.OnSearchReturn) -> Unit,
     navigateToBookInfo: (ReaderEvent.OnNavigateToBookInfo) -> Unit,
     navigateBack: (ReaderEvent.OnNavigateBack) -> Unit
 ) {
@@ -70,6 +79,20 @@ fun ReaderTopBar(
                 switchColorPreset = switchColorPreset
             )
     ) {
+        // A mode of the reader rather than a screen of its own, the way the
+        // library and history tabs do it.
+        if (search.active) {
+            ReaderSearchBar(
+                search = search,
+                listState = listState,
+                searchQueryChange = searchQueryChange,
+                searchStep = searchStep,
+                searchVisibility = searchVisibility,
+                searchReturn = searchReturn
+            )
+            return@Column
+        }
+
         TopAppBar(
             navigationIcon = {
                 IconButton(
@@ -130,6 +153,15 @@ fun ReaderTopBar(
                 )
             },
             actions = {
+                IconButton(
+                    icon = Icons.Default.Search,
+                    contentDescription = R.string.search_in_book_content_desc,
+                    disableOnClick = true,
+                    enabled = !lockMenu && !isLoading
+                ) {
+                    searchVisibility(ReaderEvent.OnSearchVisibility(true))
+                }
+
                 if (currentChapter != null) {
                     IconButton(
                         icon = Icons.Rounded.Menu,

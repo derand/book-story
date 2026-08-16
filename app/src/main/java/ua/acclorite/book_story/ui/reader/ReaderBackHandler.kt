@@ -12,10 +12,20 @@ import ua.acclorite.book_story.presentation.reader.ReaderEvent
 
 @Composable
 fun ReaderBackHandler(
+    searchActive: Boolean,
+    searchReturn: (ReaderEvent.OnSearchReturn) -> Unit,
     leave: (ReaderEvent.OnLeave) -> Unit,
     navigateBack: (ReaderEvent.OnNavigateBack) -> Unit
 ) {
     BackHandler {
+        // Back out of a search the safe way: to where the reading was, not out
+        // of the book. Staying at a match is the deliberate choice, and it has
+        // its own button.
+        if (searchActive) {
+            searchReturn(ReaderEvent.OnSearchReturn)
+            return@BackHandler
+        }
+
         leave(
             ReaderEvent.OnLeave(
                 navigate = {

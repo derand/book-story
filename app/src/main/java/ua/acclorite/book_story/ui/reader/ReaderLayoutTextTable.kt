@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import ua.acclorite.book_story.domain.model.reader.ReaderText.Table
 import ua.acclorite.book_story.domain.model.reader.TableAlignment
+import ua.acclorite.book_story.domain.model.reader.SearchMatch
 import ua.acclorite.book_story.presentation.reader.model.ReaderFontThickness
 import ua.acclorite.book_story.ui.common.components.common.StyledText
 import ua.acclorite.book_story.ui.reader.model.FontWithName
@@ -53,6 +54,8 @@ private val LINE_THICKNESS = 1.dp
  */
 @Composable
 fun LazyItemScope.ReaderLayoutTextTable(
+    searchMatches: List<SearchMatch>,
+    currentSearchMatch: SearchMatch?,
     table: Table,
     fontFamily: FontWithName,
     fontColor: Color,
@@ -128,7 +131,15 @@ fun LazyItemScope.ReaderLayoutTextTable(
 
                     repeat(columns) { columnIndex ->
                         StyledText(
-                            text = row.getOrNull(columnIndex) ?: AnnotatedString(""),
+                            text = (row.getOrNull(columnIndex) ?: AnnotatedString(""))
+                                .withSearchHighlights(
+                                    matches = searchMatches,
+                                    current = currentSearchMatch,
+                                    fontColor = fontColor,
+                                    // The same numbering [forEachCell] hands the
+                                    // scanner: a position in the drawn grid.
+                                    part = rowIndex * columns + columnIndex
+                                ),
                             modifier = Modifier
                                 .width(with(density) { columnWidths[columnIndex].toDp() })
                                 .padding(CELL_PADDING),

@@ -30,12 +30,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import ua.acclorite.book_story.domain.model.reader.ReaderText.Chapter
+import ua.acclorite.book_story.domain.model.reader.SearchMatch
 import ua.acclorite.book_story.presentation.reader.ReaderEvent
 import ua.acclorite.book_story.presentation.reader.model.ReaderTextAlignment
 import ua.acclorite.book_story.ui.common.components.common.StyledText
 
 @Composable
 fun LazyItemScope.ReaderLayoutTextChapter(
+    searchMatches: List<SearchMatch>,
+    currentSearchMatch: SearchMatch?,
     chapter: Chapter,
     showMenu: Boolean,
     chapterTitleAlignment: ReaderTextAlignment,
@@ -50,10 +53,18 @@ fun LazyItemScope.ReaderLayoutTextChapter(
     // A title may carry inline markup, footnote references included; the note
     // handler is attached here, at render time (see [withReferenceListeners]).
     val styledTitle = chapter.styledTitle
-    val title = remember(styledTitle, chapter.title, openNote) {
-        styledTitle?.withReferenceListeners { tag ->
+    val title = remember(
+        styledTitle, chapter.title, openNote, searchMatches, currentSearchMatch, fontColor
+    ) {
+        val rendered = styledTitle?.withReferenceListeners { tag ->
             openNote(ReaderEvent.OnOpenNote(tag))
         } ?: AnnotatedString(chapter.title)
+
+        rendered.withSearchHighlights(
+            matches = searchMatches,
+            current = currentSearchMatch,
+            fontColor = fontColor
+        )
     }
 
     // Captured from the text's layout so taps can be resolved against the
