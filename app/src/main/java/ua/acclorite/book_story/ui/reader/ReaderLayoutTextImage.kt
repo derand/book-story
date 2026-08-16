@@ -31,6 +31,7 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import ua.acclorite.book_story.domain.model.reader.BookImage
 import ua.acclorite.book_story.domain.model.reader.ReaderText
+import ua.acclorite.book_story.domain.model.reader.SearchMatch
 import ua.acclorite.book_story.presentation.reader.ReaderEvent
 import ua.acclorite.book_story.presentation.reader.model.ReaderFontThickness
 import ua.acclorite.book_story.presentation.reader.model.ReaderTextAlignment
@@ -41,6 +42,8 @@ import ua.acclorite.book_story.ui.theme.model.HorizontalAlignment
 
 @Composable
 fun LazyItemScope.ReaderLayoutTextImage(
+    searchMatches: List<SearchMatch>,
+    currentSearchMatch: SearchMatch?,
     entry: ReaderText.Image,
     showMenu: Boolean,
     sidePadding: Dp,
@@ -138,6 +141,8 @@ fun LazyItemScope.ReaderLayoutTextImage(
         if (imagesCaptions) {
             entry.caption?.let { caption ->
                 ReaderLayoutTextParagraph(
+                    searchMatches = searchMatches,
+                    currentSearchMatch = currentSearchMatch,
                     paragraph = caption,
                     showMenu = showMenu,
                     fontFamily = fontFamily,

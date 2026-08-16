@@ -6,6 +6,7 @@
 
 package ua.acclorite.book_story.ui.common.components.common
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
@@ -35,6 +36,11 @@ import ua.acclorite.book_story.R
  *
  * @param modifier Modifier to apply.
  * @param initialQuery Initial search query.
+ * @param placeholder Hint shown while the field is empty.
+ * @param imeAction What the keyboard's action key does. The reader passes
+ * [ImeAction.Done], because there it navigates nothing — it only puts the
+ * keyboard away, and calling that "Search" would promise a jump that the
+ * arrows, not the keyboard, are in charge of.
  * @param onQueryChange Callback to change query.
  * @param onSearch Search action (refresh list, fetch filtered books etc..).
  */
@@ -43,6 +49,8 @@ import ua.acclorite.book_story.R
 fun SearchTextField(
     modifier: Modifier = Modifier,
     initialQuery: String,
+    @StringRes placeholder: Int = R.string.search_field_empty,
+    imeAction: ImeAction = ImeAction.Search,
     onQueryChange: (String) -> Unit,
     onSearch: () -> Unit
 ) {
@@ -77,10 +85,15 @@ fun SearchTextField(
         },
         keyboardOptions = KeyboardOptions(
             KeyboardCapitalization.Sentences,
-            imeAction = ImeAction.Search
+            imeAction = imeAction
         ),
         keyboardActions = KeyboardActions(
             onSearch = {
+                onQueryChange(query.value)
+                onSearch()
+                keyboardManager?.hide()
+            },
+            onDone = {
                 onQueryChange(query.value)
                 onSearch()
                 keyboardManager?.hide()
@@ -91,7 +104,7 @@ fun SearchTextField(
         Box(contentAlignment = Alignment.CenterStart) {
             if (query.value.isEmpty()) {
                 StyledText(
-                    text = stringResource(id = R.string.search_field_empty),
+                    text = stringResource(id = placeholder),
                     style = MaterialTheme.typography.titleLarge.copy(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     ),

@@ -52,6 +52,26 @@ sealed class ReaderEvent {
         val checkpoint: Checkpoint
     ) : ReaderEvent()
 
+    /**
+     * Opens the search, remembering where reading was, or closes it leaving the
+     * reader wherever the search took them — the deliberate "stay here".
+     */
+    data class OnSearchVisibility(
+        val show: Boolean
+    ) : ReaderEvent()
+
+    data class OnSearchQueryChange(
+        val query: String
+    ) : ReaderEvent()
+
+    /** Goes to the next match, [forward] through the book or back towards its start. */
+    data class OnSearchStep(
+        val forward: Boolean
+    ) : ReaderEvent()
+
+    /** Ends the search where it began: back to reading. */
+    data object OnSearchReturn : ReaderEvent()
+
     data class OnLeave(
         val navigate: () -> Unit
     ) : ReaderEvent()

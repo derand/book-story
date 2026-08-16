@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import ua.acclorite.book_story.domain.model.reader.ReaderText.Poem
 import ua.acclorite.book_story.domain.model.reader.ReaderTextRole
+import ua.acclorite.book_story.domain.model.reader.SearchMatch
 import ua.acclorite.book_story.presentation.reader.ReaderEvent
 import ua.acclorite.book_story.presentation.reader.model.ReaderFontThickness
 import ua.acclorite.book_story.ui.common.components.common.StyledText
@@ -43,6 +44,8 @@ import ua.acclorite.book_story.ui.reader.model.FontWithName
  */
 @Composable
 fun LazyItemScope.ReaderLayoutTextPoem(
+    searchMatches: List<SearchMatch>,
+    currentSearchMatch: SearchMatch?,
     poem: Poem,
     showMenu: Boolean,
     fontFamily: FontWithName,
@@ -79,12 +82,21 @@ fun LazyItemScope.ReaderLayoutTextPoem(
             modifier = Modifier.width(IntrinsicSize.Max),
             horizontalAlignment = Alignment.Start
         ) {
-            poem.lines.forEach { line ->
+            poem.lines.forEachIndexed { part, line ->
                 StyledText(
-                    text = remember(line.line, openNote) {
-                        line.line.withReferenceListeners { tag ->
-                            openNote(ReaderEvent.OnOpenNote(tag))
-                        }
+                    text = remember(
+                        line.line, openNote, part, searchMatches, currentSearchMatch, fontColor
+                    ) {
+                        line.line
+                            .withReferenceListeners { tag ->
+                                openNote(ReaderEvent.OnOpenNote(tag))
+                            }
+                            .withSearchHighlights(
+                                matches = searchMatches,
+                                current = currentSearchMatch,
+                                fontColor = fontColor,
+                                part = part
+                            )
                     },
                     modifier = Modifier
                         .padding(

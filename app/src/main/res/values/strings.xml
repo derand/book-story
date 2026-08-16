@@ -66,6 +66,9 @@
     <string name="search_field_empty">
         Search…
     </string>
+    <string name="search_in_book_field_empty">
+        Find in book…
+    </string>
     <string name="browse_empty">
         Expand the library\'s book collection with your downloads
     </string>
@@ -252,6 +255,9 @@
     <string name="add_to_library_no_path">This file has no location on the device, so it cannot be kept.</string>
 
     <!-- Reader -->
+    <string name="search_stay_here">Stay here</string>
+    <string name="search_no_matches">Nothing found</string>
+    <string name="search_match_in_note">in a footnote</string>
     <string name="font_family_option">Font family</string>
     <string name="font_thickness_option">Font thickness</string>
     <string name="font_style_option">Font style</string>
@@ -539,6 +545,10 @@
     <string name="cover_image_not_found_content_desc">Cover image not found</string>
     <string name="error_content_desc">Error</string>
     <string name="search_content_desc">Search</string>
+    <string name="search_in_book_content_desc">Search in book</string>
+    <string name="search_back_to_reading_content_desc">Back to reading</string>
+    <string name="search_previous_match_content_desc">Previous match</string>
+    <string name="search_next_match_content_desc">Next match</string>
     <string name="clear_selected_items_content_desc">Clear selected items</string>
     <string name="add_files_content_desc">Add files</string>
     <string name="select_all_files_content_desc">Select all files</string>

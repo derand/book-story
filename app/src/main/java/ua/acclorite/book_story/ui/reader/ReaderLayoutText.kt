@@ -16,6 +16,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import ua.acclorite.book_story.domain.model.reader.ReaderText
+import ua.acclorite.book_story.domain.model.reader.SearchMatch
 import ua.acclorite.book_story.presentation.reader.ReaderEvent
 import ua.acclorite.book_story.presentation.reader.model.ReaderFontThickness
 import ua.acclorite.book_story.presentation.reader.model.ReaderTextAlignment
@@ -26,6 +27,8 @@ import ua.acclorite.book_story.ui.theme.model.HorizontalAlignment
 fun LazyItemScope.ReaderLayoutText(
     showMenu: Boolean,
     entry: ReaderText,
+    searchMatches: List<SearchMatch>,
+    currentSearchMatch: SearchMatch?,
     imagesCornersRoundness: Dp,
     imagesAlignment: HorizontalAlignment,
     imagesWidth: Float,
@@ -56,6 +59,8 @@ fun LazyItemScope.ReaderLayoutText(
     when (entry) {
         is ReaderText.Image -> {
             ReaderLayoutTextImage(
+                searchMatches = searchMatches,
+                currentSearchMatch = currentSearchMatch,
                 entry = entry,
                 showMenu = showMenu,
                 sidePadding = sidePadding,
@@ -95,6 +100,8 @@ fun LazyItemScope.ReaderLayoutText(
 
         is ReaderText.Table -> {
             ReaderLayoutTextTable(
+                searchMatches = searchMatches,
+                currentSearchMatch = currentSearchMatch,
                 table = entry,
                 fontFamily = fontFamily,
                 fontColor = fontColor,
@@ -109,6 +116,8 @@ fun LazyItemScope.ReaderLayoutText(
 
         is ReaderText.Chapter -> {
             ReaderLayoutTextChapter(
+                searchMatches = searchMatches,
+                currentSearchMatch = currentSearchMatch,
                 chapter = entry,
                 showMenu = showMenu,
                 chapterTitleAlignment = chapterTitleAlignment,
@@ -124,6 +133,8 @@ fun LazyItemScope.ReaderLayoutText(
 
         is ReaderText.Poem -> {
             ReaderLayoutTextPoem(
+                searchMatches = searchMatches,
+                currentSearchMatch = currentSearchMatch,
                 poem = entry,
                 showMenu = showMenu,
                 fontFamily = fontFamily,
@@ -146,6 +157,8 @@ fun LazyItemScope.ReaderLayoutText(
 
         is ReaderText.Text -> {
             ReaderLayoutTextParagraph(
+                searchMatches = searchMatches,
+                currentSearchMatch = currentSearchMatch,
                 paragraph = entry,
                 showMenu = showMenu,
                 fontFamily = fontFamily,

@@ -34,6 +34,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import ua.acclorite.book_story.domain.model.reader.ReaderText.Text
 import ua.acclorite.book_story.domain.model.reader.ReaderTextRole
+import ua.acclorite.book_story.domain.model.reader.SearchMatch
 import ua.acclorite.book_story.presentation.reader.ReaderEvent
 import ua.acclorite.book_story.presentation.reader.model.ReaderFontThickness
 import ua.acclorite.book_story.presentation.reader.model.ReaderTextAlignment
@@ -60,6 +61,8 @@ internal val ReaderTextRole.indentSteps: Int
 
 @Composable
 fun LazyItemScope.ReaderLayoutTextParagraph(
+    searchMatches: List<SearchMatch>,
+    currentSearchMatch: SearchMatch?,
     paragraph: Text,
     showMenu: Boolean,
     fontFamily: FontWithName,
@@ -89,10 +92,16 @@ fun LazyItemScope.ReaderLayoutTextParagraph(
 
     // Note/anchor references are parsed as listener-less clickable links;
     // the actual handler is attached here, at render time
-    val line = remember(paragraph.line, openNote) {
-        paragraph.line.withReferenceListeners { tag ->
-            openNote(ReaderEvent.OnOpenNote(tag))
-        }
+    val line = remember(paragraph.line, openNote, searchMatches, currentSearchMatch, fontColor) {
+        paragraph.line
+            .withReferenceListeners { tag ->
+                openNote(ReaderEvent.OnOpenNote(tag))
+            }
+            .withSearchHighlights(
+                matches = searchMatches,
+                current = currentSearchMatch,
+                fontColor = fontColor
+            )
     }
 
     // Captured from the text's layout so taps can be resolved against the

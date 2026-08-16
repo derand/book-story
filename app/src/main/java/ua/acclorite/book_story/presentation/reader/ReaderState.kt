@@ -16,6 +16,7 @@ import androidx.compose.ui.text.AnnotatedString
 import ua.acclorite.book_story.domain.model.reader.ReaderText
 import ua.acclorite.book_story.domain.model.reader.ReaderText.Chapter
 import ua.acclorite.book_story.presentation.reader.model.Checkpoint
+import ua.acclorite.book_story.presentation.reader.model.ReaderSearch
 
 @Immutable
 data class ReaderState(
@@ -29,6 +30,8 @@ data class ReaderState(
 
     val currentChapter: Chapter? = null,
     val currentChapterProgress: Float = 0f,
+
+    val search: ReaderSearch = ReaderSearch(),
 
     val errorMessage: UIText? = null,
     val isLoading: Boolean = true,

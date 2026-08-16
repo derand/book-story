@@ -38,6 +38,8 @@ import ua.acclorite.book_story.core.ui.UIText
 import ua.acclorite.book_story.domain.model.reader.BookImageStore
 import ua.acclorite.book_story.domain.model.reader.ReaderText
 import ua.acclorite.book_story.domain.model.reader.ReaderText.Chapter
+import ua.acclorite.book_story.domain.model.reader.SEARCH_MIN_QUERY_LENGTH
+import ua.acclorite.book_story.domain.model.reader.findSearchMatches
 import ua.acclorite.book_story.domain.model.statistics.ReadingCoverage
 import ua.acclorite.book_story.domain.model.statistics.SessionWords
 import ua.acclorite.book_story.domain.model.statistics.wordCount
@@ -59,9 +61,17 @@ import ua.acclorite.book_story.domain.use_case.statistics.UpdateReadBookUseCase
 import ua.acclorite.book_story.presentation.history.HistoryScreen
 import ua.acclorite.book_story.presentation.library.LibraryScreen
 import ua.acclorite.book_story.presentation.reader.model.Checkpoint
+import ua.acclorite.book_story.presentation.reader.model.ReaderSearch
+import ua.acclorite.book_story.presentation.reader.model.stepTarget
 import javax.inject.Inject
 import kotlin.coroutines.coroutineContext
 import kotlin.math.roundToInt
+
+/**
+ * How long the typing has to stop before the book is scanned. Long enough that
+ * an ordinary word is scanned once rather than once per letter.
+ */
+private const val SEARCH_DEBOUNCE = 300L
 
 @HiltViewModel
 class ReaderModel @Inject constructor(
@@ -105,6 +115,7 @@ class ReaderModel @Inject constructor(
     val effects = _effects.asSharedFlow()
 
     private var scrollJob: Job? = null
+    private var searchJob: Job? = null
     private val eventStack = mutableListOf<Job>()
 
     /** Start of the running reading session, or null when none is running. */
@@ -337,6 +348,13 @@ class ReaderModel @Inject constructor(
                         _state.update {
                             it.copy(showMenu = event.show)
                         }
+
+                        // With the search open, the bars going away is the
+                        // reader turning back to the text — and coming back is
+                        // the search covering it again.
+                        if (_state.value.search.active) {
+                            if (event.show) overlayShown() else overlayHidden()
+                        }
                     }
                 }
 
@@ -379,6 +397,7 @@ class ReaderModel @Inject constructor(
                             .takeIf { it != -1 }
                         if (chapterIndex == null) return@withContext
 
+                        clearCurrentMatch()
                         _state.value.listState.requestScrollToItem(
                             index = chapterIndex,
                             scrollOffset = 0
@@ -402,6 +421,7 @@ class ReaderModel @Inject constructor(
 
                         val scrollTo = (_state.value.text.lastIndex * event.progress).roundToInt()
 
+                        clearCurrentMatch()
                         jumpedToPosition()
                         _state.value.listState.requestScrollToItem(
                             index = scrollTo,
@@ -423,6 +443,7 @@ class ReaderModel @Inject constructor(
                             )
                         }
 
+                        clearCurrentMatch()
                         _state.value.listState.requestScrollToItem(
                             index = event.checkpoint.index,
                             scrollOffset = event.checkpoint.offset
@@ -436,6 +457,122 @@ class ReaderModel @Inject constructor(
                                 firstVisibleItemOffset = event.checkpoint.offset,
                             )
                         )
+                    }
+                }
+
+                is ReaderEvent.OnSearchVisibility -> {
+                    searchJob?.cancel()
+
+                    when (event.show) {
+                        true -> {
+                            creditOpenNote()
+                            overlayShown()
+                            _state.update {
+                                it.copy(
+                                    search = ReaderSearch(
+                                        active = true,
+                                        origin = Checkpoint(
+                                            index = it.listState.firstVisibleItemIndex,
+                                            offset = it.listState.firstVisibleItemScrollOffset
+                                        )
+                                    ),
+                                    drawer = null
+                                )
+                            }
+                        }
+
+                        // "Stay here": the search ends and the reader keeps
+                        // whatever position it took them to.
+                        false -> {
+                            overlayHidden()
+                            _state.update { it.copy(search = ReaderSearch()) }
+                        }
+                    }
+                }
+
+                is ReaderEvent.OnSearchQueryChange -> {
+                    searchJob?.cancel()
+
+                    val query = event.query
+                    val searchable = query.trim().length >= SEARCH_MIN_QUERY_LENGTH
+                    _state.update {
+                        it.copy(
+                            search = it.search.copy(
+                                query = query,
+                                // Not knowing the count yet is not the same as
+                                // there being none, and the bar says so.
+                                scanning = searchable,
+                                matches = emptyList(),
+                                current = -1
+                            )
+                        )
+                    }
+                    if (!searchable) return@launch
+
+                    searchJob = viewModelScope.launch(Dispatchers.Default) {
+                        delay(SEARCH_DEBOUNCE)
+
+                        val matches = _state.value.text.findSearchMatches(
+                            query = query,
+                            notes = _state.value.notes
+                        )
+                        ensureActive()
+
+                        _state.update {
+                            // A query that moved on while this scan ran owns the
+                            // bar now; these matches are for a string nobody typed.
+                            if (it.search.query != query) return@update it
+                            it.copy(
+                                search = it.search.copy(
+                                    matches = matches,
+                                    current = -1,
+                                    scanning = false
+                                )
+                            )
+                        }
+                    }
+                }
+
+                is ReaderEvent.OnSearchStep -> {
+                    withContext(Dispatchers.Default) {
+                        val target = _state.value.search.stepTarget(
+                            forward = event.forward,
+                            visible = visibleRange()
+                        ) ?: return@withContext
+                        val match = _state.value.search.matches[target]
+
+                        _state.update {
+                            it.copy(search = it.search.copy(current = target))
+                        }
+
+                        // Stepping through matches lands on screens nobody reads,
+                        // exactly like dragging the slider does.
+                        jumpedToPosition()
+                        _state.value.listState.requestScrollToItem(
+                            index = match.itemIndex,
+                            scrollOffset = 0
+                        )
+                        // No [OnChangeProgress] on purpose: searching must not
+                        // move the position the book is reopened at.
+                        onEvent(ReaderEvent.OnUpdateChapter(match.itemIndex))
+                    }
+                }
+
+                is ReaderEvent.OnSearchReturn -> {
+                    searchJob?.cancel()
+
+                    val origin = _state.value.search.origin
+                    overlayHidden()
+                    _state.update { it.copy(search = ReaderSearch()) }
+
+                    if (origin != null) {
+                        // Not a jump for the statistics: this lands where the
+                        // reading resumes, and that screen gets no other sample.
+                        _state.value.listState.requestScrollToItem(
+                            index = origin.index,
+                            scrollOffset = origin.offset
+                        )
+                        onEvent(ReaderEvent.OnUpdateChapter(origin.index))
                     }
                 }
 
@@ -578,6 +715,8 @@ class ReaderModel @Inject constructor(
                             fullscreenImage = null
                         )
                     }
+                    // What it was opened over may still be covering the text.
+                    resumeOverlayIfCovered()
                 }
 
                 is ReaderEvent.OnDismissBottomSheet -> {
@@ -588,6 +727,7 @@ class ReaderModel @Inject constructor(
                             bottomSheet = null
                         )
                     }
+                    resumeOverlayIfCovered()
                 }
 
                 is ReaderEvent.OnShowChaptersDrawer -> {
@@ -747,12 +887,26 @@ class ReaderModel @Inject constructor(
     private fun isOverlayShowing(): Boolean = with(_state.value) {
         fullscreenImage != null ||
                 drawer != null ||
-                bottomSheet == ReaderScreen.SETTINGS_BOTTOM_SHEET
+                bottomSheet == ReaderScreen.SETTINGS_BOTTOM_SHEET ||
+                // The search *bar*, not the mode: the mode outlives hiding the
+                // menu, and reading a found passage with the bars away is
+                // reading like any other.
+                (search.active && showMenu)
     }
 
     private fun overlayShown() {
         markActive()
         if (overlayShownAt == null) overlayShownAt = System.currentTimeMillis()
+    }
+
+    /**
+     * Starts the overlay clock again if something is *still* covering the text
+     * after one of them closed — the search bar an image was opened over, say.
+     * Called after the state has been updated, which is what tells the two
+     * apart; [overlayHidden] runs before it and has to bank the span either way.
+     */
+    private fun resumeOverlayIfCovered() {
+        if (isOverlayShowing()) overlayShown()
     }
 
     private fun overlayHidden() {
@@ -951,6 +1105,7 @@ class ReaderModel @Inject constructor(
         // be recorded against the new book.
         endSession()
 
+        searchJob?.cancel()
         coverageJob?.cancelAndJoin()
         coverageReady = false
         coveredItems.clear()
@@ -993,6 +1148,15 @@ class ReaderModel @Inject constructor(
             // discards: the reader is being scrolled either way.
             sessionLastActive = System.currentTimeMillis()
             creditVisible(listState.layoutInfo.visibleItemsInfo)
+
+            // Scrolled away from the match the counter is pinned to: "34 / 57"
+            // would go on claiming a place the reader has left.
+            _state.value.search.currentMatch?.let { match ->
+                val stillOnScreen = listState.layoutInfo.visibleItemsInfo.any { item ->
+                    item.index == match.itemIndex
+                }
+                if (!stillOnScreen) clearCurrentMatch()
+            }
 
             if (
                 _state.value.isLoading ||
@@ -1042,6 +1206,29 @@ class ReaderModel @Inject constructor(
             val chapterLength = endIndex - (startIndex + 1)
             currentIndexInChapter to chapterLength
         } ?: (-1 to -1)
+    }
+
+    /**
+     * The items on screen, which is what the search arrows step away from: a
+     * match the reader is already looking at is not somewhere to go.
+     */
+    private fun visibleRange(): IntRange {
+        val visible = _state.value.listState.layoutInfo.visibleItemsInfo
+        if (visible.isEmpty()) {
+            val index = _state.value.listState.firstVisibleItemIndex
+            return index..index
+        }
+        return visible.first().index..visible.last().index
+    }
+
+    /**
+     * Drops the match the counter is pinned to, without touching the query or
+     * the results: after a jump the reader made some other way, "34 / 57" would
+     * be pointing at a place they are no longer at.
+     */
+    private suspend fun clearCurrentMatch() {
+        if (_state.value.search.current == -1) return
+        _state.update { it.copy(search = it.search.copy(current = -1)) }
     }
 
     private fun calculateProgress(firstVisibleItemIndex: Int? = null): Float {
