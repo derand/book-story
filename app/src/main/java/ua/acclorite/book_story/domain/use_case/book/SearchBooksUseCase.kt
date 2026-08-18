@@ -9,6 +9,8 @@ package ua.acclorite.book_story.domain.use_case.book
 import ua.acclorite.book_story.core.log.logE
 import ua.acclorite.book_story.core.log.logI
 import ua.acclorite.book_story.domain.model.library.Book
+import ua.acclorite.book_story.domain.model.library.bookSearchTokens
+import ua.acclorite.book_story.domain.model.library.matchesSearch
 import ua.acclorite.book_story.domain.repository.BookRepository
 import ua.acclorite.book_story.domain.repository.HistoryRepository
 import javax.inject.Inject
@@ -23,8 +25,10 @@ class SearchBooksUseCase @Inject constructor(
     suspend operator fun invoke(query: String): List<Book> {
         logI(TAG, "Searching for books with query: \"$query\".")
 
-        return bookRepository.searchBooks(query).fold(
-            onSuccess = { books ->
+        val tokens = bookSearchTokens(query)
+        return bookRepository.getLibraryBooks().fold(
+            onSuccess = { allBooks ->
+                val books = allBooks.filter { book -> book.matchesSearch(tokens) }
                 logI(TAG, "Successfully found [${books.size}] books.")
                 books.map { book ->
                     val history = historyRepository.getHistoryForBook(book.id).getOrNull()

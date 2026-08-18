@@ -25,14 +25,14 @@ interface BookDao {
     /**
      * Every list of books in the app comes from here — the library, the history
      * and the search — so this is the one place a preview has to be kept out of.
+     *
+     * Unfiltered on purpose: a search query is matched in Kotlin, by
+     * [ua.acclorite.book_story.domain.model.library.matchesSearch], because
+     * SQLite's `LOWER()` folds ASCII only and `LIKE` would read a typed `%` or
+     * `_` as a wildcard. This is the same handful of rows either way.
      */
-    @Query(
-        """
-        SELECT * FROM bookentity
-        WHERE inLibrary = 1 AND LOWER(title) LIKE '%' || LOWER(:query) || '%'
-    """
-    )
-    suspend fun searchBooks(query: String): List<BookEntity>
+    @Query("SELECT * FROM bookentity WHERE inLibrary = 1")
+    suspend fun getLibraryBooks(): List<BookEntity>
 
     /**
      * Deliberately **not** filtered by [BookEntity.inLibrary]: this is how the

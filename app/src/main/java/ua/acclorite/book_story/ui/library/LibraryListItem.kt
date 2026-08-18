@@ -9,6 +9,7 @@ package ua.acclorite.book_story.ui.library
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -103,14 +104,29 @@ fun LibraryListItem(
 
         Spacer(modifier = Modifier.width(16.dp))
 
-        StyledText(
-            text = book.data.title,
-            modifier = Modifier.weight(1f),
-            style = MaterialTheme.typography.bodyMedium.copy(
-                color = fontColor
-            ),
-            maxLines = 2
-        )
+        Column(modifier = Modifier.weight(1f)) {
+            StyledText(
+                text = book.data.title,
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    color = fontColor
+                ),
+                maxLines = 2
+            )
+
+            // Shown because the search matches it: without it an author query
+            // would return titles with no visible reason for being there. Only
+            // when the book carries one — the placeholder for an unknown author
+            // says nothing and would sit under every book that has no metadata.
+            book.data.author.getAsString()?.let { author ->
+                StyledText(
+                    text = author,
+                    style = MaterialTheme.typography.bodySmall.copy(
+                        color = fontColor.copy(alpha = 0.7f)
+                    ),
+                    maxLines = 1
+                )
+            }
+        }
 
         Spacer(modifier = Modifier.width(8.dp))
 

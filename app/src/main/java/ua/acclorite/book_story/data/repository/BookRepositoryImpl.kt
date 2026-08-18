@@ -72,9 +72,9 @@ class BookRepositoryImpl @Inject constructor(
     @Volatile
     private var lastOpenedFile: OpenedBookFile? = null
 
-    override suspend fun searchBooks(query: String): Result<List<Book>> = runCatchingCancellable {
+    override suspend fun getLibraryBooks(): Result<List<Book>> = runCatchingCancellable {
         withContext(Dispatchers.IO) {
-            database.bookDao.searchBooks(query).map { bookMapper.toBook(it) }
+            database.bookDao.getLibraryBooks().map { bookMapper.toBook(it) }
         }
     }
 
@@ -351,7 +351,7 @@ class BookRepositoryImpl @Inject constructor(
             // Matched in Kotlin rather than in SQL: a LIKE over the path would
             // treat '%' and '_' in a file name as wildcards, and the library is
             // the same handful of rows every other screen already reads whole.
-            database.bookDao.searchBooks("")
+            database.bookDao.getLibraryBooks()
                 .map(bookMapper::toBook)
                 .findForFile(filePath = filePath, fileName = fileName)
         }

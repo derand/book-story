@@ -36,7 +36,7 @@ class FakeBookRepository(
     var storedFor: Book? = null
         private set
 
-    override suspend fun searchBooks(query: String): Result<List<Book>> = Result.success(books)
+    override suspend fun getLibraryBooks(): Result<List<Book>> = Result.success(books)
 
     override suspend fun findPreviews(): Result<List<Book>> = Result.success(previews)
 
