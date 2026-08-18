@@ -10,6 +10,8 @@ import ua.acclorite.book_story.core.helpers.runCatchingCancellable
 import ua.acclorite.book_story.core.log.logE
 import ua.acclorite.book_story.core.log.logI
 import ua.acclorite.book_story.domain.model.history.History
+import ua.acclorite.book_story.domain.model.library.bookSearchTokens
+import ua.acclorite.book_story.domain.model.library.matchesSearch
 import ua.acclorite.book_story.domain.repository.HistoryRepository
 import ua.acclorite.book_story.presentation.history.model.GroupedHistory
 import java.time.Instant
@@ -48,10 +50,10 @@ class GetHistoryUseCase @Inject constructor(
             return maxElementsById.filterNotNull()
         }
 
-        val query = query.lowercase().trim()
+        val tokens = bookSearchTokens(query)
         return runCatchingCancellable {
             historyRepository.getHistory().getOrThrow()
-                .filter { history -> history.book.title.lowercase().trim().contains(query) }
+                .filter { history -> history.book.matchesSearch(tokens) }
                 .sortedByDescending { history -> history.time }
                 .groupBy { history -> getDayLabel(history.time) }
                 .map { (day, history) -> GroupedHistory(day, filterMaxElementsById(history)) }

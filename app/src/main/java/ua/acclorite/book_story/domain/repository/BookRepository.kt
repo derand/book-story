@@ -13,9 +13,8 @@ import ua.acclorite.book_story.domain.model.reader.BookImage
 import ua.acclorite.book_story.domain.model.reader.ParsedText
 
 interface BookRepository {
-    suspend fun searchBooks(
-        query: String
-    ): Result<List<Book>>
+    /** Every book in the library; previews are not books yet and are left out. */
+    suspend fun getLibraryBooks(): Result<List<Book>>
 
     suspend fun getBook(
         bookId: Int

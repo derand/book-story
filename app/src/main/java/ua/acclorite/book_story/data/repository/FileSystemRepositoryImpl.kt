@@ -40,7 +40,7 @@ class FileSystemRepositoryImpl @Inject constructor(
     override suspend fun searchFiles(query: String): Result<List<File>> {
         return withContext(Dispatchers.IO) {
             fileProvider.getStorageFiles().mapCatchingCancellable { storages ->
-                val existingFiles = database.bookDao.searchBooks("").map { it.filePath }
+                val existingFiles = database.bookDao.getLibraryBooks().map { it.filePath }
 
                 storages.map { storage ->
                     storage.getFilesFromStorage(
