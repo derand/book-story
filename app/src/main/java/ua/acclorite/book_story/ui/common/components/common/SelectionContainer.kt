@@ -30,6 +30,7 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.TextToolbar
 import androidx.compose.ui.platform.TextToolbarStatus
 import ua.acclorite.book_story.R
+import ua.acclorite.book_story.ui.main.TextActionMode
 
 
 private const val MENU_ITEM_COPY = 0
@@ -290,6 +291,12 @@ fun SelectionContainer(
             }
         )
     }
+    // Two sources, because neither alone is trustworthy: [selectionToolbar] is
+    // the app's own and knows about its menu, but Compose does not always ask it
+    // — on some devices the platform shows the selection toolbar itself and this
+    // status never leaves `Hidden`. [TextActionMode] catches that case from the
+    // window, and says nothing about a menu the app puts up without an action
+    // mode. Hidden means hidden by both.
     val isToolbarHidden = remember(selectionToolbar.status) {
         derivedStateOf {
             selectionToolbar.status == TextToolbarStatus.Hidden
@@ -300,7 +307,7 @@ fun SelectionContainer(
         LocalTextToolbar provides selectionToolbar
     ) {
         SelectionContainer {
-            content(isToolbarHidden.value)
+            content(isToolbarHidden.value && !TextActionMode.active)
         }
     }
 }

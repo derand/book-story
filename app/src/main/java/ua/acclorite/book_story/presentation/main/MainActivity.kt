@@ -13,6 +13,7 @@ import android.content.Intent
 import android.content.res.Configuration
 import android.database.CursorWindow
 import android.os.Bundle
+import android.view.ActionMode
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
@@ -43,6 +44,7 @@ import ua.acclorite.book_story.ui.common.components.navigation_bar.NavigationBar
 import ua.acclorite.book_story.ui.common.components.navigation_rail.NavigationRail
 import ua.acclorite.book_story.ui.common.helpers.ProvideSettings
 import ua.acclorite.book_story.ui.main.MainActivityKeyboardManager
+import ua.acclorite.book_story.ui.main.TextActionMode
 import ua.acclorite.book_story.ui.main.MainFileOpenEffects
 import ua.acclorite.book_story.ui.navigator.Navigator
 import ua.acclorite.book_story.ui.navigator.NavigatorTabs
@@ -240,6 +242,19 @@ class MainActivity : AppCompatActivity() {
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
         themeTrace("onConfigurationChanged", this)
+    }
+
+    // The text-selection toolbar is an action mode on the window, whoever put it
+    // there — the app's own or the platform's. The reader reads it to know that a
+    // tap belongs to the selection; see [TextActionMode].
+    override fun onActionModeStarted(mode: ActionMode?) {
+        TextActionMode.active = true
+        super.onActionModeStarted(mode)
+    }
+
+    override fun onActionModeFinished(mode: ActionMode?) {
+        TextActionMode.active = false
+        super.onActionModeFinished(mode)
     }
 
     override fun onDestroy() {
