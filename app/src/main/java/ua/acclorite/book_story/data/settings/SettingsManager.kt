@@ -8,6 +8,7 @@
 
 package ua.acclorite.book_story.data.settings
 
+import androidx.compose.runtime.Composable
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.doublePreferencesKey
@@ -37,6 +38,7 @@ import ua.acclorite.book_story.presentation.reader.model.ReaderFontThickness
 import ua.acclorite.book_story.presentation.reader.model.ReaderHorizontalGesture
 import ua.acclorite.book_story.presentation.reader.model.ReaderProgressCount
 import ua.acclorite.book_story.presentation.reader.model.ReaderScreenOrientation
+import ua.acclorite.book_story.presentation.reader.model.ReaderTapPaging
 import ua.acclorite.book_story.presentation.reader.model.ReaderTextAlignment
 import ua.acclorite.book_story.ui.reader.data.ReaderData
 import ua.acclorite.book_story.ui.reader.model.FontWithName
@@ -248,6 +250,22 @@ class SettingsManager @Inject constructor(
     val horizontalGestureDisableScrolling = setting<Boolean, Boolean>(
         key = booleanPreferencesKey("horizontal_gesture_disable_scrolling"), default = false
     )
+    val tapPaging = setting<ReaderTapPaging, String>(
+        key = stringPreferencesKey("tap_paging"), default = ReaderTapPaging.OFF,
+        serialize = { it.name }, deserialize = { ReaderTapPaging.valueOf(it) }
+    )
+    val pageTurnAnimation = setting<Boolean, Boolean>(
+        key = booleanPreferencesKey("page_turn_animation"), default = true
+    )
+
+    /**
+     * Whether anything can turn a page. The step and the animation belong to the
+     * turn itself rather than to the gesture that asked for it, so either
+     * trigger being on is enough for their settings to matter.
+     */
+    val pageTurnEnabled: Boolean
+        @Composable get() = horizontalGesture.value != ReaderHorizontalGesture.OFF ||
+                tapPaging.value != ReaderTapPaging.OFF
     val bottomBarPadding = setting<Int, Int>(
         key = intPreferencesKey("bottom_bar_padding"), default = 0
     )

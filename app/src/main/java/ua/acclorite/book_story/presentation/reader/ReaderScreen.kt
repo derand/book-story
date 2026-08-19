@@ -464,6 +464,8 @@ data class ReaderScreen(val bookId: Int) : Screen, Parcelable {
                 horizontalGestureAlphaAnim = settings.horizontalGestureAlphaAnim.value,
                 horizontalGesturePullAnim = settings.horizontalGesturePullAnim.value,
                 horizontalGestureDisableScrolling = settings.horizontalGestureDisableScrolling.value,
+                tapPaging = settings.tapPaging.value,
+                pageTurnAnimation = settings.pageTurnAnimation.value,
                 highlightedReading = settings.highlightedReading.value,
                 highlightedReadingThickness = highlightedReadingThickness,
                 progress = progress,

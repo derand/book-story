@@ -314,6 +314,11 @@
     </string>
     <string name="horizontal_gesture_disable_scrolling_option">Disable scrolling</string>
     <string name="horizontal_gesture_disable_scrolling_option_desc">Completely disable reader scrolling</string>
+    <string name="tap_paging_option">Tap to turn page</string>
+    <string name="page_turn_animation_option">Page turn animation</string>
+    <string name="page_turn_animation_option_desc">
+        Slide to the next page instead of jumping to it
+    </string>
     <string name="bottom_bar_padding_option">Bottom bar margin</string>
     <string name="highlighted_reading_option">Highlight words</string>
     <string name="highlighted_reading_option_desc">Highlight the beginning of each word</string>
@@ -413,6 +418,11 @@
     <string name="horizontal_gesture_off">Off</string>
     <string name="horizontal_gesture_on">On</string>
     <string name="horizontal_gesture_inverse">On (Inverse)</string>
+
+    <!-- Tap paging properties -->
+    <string name="tap_paging_off">Off</string>
+    <string name="tap_paging_on">On</string>
+    <string name="tap_paging_inverse">On (Inverse)</string>
 
     <!-- Highlighted Reading properties -->
     <string name="highlighted_reading_level">level</string>

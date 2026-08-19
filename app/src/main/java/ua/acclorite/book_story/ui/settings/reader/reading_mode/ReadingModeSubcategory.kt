@@ -21,6 +21,8 @@ import ua.acclorite.book_story.ui.settings.reader.reading_mode.components.Horizo
 import ua.acclorite.book_story.ui.settings.reader.reading_mode.components.HorizontalGesturePullAnimOption
 import ua.acclorite.book_story.ui.settings.reader.reading_mode.components.HorizontalGestureScrollOption
 import ua.acclorite.book_story.ui.settings.reader.reading_mode.components.HorizontalGestureSensitivityOption
+import ua.acclorite.book_story.ui.settings.reader.reading_mode.components.PageTurnAnimationOption
+import ua.acclorite.book_story.ui.settings.reader.reading_mode.components.TapPagingOption
 
 fun LazyListScope.ReadingModeSubcategory(
     titleColor: @Composable () -> Color = { MaterialTheme.colorScheme.primary },
@@ -39,7 +41,17 @@ fun LazyListScope.ReadingModeSubcategory(
         }
 
         item {
+            TapPagingOption()
+        }
+
+        // The step and the animation describe the page turn itself, so they sit
+        // under both of the gestures that ask for one.
+        item {
             HorizontalGestureScrollOption()
+        }
+
+        item {
+            PageTurnAnimationOption()
         }
 
         item {

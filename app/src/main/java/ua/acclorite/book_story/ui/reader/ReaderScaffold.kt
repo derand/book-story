@@ -43,6 +43,7 @@ import ua.acclorite.book_story.presentation.reader.model.Checkpoint
 import ua.acclorite.book_story.presentation.reader.model.ReaderFontThickness
 import ua.acclorite.book_story.presentation.reader.model.ReaderSearch
 import ua.acclorite.book_story.presentation.reader.model.ReaderHorizontalGesture
+import ua.acclorite.book_story.presentation.reader.model.ReaderTapPaging
 import ua.acclorite.book_story.presentation.reader.model.ReaderTextAlignment
 import ua.acclorite.book_story.presentation.settings.SettingsEvent
 import ua.acclorite.book_story.ui.common.components.common.AnimatedVisibility
@@ -82,6 +83,8 @@ fun ReaderScaffold(
     horizontalGestureAlphaAnim: Boolean,
     horizontalGesturePullAnim: Boolean,
     horizontalGestureDisableScrolling: Boolean,
+    tapPaging: ReaderTapPaging,
+    pageTurnAnimation: Boolean,
     highlightedReading: Boolean,
     highlightedReadingThickness: FontWeight,
     progress: String,
@@ -227,6 +230,8 @@ fun ReaderScaffold(
             horizontalGestureAlphaAnim = horizontalGestureAlphaAnim,
             horizontalGesturePullAnim = horizontalGesturePullAnim,
             horizontalGestureDisableScrolling = horizontalGestureDisableScrolling,
+            tapPaging = tapPaging,
+            pageTurnAnimation = pageTurnAnimation,
             highlightedReading = highlightedReading,
             highlightedReadingThickness = highlightedReadingThickness,
             progress = progress,

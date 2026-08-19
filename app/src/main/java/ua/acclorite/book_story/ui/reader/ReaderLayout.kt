@@ -27,6 +27,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
@@ -39,6 +41,7 @@ import ua.acclorite.book_story.domain.model.reader.SearchMatch
 import ua.acclorite.book_story.presentation.reader.ReaderEvent
 import ua.acclorite.book_story.presentation.reader.model.ReaderFontThickness
 import ua.acclorite.book_story.presentation.reader.model.ReaderHorizontalGesture
+import ua.acclorite.book_story.presentation.reader.model.ReaderTapPaging
 import ua.acclorite.book_story.presentation.reader.model.ReaderTextAlignment
 import ua.acclorite.book_story.ui.common.components.common.AnimatedVisibility
 import ua.acclorite.book_story.ui.common.components.common.LazyColumnWithScrollbar
@@ -62,6 +65,8 @@ fun ReaderLayout(
     horizontalGestureAlphaAnim: Boolean,
     horizontalGesturePullAnim: Boolean,
     horizontalGestureDisableScrolling: Boolean,
+    tapPaging: ReaderTapPaging,
+    pageTurnAnimation: Boolean,
     highlightedReading: Boolean,
     highlightedReadingThickness: FontWeight,
     progress: String,
@@ -109,6 +114,22 @@ fun ReaderLayout(
     // the dozen on screen.
     val matchesByItem = remember(searchMatches) {
         searchMatches.groupBy { match -> match.itemIndex }
+    }
+
+    // Both triggers of a page turn — the tap zones and the horizontal swipe —
+    // go through one pager, so the same action cannot behave two ways.
+    val pager = rememberReaderPager(
+        listState = listState,
+        stepFraction = horizontalGestureScroll,
+        overlap = with(LocalDensity.current) { lineHeight.toDp() } * PAGE_TURN_OVERLAP_LINES,
+        animate = pageTurnAnimation
+    )
+    val tapZones = remember(tapPaging) {
+        when (tapPaging) {
+            ReaderTapPaging.OFF -> null
+            ReaderTapPaging.ON -> ReaderTapZones()
+            ReaderTapPaging.INVERSE -> ReaderTapZones(inverted = true)
+        }
     }
 
     ReaderFirstFrameTrace(hasText = text.isNotEmpty())
@@ -170,9 +191,8 @@ fun ReaderLayout(
                 .padding(contentPadding)
                 .padding(vertical = verticalPadding)
                 .readerHorizontalGesture(
-                    listState = listState,
+                    pager = pager,
                     horizontalGesture = horizontalGesture,
-                    horizontalGestureScroll = horizontalGestureScroll,
                     horizontalGestureSensitivity = horizontalGestureSensitivity,
                     horizontalGestureAlphaAnim = horizontalGestureAlphaAnim,
                     horizontalGesturePullAnim = horizontalGesturePullAnim,
@@ -182,7 +202,26 @@ fun ReaderLayout(
             LazyColumnWithScrollbar(
                 state = listState,
                 enableScrollbar = false,
-                parentModifier = Modifier.weight(1f),
+                // The text viewport is what a page is measured against and what
+                // the tap zones divide, so both are attached to it and to
+                // nothing wider — the progress bar below is not part of a page.
+                parentModifier = Modifier
+                    .weight(1f)
+                    .onGloballyPositioned { pager.viewportHeight = it.size.height.toFloat() }
+                    .readerTapNavigation(
+                        enabled = !isLoading && toolbarHidden,
+                        zones = tapZones,
+                        pager = pager,
+                        listState = listState,
+                        text = text,
+                        images = images,
+                        itemSpacing = paragraphHeight,
+                        showMenu = showMenu,
+                        doubleClickTranslation = doubleClickTranslation,
+                        menuVisibility = menuVisibility,
+                        openImage = openImage,
+                        openTranslator = openTranslator
+                    ),
                 modifier = Modifier.fillMaxSize(),
                 userScrollEnabled = !horizontalGestureDisableScrolling,
                 contentPadding = PaddingValues(
@@ -206,7 +245,6 @@ fun ReaderLayout(
                                 spacing = paragraphHeight
                             ) {
                                 ReaderLayoutText(
-                                    showMenu = showMenu,
                                     entry = entry,
                                     searchMatches = matchesByItem[index].orEmpty(),
                                     currentSearchMatch = currentSearchMatch,
@@ -228,14 +266,10 @@ fun ReaderLayout(
                                     letterSpacing = letterSpacing,
                                     sidePadding = sidePadding,
                                     paragraphIndentation = paragraphIndentation,
-                                    doubleClickTranslation = doubleClickTranslation,
                                     highlightedReading = highlightedReading,
                                     highlightedReadingThickness = highlightedReadingThickness,
                                     toolbarHidden = toolbarHidden,
-                                    openTranslator = openTranslator,
-                                    openNote = openNote,
-                                    openImage = openImage,
-                                    menuVisibility = menuVisibility
+                                    openNote = openNote
                                 )
                             }
                         }
