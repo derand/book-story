@@ -64,8 +64,8 @@ fun ReaderLayout(
     horizontalGestureSensitivity: Dp,
     horizontalGestureAlphaAnim: Boolean,
     horizontalGesturePullAnim: Boolean,
-    horizontalGestureDisableScrolling: Boolean,
     tapPaging: ReaderTapPaging,
+    disableScrolling: Boolean,
     pageTurnOverlap: Float,
     pageTurnAnimation: Boolean,
     highlightedReading: Boolean,
@@ -251,7 +251,10 @@ fun ReaderLayout(
                         openTranslator = openTranslator
                     ),
                 modifier = Modifier.fillMaxSize(),
-                userScrollEnabled = !horizontalGestureDisableScrolling,
+                userScrollEnabled = readerScrollEnabled(
+                    disableScrolling = disableScrolling,
+                    canTurnPage = tapZones != null || horizontalGesture != ReaderHorizontalGesture.OFF
+                ),
                 contentPadding = PaddingValues(
                     top = (WindowInsets.displayCutout.asPaddingValues()
                         .calculateTopPadding() + paragraphHeight)

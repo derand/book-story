@@ -15,8 +15,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import ua.acclorite.book_story.R
 import ua.acclorite.book_story.ui.settings.components.SettingsSubcategory
+import ua.acclorite.book_story.ui.settings.reader.reading_mode.components.DisableScrollingOption
 import ua.acclorite.book_story.ui.settings.reader.reading_mode.components.HorizontalGestureAlphaAnimOption
-import ua.acclorite.book_story.ui.settings.reader.reading_mode.components.HorizontalGestureDisableScrollingOption
 import ua.acclorite.book_story.ui.settings.reader.reading_mode.components.HorizontalGestureOption
 import ua.acclorite.book_story.ui.settings.reader.reading_mode.components.HorizontalGesturePullAnimOption
 import ua.acclorite.book_story.ui.settings.reader.reading_mode.components.HorizontalGestureSensitivityOption
@@ -44,14 +44,19 @@ fun LazyListScope.ReadingModeSubcategory(
             TapPagingOption()
         }
 
-        // The overlap and the animation describe the page turn itself, so they
-        // sit under both of the gestures that ask for one.
+        // The overlap, the animation and giving up the scroll describe the page
+        // turn itself, so they sit under both of the gestures that ask for one;
+        // what follows belongs to the swipe alone.
         item {
             PageTurnOverlapOption()
         }
 
         item {
             PageTurnAnimationOption()
+        }
+
+        item {
+            DisableScrollingOption()
         }
 
         item {
@@ -64,10 +69,6 @@ fun LazyListScope.ReadingModeSubcategory(
 
         item {
             HorizontalGestureAlphaAnimOption()
-        }
-
-        item {
-            HorizontalGestureDisableScrollingOption()
         }
     }
 }
