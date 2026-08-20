@@ -1,5 +1,6 @@
 /*
  * Book's Story — free and open-source Material You eBook reader.
+ * Copyright (C) 2026 derand
  * Copyright (C) 2024-2026 Acclorite
  * SPDX-License-Identifier: GPL-3.0-only
  */
@@ -14,17 +15,18 @@ import ua.acclorite.book_story.ui.common.helpers.LocalSettings
 import ua.acclorite.book_story.ui.theme.ExpandingTransition
 
 @Composable
-fun HorizontalGestureScrollOption() {
+fun PageTurnOverlapOption() {
     val settings = LocalSettings.current
 
     // Shared by both triggers of a page turn, so it stays visible for either.
     ExpandingTransition(visible = settings.pageTurnEnabled) {
         SliderWithTitle(
-            value = settings.horizontalGestureScroll.value to "%",
-            toValue = 100,
-            title = stringResource(id = R.string.horizontal_gesture_scroll_option),
+            value = settings.pageTurnOverlapLines.value to "",
+            fromValue = 1,
+            toValue = 4,
+            title = stringResource(id = R.string.page_turn_overlap_option),
             onValueChange = {
-                settings.horizontalGestureScroll.update(it)
+                settings.pageTurnOverlapLines.update(it)
             }
         )
     }

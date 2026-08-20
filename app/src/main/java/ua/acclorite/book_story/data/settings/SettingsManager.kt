@@ -233,10 +233,6 @@ class SettingsManager @Inject constructor(
         key = stringPreferencesKey("horizontal_gesture"), default = ReaderHorizontalGesture.OFF,
         serialize = { it.name }, deserialize = { ReaderHorizontalGesture.valueOf(it) }
     )
-    val horizontalGestureScroll = setting<Float, Double>(
-        key = doublePreferencesKey("horizontal_gesture_scroll"), default = 0.7f,
-        serialize = { it.toDouble() }, deserialize = { it.toFloat() }
-    )
     val horizontalGestureSensitivity = setting<Float, Double>(
         key = doublePreferencesKey("horizontal_gesture_sensitivity"), default = 0.6f,
         serialize = { it.toDouble() }, deserialize = { it.toFloat() }
@@ -253,6 +249,16 @@ class SettingsManager @Inject constructor(
     val tapPaging = setting<ReaderTapPaging, String>(
         key = stringPreferencesKey("tap_paging"), default = ReaderTapPaging.OFF,
         serialize = { it.name }, deserialize = { ReaderTapPaging.valueOf(it) }
+    )
+    /**
+     * Lines of the page just read that stay on screen after a turn, which is
+     * what decides the step: a screenful, less these. Two by default — one only
+     * guarantees the line the bottom edge cut, whose predecessor can still
+     * arrive half-cut, and it is a whole line already read that the eye starts
+     * from.
+     */
+    val pageTurnOverlapLines = setting<Int, Int>(
+        key = intPreferencesKey("page_turn_overlap_lines"), default = 2
     )
     val pageTurnAnimation = setting<Boolean, Boolean>(
         key = booleanPreferencesKey("page_turn_animation"), default = true

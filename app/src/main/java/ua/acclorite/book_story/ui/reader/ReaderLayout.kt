@@ -28,9 +28,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.coerceAtLeast
@@ -60,12 +61,12 @@ fun ReaderLayout(
     contentPadding: PaddingValues,
     verticalPadding: Dp,
     horizontalGesture: ReaderHorizontalGesture,
-    horizontalGestureScroll: Float,
     horizontalGestureSensitivity: Dp,
     horizontalGestureAlphaAnim: Boolean,
     horizontalGesturePullAnim: Boolean,
     horizontalGestureDisableScrolling: Boolean,
     tapPaging: ReaderTapPaging,
+    pageTurnOverlapLines: Int,
     pageTurnAnimation: Boolean,
     highlightedReading: Boolean,
     highlightedReadingThickness: FontWeight,
@@ -116,12 +117,37 @@ fun ReaderLayout(
         searchMatches.groupBy { match -> match.itemIndex }
     }
 
+    // What one line of page-turn overlap is worth. Converting the line height
+    // setting is not the same as asking what the text engine did with it: at a
+    // system font scale of 1.3, `toDp()` puts a 22sp line at 37.5px where the
+    // paragraph lays it out at 42.9px, the conversion applying a non-linear
+    // font-scale curve the layout does not. So a sample is measured in the
+    // paragraphs' own metrics instead, and the distance between two *inner*
+    // lines is taken — the first line's top is trimmed, so a two-line sample
+    // answers 37.5 as well. Only the fields that move that distance go into the
+    // style.
+    val textMeasurer = rememberTextMeasurer()
+    val lineHeightPx = remember(
+        textMeasurer, fontFamily, fontThickness, fontStyle, fontSize, lineHeight
+    ) {
+        val sample = textMeasurer.measure(
+            text = "A\nA\nA",
+            style = TextStyle(
+                fontFamily = fontFamily.font,
+                fontWeight = fontThickness.thickness,
+                fontStyle = fontStyle,
+                fontSize = fontSize,
+                lineHeight = lineHeight
+            )
+        )
+        sample.getLineTop(2) - sample.getLineTop(1)
+    }
+
     // Both triggers of a page turn — the tap zones and the horizontal swipe —
     // go through one pager, so the same action cannot behave two ways.
     val pager = rememberReaderPager(
         listState = listState,
-        stepFraction = horizontalGestureScroll,
-        overlap = with(LocalDensity.current) { lineHeight.toDp() } * PAGE_TURN_OVERLAP_LINES,
+        overlap = lineHeightPx * pageTurnOverlapLines,
         animate = pageTurnAnimation
     )
     val tapZones = remember(tapPaging) {

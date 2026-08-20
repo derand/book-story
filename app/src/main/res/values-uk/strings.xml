@@ -207,7 +207,6 @@
     <string name="custom_screen_brightness_option">Користувацька яскравість</string>
     <string name="screen_brightness_option">Яскравість</string>
     <string name="horizontal_gesture_option">Горизонтальний жест</string>
-    <string name="horizontal_gesture_scroll_option">Частка прокрутки</string>
     <string name="horizontal_gesture_sensitivity_option">Чутливість</string>
     <string name="horizontal_gesture_alpha_anim_option">Анімація видимості</string>
     <string name="horizontal_gesture_alpha_anim_option_desc">

@@ -271,7 +271,6 @@
     <string name="progress_bar_alignment_option">Ausrichtung</string>
     <string name="horizontal_gesture_on">An</string>
     <string name="horizontal_gesture_option">Horizontale Geste</string>
-    <string name="horizontal_gesture_scroll_option">Scroll-Bruch</string>
     <string name="horizontal_gesture_sensitivity_option">Empfindlichkeit</string>
     <string name="bottom_bar_padding_option">Unterer Balkenrand</string>
     <string name="highlighted_reading_option">Wörter hervorheben</string>

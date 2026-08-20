@@ -277,7 +277,6 @@
     <string name="file_details">Détails du fichier</string>
     <string name="screen_brightness_option">Luminosité</string>
     <string name="horizontal_gesture_option">Geste horizontal</string>
-    <string name="horizontal_gesture_scroll_option">Fraction de défilement</string>
     <string name="more_content_desc">Plus</string>
     <string name="color_effects_font">Couleur de police</string>
     <string name="green2_theme">Io</string>

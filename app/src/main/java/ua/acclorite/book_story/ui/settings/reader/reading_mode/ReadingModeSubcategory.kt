@@ -19,9 +19,9 @@ import ua.acclorite.book_story.ui.settings.reader.reading_mode.components.Horizo
 import ua.acclorite.book_story.ui.settings.reader.reading_mode.components.HorizontalGestureDisableScrollingOption
 import ua.acclorite.book_story.ui.settings.reader.reading_mode.components.HorizontalGestureOption
 import ua.acclorite.book_story.ui.settings.reader.reading_mode.components.HorizontalGesturePullAnimOption
-import ua.acclorite.book_story.ui.settings.reader.reading_mode.components.HorizontalGestureScrollOption
 import ua.acclorite.book_story.ui.settings.reader.reading_mode.components.HorizontalGestureSensitivityOption
 import ua.acclorite.book_story.ui.settings.reader.reading_mode.components.PageTurnAnimationOption
+import ua.acclorite.book_story.ui.settings.reader.reading_mode.components.PageTurnOverlapOption
 import ua.acclorite.book_story.ui.settings.reader.reading_mode.components.TapPagingOption
 
 fun LazyListScope.ReadingModeSubcategory(
@@ -44,10 +44,10 @@ fun LazyListScope.ReadingModeSubcategory(
             TapPagingOption()
         }
 
-        // The step and the animation describe the page turn itself, so they sit
-        // under both of the gestures that ask for one.
+        // The overlap and the animation describe the page turn itself, so they
+        // sit under both of the gestures that ask for one.
         item {
-            HorizontalGestureScrollOption()
+            PageTurnOverlapOption()
         }
 
         item {

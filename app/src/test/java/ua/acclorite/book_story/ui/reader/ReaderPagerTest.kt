@@ -14,46 +14,46 @@ import org.junit.Test
 class ReaderPagerTest {
 
     private val viewport = 2000f
-    private val overlap = 60f * PAGE_TURN_OVERLAP_LINES
+    private val line = 60f
 
     @Test
-    fun aFullPageStillLeavesTheCutLineOnScreen() {
-        // Asking for the whole screen must not cost the line the bottom edge cut.
-        val distance = pageTurnDistance(viewport, fraction = 1f, overlap = overlap)
-
-        assertEquals(viewport - overlap, distance, TOLERANCE)
+    fun aTurnIsAScreenfulLessTheOverlap() {
+        assertEquals(1880f, pageTurnDistance(viewport, overlap = 2 * line), TOLERANCE)
     }
 
     @Test
-    fun aSmallerStepIsTakenAtItsWord() {
-        assertEquals(1400f, pageTurnDistance(viewport, fraction = 0.7f, overlap = overlap), TOLERANCE)
+    fun theOverlapIsTheOnlyThingThatShortensATurn() {
+        // Every line asked for is a line the reader keeps, one for one.
+        assertEquals(1940f, pageTurnDistance(viewport, overlap = line), TOLERANCE)
+        assertEquals(1760f, pageTurnDistance(viewport, overlap = 4 * line), TOLERANCE)
     }
 
     @Test
-    fun theOverlapOnlyEverCapsTheStep() {
-        // The cap sits at 1910; 0.9 of the screen is below it and is left alone.
-        assertEquals(1800f, pageTurnDistance(viewport, fraction = 0.9f, overlap = overlap), TOLERANCE)
-        assertEquals(1910f, pageTurnDistance(viewport, fraction = 0.99f, overlap = 90f), TOLERANCE)
+    fun whatTheBottomEdgeCutComesBackWhole() {
+        // The line the edge cut can be a full line height tall, so a page that
+        // moves by this much can never carry text past the reader unseen.
+        val distance = pageTurnDistance(viewport, overlap = line)
+
+        assertEquals(viewport - distance, line, TOLERANCE)
     }
 
     @Test
     fun aTurnIsNeverEmpty() {
-        // A line height taller than the screen, or a step of nothing: a tap that
-        // moved the book by zero would read as the reader having frozen.
-        assertEquals(200f, pageTurnDistance(viewport, fraction = 1f, overlap = 5000f), TOLERANCE)
-        assertEquals(200f, pageTurnDistance(viewport, fraction = 0f, overlap = overlap), TOLERANCE)
+        // A line height taller than the screen: a tap that moved the book by
+        // zero would read as the reader having frozen.
+        assertEquals(200f, pageTurnDistance(viewport, overlap = 5000f), TOLERANCE)
     }
 
     @Test
     fun aNegativeOverlapIsNoOverlap() {
-        assertEquals(viewport, pageTurnDistance(viewport, fraction = 1f, overlap = -100f), TOLERANCE)
+        assertEquals(viewport, pageTurnDistance(viewport, overlap = -100f), TOLERANCE)
     }
 
     @Test
     fun withoutAViewportThereIsNoPage() {
-        assertEquals(0f, pageTurnDistance(0f, fraction = 1f, overlap = overlap), TOLERANCE)
-        assertEquals(0f, pageTurnDistance(-10f, fraction = 1f, overlap = overlap), TOLERANCE)
-        assertEquals(0f, pageTurnDistance(Float.NaN, fraction = 1f, overlap = overlap), TOLERANCE)
+        assertEquals(0f, pageTurnDistance(0f, overlap = 2 * line), TOLERANCE)
+        assertEquals(0f, pageTurnDistance(-10f, overlap = 2 * line), TOLERANCE)
+        assertEquals(0f, pageTurnDistance(Float.NaN, overlap = 2 * line), TOLERANCE)
     }
 
     private companion object {

@@ -259,7 +259,6 @@
     <string name="perception_expander_option_desc">Zvyšte svou rychlost čtení tím, že se soustředíte na střed</string>
     <string name="perception_expander_padding_option">Okraj na straně řádku</string>
     <string name="horizontal_gesture_option">Horizontální gesto</string>
-    <string name="horizontal_gesture_scroll_option">Frakce posouvání</string>
     <string name="horizontal_gesture_alpha_anim_option">Animace viditelnosti</string>
     <string name="horizontal_gesture_alpha_anim_option_desc">Povolit animaci viditelnosti při použití horizontálního gesta</string>
     <string name="horizontal_gesture_pull_anim_option">Animace tahu</string>
