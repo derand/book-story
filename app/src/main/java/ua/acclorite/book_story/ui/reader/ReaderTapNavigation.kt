@@ -9,7 +9,6 @@ package ua.acclorite.book_story.ui.reader
 
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberUpdatedState
@@ -91,7 +90,7 @@ internal fun Modifier.readerTapNavigation(
             // An open menu makes every tap a dismissal: turning a page while the
             // reader is trying to put the menu away would be nobody's intent.
             if (currentShowMenu.value) {
-                val outcome = awaitPress()
+                val outcome = awaitPress(down)
                 if (outcome is PressOutcome.Tap) {
                     outcome.change.consume()
                     toggleMenu()
@@ -114,7 +113,7 @@ internal fun Modifier.readerTapNavigation(
 
             // Only an image waits out the long-press timeout, and only because a
             // long press is its second way of opening.
-            when (val outcome = awaitPress(if (image != null) longPressTimeout else null)) {
+            when (val outcome = awaitPress(down, if (image != null) longPressTimeout else null)) {
                 is PressOutcome.Cancelled -> return@awaitEachGesture
 
                 // The moment the press becomes long is the moment it acts —
@@ -192,6 +191,30 @@ internal fun pictureHeight(
     return width / aspectRatio
 }
 
+/**
+ * The same notion of a tap, for the area *around* the text viewport — the
+ * margins and the cutout padding, which no zone divides because they are not
+ * part of a page. A tap there means what it has always meant, the menu; what
+ * this adds is that a drag there is not a tap.
+ *
+ * It has to be said twice because `clickable` cannot say it: that cancels a
+ * click when someone *consumes* the movement, which the list stops doing the
+ * moment free scrolling is given up. The viewport's own handler runs first and
+ * consumes the taps it acts on, so this one only ever sees what it left.
+ */
+@Composable
+internal fun Modifier.readerMenuTap(enabled: Boolean, onTap: () -> Unit): Modifier {
+    if (!enabled) return this
+    val currentOnTap = rememberUpdatedState(onTap)
+
+    return this.pointerInput(Unit) {
+        awaitEachGesture {
+            val down = awaitFirstDown(requireUnconsumed = true)
+            if (awaitPress(down) is PressOutcome.Tap) currentOnTap.value()
+        }
+    }
+}
+
 /** What became of a press: it lifted, it was held, or something else took it. */
 private sealed interface PressOutcome {
     data class Tap(val change: PointerInputChange) : PressOutcome
@@ -200,18 +223,34 @@ private sealed interface PressOutcome {
 }
 
 /**
- * Waits for the finger to lift. [longPressTimeout] (when given) cuts the wait
- * short and reports a long press instead.
+ * Waits for the finger to lift without having travelled. [longPressTimeout]
+ * (when given) cuts the wait short and reports a long press instead.
  *
  * A press that another handler consumed — a scroll, a link, the text selection —
- * counts as cancelled: it was never a tap on the page.
+ * counts as cancelled: it was never a tap on the page. So does one that moved
+ * further than the touch slop, and that half cannot be left to the consuming:
+ * with the scroll given up for a page-only reader the list consumes nothing, so
+ * a drag of half a screen would otherwise arrive here as an unconsumed press and
+ * be read as a tap — turning a page under a finger that was only moving.
  */
 private suspend fun AwaitPointerEventScope.awaitPress(
+    down: PointerInputChange,
     longPressTimeout: Long? = null
 ): PressOutcome {
     suspend fun AwaitPointerEventScope.tapOrCancel(): PressOutcome {
-        val up = waitForUpOrCancellation() ?: return PressOutcome.Cancelled
-        return if (up.isConsumed) PressOutcome.Cancelled else PressOutcome.Tap(up)
+        while (true) {
+            val change = awaitPointerEvent().changes
+                .firstOrNull { it.id == down.id }
+                ?: return PressOutcome.Cancelled
+
+            when {
+                change.isConsumed -> return PressOutcome.Cancelled
+                (change.position - down.position).getDistance() > viewConfiguration.touchSlop ->
+                    return PressOutcome.Cancelled
+
+                !change.pressed -> return PressOutcome.Tap(change)
+            }
+        }
     }
 
     if (longPressTimeout == null) return tapOrCancel()
