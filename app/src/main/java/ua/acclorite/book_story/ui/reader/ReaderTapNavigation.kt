@@ -22,8 +22,10 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.toSize
+import ua.acclorite.book_story.domain.model.reader.BookImage
 import ua.acclorite.book_story.domain.model.reader.ReaderText
 import ua.acclorite.book_story.presentation.reader.ReaderEvent
+import ua.acclorite.book_story.ui.common.helpers.LocalBookImages
 
 /**
  * The one place that decides what a tap on the reader's text area means.
@@ -46,6 +48,8 @@ internal fun Modifier.readerTapNavigation(
     listState: LazyListState,
     text: List<ReaderText>,
     images: Boolean,
+    imagesWidth: Float,
+    sidePadding: Dp,
     itemSpacing: Dp,
     showMenu: Boolean,
     doubleClickTranslation: Boolean,
@@ -61,6 +65,9 @@ internal fun Modifier.readerTapNavigation(
     val currentZones = rememberUpdatedState(zones)
     val currentText = rememberUpdatedState(text)
     val currentImages = rememberUpdatedState(images)
+    val currentImagesWidth = rememberUpdatedState(imagesWidth)
+    val currentSidePadding = rememberUpdatedState(sidePadding)
+    val currentBookImages = rememberUpdatedState(LocalBookImages.current)
     val currentShowMenu = rememberUpdatedState(showMenu)
     val currentTranslation = rememberUpdatedState(doubleClickTranslation)
     val currentMenuVisibility = rememberUpdatedState(menuVisibility)
@@ -92,9 +99,16 @@ internal fun Modifier.readerTapNavigation(
                 return@awaitEachGesture
             }
 
-            val entry = currentText.value
-                .getOrNull(listState.entryIndexAt(down.position.y, itemSpacing.toPx()))
-            val image = (entry as? ReaderText.Image)?.takeIf { currentImages.value }
+            val hit = listState.entryHitAt(down.position.y, itemSpacing.toPx())
+            val entry = hit?.let { currentText.value.getOrNull(it.index) }
+
+            // A picture that has not arrived opens nothing: the viewer takes its
+            // bytes from the same store and would put up an empty overlay. Its
+            // placeholder is not a picture yet, so a tap on it is a tap on the
+            // page, and the zone decides.
+            val image = (entry as? ReaderText.Image)
+                ?.takeIf { currentImages.value }
+                ?.takeIf { currentBookImages.value[it.image.src] is BookImage.Ready }
             val zone = currentZones.value?.zoneAt(down.position, size.toSize())
                 ?: ReaderTapZone.Center
 
@@ -108,11 +122,22 @@ internal fun Modifier.readerTapNavigation(
                 // like it had not registered. The buzz says so before the
                 // viewer is even drawn, exactly as a long press does elsewhere.
                 is PressOutcome.LongPress -> {
-                    image?.let {
+                    // A long press on the caption belongs to the text under it:
+                    // the caption is the one part of an image entry a reader may
+                    // want to select, and a tap already opens the picture.
+                    val onPicture = image != null && hit != null && down.position.y <
+                            hit.top + itemSpacing.toPx() + pictureHeight(
+                        entryWidth = size.width.toFloat(),
+                        sidePadding = currentSidePadding.value.toPx(),
+                        widthFraction = currentImagesWidth.value,
+                        aspectRatio = image.image.aspectRatio
+                    )
+
+                    if (onPicture) {
                         haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                        currentOpenImage.value(ReaderEvent.OnOpenImage(it))
+                        currentOpenImage.value(ReaderEvent.OnOpenImage(image))
+                        consumeUntilUp()
                     }
-                    consumeUntilUp()
                 }
 
                 is PressOutcome.Tap -> {
@@ -147,6 +172,24 @@ internal fun Modifier.readerTapNavigation(
             }
         }
     }
+}
+
+/**
+ * How tall the picture inside an image entry is, in pixels. The caption sits
+ * below it and is text, so the two have to be told apart, and only the layout
+ * knows the rule: the picture is [widthFraction] of the width left by the side
+ * padding, in its own aspect ratio.
+ */
+internal fun pictureHeight(
+    entryWidth: Float,
+    sidePadding: Float,
+    widthFraction: Float,
+    aspectRatio: Float
+): Float {
+    if (aspectRatio <= 0f || !aspectRatio.isFinite()) return 0f
+
+    val width = (entryWidth - 2 * sidePadding).coerceAtLeast(0f) * widthFraction
+    return width / aspectRatio
 }
 
 /** What became of a press: it lifted, it was held, or something else took it. */
@@ -206,8 +249,15 @@ private suspend fun AwaitPointerEventScope.awaitSecondDown(
 private val AwaitPointerEventScope.longPressTimeout: Long
     get() = viewConfiguration.longPressTimeoutMillis
 
+/** Where an entry sits, in the same coordinates the finger is reported in. */
+internal data class EntryHit(val index: Int, val top: Float)
+
+/** One visible entry, as the list describes it: an offset and a size. */
+internal data class EntryBounds(val index: Int, val offset: Int, val size: Int)
+
 /**
- * The entry under [y], in the coordinates of the list's own viewport.
+ * The entry under [listY], which is the pointer's position **in the list's own
+ * coordinates** — see the caller, which is where the two differ.
  *
  * The blank space between two entries is laid out as part of the lower one, and
  * is split here: each entry answers for the half of the gap that touches it.
@@ -216,15 +266,38 @@ private val AwaitPointerEventScope.longPressTimeout: Long
  * the picture; give it to no one and a one-line paragraph shrinks to a single
  * line of text, too small to double-tap.
  */
-private fun LazyListState.entryIndexAt(y: Float, spacing: Float): Int {
-    val item = layoutInfo.visibleItemsInfo
-        .firstOrNull { y >= it.offset && y < it.offset + it.size }
-        ?: return -1
+internal fun entryHitAt(listY: Float, items: List<EntryBounds>, spacing: Float): EntryHit? {
+    val item = items.firstOrNull { listY >= it.offset && listY < it.offset + it.size }
+        ?: return null
 
     return when {
-        item.index > 0 && y < item.offset + spacing / 2f -> item.index - 1
-        else -> item.index
+        item.index > 0 && listY < item.offset + spacing / 2f ->
+            items.firstOrNull { it.index == item.index - 1 }
+                ?.let { EntryHit(it.index, it.offset.toFloat()) }
+                ?: EntryHit(item.index - 1, item.offset.toFloat())
+
+        else -> EntryHit(item.index, item.offset.toFloat())
     }
+}
+
+/**
+ * The same question asked of a live list, where the pointer's `y` and the items'
+ * offsets are **not** in the same coordinates: an item's offset is measured from
+ * where the content begins, while the finger is reported from the top edge of
+ * the viewport, which is the content padding higher up. `viewportStartOffset` is
+ * that difference (it is `-beforeContentPadding`), and forgetting it moves every
+ * tap a padding's worth down the page — enough to answer with the entry below
+ * the finger.
+ */
+private fun LazyListState.entryHitAt(y: Float, spacing: Float): EntryHit? {
+    val start = layoutInfo.viewportStartOffset
+    val hit = entryHitAt(
+        listY = y + start,
+        items = layoutInfo.visibleItemsInfo.map { EntryBounds(it.index, it.offset, it.size) },
+        spacing = spacing
+    ) ?: return null
+
+    return hit.copy(top = hit.top - start)
 }
 
 /** The text a double tap sends to the translator, or null when there is none. */

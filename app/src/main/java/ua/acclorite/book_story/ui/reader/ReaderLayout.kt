@@ -241,6 +241,8 @@ fun ReaderLayout(
                         listState = listState,
                         text = text,
                         images = images,
+                        imagesWidth = imagesWidth,
+                        sidePadding = sidePadding,
                         itemSpacing = paragraphHeight,
                         showMenu = showMenu,
                         doubleClickTranslation = doubleClickTranslation,
