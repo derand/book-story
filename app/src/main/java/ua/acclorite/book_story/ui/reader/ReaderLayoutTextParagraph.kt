@@ -8,7 +8,6 @@ package ua.acclorite.book_story.ui.reader
 
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -138,9 +137,15 @@ fun LazyItemScope.ReaderLayoutTextParagraph(
                             }
 
                             down.consume()
-                            val up = waitForUpOrCancellation() ?: return@awaitEachGesture
-                            up.consume()
-                            line.linkAt(layout, up.position, linkPadding)?.dispatch(uriHandler)
+                            // A press that travelled was going somewhere, not
+                            // opening anything: with free scrolling given up
+                            // nobody consumes that movement, so the drag would
+                            // otherwise arrive here as a tap on a link.
+                            val up = awaitPress(down)
+                            if (up !is PressOutcome.Tap) return@awaitEachGesture
+                            up.change.consume()
+                            line.linkAt(layout, up.change.position, linkPadding)
+                                ?.dispatch(uriHandler)
                         }
                     }
                 } else Modifier

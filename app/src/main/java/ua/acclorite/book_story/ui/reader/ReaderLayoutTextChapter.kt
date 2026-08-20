@@ -8,7 +8,6 @@ package ua.acclorite.book_story.ui.reader
 
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -102,9 +101,13 @@ fun LazyItemScope.ReaderLayoutTextChapter(
                                 }
 
                                 down.consume()
-                                val up = waitForUpOrCancellation() ?: return@awaitEachGesture
-                                up.consume()
-                                title.linkAt(layout, up.position, linkPadding)?.dispatch(uriHandler)
+                                // See the paragraph's twin: a press that
+                                // travelled is not a tap on a link.
+                                val up = awaitPress(down)
+                                if (up !is PressOutcome.Tap) return@awaitEachGesture
+                                up.change.consume()
+                                title.linkAt(layout, up.change.position, linkPadding)
+                                    ?.dispatch(uriHandler)
                             }
                         }
                     } else Modifier

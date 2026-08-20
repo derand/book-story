@@ -216,7 +216,7 @@ internal fun Modifier.readerMenuTap(enabled: Boolean, onTap: () -> Unit): Modifi
 }
 
 /** What became of a press: it lifted, it was held, or something else took it. */
-private sealed interface PressOutcome {
+internal sealed interface PressOutcome {
     data class Tap(val change: PointerInputChange) : PressOutcome
     data object LongPress : PressOutcome
     data object Cancelled : PressOutcome
@@ -233,7 +233,7 @@ private sealed interface PressOutcome {
  * a drag of half a screen would otherwise arrive here as an unconsumed press and
  * be read as a tap — turning a page under a finger that was only moving.
  */
-private suspend fun AwaitPointerEventScope.awaitPress(
+internal suspend fun AwaitPointerEventScope.awaitPress(
     down: PointerInputChange,
     longPressTimeout: Long? = null
 ): PressOutcome {
