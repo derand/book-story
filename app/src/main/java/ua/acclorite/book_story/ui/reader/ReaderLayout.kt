@@ -66,7 +66,7 @@ fun ReaderLayout(
     horizontalGesturePullAnim: Boolean,
     horizontalGestureDisableScrolling: Boolean,
     tapPaging: ReaderTapPaging,
-    pageTurnOverlapLines: Int,
+    pageTurnOverlap: Float,
     pageTurnAnimation: Boolean,
     highlightedReading: Boolean,
     highlightedReadingThickness: FontWeight,
@@ -147,7 +147,7 @@ fun ReaderLayout(
     // go through one pager, so the same action cannot behave two ways.
     val pager = rememberReaderPager(
         listState = listState,
-        overlap = lineHeightPx * pageTurnOverlapLines,
+        overlap = lineHeightPx * pageTurnOverlap,
         animate = pageTurnAnimation
     )
     val tapZones = remember(tapPaging) {

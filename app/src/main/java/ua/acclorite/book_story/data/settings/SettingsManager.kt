@@ -252,13 +252,19 @@ class SettingsManager @Inject constructor(
     )
     /**
      * Lines of the page just read that stay on screen after a turn, which is
-     * what decides the step: a screenful, less these. Two by default — one only
-     * guarantees the line the bottom edge cut, whose predecessor can still
-     * arrive half-cut, and it is a whole line already read that the eye starts
-     * from.
+     * what decides the step: a screenful, less these. Chosen in halves, because
+     * whole lines are too coarse a grid to sit comfortably on — 1.5 and 2 are
+     * different pages to read from.
+     *
+     * Two by default: one line only guarantees the line the bottom edge cut,
+     * whose predecessor can still arrive half-cut, and it is a whole line
+     * already read that the eye starts from. Below one line even the cut line
+     * can arrive with its top clipped, which is why the reader has to ask for
+     * that deliberately.
      */
-    val pageTurnOverlapLines = setting<Int, Int>(
-        key = intPreferencesKey("page_turn_overlap_lines"), default = 2
+    val pageTurnOverlap = setting<Float, Double>(
+        key = doublePreferencesKey("page_turn_overlap"), default = 2f,
+        serialize = { it.toDouble() }, deserialize = { it.toFloat() }
     )
     val pageTurnAnimation = setting<Boolean, Boolean>(
         key = booleanPreferencesKey("page_turn_animation"), default = true

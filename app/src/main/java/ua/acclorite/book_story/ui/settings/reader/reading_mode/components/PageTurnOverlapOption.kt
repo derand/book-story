@@ -14,6 +14,22 @@ import ua.acclorite.book_story.ui.common.components.settings.SliderWithTitle
 import ua.acclorite.book_story.ui.common.helpers.LocalSettings
 import ua.acclorite.book_story.ui.theme.ExpandingTransition
 
+/** Half a line either way is a visible difference, a whole line a coarse jump. */
+private const val STEPS_PER_LINE = 2
+private const val MIN_HALF_LINES = 1
+private const val MAX_HALF_LINES = 8
+
+/**
+ * Half-lines as the slider counts them, lines as the reader reads them: `3` is
+ * shown as `1.5`, and a whole number keeps its bare form rather than a trailing
+ * `.0`.
+ */
+internal fun overlapLabel(halfLines: Int): String =
+    when (halfLines % STEPS_PER_LINE) {
+        0 -> "${halfLines / STEPS_PER_LINE}"
+        else -> "${halfLines / STEPS_PER_LINE}.5"
+    }
+
 @Composable
 fun PageTurnOverlapOption() {
     val settings = LocalSettings.current
@@ -21,12 +37,13 @@ fun PageTurnOverlapOption() {
     // Shared by both triggers of a page turn, so it stays visible for either.
     ExpandingTransition(visible = settings.pageTurnEnabled) {
         SliderWithTitle(
-            value = settings.pageTurnOverlapLines.value to "",
-            fromValue = 1,
-            toValue = 4,
+            value = (settings.pageTurnOverlap.value * STEPS_PER_LINE).toInt() to "",
+            fromValue = MIN_HALF_LINES,
+            toValue = MAX_HALF_LINES,
             title = stringResource(id = R.string.page_turn_overlap_option),
-            onValueChange = {
-                settings.pageTurnOverlapLines.update(it)
+            format = ::overlapLabel,
+            onValueChange = { halfLines ->
+                settings.pageTurnOverlap.update(halfLines.toFloat() / STEPS_PER_LINE)
             }
         )
     }
