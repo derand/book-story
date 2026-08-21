@@ -14,10 +14,12 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -28,6 +30,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -140,6 +143,15 @@ fun ReaderLayout(
             )
         )
         sample.getLineTop(2) - sample.getLineTop(1)
+    }
+
+    // The chapter break is measured in lines, and this is the line it counts:
+    // the one the paragraphs are actually laid out at. Converting the
+    // line-height setting instead would go through the non-linear font-scale
+    // curve `toDp()` applies and the layout does not.
+    val density = LocalDensity.current
+    val lineHeightDp = remember(lineHeightPx, density) {
+        with(density) { lineHeightPx.toDp() }
     }
 
     // Both triggers of a page turn — the tap zones and the horizontal swipe —
@@ -302,6 +314,19 @@ fun ReaderLayout(
                                     toolbarHidden = toolbarHidden,
                                     openNote = openNote
                                 )
+
+                                // A chapter boundary is marked below the
+                                // chapter that ends, not above the title that
+                                // begins — see [chapterBreakAfter].
+                                val chapterBreak = chapterBreakAfter(
+                                    text = text,
+                                    index = index,
+                                    images = images,
+                                    lineHeight = lineHeightDp
+                                )
+                                if (chapterBreak > 0.dp) {
+                                    Spacer(Modifier.height(chapterBreak))
+                                }
                             }
                         }
                     }
