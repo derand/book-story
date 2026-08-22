@@ -49,7 +49,6 @@ import ua.acclorite.book_story.ui.common.components.common.LazyColumnWithScrollb
 import ua.acclorite.book_story.ui.common.components.common.SelectionContainer
 import ua.acclorite.book_story.ui.common.components.common.SpacedItem
 import ua.acclorite.book_story.ui.common.helpers.LocalActivity
-import ua.acclorite.book_story.ui.common.helpers.noRippleClickable
 import ua.acclorite.book_story.ui.common.helpers.showToast
 import ua.acclorite.book_story.ui.reader.model.FontWithName
 import ua.acclorite.book_story.ui.theme.model.HorizontalAlignment
@@ -64,8 +63,8 @@ fun ReaderLayout(
     horizontalGestureSensitivity: Dp,
     horizontalGestureAlphaAnim: Boolean,
     horizontalGesturePullAnim: Boolean,
-    horizontalGestureDisableScrolling: Boolean,
     tapPaging: ReaderTapPaging,
+    disableScrolling: Boolean,
     pageTurnOverlap: Float,
     pageTurnAnimation: Boolean,
     highlightedReading: Boolean,
@@ -200,20 +199,14 @@ fun ReaderLayout(
             Modifier
                 .fillMaxSize()
                 .background(backgroundColor)
-                .then(
-                    if (!isLoading && toolbarHidden) {
-                        Modifier.noRippleClickable(
-                            onClick = {
-                                menuVisibility(
-                                    ReaderEvent.OnMenuVisibility(
-                                        show = !showMenu,
-                                        saveCheckpoint = true
-                                    )
-                                )
-                            }
+                .readerMenuTap(enabled = !isLoading && toolbarHidden) {
+                    menuVisibility(
+                        ReaderEvent.OnMenuVisibility(
+                            show = !showMenu,
+                            saveCheckpoint = true
                         )
-                    } else Modifier
-                )
+                    )
+                }
                 .padding(contentPadding)
                 .padding(vertical = verticalPadding)
                 .readerHorizontalGesture(
@@ -251,7 +244,17 @@ fun ReaderLayout(
                         openTranslator = openTranslator
                     ),
                 modifier = Modifier.fillMaxSize(),
-                userScrollEnabled = !horizontalGestureDisableScrolling,
+                userScrollEnabled = readerScrollEnabled(
+                    disableScrolling = disableScrolling,
+                    // A trigger counts only while it is attached. The tap zones
+                    // come off with the text-selection toolbar, so for a reader
+                    // who turns pages by tapping and has given up the scroll,
+                    // selecting a word would otherwise leave the text answering
+                    // to nothing until the selection was dismissed — the same
+                    // dead end this guard exists for, only lasting a moment.
+                    canTurnPage = horizontalGesture != ReaderHorizontalGesture.OFF ||
+                            (tapZones != null && toolbarHidden)
+                ),
                 contentPadding = PaddingValues(
                     top = (WindowInsets.displayCutout.asPaddingValues()
                         .calculateTopPadding() + paragraphHeight)

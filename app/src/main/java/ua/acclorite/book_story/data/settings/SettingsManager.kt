@@ -243,9 +243,6 @@ class SettingsManager @Inject constructor(
     val horizontalGesturePullAnim = setting<Boolean, Boolean>(
         key = booleanPreferencesKey("horizontal_gesture_pull_anim"), default = true
     )
-    val horizontalGestureDisableScrolling = setting<Boolean, Boolean>(
-        key = booleanPreferencesKey("horizontal_gesture_disable_scrolling"), default = false
-    )
     val tapPaging = setting<ReaderTapPaging, String>(
         key = stringPreferencesKey("tap_paging"), default = ReaderTapPaging.OFF,
         serialize = { it.name }, deserialize = { ReaderTapPaging.valueOf(it) }
@@ -268,6 +265,24 @@ class SettingsManager @Inject constructor(
     )
     val pageTurnAnimation = setting<Boolean, Boolean>(
         key = booleanPreferencesKey("page_turn_animation"), default = true
+    )
+
+    /**
+     * Whether the reader gives up free scrolling and becomes a page-only one.
+     * It answers to the page turn and not to any one gesture, which is why it
+     * sits here rather than among the swipe's own settings.
+     *
+     * The stored key is a new one, and deliberately so: what used to be reached
+     * only through the swipe is now reached by tapping too, so an old `true`
+     * would arrive as a page-only reader nobody asked for — chosen once for a
+     * gesture, applied later to another. A widened setting starts again from its
+     * default. Resetting is the safe direction here, and the only silent one:
+     * the reader keeps scrolling, and whoever wants otherwise asks from a switch
+     * they can now actually see. `horizontal_gesture_disable_scrolling` is left
+     * in the store, read by nobody.
+     */
+    val disableScrolling = setting<Boolean, Boolean>(
+        key = booleanPreferencesKey("disable_scrolling"), default = false
     )
 
     /**
