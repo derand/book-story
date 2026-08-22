@@ -52,6 +52,8 @@ internal fun Modifier.readerTapNavigation(
     imagesWidth: Float,
     sidePadding: Dp,
     itemSpacing: Dp,
+    chapterBreak: Float,
+    lineHeight: Dp,
     showMenu: Boolean,
     doubleClickTranslation: Boolean,
     menuVisibility: (ReaderEvent.OnMenuVisibility) -> Unit,
@@ -68,6 +70,8 @@ internal fun Modifier.readerTapNavigation(
     val currentImages = rememberUpdatedState(images)
     val currentImagesWidth = rememberUpdatedState(imagesWidth)
     val currentSidePadding = rememberUpdatedState(sidePadding)
+    val currentChapterBreak = rememberUpdatedState(chapterBreak)
+    val currentLineHeight = rememberUpdatedState(lineHeight)
     val currentBookImages = rememberUpdatedState(LocalBookImages.current)
     val currentShowMenu = rememberUpdatedState(showMenu)
     val currentTranslation = rememberUpdatedState(doubleClickTranslation)
@@ -100,7 +104,19 @@ internal fun Modifier.readerTapNavigation(
                 return@awaitEachGesture
             }
 
-            val hit = listState.entryHitAt(down.position.y, itemSpacing.toPx())
+            // The break closing a chapter belongs to no entry, so a press there
+            // is a press on the page — which is what keeps the blank space
+            // below a picture from opening it, the mirror of the space above it
+            // that the zones already answer for.
+            val hit = listState.entryHitAt(down.position.y, itemSpacing.toPx()) { index ->
+                chapterBreakAfter(
+                    text = currentText.value,
+                    index = index,
+                    images = currentImages.value,
+                    lineHeight = currentLineHeight.value,
+                    breakLines = currentChapterBreak.value
+                ).toPx()
+            }
             val entry = hit?.let { currentText.value.getOrNull(it.index) }
 
             // A picture that has not arrived opens nothing: the viewer takes its
@@ -319,19 +335,36 @@ internal data class EntryBounds(val index: Int, val offset: Int, val size: Int)
  * — give the whole gap to the entry below and the space above a picture opens
  * the picture; give it to no one and a one-line paragraph shrinks to a single
  * line of text, too small to double-tap.
+ *
+ * [trailingBreak] says how much of an entry, in pixels, is the chapter break
+ * drawn after it. That space is not the entry: it is the boundary between two
+ * chapters, so a press there lands on nothing and the zone decides what it
+ * means. A lookup rather than one number because it differs per index — only
+ * the last entry of a chapter has any.
  */
-internal fun entryHitAt(listY: Float, items: List<EntryBounds>, spacing: Float): EntryHit? {
+internal fun entryHitAt(
+    listY: Float,
+    items: List<EntryBounds>,
+    spacing: Float,
+    trailingBreak: (Int) -> Float
+): EntryHit? {
     val item = items.firstOrNull { listY >= it.offset && listY < it.offset + it.size }
         ?: return null
 
-    return when {
-        item.index > 0 && listY < item.offset + spacing / 2f ->
-            items.firstOrNull { it.index == item.index - 1 }
-                ?.let { EntryHit(it.index, it.offset.toFloat()) }
-                ?: EntryHit(item.index - 1, item.offset.toFloat())
+    val above = item.index > 0 && listY < item.offset + spacing / 2f
+    val index = if (above) item.index - 1 else item.index
+    val bounds = if (above) items.firstOrNull { it.index == index } else item
 
-        else -> EntryHit(item.index, item.offset.toFloat())
-    }
+    // One comparison answers for two regions, because they are contiguous: the
+    // break itself, and the half-gap below it, which is laid out inside the
+    // next entry and would otherwise still answer for this one — without that
+    // second half a picture closing a chapter would go on opening from the
+    // strip immediately above the title that follows it.
+    val breakHeight = trailingBreak(index)
+    val ends = bounds?.let { it.offset + it.size - breakHeight }
+    if (breakHeight > 0f && (ends == null || listY >= ends)) return null
+
+    return EntryHit(index, (bounds ?: item).offset.toFloat())
 }
 
 /**
@@ -343,12 +376,17 @@ internal fun entryHitAt(listY: Float, items: List<EntryBounds>, spacing: Float):
  * tap a padding's worth down the page — enough to answer with the entry below
  * the finger.
  */
-private fun LazyListState.entryHitAt(y: Float, spacing: Float): EntryHit? {
+private fun LazyListState.entryHitAt(
+    y: Float,
+    spacing: Float,
+    trailingBreak: (Int) -> Float
+): EntryHit? {
     val start = layoutInfo.viewportStartOffset
     val hit = entryHitAt(
         listY = y + start,
         items = layoutInfo.visibleItemsInfo.map { EntryBounds(it.index, it.offset, it.size) },
-        spacing = spacing
+        spacing = spacing,
+        trailingBreak = trailingBreak
     ) ?: return null
 
     return hit.copy(top = hit.top - start)

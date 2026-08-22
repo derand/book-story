@@ -250,6 +250,8 @@ fun ReaderLayout(
                         imagesWidth = imagesWidth,
                         sidePadding = sidePadding,
                         itemSpacing = paragraphHeight,
+                        chapterBreak = chapterBreak,
+                        lineHeight = lineHeightDp,
                         showMenu = showMenu,
                         doubleClickTranslation = doubleClickTranslation,
                         menuVisibility = menuVisibility,
