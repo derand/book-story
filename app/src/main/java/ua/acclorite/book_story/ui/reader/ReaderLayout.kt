@@ -246,7 +246,14 @@ fun ReaderLayout(
                 modifier = Modifier.fillMaxSize(),
                 userScrollEnabled = readerScrollEnabled(
                     disableScrolling = disableScrolling,
-                    canTurnPage = tapZones != null || horizontalGesture != ReaderHorizontalGesture.OFF
+                    // A trigger counts only while it is attached. The tap zones
+                    // come off with the text-selection toolbar, so for a reader
+                    // who turns pages by tapping and has given up the scroll,
+                    // selecting a word would otherwise leave the text answering
+                    // to nothing until the selection was dismissed — the same
+                    // dead end this guard exists for, only lasting a moment.
+                    canTurnPage = horizontalGesture != ReaderHorizontalGesture.OFF ||
+                            (tapZones != null && toolbarHidden)
                 ),
                 contentPadding = PaddingValues(
                     top = (WindowInsets.displayCutout.asPaddingValues()

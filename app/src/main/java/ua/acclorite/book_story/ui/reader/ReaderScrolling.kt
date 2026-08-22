@@ -16,6 +16,12 @@ package ua.acclorite.book_story.ui.reader
  * one off and scrolling comes back rather than leaving the text answering to
  * nothing at all. The alternative — the setting outliving every way to advance —
  * is a state the reader cannot get out of from the reading screen.
+ *
+ * [canTurnPage] is about the triggers that are **attached right now**, not the
+ * ones that are switched on in the settings. A trigger that a passing state has
+ * taken away — the tap zones, while a text selection holds the toolbar open —
+ * leaves the same dead end behind it, and a dead end that lasts a moment is
+ * still one the reader did not ask for.
  */
 internal fun readerScrollEnabled(disableScrolling: Boolean, canTurnPage: Boolean): Boolean =
     !(disableScrolling && canTurnPage)

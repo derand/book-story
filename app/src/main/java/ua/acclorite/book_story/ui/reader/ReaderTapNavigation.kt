@@ -19,6 +19,8 @@ import androidx.compose.ui.input.pointer.PointerEventTimeoutCancellationExceptio
 import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.toSize
 import ua.acclorite.book_story.domain.model.reader.BookImage
@@ -207,12 +209,25 @@ internal fun Modifier.readerMenuTap(enabled: Boolean, onTap: () -> Unit): Modifi
     if (!enabled) return this
     val currentOnTap = rememberUpdatedState(onTap)
 
-    return this.pointerInput(Unit) {
-        awaitEachGesture {
-            val down = awaitFirstDown(requireUnconsumed = true)
-            if (awaitPress(down) is PressOutcome.Tap) currentOnTap.value()
+    return this
+        // A raw `pointerInput` answers a finger and nothing else, and the
+        // `clickable` it replaced was also what told the accessibility tree that
+        // this screen can be activated at all. Without it a TalkBack double tap
+        // reaches no click action anywhere in the reader, and the menu is the
+        // only way from the reading screen to back, to settings and to the
+        // chapters.
+        .semantics {
+            onClick {
+                currentOnTap.value()
+                true
+            }
         }
-    }
+        .pointerInput(Unit) {
+            awaitEachGesture {
+                val down = awaitFirstDown(requireUnconsumed = true)
+                if (awaitPress(down) is PressOutcome.Tap) currentOnTap.value()
+            }
+        }
 }
 
 /** What became of a press: it lifted, it was held, or something else took it. */
