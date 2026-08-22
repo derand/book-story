@@ -216,7 +216,6 @@
     <string name="absolute_dark_option_desc">Mude a cor do fundo para preto total</string>
     <string name="fast_color_preset_change_option_desc">Deslize a barra superior para esquerda e oara direita para mudar o padrão de cores</string>
     <string name="hide_bars_on_fast_scroll_option">Esconder barras ao rolar</string>
-    <string name="horizontal_gesture_scroll_option">Fração de deslize</string>
     <string name="bottom_bar_padding_option">Margem da barra inferior</string>
     <string name="perception_expander_option">Expansor de percepção</string>
     <string name="perception_expander_padding_option">Margem lateral da linha</string>

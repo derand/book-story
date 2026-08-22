@@ -296,7 +296,6 @@
     <string name="checkpoint_forward_content_desc">نقطة التحقق إلى الأمام</string>
     <string name="chapters_content_desc">الفصول</string>
     <string name="horizontal_gesture_option">إيماءة أفقية</string>
-    <string name="horizontal_gesture_scroll_option">كسر التمرير</string>
     <string name="font_thickness_extra_light">خفيف أكثر</string>
     <string name="font_thickness_light">خفيف</string>
     <string name="start_done">كل شيء قد تم!</string>

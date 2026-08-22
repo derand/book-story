@@ -6,7 +6,9 @@
 
 package ua.acclorite.book_story.ui.reader
 
-import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -40,15 +42,13 @@ fun LazyItemScope.ReaderLayoutTextChapter(
     searchMatches: List<SearchMatch>,
     currentSearchMatch: SearchMatch?,
     chapter: Chapter,
-    showMenu: Boolean,
     chapterTitleAlignment: ReaderTextAlignment,
     fontColor: Color,
     sidePadding: Dp,
     highlightedReading: Boolean,
     highlightedReadingThickness: FontWeight,
     toolbarHidden: Boolean,
-    openNote: (ReaderEvent.OnOpenNote) -> Unit,
-    menuVisibility: (ReaderEvent.OnMenuVisibility) -> Unit
+    openNote: (ReaderEvent.OnOpenNote) -> Unit
 ) {
     // A title may carry inline markup, footnote references included; the note
     // handler is attached here, at render time (see [withReferenceListeners]).
@@ -91,26 +91,21 @@ fun LazyItemScope.ReaderLayoutTextChapter(
                 .then(
                     if (toolbarHidden && styledTitle != null) {
                         // A reference in the title has to win over the reader's
-                        // menu toggle, exactly like one in a paragraph does.
-                        Modifier.pointerInput(title, showMenu) {
+                        // own tap handling, exactly like one in a paragraph does.
+                        Modifier.pointerInput(title) {
                             val linkPadding = 12.dp.toPx()
-                            detectTapGestures(
-                                onTap = { position ->
-                                    val hitLink = layoutResult?.let { layout ->
-                                        title.dispatchLinkAt(
-                                            layout, position, uriHandler, linkPadding
-                                        )
-                                    } ?: false
-                                    if (!hitLink) {
-                                        menuVisibility(
-                                            ReaderEvent.OnMenuVisibility(
-                                                show = !showMenu,
-                                                saveCheckpoint = true
-                                            )
-                                        )
-                                    }
+                            awaitEachGesture {
+                                val down = awaitFirstDown(requireUnconsumed = true)
+                                val layout = layoutResult ?: return@awaitEachGesture
+                                if (title.linkAt(layout, down.position, linkPadding) == null) {
+                                    return@awaitEachGesture
                                 }
-                            )
+
+                                down.consume()
+                                val up = waitForUpOrCancellation() ?: return@awaitEachGesture
+                                up.consume()
+                                title.linkAt(layout, up.position, linkPadding)?.dispatch(uriHandler)
+                            }
                         }
                     } else Modifier
                 ),

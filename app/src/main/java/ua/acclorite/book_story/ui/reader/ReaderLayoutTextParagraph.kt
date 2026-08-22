@@ -6,7 +6,9 @@
 
 package ua.acclorite.book_story.ui.reader
 
-import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -64,7 +66,6 @@ fun LazyItemScope.ReaderLayoutTextParagraph(
     searchMatches: List<SearchMatch>,
     currentSearchMatch: SearchMatch?,
     paragraph: Text,
-    showMenu: Boolean,
     fontFamily: FontWithName,
     fontColor: Color,
     lineHeight: TextUnit,
@@ -76,13 +77,10 @@ fun LazyItemScope.ReaderLayoutTextParagraph(
     letterSpacing: TextUnit,
     sidePadding: Dp,
     paragraphIndentation: TextUnit,
-    doubleClickTranslation: Boolean,
     highlightedReading: Boolean,
     highlightedReadingThickness: FontWeight,
     toolbarHidden: Boolean,
-    openTranslator: (ReaderEvent.OnOpenTranslator) -> Unit,
-    openNote: (ReaderEvent.OnOpenNote) -> Unit,
-    menuVisibility: (ReaderEvent.OnMenuVisibility) -> Unit
+    openNote: (ReaderEvent.OnOpenNote) -> Unit
 ) {
     val blockIndent = BLOCK_INDENT_STEP * paragraph.role.indentSteps +
             if (paragraph.role == ReaderTextRole.TextAuthor) {
@@ -123,40 +121,27 @@ fun LazyItemScope.ReaderLayoutTextParagraph(
             onTextLayout = { layoutResult = it },
             modifier = Modifier.then(
                 if (toolbarHidden) {
-                    // A single positional handler for the whole paragraph: a
-                    // tap first tries to hit a reference/link at its exact
-                    // position; only if it misses does it toggle the menu.
-                    // This replaces trusting Compose's per-link touch boxes,
-                    // which are misaligned on justified lines.
-                    Modifier.pointerInput(line, showMenu, doubleClickTranslation) {
+                    // A single positional handler for the whole paragraph,
+                    // because Compose's per-link touch boxes are misaligned on
+                    // justified lines. It claims the gesture only when a link
+                    // is genuinely under the finger; every other tap is left
+                    // unconsumed for the reader to read as a zone.
+                    Modifier.pointerInput(line) {
                         // Enlarge the reference hit boxes so the small
                         // superscript footnote markers stay easy to tap.
                         val linkPadding = 12.dp.toPx()
-                        detectTapGestures(
-                            onDoubleTap = if (doubleClickTranslation) {
-                                {
-                                    openTranslator(
-                                        ReaderEvent.OnOpenTranslator(
-                                            textToTranslate = paragraph.line.text,
-                                            translateWholeParagraph = true
-                                        )
-                                    )
-                                }
-                            } else null,
-                            onTap = { position ->
-                                val hitLink = layoutResult?.let { layout ->
-                                    line.dispatchLinkAt(layout, position, uriHandler, linkPadding)
-                                } ?: false
-                                if (!hitLink) {
-                                    menuVisibility(
-                                        ReaderEvent.OnMenuVisibility(
-                                            show = !showMenu,
-                                            saveCheckpoint = true
-                                        )
-                                    )
-                                }
+                        awaitEachGesture {
+                            val down = awaitFirstDown(requireUnconsumed = true)
+                            val layout = layoutResult ?: return@awaitEachGesture
+                            if (line.linkAt(layout, down.position, linkPadding) == null) {
+                                return@awaitEachGesture
                             }
-                        )
+
+                            down.consume()
+                            val up = waitForUpOrCancellation() ?: return@awaitEachGesture
+                            up.consume()
+                            line.linkAt(layout, up.position, linkPadding)?.dispatch(uriHandler)
+                        }
                     }
                 } else Modifier
             ),

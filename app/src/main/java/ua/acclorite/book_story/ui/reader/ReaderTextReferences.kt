@@ -14,10 +14,11 @@ import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.TextLayoutResult
 
 /**
- * Positional hit-test for reference/link annotations. Finds the link (if any)
- * whose visible glyphs are under [position] and fires it, returning `true`
- * when a link was hit (so the caller can suppress its fall-through action,
- * e.g. toggling the reader menu).
+ * Positional hit-test for reference/link annotations: the link (if any) whose
+ * visible glyphs are under [position], or null. Finding one and firing it are
+ * separate steps ([dispatch]) because a tap is claimed when the finger goes
+ * *down* and acted upon when it lifts — everything not claimed here belongs to
+ * the reader's own tap handling.
  *
  * Why this is needed: inter-word justification is applied only when a line is
  * *drawn*, so every layout query API ([TextLayoutResult.getBoundingBox],
@@ -32,22 +33,21 @@ import androidx.compose.ui.text.TextLayoutResult
  * the draw pass does. [paddingPx] enlarges the hit box horizontally so the tiny
  * superscript footnote markers stay comfortably tappable.
  */
-internal fun AnnotatedString.dispatchLinkAt(
+internal fun AnnotatedString.linkAt(
     layout: TextLayoutResult,
     position: Offset,
-    uriHandler: UriHandler,
     paddingPx: Float = 0f
-): Boolean {
+): LinkAnnotation? {
     val lineIndex = layout.getLineForVerticalPosition(position.y)
     val lineStart = layout.getLineStart(lineIndex)
     val lineEnd = layout.getLineEnd(lineIndex, visibleEnd = true)
-    if (lineEnd <= lineStart) return false
+    if (lineEnd <= lineStart) return null
     if (position.y < layout.getLineTop(lineIndex) ||
         position.y > layout.getLineBottom(lineIndex)
-    ) return false
+    ) return null
 
     val links = getLinkAnnotations(lineStart, lineEnd)
-    if (links.isEmpty()) return false
+    if (links.isEmpty()) return null
 
     // Extra width the draw pass spreads across this line's inter-word spaces.
     // On the last (or otherwise un-justified) line getLineRight equals the
@@ -70,27 +70,35 @@ internal fun AnnotatedString.dispatchLinkAt(
         val right = layout.getBoundingBox(e - 1).right + shift
         if (position.x < left - paddingPx || position.x > right + paddingPx) continue
 
-        return when (val item = link.item) {
-            is LinkAnnotation.Clickable -> {
-                item.linkInteractionListener?.onClick(item)
-                true
-            }
-
-            is LinkAnnotation.Url -> {
-                // External links carry no listener; open them the way Compose's
-                // default link handler would.
-                item.linkInteractionListener?.onClick(item) ?: uriHandler.openUri(item.url)
-                true
-            }
-
-            else -> {
-                item.linkInteractionListener?.onClick(item)
-                item.linkInteractionListener != null
-            }
-        }
+        val item = link.item
+        if (item.actionable) return item
     }
-    return false
+    return null
 }
+
+/** Fires the link: its own listener, or — for a bare URL — the platform's. */
+internal fun LinkAnnotation.dispatch(uriHandler: UriHandler) {
+    when (this) {
+        // External links carry no listener; open them the way Compose's
+        // default link handler would.
+        is LinkAnnotation.Url -> linkInteractionListener?.onClick(this)
+            ?: uriHandler.openUri(url)
+
+        else -> linkInteractionListener?.onClick(this)
+    }
+}
+
+/**
+ * Whether firing this link would do anything. A note/anchor reference always
+ * would (its listener is attached at render time), a URL always would, and
+ * anything else only with a listener of its own — without one it is not a tap
+ * target at all, and the tap belongs to the reader.
+ */
+private val LinkAnnotation.actionable: Boolean
+    get() = when (this) {
+        is LinkAnnotation.Clickable, is LinkAnnotation.Url -> true
+        else -> linkInteractionListener != null
+    }
 
 /**
  * Attaches [onClick] to the clickable reference annotations (note/anchor

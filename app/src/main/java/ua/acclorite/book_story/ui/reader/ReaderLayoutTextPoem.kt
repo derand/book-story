@@ -33,7 +33,6 @@ import ua.acclorite.book_story.domain.model.reader.SearchMatch
 import ua.acclorite.book_story.presentation.reader.ReaderEvent
 import ua.acclorite.book_story.presentation.reader.model.ReaderFontThickness
 import ua.acclorite.book_story.ui.common.components.common.StyledText
-import ua.acclorite.book_story.ui.common.helpers.noRippleClickable
 import ua.acclorite.book_story.ui.reader.model.FontWithName
 
 /**
@@ -47,7 +46,6 @@ fun LazyItemScope.ReaderLayoutTextPoem(
     searchMatches: List<SearchMatch>,
     currentSearchMatch: SearchMatch?,
     poem: Poem,
-    showMenu: Boolean,
     fontFamily: FontWithName,
     fontColor: Color,
     lineHeight: TextUnit,
@@ -56,13 +54,9 @@ fun LazyItemScope.ReaderLayoutTextPoem(
     fontSize: TextUnit,
     letterSpacing: TextUnit,
     sidePadding: Dp,
-    doubleClickTranslation: Boolean,
     highlightedReading: Boolean,
     highlightedReadingThickness: FontWeight,
-    toolbarHidden: Boolean,
-    openTranslator: (ReaderEvent.OnOpenTranslator) -> Unit,
-    openNote: (ReaderEvent.OnOpenNote) -> Unit,
-    menuVisibility: (ReaderEvent.OnMenuVisibility) -> Unit
+    openNote: (ReaderEvent.OnOpenNote) -> Unit
 ) {
     val poemFontSize = fontSize * POEM_FONT_SCALE
     val poemLineHeight = lineHeight * POEM_FONT_SCALE
@@ -105,28 +99,6 @@ fun LazyItemScope.ReaderLayoutTextPoem(
                                         // One extra (current) character height
                                         authorExtraIndent
                                     } else 0.dp
-                        )
-                        .then(
-                            if (doubleClickTranslation && toolbarHidden) {
-                                Modifier.noRippleClickable(
-                                    onDoubleClick = {
-                                        openTranslator(
-                                            ReaderEvent.OnOpenTranslator(
-                                                textToTranslate = line.line.text,
-                                                translateWholeParagraph = true
-                                            )
-                                        )
-                                    },
-                                    onClick = {
-                                        menuVisibility(
-                                            ReaderEvent.OnMenuVisibility(
-                                                show = !showMenu,
-                                                saveCheckpoint = true
-                                            )
-                                        )
-                                    }
-                                )
-                            } else Modifier
                         ),
                     style = TextStyle(
                         fontFamily = fontFamily.font,

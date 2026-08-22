@@ -43,6 +43,7 @@ import ua.acclorite.book_story.presentation.reader.model.Checkpoint
 import ua.acclorite.book_story.presentation.reader.model.ReaderFontThickness
 import ua.acclorite.book_story.presentation.reader.model.ReaderSearch
 import ua.acclorite.book_story.presentation.reader.model.ReaderHorizontalGesture
+import ua.acclorite.book_story.presentation.reader.model.ReaderTapPaging
 import ua.acclorite.book_story.presentation.reader.model.ReaderTextAlignment
 import ua.acclorite.book_story.presentation.settings.SettingsEvent
 import ua.acclorite.book_story.ui.common.components.common.AnimatedVisibility
@@ -77,11 +78,13 @@ fun ReaderScaffold(
     contentPadding: PaddingValues,
     verticalPadding: Dp,
     horizontalGesture: ReaderHorizontalGesture,
-    horizontalGestureScroll: Float,
     horizontalGestureSensitivity: Dp,
     horizontalGestureAlphaAnim: Boolean,
     horizontalGesturePullAnim: Boolean,
     horizontalGestureDisableScrolling: Boolean,
+    tapPaging: ReaderTapPaging,
+    pageTurnOverlap: Float,
+    pageTurnAnimation: Boolean,
     highlightedReading: Boolean,
     highlightedReadingThickness: FontWeight,
     progress: String,
@@ -222,11 +225,13 @@ fun ReaderScaffold(
             ),
             verticalPadding = verticalPadding,
             horizontalGesture = horizontalGesture,
-            horizontalGestureScroll = horizontalGestureScroll,
             horizontalGestureSensitivity = horizontalGestureSensitivity,
             horizontalGestureAlphaAnim = horizontalGestureAlphaAnim,
             horizontalGesturePullAnim = horizontalGesturePullAnim,
             horizontalGestureDisableScrolling = horizontalGestureDisableScrolling,
+            tapPaging = tapPaging,
+            pageTurnOverlap = pageTurnOverlap,
+            pageTurnAnimation = pageTurnAnimation,
             highlightedReading = highlightedReading,
             highlightedReadingThickness = highlightedReadingThickness,
             progress = progress,

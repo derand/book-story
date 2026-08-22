@@ -123,7 +123,6 @@
     <string name="custom_screen_brightness_option">明るさを調整</string>
     <string name="highlighted_reading_option">単語のハイライト</string>
     <string name="horizontal_gesture_option">水平ジェスチャー</string>
-    <string name="horizontal_gesture_scroll_option">スクロール率</string>
     <string name="bottom_bar_padding_option">ボトムバーの余白</string>
     <string name="images_option">画像</string>
     <string name="images_width_option">サイズ</string>

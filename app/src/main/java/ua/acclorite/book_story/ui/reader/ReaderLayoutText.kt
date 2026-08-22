@@ -23,9 +23,13 @@ import ua.acclorite.book_story.presentation.reader.model.ReaderTextAlignment
 import ua.acclorite.book_story.ui.reader.model.FontWithName
 import ua.acclorite.book_story.ui.theme.model.HorizontalAlignment
 
+/**
+ * One entry of the book. What a *tap* on it means is not decided here — see
+ * [readerTapNavigation]; the only gesture an entry owns is the hit test for its
+ * own links, which is why [openNote] is all that is passed down.
+ */
 @Composable
 fun LazyItemScope.ReaderLayoutText(
-    showMenu: Boolean,
     entry: ReaderText,
     searchMatches: List<SearchMatch>,
     currentSearchMatch: SearchMatch?,
@@ -47,14 +51,10 @@ fun LazyItemScope.ReaderLayoutText(
     letterSpacing: TextUnit,
     sidePadding: Dp,
     paragraphIndentation: TextUnit,
-    doubleClickTranslation: Boolean,
     highlightedReading: Boolean,
     highlightedReadingThickness: FontWeight,
     toolbarHidden: Boolean,
-    openTranslator: (ReaderEvent.OnOpenTranslator) -> Unit,
-    openNote: (ReaderEvent.OnOpenNote) -> Unit,
-    openImage: (ReaderEvent.OnOpenImage) -> Unit,
-    menuVisibility: (ReaderEvent.OnMenuVisibility) -> Unit
+    openNote: (ReaderEvent.OnOpenNote) -> Unit
 ) {
     when (entry) {
         is ReaderText.Image -> {
@@ -62,7 +62,6 @@ fun LazyItemScope.ReaderLayoutText(
                 searchMatches = searchMatches,
                 currentSearchMatch = currentSearchMatch,
                 entry = entry,
-                showMenu = showMenu,
                 sidePadding = sidePadding,
                 imagesCornersRoundness = imagesCornersRoundness,
                 imagesAlignment = imagesAlignment,
@@ -80,14 +79,10 @@ fun LazyItemScope.ReaderLayoutText(
                 fontSize = fontSize,
                 letterSpacing = letterSpacing,
                 paragraphIndentation = paragraphIndentation,
-                doubleClickTranslation = doubleClickTranslation,
                 highlightedReading = highlightedReading,
                 highlightedReadingThickness = highlightedReadingThickness,
                 toolbarHidden = toolbarHidden,
-                openTranslator = openTranslator,
-                openNote = openNote,
-                openImage = openImage,
-                menuVisibility = menuVisibility
+                openNote = openNote
             )
         }
 
@@ -119,15 +114,13 @@ fun LazyItemScope.ReaderLayoutText(
                 searchMatches = searchMatches,
                 currentSearchMatch = currentSearchMatch,
                 chapter = entry,
-                showMenu = showMenu,
                 chapterTitleAlignment = chapterTitleAlignment,
                 fontColor = fontColor,
                 sidePadding = sidePadding,
                 highlightedReading = highlightedReading,
                 highlightedReadingThickness = highlightedReadingThickness,
                 toolbarHidden = toolbarHidden,
-                openNote = openNote,
-                menuVisibility = menuVisibility
+                openNote = openNote
             )
         }
 
@@ -136,7 +129,6 @@ fun LazyItemScope.ReaderLayoutText(
                 searchMatches = searchMatches,
                 currentSearchMatch = currentSearchMatch,
                 poem = entry,
-                showMenu = showMenu,
                 fontFamily = fontFamily,
                 fontColor = fontColor,
                 lineHeight = lineHeight,
@@ -145,13 +137,9 @@ fun LazyItemScope.ReaderLayoutText(
                 fontSize = fontSize,
                 letterSpacing = letterSpacing,
                 sidePadding = sidePadding,
-                doubleClickTranslation = doubleClickTranslation,
                 highlightedReading = highlightedReading,
                 highlightedReadingThickness = highlightedReadingThickness,
-                toolbarHidden = toolbarHidden,
-                openTranslator = openTranslator,
-                openNote = openNote,
-                menuVisibility = menuVisibility
+                openNote = openNote
             )
         }
 
@@ -160,7 +148,6 @@ fun LazyItemScope.ReaderLayoutText(
                 searchMatches = searchMatches,
                 currentSearchMatch = currentSearchMatch,
                 paragraph = entry,
-                showMenu = showMenu,
                 fontFamily = fontFamily,
                 fontColor = fontColor,
                 lineHeight = lineHeight,
@@ -172,13 +159,10 @@ fun LazyItemScope.ReaderLayoutText(
                 letterSpacing = letterSpacing,
                 sidePadding = sidePadding,
                 paragraphIndentation = paragraphIndentation,
-                doubleClickTranslation = doubleClickTranslation,
                 highlightedReading = highlightedReading,
                 highlightedReadingThickness = highlightedReadingThickness,
                 toolbarHidden = toolbarHidden,
-                openTranslator = openTranslator,
-                openNote = openNote,
-                menuVisibility = menuVisibility
+                openNote = openNote
             )
         }
     }

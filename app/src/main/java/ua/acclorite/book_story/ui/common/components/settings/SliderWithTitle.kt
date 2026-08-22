@@ -45,12 +45,14 @@ fun SliderWithTitle(
     title: String,
     horizontalPadding: Dp = 18.dp,
     verticalPadding: Dp = 8.dp,
+    // For sliders whose step is not what they count in — halves of a line, say.
+    format: (Int) -> String = { "$it" },
     onValueChange: (Int) -> Unit
 ) {
     val interactionSource = remember { MutableInteractionSource() }
-    val placeholder = remember(showPlaceholder, value, valuePlaceholder) {
+    val placeholder = remember(showPlaceholder, value, valuePlaceholder, format) {
         derivedStateOf {
-            if (!showPlaceholder) "${value.first}${value.second}"
+            if (!showPlaceholder) "${format(value.first)}${value.second}"
             else valuePlaceholder
         }
     }

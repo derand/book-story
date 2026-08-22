@@ -8,6 +8,7 @@
 
 package ua.acclorite.book_story.data.settings
 
+import androidx.compose.runtime.Composable
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.doublePreferencesKey
@@ -37,6 +38,7 @@ import ua.acclorite.book_story.presentation.reader.model.ReaderFontThickness
 import ua.acclorite.book_story.presentation.reader.model.ReaderHorizontalGesture
 import ua.acclorite.book_story.presentation.reader.model.ReaderProgressCount
 import ua.acclorite.book_story.presentation.reader.model.ReaderScreenOrientation
+import ua.acclorite.book_story.presentation.reader.model.ReaderTapPaging
 import ua.acclorite.book_story.presentation.reader.model.ReaderTextAlignment
 import ua.acclorite.book_story.ui.reader.data.ReaderData
 import ua.acclorite.book_story.ui.reader.model.FontWithName
@@ -231,10 +233,6 @@ class SettingsManager @Inject constructor(
         key = stringPreferencesKey("horizontal_gesture"), default = ReaderHorizontalGesture.OFF,
         serialize = { it.name }, deserialize = { ReaderHorizontalGesture.valueOf(it) }
     )
-    val horizontalGestureScroll = setting<Float, Double>(
-        key = doublePreferencesKey("horizontal_gesture_scroll"), default = 0.7f,
-        serialize = { it.toDouble() }, deserialize = { it.toFloat() }
-    )
     val horizontalGestureSensitivity = setting<Float, Double>(
         key = doublePreferencesKey("horizontal_gesture_sensitivity"), default = 0.6f,
         serialize = { it.toDouble() }, deserialize = { it.toFloat() }
@@ -248,6 +246,38 @@ class SettingsManager @Inject constructor(
     val horizontalGestureDisableScrolling = setting<Boolean, Boolean>(
         key = booleanPreferencesKey("horizontal_gesture_disable_scrolling"), default = false
     )
+    val tapPaging = setting<ReaderTapPaging, String>(
+        key = stringPreferencesKey("tap_paging"), default = ReaderTapPaging.OFF,
+        serialize = { it.name }, deserialize = { ReaderTapPaging.valueOf(it) }
+    )
+    /**
+     * Lines of the page just read that stay on screen after a turn, which is
+     * what decides the step: a screenful, less these. Chosen in halves, because
+     * whole lines are too coarse a grid to sit comfortably on — 1.5 and 2 are
+     * different pages to read from.
+     *
+     * Two by default: one line only guarantees the line the bottom edge cut,
+     * whose predecessor can still arrive half-cut, and it is a whole line
+     * already read that the eye starts from. Below one line even the cut line
+     * can arrive with its top clipped, which is why the reader has to ask for
+     * that deliberately.
+     */
+    val pageTurnOverlap = setting<Float, Double>(
+        key = doublePreferencesKey("page_turn_overlap"), default = 2f,
+        serialize = { it.toDouble() }, deserialize = { it.toFloat() }
+    )
+    val pageTurnAnimation = setting<Boolean, Boolean>(
+        key = booleanPreferencesKey("page_turn_animation"), default = true
+    )
+
+    /**
+     * Whether anything can turn a page. The step and the animation belong to the
+     * turn itself rather than to the gesture that asked for it, so either
+     * trigger being on is enough for their settings to matter.
+     */
+    val pageTurnEnabled: Boolean
+        @Composable get() = horizontalGesture.value != ReaderHorizontalGesture.OFF ||
+                tapPaging.value != ReaderTapPaging.OFF
     val bottomBarPadding = setting<Int, Int>(
         key = intPreferencesKey("bottom_bar_padding"), default = 0
     )

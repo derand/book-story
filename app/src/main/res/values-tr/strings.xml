@@ -172,7 +172,6 @@
     <string name="custom_screen_brightness_option">Özel parlaklık</string>
     <string name="screen_brightness_option">Parlaklık</string>
     <string name="horizontal_gesture_option">Yatay hareket</string>
-    <string name="horizontal_gesture_scroll_option">Kaydırma oranı</string>
     <string name="horizontal_gesture_sensitivity_option">Hassasiyet</string>
     <string name="bottom_bar_padding_option">Alt çubuk boşluğu</string>
     <string name="highlighted_reading_option">Kelimeleri vurgula</string>

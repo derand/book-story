@@ -45,7 +45,6 @@ fun LazyItemScope.ReaderLayoutTextImage(
     searchMatches: List<SearchMatch>,
     currentSearchMatch: SearchMatch?,
     entry: ReaderText.Image,
-    showMenu: Boolean,
     sidePadding: Dp,
     imagesCornersRoundness: Dp,
     imagesAlignment: HorizontalAlignment,
@@ -63,14 +62,10 @@ fun LazyItemScope.ReaderLayoutTextImage(
     fontSize: TextUnit,
     letterSpacing: TextUnit,
     paragraphIndentation: TextUnit,
-    doubleClickTranslation: Boolean,
     highlightedReading: Boolean,
     highlightedReadingThickness: FontWeight,
     toolbarHidden: Boolean,
-    openTranslator: (ReaderEvent.OnOpenTranslator) -> Unit,
-    openNote: (ReaderEvent.OnOpenNote) -> Unit,
-    openImage: (ReaderEvent.OnOpenImage) -> Unit,
-    menuVisibility: (ReaderEvent.OnMenuVisibility) -> Unit
+    openNote: (ReaderEvent.OnOpenNote) -> Unit
 ) {
     val context = LocalContext.current
     // The image comes from the store, not from the entry: the text arrives
@@ -121,15 +116,13 @@ fun LazyItemScope.ReaderLayoutTextImage(
                     missing = image is BookImage.Missing
                 )
 
-                // A tap opens the image full screen; without a clickable of its
-                // own it would fall through to the reader column and merely
-                // toggle the menu. The placeholder keeps doing exactly that —
-                // there is nothing to open until the bytes are in.
+                // The image carries no gesture of its own: what opens it is a
+                // tap in the middle zone or a long press, both of which are
+                // decided in one place against the whole screen — see
+                // [readerTapNavigation]. An image is full width, so an image
+                // that claimed every tap would swallow half the page turns.
                 else -> AsyncImage(
-                    modifier = slot.noRippleClickable(
-                        enabled = toolbarHidden,
-                        onClick = { openImage(ReaderEvent.OnOpenImage(entry)) }
-                    ),
+                    modifier = slot,
                     model = imageRequest,
                     contentDescription = entry.caption?.line?.text,
                     colorFilter = imagesColorEffects,
@@ -144,7 +137,6 @@ fun LazyItemScope.ReaderLayoutTextImage(
                     searchMatches = searchMatches,
                     currentSearchMatch = currentSearchMatch,
                     paragraph = caption,
-                    showMenu = showMenu,
                     fontFamily = fontFamily,
                     fontColor = fontColor,
                     lineHeight = lineHeight,
@@ -156,13 +148,10 @@ fun LazyItemScope.ReaderLayoutTextImage(
                     letterSpacing = letterSpacing,
                     sidePadding = sidePadding,
                     paragraphIndentation = paragraphIndentation,
-                    doubleClickTranslation = doubleClickTranslation,
                     highlightedReading = highlightedReading,
                     highlightedReadingThickness = highlightedReadingThickness,
                     toolbarHidden = toolbarHidden,
-                    openTranslator = openTranslator,
-                    openNote = openNote,
-                    menuVisibility = menuVisibility
+                    openNote = openNote
                 )
             }
         }
