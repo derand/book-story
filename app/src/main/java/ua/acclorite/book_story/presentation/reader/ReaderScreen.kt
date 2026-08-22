@@ -473,6 +473,7 @@ data class ReaderScreen(val bookId: Int) : Screen, Parcelable {
                 progressBarPadding = progressBarPadding,
                 progressBarAlignment = settings.progressBarAlignment.value,
                 progressBarFontSize = progressBarFontSize,
+                chapterBreak = settings.chapterBreak.value,
                 paragraphHeight = paragraphHeight,
                 sidePadding = sidePadding,
                 bottomBarPadding = bottomBarPadding,

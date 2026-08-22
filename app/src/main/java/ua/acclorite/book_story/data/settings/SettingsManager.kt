@@ -302,6 +302,24 @@ class SettingsManager @Inject constructor(
     val highlightedReadingThickness = setting<Int, Int>(
         key = intPreferencesKey("highlighted_reading_thickness"), default = 2
     )
+    /**
+     * The blank space that marks a chapter boundary, in lines of the reader's
+     * own text, as the break before a top-level chapter. Deeper levels take a
+     * fraction of it, so one number keeps the whole ladder — see
+     * `chapterBreakAfter`.
+     *
+     * A line and a half by default, which is a number chosen by eye against a
+     * page of the reader's own text rather than the three lines the boundary
+     * was hardcoded at before the setting existed — that three was never judged
+     * at its own size, and read as a hole in the page on a tablet.
+     *
+     * Zero is a reader saying they want no break at all: the chapters run on,
+     * and the title's own size is left to carry the boundary by itself.
+     */
+    val chapterBreak = setting<Float, Double>(
+        key = doublePreferencesKey("chapter_break"), default = 1.5f,
+        serialize = { it.toDouble() }, deserialize = { it.toFloat() }
+    )
     val chapterTitleAlignment = setting<ReaderTextAlignment, String>(
         key = stringPreferencesKey("chapter_title_alignment"),
         default = ReaderTextAlignment.JUSTIFY,

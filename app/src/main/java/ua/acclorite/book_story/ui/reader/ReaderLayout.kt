@@ -77,6 +77,7 @@ fun ReaderLayout(
     progressBarPadding: Dp,
     progressBarAlignment: HorizontalAlignment,
     progressBarFontSize: TextUnit,
+    chapterBreak: Float,
     paragraphHeight: Dp,
     sidePadding: Dp,
     backgroundColor: Color,
@@ -322,7 +323,8 @@ fun ReaderLayout(
                                     text = text,
                                     index = index,
                                     images = images,
-                                    lineHeight = lineHeightDp
+                                    lineHeight = lineHeightDp,
+                                    breakLines = chapterBreak
                                 )
                                 if (chapterBreak > 0.dp) {
                                     Spacer(Modifier.height(chapterBreak))

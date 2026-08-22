@@ -33,18 +33,26 @@ import ua.acclorite.book_story.domain.model.reader.ReaderText
  * Measured in lines rather than in `dp` or in paragraph gaps. A `dp` does not
  * follow the type — the distance would shrink to nothing as the font grows. A
  * paragraph gap does follow it, but the reader is allowed to set that gap to
- * zero, and a chapter break that a text setting can switch off is not one.
+ * zero, and a chapter break that a *text* setting can switch off is not one.
+ *
+ * How many lines is the reader's own to say. The setting names one number — the
+ * break before a top-level chapter — and the ladder below is expressed as
+ * divisors of it rather than as a second list of sizes, so a hierarchy that was
+ * agreed once is not something a slider can flatten. At the default of a line
+ * and a half the ladder is 1.5, 1, 0.75 and 0.5; at three lines it is 3, 2, 1.5
+ * and 1, which is exactly what the boundary was before the setting existed.
  */
-private fun breakLines(depth: Int): Float = when (depth) {
-    0 -> 3f
-    1 -> 2f
-    2 -> 1.5f
-    else -> 1f
+private fun depthDivisor(depth: Int): Float = when (depth) {
+    0 -> 1f
+    1 -> 1.5f
+    2 -> 2f
+    else -> 3f
 }
 
 /**
  * The break to leave below the entry at [index], or zero when no chapter starts
- * after it.
+ * after it — [breakLines] lines of [lineHeight] before a top-level chapter, and
+ * a fraction of that deeper down.
  *
  * It reads ahead rather than taking the immediate successor because an [images]
  * setting of `false` drops every [ReaderText.Image] from the list without
@@ -61,11 +69,17 @@ fun chapterBreakAfter(
     text: List<ReaderText>,
     index: Int,
     images: Boolean,
-    lineHeight: Dp
+    lineHeight: Dp,
+    breakLines: Float
 ): Dp {
+    // Asked for no break, and this is asked once per visible entry.
+    if (breakLines <= 0f) return 0.dp
+
     for (next in index + 1..text.lastIndex) {
         when (val entry = text[next]) {
-            is ReaderText.Chapter -> return lineHeight * breakLines(entry.depth)
+            is ReaderText.Chapter ->
+                return lineHeight * (breakLines / depthDivisor(entry.depth))
+
             is ReaderText.Image -> if (images) return 0.dp
             else -> return 0.dp
         }
