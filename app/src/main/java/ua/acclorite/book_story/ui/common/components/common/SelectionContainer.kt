@@ -4,255 +4,34 @@
  * SPDX-License-Identifier: GPL-3.0-only
  */
 
-@file:Suppress("DEPRECATION")
-
 package ua.acclorite.book_story.ui.common.components.common
 
-import android.content.ClipData
-import android.content.ClipboardManager
-import android.content.Context
-import android.view.ActionMode
-import android.view.Menu
-import android.view.MenuItem
-import android.view.View
+import androidx.compose.foundation.text.contextmenu.builder.item
+import androidx.compose.foundation.text.contextmenu.modifier.appendTextContextMenuComponents
+import androidx.compose.foundation.text.contextmenu.modifier.filterTextContextMenuComponents
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalTextToolbar
-import androidx.compose.ui.platform.LocalView
-import androidx.compose.ui.platform.TextToolbar
-import androidx.compose.ui.platform.TextToolbarStatus
 import ua.acclorite.book_story.R
 import ua.acclorite.book_story.ui.main.TextActionMode
-
-
-private const val MENU_ITEM_COPY = 0
-private const val MENU_ITEM_SHARE = 1
-private const val MENU_ITEM_WEB = 2
-private const val MENU_ITEM_TRANSLATE = 3
-private const val MENU_ITEM_DICTIONARY = 4
-
-/**
- * Text ActionMode callback.
- * Used in pair with [SelectionToolbar]. Follow [TextToolbar] for more info.
- */
-private class TextActionModeCallback(
-    private val context: Context,
-    var rect: Rect = Rect.Zero,
-    var onCopyRequested: (() -> Unit)? = null,
-    var onShareRequested: (() -> Unit)? = null,
-    var onWebSearchRequested: (() -> Unit)? = null,
-    var onTranslateRequested: (() -> Unit)? = null,
-    var onDictionaryRequested: (() -> Unit)? = null
-) : ActionMode.Callback {
-    override fun onCreateActionMode(mode: ActionMode?, menu: Menu?): Boolean {
-        requireNotNull(menu)
-        requireNotNull(mode)
-
-        onCopyRequested?.let {
-            menu.add(0, MENU_ITEM_COPY, 0, context.getString(R.string.copy))
-                .setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER)
-        }
-
-        onShareRequested?.let {
-            menu.add(0, MENU_ITEM_SHARE, 1, context.getString(R.string.share))
-                .setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER)
-        }
-
-        onWebSearchRequested?.let {
-            menu.add(0, MENU_ITEM_WEB, 2, context.getString(R.string.web_search))
-                .setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER)
-        }
-
-        onTranslateRequested?.let {
-            menu.add(0, MENU_ITEM_TRANSLATE, 3, context.getString(R.string.translate))
-                .setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER)
-        }
-
-        onDictionaryRequested?.let {
-            menu.add(0, MENU_ITEM_DICTIONARY, 4, context.getString(R.string.dictionary))
-                .setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER)
-        }
-
-        return true
-    }
-
-    override fun onPrepareActionMode(mode: ActionMode?, menu: Menu?): Boolean {
-        return false
-    }
-
-    override fun onActionItemClicked(mode: ActionMode?, item: MenuItem?): Boolean {
-        when (item!!.itemId) {
-            MENU_ITEM_COPY -> onCopyRequested?.invoke()
-            MENU_ITEM_SHARE -> onShareRequested?.invoke()
-            MENU_ITEM_WEB -> onWebSearchRequested?.invoke()
-            MENU_ITEM_TRANSLATE -> onTranslateRequested?.invoke()
-            MENU_ITEM_DICTIONARY -> onDictionaryRequested?.invoke()
-            else -> return false
-        }
-        mode?.finish()
-        return true
-    }
-
-    override fun onDestroyActionMode(mode: ActionMode?) {}
-}
-
-/**
- * Floating [TextActionModeCallback].
- */
-private class FloatingTextActionModeCallback(
-    val callback: TextActionModeCallback
-) : ActionMode.Callback2() {
-    override fun onActionItemClicked(mode: ActionMode?, item: MenuItem?): Boolean {
-        return callback.onActionItemClicked(mode, item)
-    }
-
-    override fun onCreateActionMode(mode: ActionMode?, menu: Menu?): Boolean {
-        return callback.onCreateActionMode(mode, menu)
-    }
-
-    override fun onPrepareActionMode(mode: ActionMode?, menu: Menu?): Boolean {
-        return callback.onPrepareActionMode(mode, menu)
-    }
-
-    override fun onDestroyActionMode(mode: ActionMode?) {
-        callback.onDestroyActionMode(mode)
-    }
-
-    override fun onGetContentRect(mode: ActionMode?, view: View?, outRect: android.graphics.Rect?) {
-        val rect = callback.rect
-        outRect?.set(
-            rect.left.toInt(),
-            rect.top.toInt(),
-            rect.right.toInt(),
-            rect.bottom.toInt()
-        )
-    }
-}
-
-/**
- * Selection Toolbar.
- * Used in pair with [SelectionContainer] to display custom toolbar.
- */
-private class SelectionToolbar(
-    private val view: View,
-    context: Context,
-    private val onCopyRequest: (() -> Unit)?,
-    private val onShareRequest: ((String) -> Unit)?,
-    private val onWebSearchRequest: ((String) -> Unit)?,
-    private val onTranslateRequest: ((String) -> Unit)?,
-    private val onDictionaryRequest: ((String) -> Unit)?
-) : TextToolbar {
-    private var actionMode: ActionMode? = null
-    private val callback = TextActionModeCallback(context = context)
-
-    val clipboardManager =
-        context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-
-    override var status: TextToolbarStatus by mutableStateOf(TextToolbarStatus.Hidden)
-
-    override fun showMenu(
-        rect: Rect,
-        onCopyRequested: (() -> Unit)?,
-        onPasteRequested: (() -> Unit)?,
-        onCutRequested: (() -> Unit)?,
-        onSelectAllRequested: (() -> Unit)?
-    ) {
-        callback.rect = rect
-        callback.onCopyRequested = {
-            onCopyRequested?.invoke()
-            onCopyRequest?.invoke()
-        }
-        callback.onShareRequested = {
-            val previousClipboard = clipboardManager.primaryClip
-            onCopyRequested?.invoke()
-            val currentClipboard = clipboardManager.text
-
-            onShareRequest?.invoke(currentClipboard.toString())
-
-            if (previousClipboard != null) {
-                clipboardManager.setPrimaryClip(
-                    previousClipboard
-                )
-            } else {
-                clipboardManager.setPrimaryClip(ClipData.newPlainText(null, " "))
-            }
-        }
-        callback.onWebSearchRequested = {
-            val previousClipboard = clipboardManager.primaryClip
-            onCopyRequested?.invoke()
-            val currentClipboard = clipboardManager.text
-
-            onWebSearchRequest?.invoke(currentClipboard.toString())
-
-            if (previousClipboard != null) {
-                clipboardManager.setPrimaryClip(
-                    previousClipboard
-                )
-            } else {
-                clipboardManager.setPrimaryClip(ClipData.newPlainText(null, " "))
-            }
-        }
-        callback.onTranslateRequested = {
-            val previousClipboard = clipboardManager.primaryClip
-            onCopyRequested?.invoke()
-            val currentClipboard = clipboardManager.text
-
-            onTranslateRequest?.invoke(currentClipboard.toString())
-
-            if (previousClipboard != null) {
-                clipboardManager.setPrimaryClip(
-                    previousClipboard
-                )
-            } else {
-                clipboardManager.setPrimaryClip(ClipData.newPlainText(null, " "))
-            }
-        }
-        callback.onDictionaryRequested = {
-            val previousClipboard = clipboardManager.primaryClip
-            onCopyRequested?.invoke()
-            val currentClipboard = clipboardManager.text
-
-            onDictionaryRequest?.invoke(currentClipboard.toString())
-
-            if (previousClipboard != null) {
-                clipboardManager.setPrimaryClip(
-                    previousClipboard
-                )
-            } else {
-                clipboardManager.setPrimaryClip(ClipData.newPlainText(null, " "))
-            }
-        }
-
-        if (actionMode == null) {
-            status = TextToolbarStatus.Shown
-            actionMode = view.startActionMode(
-                FloatingTextActionModeCallback(callback),
-                ActionMode.TYPE_FLOATING
-            )
-        } else {
-            actionMode?.invalidate()
-        }
-    }
-
-    override fun hide() {
-        status = TextToolbarStatus.Hidden
-        actionMode?.finish()
-        actionMode = null
-    }
-}
 
 /**
  * Selection container.
  *
- * @param onCopyRequested Callback for when the copy option is clicked.
+ * The menu itself is Compose's: since Foundation 1.9 a selection no longer goes
+ * through [TextToolbar][androidx.compose.ui.platform.TextToolbar] at all
+ * (`ComposeFoundationFlags.isNewContextMenuEnabled`), so providing one is a way
+ * of being silently ignored. The app's actions are *appended* to the menu
+ * Compose builds instead — see [SelectionMenu] for how they reach the selected
+ * text.
+ *
+ * @param onCopyRequested Callback for when text is copied.
+ * @param onShareRequested Callback for when the share option is clicked.
+ * @param onWebSearchRequested Callback for when the web search option is clicked.
  * @param onTranslateRequested Callback for when the translate option is clicked.
  * @param onDictionaryRequested Callback for when the dictionary option is clicked.
  * @param content Selection container content.
@@ -266,48 +45,52 @@ fun SelectionContainer(
     onDictionaryRequested: ((String) -> Unit),
     content: @Composable (toolbarHidden: Boolean) -> Unit
 ) {
-    val view = LocalView.current
     val context = LocalContext.current
+    val menu = remember { SelectionMenu() }
+    menu.onCopied = onCopyRequested
 
-    val selectionToolbar = remember {
-        SelectionToolbar(
-            view = view,
-            context = context,
-
-            onCopyRequest = {
-                onCopyRequested()
-            },
-            onShareRequest = {
-                onShareRequested(it)
-            },
-            onWebSearchRequest = {
-                onWebSearchRequested(it)
-            },
-            onTranslateRequest = {
-                onTranslateRequested(it)
-            },
-            onDictionaryRequest = {
-                onDictionaryRequested(it)
-            }
-        )
-    }
-    // Two sources, because neither alone is trustworthy: [selectionToolbar] is
-    // the app's own and knows about its menu, but Compose does not always ask it
-    // — on some devices the platform shows the selection toolbar itself and this
-    // status never leaves `Hidden`. [TextActionMode] catches that case from the
-    // window, and says nothing about a menu the app puts up without an action
-    // mode. Hidden means hidden by both.
-    val isToolbarHidden = remember(selectionToolbar.status) {
-        derivedStateOf {
-            selectionToolbar.status == TextToolbarStatus.Hidden
-        }
+    val clipboard = LocalClipboard.current
+    val interceptingClipboard = remember(clipboard, menu) {
+        InterceptingClipboard(delegate = clipboard, menu = menu)
     }
 
-    CompositionLocalProvider(
-        LocalTextToolbar provides selectionToolbar
-    ) {
-        SelectionContainer {
-            content(isToolbarHidden.value && !TextActionMode.active)
+    CompositionLocalProvider(LocalClipboard provides interceptingClipboard) {
+        SelectionContainer(
+            modifier = Modifier
+                .appendTextContextMenuComponents {
+                    menu.startBuild()
+
+                    separator()
+                    item(
+                        key = TranslateKey,
+                        label = context.getString(R.string.translate)
+                    ) {
+                        menu.withSelectedText(this, onTranslateRequested)
+                    }
+                    item(
+                        key = ShareKey,
+                        label = context.getString(R.string.share)
+                    ) {
+                        menu.withSelectedText(this, onShareRequested)
+                    }
+                    item(
+                        key = WebSearchKey,
+                        label = context.getString(R.string.web_search)
+                    ) {
+                        menu.withSelectedText(this, onWebSearchRequested)
+                    }
+                    item(
+                        key = DictionaryKey,
+                        label = context.getString(R.string.dictionary)
+                    ) {
+                        menu.withSelectedText(this, onDictionaryRequested)
+                    }
+                }
+                .filterTextContextMenuComponents(menu::keep)
+        ) {
+            // The menu Compose puts up is a floating action mode, which the window
+            // sees; see [TextActionMode] for why the app has to ask the window.
+            content(!TextActionMode.active)
         }
     }
 }
