@@ -15,6 +15,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import ua.acclorite.book_story.R
 import ua.acclorite.book_story.ui.settings.components.SettingsSubcategory
+import ua.acclorite.book_story.ui.settings.reader.chapters.components.ChapterBreakOption
 import ua.acclorite.book_story.ui.settings.reader.chapters.components.ChapterTitleAlignmentOption
 
 fun LazyListScope.ChaptersSubcategory(
@@ -31,6 +32,10 @@ fun LazyListScope.ChaptersSubcategory(
     ) {
         item {
             ChapterTitleAlignmentOption()
+        }
+
+        item {
+            ChapterBreakOption()
         }
     }
 }

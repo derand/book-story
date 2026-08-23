@@ -9,12 +9,9 @@ package ua.acclorite.book_story.ui.reader
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyItemScope
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -79,8 +76,6 @@ fun LazyItemScope.ReaderLayoutTextChapter(
             )
             .fillMaxWidth()
     ) {
-        Spacer(modifier = Modifier.height(22.dp))
-
         StyledText(
             text = title,
             onTextLayout = { layoutResult = it },
@@ -126,9 +121,5 @@ fun LazyItemScope.ReaderLayoutTextChapter(
             highlightText = highlightedReading,
             highlightThickness = highlightedReadingThickness
         )
-
-        Spacer(modifier = Modifier.height(16.dp))
-        HorizontalDivider(color = fontColor.copy(0.4f))
-        Spacer(modifier = Modifier.height(16.dp))
     }
 }
