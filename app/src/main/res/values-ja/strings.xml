@@ -14,7 +14,6 @@
     <string name="delete_books_description">データベースから選択したすべての書籍(%1$s)を削除します。 選択した書籍はデバイスから削除されません。</string>
     <string name="delete_history_description">すべての履歴をデータベースから削除します。すべての履歴が削除されると、書籍の順序はリセットされます。</string>
     <string name="error_something_went_wrong">問題が発生しました。</string>
-    <string name="error_no_dictionary">辞書アプリが見つかりません。</string>
     <string name="error_no_share_app">共有するアプリはありません。</string>
     <string name="error_closed_source">クローズドソース</string>
     <string name="error_no_file">ファイルが存在しないか、アクセスすることが出来ません</string>
@@ -27,7 +26,6 @@
     <string name="never">決して</string>
     <string name="undo">元に戻す</string>
     <string name="copy">コピー</string>
-    <string name="dictionary">辞書</string>
     <string name="next">次へ</string>
     <string name="done">はい</string>
     <string name="web_search">ウェブで検索</string>

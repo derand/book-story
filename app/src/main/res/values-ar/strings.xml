@@ -46,7 +46,6 @@
     <string name="font_reader_settings">خط</string>
     <string name="copy">نسخ</string>
     <string name="translate">ترجمة</string>
-    <string name="dictionary">القاموس</string>
     <string name="next">التالي</string>
     <string name="text_reader_settings">نص</string>
     <string name="colors_appearance_settings">الألوان</string>
@@ -92,7 +91,6 @@
     <string name="layout_grid">شبكة</string>
     <string name="browse_settings">تصفح</string>
     <string name="sort_settings">ترتيب</string>
-    <string name="error_no_dictionary">لم يتم العثور على تطبيق قاموس.</string>
     <string name="error_no_share_app">لم يتم العثور على تطبيق للمشاركة.</string>
     <string name="font_style_italic">مائل</string>
     <string name="green_color">أخضر</string>

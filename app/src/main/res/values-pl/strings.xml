@@ -10,7 +10,6 @@
     <string name="never">Nigdy</string>
     <string name="undo">Cofnij</string>
     <string name="copy">Kopiuj</string>
-    <string name="dictionary">Słownik</string>
     <string name="next">Dalej</string>
     <string name="done">Gotowe</string>
     <string name="share">Udostępnij</string>
@@ -59,7 +58,6 @@
     <string name="delete_history_description">To spowoduje usuniecie całej historii z bazy danych. Po usunięciu całej historii kolejność książek zostanie zresetowana.</string>
     <string name="error_no_description">Brak opisu.</string>
     <string name="error_something_went_wrong">Coś poszło nie tak.</string>
-    <string name="error_no_dictionary">Nie znaleziono aplikacji słownikowej.</string>
     <string name="error_no_share_app">Nie znaleziono aplikacji do udostępniania.</string>
     <string name="error_closed_source">Zamknięte źródło</string>
     <string name="browse_empty">Rozszerz kolekcję książek biblioteki o swoje pobrane pliki</string>

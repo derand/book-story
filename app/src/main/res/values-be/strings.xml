@@ -9,7 +9,6 @@
     <string name="delete">Выдаліць</string>
     <string name="delete_books_description">Гэта выдаліць усе выбраныя кнігі(%1$s) з базы дадзеных. Гэта не выдаліць выбраныя кнігі з вашай прылады.</string>
     <string name="delete_books">Выдаліць кнігі?</string>
-    <string name="dictionary">Слоўнік</string>
     <string name="never">Ніколі</string>
     <string name="default_string">Па змаўчанні</string>
     <string name="library_screen">Бібліятэка</string>
@@ -26,7 +25,6 @@
     <string name="error_no_description">Без апісання.</string>
     <string name="error_something_went_wrong">Нажаль! Штосьці пайшло не так.</string>
     <string name="error_no_translator">Перакладчык не знойдзены.</string>
-    <string name="error_no_dictionary">Слоўнік не знойдзены.</string>
     <string name="error_no_browser">Браўзер не знойдзены.</string>
     <string name="error_no_share_app">Не знойдзена прыкладання для абагулення.</string>
     <string name="error_could_not_get_text">Файл пусты, пашкоджаны або адсутніцае. Праверце файл або змяніце шлях і паўтарыце спробу.</string>

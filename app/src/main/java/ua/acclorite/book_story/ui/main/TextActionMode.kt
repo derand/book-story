@@ -16,14 +16,15 @@ import androidx.compose.runtime.setValue
  *
  * The reader has to know: while text is selected, a tap belongs to the
  * selection — it dismisses it — and must not turn a page, open the menu or
- * follow a link. The app's own [TextToolbar][androidx.compose.ui.platform.TextToolbar]
- * cannot answer that question. It is bypassed on at least some devices, where
- * the platform puts up its own floating toolbar instead and the app's
- * `TextToolbarStatus` stays `Hidden` for the whole life of the selection.
+ * follow a link. A [TextToolbar][androidx.compose.ui.platform.TextToolbar]
+ * cannot answer that question, on any device: since Foundation 1.9 the selection
+ * menu is Compose's own and no `TextToolbar` is ever asked to show it, so a
+ * `TextToolbarStatus` stays `Hidden` for the whole life of a selection.
  *
- * A window-level action mode is the one signal that holds whoever shows the
- * menu, so it is taken from the activity's own callbacks. Window state, hence a
- * single value for the process: there is exactly one window.
+ * That menu is still a floating action mode, started on this window. So a
+ * window-level action mode is the signal, and it is taken from the activity's
+ * own callbacks. Window state, hence a single value for the process: there is
+ * exactly one window.
  */
 object TextActionMode {
 

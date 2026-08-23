@@ -53,7 +53,6 @@
     <string name="books_moved">Tutti i libri selezionati sono stati spostati correttamente.</string>
     <string name="error_no_browser">Nessuna app browser trovata.</string>
     <string name="delete_history">Cancellare la cronologia di lettura?</string>
-    <string name="error_no_dictionary">Nessuna app dizionario trovata.</string>
     <string name="done">Fatto</string>
     <string name="share">Condividi</string>
     <string name="delete_color_preset_content_desc">Elimina preset di colori</string>
@@ -112,7 +111,6 @@
     <string name="general_tab">Generale</string>
     <string name="help_translate_option">Aiuta a tradurre</string>
     <string name="yellow_theme">Venere</string>
-    <string name="dictionary">Dizionario</string>
     <string name="theme_contrast_option">Contrasto tema</string>
     <string name="search_content_desc">Cerca</string>
     <string name="green_theme">Terra</string>

@@ -35,7 +35,6 @@
     <string name="error_no_description">Немає опису.</string>
     <string name="error_something_went_wrong">Який жах! Щось пішло не так.</string>
     <string name="error_no_translator">Жодного перекладача не знайдено.</string>
-    <string name="error_no_dictionary">Жодного словника не знайдено.</string>
     <string name="error_no_browser">Жодного браузера не знайдено.</string>
     <string name="error_no_share_app">Не знайдено застосунок, щоб поділитися.</string>
     <string name="error_no_file_manager_app">Не знайдено застосунку для вибору теки.</string>
@@ -70,7 +69,6 @@
     <string name="copy">Копіювати</string>
     <string name="report">Повідомити</string>
     <string name="translate">Перекласти</string>
-    <string name="dictionary">Словник</string>
     <string name="next">Далі</string>
     <string name="done">Готово</string>
     <string name="web_search">Веб-пошук</string>

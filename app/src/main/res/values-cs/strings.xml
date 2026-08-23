@@ -86,7 +86,6 @@
     <string name="general_settings_desc">Jazyk aplikace</string>
     <string name="lavender_theme">Eris</string>
     <string name="author">Autor</string>
-    <string name="error_no_dictionary">Žádná aplikace pro slovník nebyla nalezena.</string>
     <string name="selected_items_count_query">%1$s vybráno</string>
     <string name="licenses_option">Open source licence</string>
     <string name="move">Přesunout</string>
@@ -114,7 +113,6 @@
     <string name="delete_books_description">Smaže to všechny vybrané knihy( %1$s) z databáze. Nesmaže to knihy ze zařízení.</string>
     <string name="never">Nikdy</string>
     <string name="settings_screen">Nastavení</string>
-    <string name="dictionary">Slovník</string>
     <string name="undo">Vrátit</string>
     <string name="perception_expander_thickness_option">Tloušťka řádku</string>
     <string name="error_no_browser">Žádná aplikace pro prohlížeč nebyla nalezena.</string>

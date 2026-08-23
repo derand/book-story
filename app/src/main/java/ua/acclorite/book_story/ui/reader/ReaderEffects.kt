@@ -150,40 +150,6 @@ fun ReaderEffects(
                         .showToast(context = activity, longToast = false)
                 }
 
-                is ReaderEffect.OnOpenDictionary -> {
-                    val dictionaryIntent = Intent()
-                    val browserIntent = Intent()
-
-                    dictionaryIntent.type = "text/plain"
-                    dictionaryIntent.action = Intent.ACTION_PROCESS_TEXT
-                    dictionaryIntent.putExtra(
-                        Intent.EXTRA_PROCESS_TEXT,
-                        effect.textToDefine.trim()
-                    )
-                    dictionaryIntent.putExtra(Intent.EXTRA_PROCESS_TEXT_READONLY, true)
-
-                    browserIntent.action = Intent.ACTION_VIEW
-                    val text = effect.textToDefine.trim().replace(" ", "+")
-                    browserIntent.data = "https://www.onelook.com/?w=$text".toUri()
-
-                    dictionaryIntent.launchActivity(
-                        activity = activity,
-                        createChooser = true,
-                        success = {
-                            return@collect
-                        }
-                    )
-                    browserIntent.launchActivity(
-                        activity = activity,
-                        success = {
-                            return@collect
-                        }
-                    )
-
-                    activity.getString(R.string.error_no_dictionary)
-                        .showToast(context = activity, longToast = false)
-                }
-
                 is ReaderEffect.OnNavigateBack -> {
                     navigator.pop()
                 }

@@ -49,7 +49,6 @@
     <string name="error_no_description">No description.</string>
     <string name="error_something_went_wrong">Something went wrong.</string>
     <string name="error_no_translator">No translator app found.</string>
-    <string name="error_no_dictionary">No dictionary app found.</string>
     <string name="error_no_browser">No browser app found.</string>
     <string name="error_no_share_app">No app to share found.</string>
     <string name="error_no_file_manager_app">No app to choose folder found.</string>
@@ -130,7 +129,6 @@
     <string name="copy">Copy</string>
     <string name="report">Report</string>
     <string name="translate">Translate</string>
-    <string name="dictionary">Dictionary</string>
     <string name="next">Next</string>
     <string name="done">Done</string>
     <string name="web_search">Web search</string>

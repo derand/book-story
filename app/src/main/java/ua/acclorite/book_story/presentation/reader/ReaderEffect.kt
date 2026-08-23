@@ -29,10 +29,6 @@ sealed class ReaderEffect {
         val textToSearch: String
     ) : ReaderEffect()
 
-    data class OnOpenDictionary(
-        val textToDefine: String
-    ) : ReaderEffect()
-
     data object OnNavigateBack : ReaderEffect()
 
     data class OnNavigateToBookInfo(

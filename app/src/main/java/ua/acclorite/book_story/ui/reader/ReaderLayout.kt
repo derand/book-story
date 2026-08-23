@@ -108,8 +108,7 @@ fun ReaderLayout(
     openWebBrowser: (ReaderEvent.OnOpenWebBrowser) -> Unit,
     openTranslator: (ReaderEvent.OnOpenTranslator) -> Unit,
     openNote: (ReaderEvent.OnOpenNote) -> Unit,
-    openImage: (ReaderEvent.OnOpenImage) -> Unit,
-    openDictionary: (ReaderEvent.OnOpenDictionary) -> Unit
+    openImage: (ReaderEvent.OnOpenImage) -> Unit
 ) {
     val activity = LocalActivity.current
 
@@ -200,13 +199,6 @@ fun ReaderLayout(
                 )
             )
         },
-        onDictionaryRequested = { textToDefine ->
-            openDictionary(
-                ReaderEvent.OnOpenDictionary(
-                    textToDefine = textToDefine
-                )
-            )
-        }
     ) { toolbarHidden ->
         Column(
             Modifier

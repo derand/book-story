@@ -77,7 +77,6 @@
     <string name="done">Hecho</string>
     <string name="undo">Deshacer</string>
     <string name="next">Siguiente</string>
-    <string name="dictionary">Diccionario</string>
     <string name="unknown_author">Desconocido</string>
     <string name="delete_cover">Borrar portada</string>
     <string name="font_reader_settings">Fuente</string>
@@ -174,7 +173,6 @@
     <string name="sort_order_file_size">Tamaño del archivo</string>
     <string name="sort_order_content_desc">Orden de clasificación</string>
     <string name="error_no_share_app">No se ha encontrado ninguna aplicación para compartir.</string>
-    <string name="error_no_dictionary">No se ha encontrado ninguna aplicación de diccionario.</string>
     <string name="web_search">Buscar en Internet</string>
     <string name="share">Compartir</string>
     <string name="filter_tab">Filtrar</string>

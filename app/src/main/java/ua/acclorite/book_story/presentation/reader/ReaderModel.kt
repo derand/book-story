@@ -675,14 +675,6 @@ class ReaderModel @Inject constructor(
                     )
                 }
 
-                is ReaderEvent.OnOpenDictionary -> {
-                    _effects.emit(
-                        ReaderEffect.OnOpenDictionary(
-                            textToDefine = event.textToDefine
-                        )
-                    )
-                }
-
                 is ReaderEvent.OnShowSettingsBottomSheet -> {
                     creditOpenNote()
                     overlayShown()
