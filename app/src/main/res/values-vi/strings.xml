@@ -24,7 +24,6 @@
     <string name="error_no_description">Không có mô tả.</string>
     <string name="error_something_went_wrong">Có gì đó không ổn.</string>
     <string name="error_no_translator">Không tìm thấy ứng dụng dịch nào.</string>
-    <string name="error_no_dictionary">Không tìm thấy ứng dụng từ điển nào.</string>
     <string name="error_no_browser">Không có trình duyệt được chọn.</string>
     <string name="error_no_share_app">Không tìm thấy ứng dụng nào để chia sẻ.</string>
     <string name="error_no_file_manager_app">Không tìm thấy ứng dụng nào để chọn thư mục.</string>
@@ -50,6 +49,5 @@
     <string name="copy">Sao chép</string>
     <string name="report">Báo cáo</string>
     <string name="translate">Dịch</string>
-    <string name="dictionary">Từ điển</string>
     <string name="next">Tiếp</string>
 </resources>

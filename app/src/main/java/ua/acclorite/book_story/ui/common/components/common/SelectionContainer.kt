@@ -33,7 +33,6 @@ import ua.acclorite.book_story.ui.main.TextActionMode
  * @param onShareRequested Callback for when the share option is clicked.
  * @param onWebSearchRequested Callback for when the web search option is clicked.
  * @param onTranslateRequested Callback for when the translate option is clicked.
- * @param onDictionaryRequested Callback for when the dictionary option is clicked.
  * @param content Selection container content.
  */
 @Composable
@@ -42,7 +41,6 @@ fun SelectionContainer(
     onShareRequested: ((String) -> Unit),
     onWebSearchRequested: ((String) -> Unit),
     onTranslateRequested: ((String) -> Unit),
-    onDictionaryRequested: ((String) -> Unit),
     content: @Composable (toolbarHidden: Boolean) -> Unit
 ) {
     val context = LocalContext.current
@@ -78,12 +76,6 @@ fun SelectionContainer(
                         label = context.getString(R.string.web_search)
                     ) {
                         menu.withSelectedText(this, onWebSearchRequested)
-                    }
-                    item(
-                        key = DictionaryKey,
-                        label = context.getString(R.string.dictionary)
-                    ) {
-                        menu.withSelectedText(this, onDictionaryRequested)
                     }
                 }
                 .filterTextContextMenuComponents(menu::keep)

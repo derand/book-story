@@ -21,7 +21,6 @@
     <string name="delete">நீக்கு</string>
     <string name="next">அடுத்தது</string>
     <string name="done">முடிந்தது</string>
-    <string name="dictionary">அகராதி</string>
     <string name="general_settings_desc">பயன்பாட்டு மொழி</string>
     <string name="appearance_settings">தோற்றம்</string>
     <string name="font_reader_settings">எழுத்துரு</string>
@@ -158,7 +157,6 @@
     <string name="error_no_translator">மொழிபெயர்ப்பாளர் பயன்பாடு எதுவும் கிடைக்கவில்லை.</string>
     <string name="error_no_share_app">பகிர்வதற்கு பயன்பாடு இல்லை.</string>
     <string name="error_could_not_get_text">புத்தக உள்ளடக்கம் காலியாக உள்ளது. தயவுசெய்து, புத்தக உள்ளடக்கம் காலியாக இல்லை என்பதை உறுதிப்படுத்திக் கொள்ளுங்கள்.</string>
-    <string name="error_no_dictionary">அகராதி பயன்பாடு எதுவும் கிடைக்கவில்லை.</string>
     <string name="error_no_browser">உலாவி பயன்பாடு எதுவும் கிடைக்கவில்லை.</string>
     <string name="error_could_not_reset_cover">கவர் படத்தை மீட்டமைக்க முடியவில்லை.</string>
     <string name="library_empty">உங்களுக்கு பிடித்த புத்தகங்களைப் படித்து அவற்றை வகைகளுக்கு இடையில் வரிசைப்படுத்தவும்</string>

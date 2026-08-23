@@ -30,7 +30,6 @@
     <string name="undo">Rückgängig machen</string>
     <string name="copy">Kopieren</string>
     <string name="translate">Übersetzen</string>
-    <string name="dictionary">Wörterbuch</string>
     <string name="next">Nächste</string>
     <string name="done">Fertig</string>
     <string name="unknown_author">Unbekannt</string>
@@ -185,7 +184,6 @@
     <string name="sort_order_content_desc">Sortierung</string>
     <string name="select_all_files_content_desc">Alle Dateien auswählen</string>
     <string name="error_no_share_app">Keine App zum Teilen gefunden.</string>
-    <string name="error_no_dictionary">Keine Wörterbuch-App gefunden.</string>
     <string name="web_search">Websuche</string>
     <string name="share">Teilen</string>
     <string name="sort_order_last_modified">Zuletzt geändert</string>

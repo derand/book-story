@@ -45,7 +45,6 @@
         Bir şeyler ters gitti.
     </string>
     <string name="error_no_translator">Çeviri uygulaması bulunamadı.</string>
-    <string name="error_no_dictionary">Sözlük uygulaması bulunamadı.</string>
     <string name="error_no_browser">Tarayıcı uygulaması bulunamadı.</string>
     <string name="error_no_share_app">Paylaşım yapacak uygulama bulunamadı.</string>
     <string name="error_could_not_get_text">Dosya boş, kayıp veya erişilemez. Dosyayı doğrulayın, ayarları kontrol edin veya yolu değiştirip ardından tekrar deneyin.</string>
@@ -78,7 +77,6 @@
     <string name="undo">Geri al</string>
     <string name="copy">Kopyala</string>
     <string name="translate">Çevir</string>
-    <string name="dictionary">Sözlük</string>
     <string name="next">İleri</string>
     <string name="done">Tamam</string>
     <string name="web_search">Web\'de ara</string>

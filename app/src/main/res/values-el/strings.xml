@@ -24,7 +24,6 @@
     <string name="error_no_description">Καμία περιγραφή.</string>
     <string name="error_something_went_wrong">Κάτι πήγε λάθος.</string>
     <string name="error_no_translator">Δεν βρέθηκε εφαρμογή μετάφρασης.</string>
-    <string name="error_no_dictionary">Δεν βρέθηκε εφαρμογή λεξικού.</string>
     <string name="error_no_browser">Δεν βρέθηκε εφαρμογή περιήγησης.</string>
     <string name="error_no_share_app">Δεν βρέθηκε εφαρμογή μοιρασμού.</string>
     <string name="error_no_file_manager_app">Δεν βρέθηκε εφαρμογή επιλογής φακέλου.</string>

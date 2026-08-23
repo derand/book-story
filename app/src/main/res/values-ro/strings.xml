@@ -10,7 +10,6 @@
     <string name="chapters_reader_settings">Capitole</string>
     <string name="about_screen">Despre aplicație</string>
     <string name="never">Niciodată</string>
-    <string name="dictionary">Dicționar</string>
     <string name="reading_mode_reader_settings">Modul de citire</string>
     <string name="general_settings_desc">Limba aplicației</string>
     <string name="theme_appearance_settings">Preferințele temei</string>
@@ -177,7 +176,6 @@
     <string name="remove_category">Eliminați categoria?</string>
     <string name="remove_category_description">Va elimina această categorie din bibliotecă, dar nu va șterge nicio carte.</string>
     <string name="error_no_translator">Nu a fost găsită nicio aplicație de traducere.</string>
-    <string name="error_no_dictionary">Nu a fost găsită nicio aplicație de dicționar.</string>
     <string name="error_no_browser">Nu a fost găsită nicio aplicație de browser.</string>
     <string name="error_no_file_manager_app">Nu a fost găsită nicio aplicație pentru a alege folderul.</string>
     <string name="error_could_not_get_text">Fișierul este gol, lipsește sau este inaccesibil. Verificați fișierul, setările de scanare sau ajustați calea și încercați din nou.</string>

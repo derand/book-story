@@ -30,7 +30,6 @@
     <string name="add_books_description">Você pode escolher que livros adicionar. Você pode editar o título e a capa do livro depois. O processo pode levar alguns minutos.</string>
     <string name="copy">Copiar</string>
     <string name="translate">Traduzir</string>
-    <string name="dictionary">Dicionário</string>
     <string name="next">Próximo</string>
     <string name="share">Compartilhar</string>
     <string name="unknown_author">Desconhecido</string>
@@ -194,7 +193,6 @@
     <string name="horizontal_gesture_off">Desativar</string>
     <string name="error_no_browser">Nenhum aplicativo de navegador encontrado.</string>
     <string name="error_no_share_app">Nenhum aplicativo para compartilhar encontrado.</string>
-    <string name="error_no_dictionary">Nenhum aplicativo de dicionário encontrado.</string>
     <string name="error_no_translator">Nenhum aplicativo tradutor encontrado.</string>
     <string name="error_could_not_get_text">Arquivo está vazio, corrompido ou ausente. Por favor verifique o caminho, opções de varredura ou mude o arquivo o arquivo, então tente novamente.</string>
     <string name="history_empty">Deixe seu último livro lido abrir as páginas para uma grande história na sua jornada de leitura</string>

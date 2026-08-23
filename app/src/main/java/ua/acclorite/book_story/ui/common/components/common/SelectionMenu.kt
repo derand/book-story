@@ -19,7 +19,6 @@ import androidx.compose.ui.platform.NativeClipboard
 internal data object ShareKey
 internal data object WebSearchKey
 internal data object TranslateKey
-internal data object DictionaryKey
 
 /**
  * The app's own actions inside the selection menu, and the one route to the
@@ -68,16 +67,16 @@ internal class SelectionMenu {
      * menu cannot be named: `PROCESS_TEXT` items have a public key, but the
      * TextClassifier's smart actions are keyed by a private `Any()` held inside
      * Foundation, so there is nothing to exclude them by. Keeping `Copy` and the
-     * app's four is a rule that stays true whatever the platform adds next.
+     * app's three is a rule that stays true whatever the platform adds next.
      *
      * What that drops, and why it is no loss:
      * - **`Select all`.** A selection container reaches only what is composed, so
      *   in a lazily laid out book "all" is the page on screen plus whatever is
      *   buffered around it — a selection whose size is an accident of scrolling.
      * - **Other apps' `PROCESS_TEXT` actions and the assistant's suggestions.**
-     *   The reader's own `Translate` and `Dictionary` are that same intent
-     *   gathered into a chooser, with a fallback when nothing answers it, so
-     *   keeping both showed `Translate` twice.
+     *   The reader's own `Translate` is that same intent gathered into a
+     *   chooser, with a fallback when nothing answers it, so keeping both
+     *   showed `Translate` twice.
      *
      * The app's own items go too while `Copy` is absent: Compose leaves out an
      * item it would show disabled, so a menu without `Copy` is a menu over an
@@ -128,7 +127,7 @@ internal class SelectionMenu {
         return true
     }
 
-    private val ownKeys = setOf(ShareKey, WebSearchKey, TranslateKey, DictionaryKey)
+    private val ownKeys = setOf(ShareKey, WebSearchKey, TranslateKey)
 }
 
 /**

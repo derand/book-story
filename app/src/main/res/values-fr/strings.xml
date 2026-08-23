@@ -17,7 +17,6 @@
     <string name="delete_books_description">Cela supprimera tous les livres sélectionnés (%1$s) de la base de données. Ceci ne supprimera pas les livres sélectionnés de votre appareil.</string>
     <string name="delete_book_description">Cela supprimera ce livre de la base de données. Ceci ne le supprimera pas de votre appareil.</string>
     <string name="error_no_translator">Aucune application de traduction n\'a été trouvée.</string>
-    <string name="error_no_dictionary">Aucune application de dictionnaire n\'a été trouvée.</string>
     <string name="error_no_share_app">Aucune application pour partager n\'a été trouvée.</string>
     <string name="error_could_not_reset_cover">L\'image de couverture n\'a pas pu être réinitialisée.</string>
     <string name="error_closed_source">Source fermée</string>
@@ -32,7 +31,6 @@
     <string name="undo">Annuler</string>
     <string name="copy">Copier</string>
     <string name="translate">Traduire</string>
-    <string name="dictionary">Dictionnaire</string>
     <string name="next">Suivant</string>
     <string name="done">Terminé</string>
     <string name="web_search">Recherche Web</string>

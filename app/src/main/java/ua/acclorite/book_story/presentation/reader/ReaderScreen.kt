@@ -505,7 +505,6 @@ data class ReaderScreen(val bookId: Int) : Screen, Parcelable {
                 openShareApp = screenModel::onEvent,
                 openWebBrowser = screenModel::onEvent,
                 openTranslator = screenModel::onEvent,
-                openDictionary = screenModel::onEvent,
                 openNote = screenModel::onEvent,
                 openImage = screenModel::onEvent,
                 dismissImage = screenModel::onEvent,

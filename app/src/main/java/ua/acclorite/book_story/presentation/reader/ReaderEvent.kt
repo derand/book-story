@@ -89,10 +89,6 @@ sealed class ReaderEvent {
         val textToSearch: String
     ) : ReaderEvent()
 
-    data class OnOpenDictionary(
-        val textToDefine: String
-    ) : ReaderEvent()
-
     data object OnShowSettingsBottomSheet : ReaderEvent()
 
     /** [tag] is a clickable reference tag, e.g. "note:<id>" or "anchor:<id>". */

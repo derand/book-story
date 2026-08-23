@@ -26,7 +26,6 @@
     <string name="undo">पूर्ववत् करें</string>
     <string name="copy">कॉपी करें</string>
     <string name="translate">अनुवाद करें</string>
-    <string name="dictionary">शब्दकोष</string>
     <string name="next">अगला</string>
     <string name="done">समाप्त</string>
     <string name="web_search">वेब खोज</string>
@@ -70,7 +69,6 @@
     <string name="delete_book_description">यह इस पुस्तक को डेटाबेस से हटा देगा. यह आपकी डिवाइस से इस पुस्तक को नहीं हटाएगा।</string>
     <string name="delete_history_description">यह डेटाबेस से पूरा इतिहास मिटा देगा। पूरा इतिहास मिटाने के बाद, किताबों का क्रम फिर से सेट हो जाएगा।</string>
     <string name="error_no_description">कोई वर्णन नहीं।</string>
-    <string name="error_no_dictionary">कोई शब्दकोश ऐप नहीं मिला ।</string>
     <string name="error_no_browser">कोई ब्राउज़र ऐप नहीं मिला ।</string>
     <string name="error_could_not_get_text">पुस्तक की सामग्री रिक्त है। कृपया जाँच करें कि पुस्तक की सामग्री रिक्त न हो और उसे अपडेट करें।</string>
     <string name="error_could_not_reset_cover">कवर छवि रीसेट नहीं की जा सकी ।</string>
