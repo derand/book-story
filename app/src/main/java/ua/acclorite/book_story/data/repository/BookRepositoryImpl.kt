@@ -446,27 +446,29 @@ class BookRepositoryImpl @Inject constructor(
     }
 
     /**
-     * The row to write, with the document identity the resolver learned rather
-     * than the one the caller is holding.
+     * The row to write, with the document identity that belongs to it rather
+     * than the one the caller happens to be holding.
      *
      * Every screen updates a book by writing the whole row back from a [Book] it
-     * loaded earlier — the reader on leaving, the info screen on any edit — and
-     * that copy predates the identity being written, so a plain update would
-     * erase it on the very open that learned it. The identity is not the
-     * caller's to state: it belongs to the location, and it is dropped exactly
-     * when that changes, which is what the path dialog does and what keeping a
-     * book by copying its file does.
+     * loaded earlier, and those copies disagree about the identity: the reader's
+     * predates the open that learned it, the info screen's is current. The rule
+     * cannot be about which of them is talking, so [identityToWrite] states it
+     * about the book instead.
      */
     private suspend fun withStoredIdentity(book: Book): BookEntity {
         val entity = bookMapper.toBookEntity(book)
-        if (book.documentId != null) return entity
+        val stored = database.bookDao.findBookById(book.id)
 
-        val stored = database.bookDao.findBookById(book.id) ?: return entity
-        if (stored.documentId == null || stored.filePath != book.filePath) return entity
+        val identity = identityToWrite(
+            incoming = BookIdentity(book.filePath, book.documentAuthority, book.documentId),
+            stored = stored?.let {
+                BookIdentity(it.filePath, it.documentAuthority, it.documentId)
+            }
+        )
 
         return entity.copy(
-            documentAuthority = stored.documentAuthority,
-            documentId = stored.documentId
+            documentAuthority = identity.documentAuthority,
+            documentId = identity.documentId
         )
     }
 
