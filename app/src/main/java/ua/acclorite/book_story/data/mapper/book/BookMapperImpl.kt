@@ -27,7 +27,9 @@ class BookMapperImpl @Inject constructor() : BookMapper {
             image = book.coverImage?.toString(),
             categories = book.categories,
             inLibrary = book.inLibrary,
-            previewUri = book.previewUri
+            previewUri = book.previewUri,
+            documentAuthority = book.documentAuthority,
+            documentId = book.documentId
         )
     }
 
@@ -48,7 +50,9 @@ class BookMapperImpl @Inject constructor() : BookMapper {
             coverImage = bookEntity.image?.toUri(),
             categories = bookEntity.categories,
             inLibrary = bookEntity.inLibrary,
-            previewUri = bookEntity.previewUri
+            previewUri = bookEntity.previewUri,
+            documentAuthority = bookEntity.documentAuthority,
+            documentId = bookEntity.documentId
         )
     }
 }

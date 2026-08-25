@@ -88,7 +88,13 @@ class FileSystemRepositoryImpl @Inject constructor(
                 ) ?: throw Exception("Could not parse ${file.name}.")
                 val coverImage = coverParser.parse(cachedFile = cachedFile)
 
-                return@withContext book to coverImage
+                // Stamped here rather than in each of the five parsers: what
+                // identifies a book is a property of where it came from, and a
+                // parser only ever sees its bytes.
+                return@withContext book.copy(
+                    documentAuthority = cachedFile.documentAuthority,
+                    documentId = cachedFile.documentId
+                ) to coverImage
             }
         }
 

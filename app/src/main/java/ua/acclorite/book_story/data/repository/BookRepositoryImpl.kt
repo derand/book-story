@@ -13,6 +13,7 @@ import ua.acclorite.book_story.core.CoverImage
 import ua.acclorite.book_story.core.helpers.mapCatchingCancellable
 import ua.acclorite.book_story.core.helpers.runCatchingCancellable
 import ua.acclorite.book_story.core.log.bookTimingNote
+import ua.acclorite.book_story.core.log.logE
 import ua.acclorite.book_story.core.log.timed
 import ua.acclorite.book_story.data.cache.ImageMemoryBudget
 import ua.acclorite.book_story.data.cache.ParseCache
@@ -37,6 +38,8 @@ import ua.acclorite.book_story.domain.service.FileProvider
 import kotlin.coroutines.coroutineContext
 import javax.inject.Inject
 import javax.inject.Singleton
+
+private const val TAG = "BookRepository"
 
 @Singleton
 class BookRepositoryImpl @Inject constructor(
@@ -72,6 +75,44 @@ class BookRepositoryImpl @Inject constructor(
     @Volatile
     private var lastOpenedFile: OpenedBookFile? = null
 
+    /**
+     * The file this book names, and the identity it turned out to have.
+     *
+     * A row written before a document id was stored — every book already in a
+     * library — learns its identity the first time it is resolved, which is the
+     * first time anything can know it. Nothing is derived from the path: this is
+     * what the provider answered about the file actually found. From then on the
+     * book is reached by that id in one query, instead of by descending a tree a
+     * listing at a time.
+     *
+     * The limit is inherited, not introduced: where a path is ambiguous the
+     * fallback can find the wrong file, and now it remembers the wrong file. The
+     * same open would have shown the same wrong book before, and only a path
+     * could ever have been ambiguous.
+     */
+    private suspend fun fileOf(book: Book): CachedFile {
+        val file = fileProvider.getFileFromBook(book).getOrThrow()
+
+        val documentId = file.documentId
+        if (documentId != null &&
+            book.id > 0 &&
+            (book.documentId != documentId || book.documentAuthority != file.documentAuthority)
+        ) {
+            runCatchingCancellable {
+                database.bookDao.findBookById(book.id)?.let { entity ->
+                    database.bookDao.updateBook(
+                        entity.copy(
+                            documentAuthority = file.documentAuthority,
+                            documentId = documentId
+                        )
+                    )
+                }
+            }.onFailure { logE(TAG, "Could not remember the identity: ${it.message}") }
+        }
+
+        return file
+    }
+
     override suspend fun getLibraryBooks(): Result<List<Book>> = runCatchingCancellable {
         withContext(Dispatchers.IO) {
             database.bookDao.getLibraryBooks().map { bookMapper.toBook(it) }
@@ -94,7 +135,7 @@ class BookRepositoryImpl @Inject constructor(
                     // Walks every persisted SAF tree looking for the book's path,
                     // a ContentResolver query per directory — hence timed on its own.
                     timed("  open: find file") {
-                        fileProvider.getFileFromBook(book).getOrThrow()
+                        fileOf(book)
                     }.also { lastOpenedFile = OpenedBookFile(bookId, it) }
                 }
                 .mapCatchingCancellable { cachedFile ->
@@ -266,7 +307,7 @@ class BookRepositoryImpl @Inject constructor(
             return Result.success(opened.file)
         }
         return getBook(bookId).mapCatchingCancellable {
-            timed("  images: find file") { fileProvider.getFileFromBook(it).getOrThrow() }
+            timed("  images: find file") { fileOf(it) }
         }
     }
 
@@ -284,7 +325,7 @@ class BookRepositoryImpl @Inject constructor(
 
     override suspend fun storeBookFile(book: Book): Result<String> = runCatchingCancellable {
         withContext(Dispatchers.IO) {
-            val source = fileProvider.getFileFromBook(book).getOrThrow()
+            val source = fileOf(book)
             val sourcePath = source.cacheKeyPath
             val size = source.size
             val lastModified = source.lastModified
@@ -332,7 +373,7 @@ class BookRepositoryImpl @Inject constructor(
     override suspend fun getFileFromBook(bookId: Int): Result<File> {
         return withContext(Dispatchers.IO) {
             getBook(bookId)
-                .mapCatchingCancellable { fileProvider.getFileFromBook(it).getOrThrow() }
+                .mapCatchingCancellable { fileOf(it) }
                 .mapCatchingCancellable { fileMapper.toFile(it) }
         }
     }
@@ -381,9 +422,7 @@ class BookRepositoryImpl @Inject constructor(
 
     override suspend fun getDefaultCover(book: Book): Result<CoverImage?> = runCatchingCancellable {
         return withContext(Dispatchers.IO) {
-            fileProvider.getFileFromBook(book).mapCatchingCancellable {
-                coverParser.parse(it)
-            }
+            runCatchingCancellable { coverParser.parse(fileOf(book)) }
         }
     }
 }

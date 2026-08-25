@@ -48,5 +48,21 @@ data class BookEntity(
      * must be reachable the way every other one is — the grant behind this URI
      * dies with the task.
      */
-    val previewUri: String? = null
+    val previewUri: String? = null,
+
+    /**
+     * Who holds the document, and what that provider calls it — the identity SAF
+     * actually offers, against [filePath], which is a path
+     * `DocumentFileCompat.getAbsolutePath` reconstructs and which only
+     * `com.android.externalstorage` can be reconstructed for. A document id is
+     * unique within its provider and durable, since the long-term permission
+     * grants are issued against it.
+     *
+     * Null until the book is next resolved, and null forever for a book the app
+     * owns a copy of, whose [filePath] is a real path in the app's own directory.
+     * Nothing derives these from an existing path: a path that was invented
+     * cannot be turned back into the id it was invented from.
+     */
+    val documentAuthority: String? = null,
+    val documentId: String? = null
 )

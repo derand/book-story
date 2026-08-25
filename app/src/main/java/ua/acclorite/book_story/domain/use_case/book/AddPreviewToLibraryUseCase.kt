@@ -65,7 +65,8 @@ class AddPreviewToLibraryUseCase @Inject constructor(
         // Asked without the preview's own URI, which would answer yes and mean
         // nothing — that URI is good only while the task that received it lives,
         // and this is the decision to keep the book past it.
-        if (fileProvider.getFileFromBook(book.copy(previewUri = null)).isFailure) {
+        val reachable = fileProvider.getFileFromBook(book.copy(previewUri = null)).getOrNull()
+        if (reachable == null) {
             val folder = book.filePath.substringBeforeLast('/', missingDelimiterValue = "")
             logI(TAG, "[${book.title}] is not reachable yet; asking for [$folder].")
             return Result.NeedsGrant(folder.ifBlank { null })
@@ -74,7 +75,17 @@ class AddPreviewToLibraryUseCase @Inject constructor(
         // The URI goes with the promotion: keeping it would leave the book
         // reachable by a route that stops working the moment the app is killed,
         // hiding a broken path until the next restart.
-        val promoted = book.copy(inLibrary = true, previewUri = null)
+        //
+        // The identity comes from the file as it was just reached, not from the
+        // preview: a preview arrives on whatever URI the handing-over app chose,
+        // and the grant that will serve every future open may belong to another
+        // provider entirely.
+        val promoted = book.copy(
+            inLibrary = true,
+            previewUri = null,
+            documentAuthority = reachable.documentAuthority,
+            documentId = reachable.documentId
+        )
         bookRepository.updateBook(promoted).onFailure {
             logW(TAG, "Could not add [${book.title}]: ${it.message}")
             return Result.Failed
@@ -100,7 +111,16 @@ class AddPreviewToLibraryUseCase @Inject constructor(
             return Result.Failed
         }
 
-        val promoted = book.copy(inLibrary = true, previewUri = null, filePath = path)
+        // No document identity: the book is a file in the app's own directory now,
+        // and the id it arrived with belongs to a provider that no longer has
+        // anything to do with it.
+        val promoted = book.copy(
+            inLibrary = true,
+            previewUri = null,
+            filePath = path,
+            documentAuthority = null,
+            documentId = null
+        )
         bookRepository.updateBook(promoted).onFailure {
             logW(TAG, "Could not add [${book.title}]: ${it.message}")
             bookRepository.deleteBookFile(book.id)

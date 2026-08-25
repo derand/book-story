@@ -65,6 +65,28 @@ class CachedFile(
      * gains a real path of its own.
      */
     val cacheKeyPath: String get() = path.ifBlank { uri.toString() }
+
+    /**
+     * Who holds this document and what that provider calls it, or null when there
+     * is no provider behind it — a file the app owns, or a URI another app handed
+     * over that is not a document URI at all, such as one from MediaStore.
+     *
+     * This is what SAF promises and a path is not: unique within the provider and
+     * durable, since the long-term permission grants are issued against it. It
+     * costs nothing to read — the id is already in the URI.
+     */
+    val documentAuthority: String? by lazy {
+        if (documentId == null) null else uri.authority
+    }
+    val documentId: String? by lazy {
+        if (localFile != null) return@lazy null
+        try {
+            if (!DocumentsContract.isDocumentUri(context, uri)) null
+            else DocumentsContract.getDocumentId(uri)
+        } catch (e: Exception) {
+            null
+        }
+    }
     val rawFile: File? by lazy { storeInCache() }
 
     val name: String get() = builder?.name ?: queryParams.name
