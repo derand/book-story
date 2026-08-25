@@ -40,38 +40,62 @@ class FileSystemRepositoryImpl @Inject constructor(
     override suspend fun searchFiles(query: String): Result<List<File>> {
         return withContext(Dispatchers.IO) {
             fileProvider.getStorageFiles().mapCatchingCancellable { storages ->
-                val existingFiles = database.bookDao.getLibraryBooks().map { it.filePath }
+                val library = database.bookDao.getLibraryBooks()
+                val existing = LibraryFiles(
+                    identities = library.mapNotNull { book ->
+                        book.documentId?.let { "${book.documentAuthority}|$it" }
+                    }.toSet(),
+                    // Only the books that have no identity yet, so a file known by
+                    // its id is never taken for one whose path merely looks the
+                    // same — which two folders on one cloud provider produce, since
+                    // every path under them is invented from the same string.
+                    pathsWithoutIdentity = library
+                        .filter { it.documentId == null }
+                        .map { it.filePath.lowercase() }
+                        .toSet()
+                )
 
                 storages.map { storage ->
                     storage.getFilesFromStorage(
                         query = query,
-                        existingFiles = existingFiles
+                        existing = existing
                     )
                 }.flatten()
             }
         }
     }
 
-    private fun CachedFile.isValid(
-        query: String,
-        existingFiles: List<String>
-    ): Boolean {
+    /** What the library already holds, in the two terms a listed file can match. */
+    private data class LibraryFiles(
+        val identities: Set<String>,
+        val pathsWithoutIdentity: Set<String>
+    )
+
+    private fun CachedFile.isValid(query: String, existing: LibraryFiles): Boolean {
         // The same question the parsers ask, so the listing cannot offer a file
         // that then refuses to open — and so a book named the way Drive names
         // one is visible here too.
         if (ExtensionsData.formatOf(name) == null) return false
         if (query.isNotBlank() && !name.contains(query.trim(), ignoreCase = true)) return false
-        if (existingFiles.any { it.equals(path, ignoreCase = true) }) return false
+
+        val identity = documentId?.let { "$documentAuthority|$it" }
+        if (identity != null && identity in existing.identities) return false
+
+        // The path still answers for a book that has no identity yet — every row
+        // written before one was stored, until the first time it is opened. It is
+        // asked only about those, so a book known by its id is never claimed by a
+        // path that merely looks like its own.
+        if (path.lowercase() in existing.pathsWithoutIdentity) return false
         return true
     }
 
     private fun CachedFile.getFilesFromStorage(
         query: String,
-        existingFiles: List<String>
+        existing: LibraryFiles
     ): List<File> {
         val files = mutableListOf<File>()
         walk { cachedFile ->
-            if (cachedFile.isValid(query, existingFiles)) {
+            if (cachedFile.isValid(query, existing)) {
                 files.add(fileMapper.toFile(cachedFile))
             }
         }
@@ -88,7 +112,13 @@ class FileSystemRepositoryImpl @Inject constructor(
                 ) ?: throw Exception("Could not parse ${file.name}.")
                 val coverImage = coverParser.parse(cachedFile = cachedFile)
 
-                return@withContext book to coverImage
+                // Stamped here rather than in each of the five parsers: what
+                // identifies a book is a property of where it came from, and a
+                // parser only ever sees its bytes.
+                return@withContext book.copy(
+                    documentAuthority = cachedFile.documentAuthority,
+                    documentId = cachedFile.documentId
+                ) to coverImage
             }
         }
 

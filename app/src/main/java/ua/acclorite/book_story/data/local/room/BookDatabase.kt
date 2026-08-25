@@ -34,7 +34,7 @@ import java.io.File
         ReadBookEntity::class,
         ReadingCoverageEntity::class
     ],
-    version = 22,
+    version = 23,
     autoMigrations = [
         AutoMigration(1, 2),
         AutoMigration(2, 3),
@@ -57,6 +57,7 @@ import java.io.File
         AutoMigration(19, 20), // ReadingCoverageEntity.wordsBeforeBookmark (nullable)
         AutoMigration(20, 21), // ReadBookEntity.bookId is unique (one record per book)
         AutoMigration(21, 22), // BookEntity.inLibrary (default 1: every existing book)
+        AutoMigration(22, 23), // BookEntity.documentAuthority/documentId (both null)
     ],
     exportSchema = true
 )

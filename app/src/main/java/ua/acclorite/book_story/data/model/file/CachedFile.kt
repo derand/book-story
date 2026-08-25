@@ -44,8 +44,14 @@ class CachedFile(
     @Immutable
     private data class QueryParams(
         val name: String,
-        val size: Long,
-        val lastModified: Long,
+        /**
+         * Null where the provider did not say. `COLUMN_SIZE` and
+         * `COLUMN_LAST_MODIFIED` are required columns whose *value* may be null,
+         * documented as "if unknown", and unknown is not zero: a 100 KB book
+         * dated 1970 is a provider that will not answer, not a file from 1970.
+         */
+        val size: Long?,
+        val lastModified: Long?,
         val isDirectory: Boolean
     )
 
@@ -64,12 +70,54 @@ class CachedFile(
      * document, which is exactly what is needed until the book is kept and
      * gains a real path of its own.
      */
-    val cacheKeyPath: String get() = path.ifBlank { uri.toString() }
+    val cacheKey: String
+        get() = documentId?.let { "${uri.authority}|$it" } ?: path.ifBlank { uri.toString() }
+
+    /**
+     * What [cacheKey] was before a document id was stored, so an entry
+     * written under the old identity can be moved to the new one instead of the
+     * book being parsed again to produce the very same text.
+     */
+    val legacyCacheKey: String get() = path.ifBlank { uri.toString() }
+
+    /**
+     * Whether the source says enough about itself to be cached against.
+     *
+     * The parse cache keys on the identity plus size and modification time, and
+     * the last two exist to notice the file changing underneath it. A provider
+     * that reports neither leaves an entry that can never go stale and can never
+     * be invalidated — so nothing is written, and nothing is read.
+     */
+    val hasKnownMetadata: Boolean
+        get() = builder?.size != null && builder.lastModified != null ||
+                queryParams.size != null && queryParams.lastModified != null
+
+    /**
+     * Who holds this document and what that provider calls it, or null when there
+     * is no provider behind it — a file the app owns, or a URI another app handed
+     * over that is not a document URI at all, such as one from MediaStore.
+     *
+     * This is what SAF promises and a path is not: unique within the provider and
+     * durable, since the long-term permission grants are issued against it. It
+     * costs nothing to read — the id is already in the URI.
+     */
+    val documentAuthority: String? by lazy {
+        if (documentId == null) null else uri.authority
+    }
+    val documentId: String? by lazy {
+        if (localFile != null) return@lazy null
+        try {
+            if (!DocumentsContract.isDocumentUri(context, uri)) null
+            else DocumentsContract.getDocumentId(uri)
+        } catch (e: Exception) {
+            null
+        }
+    }
     val rawFile: File? by lazy { storeInCache() }
 
     val name: String get() = builder?.name ?: queryParams.name
-    val size: Long get() = builder?.size ?: queryParams.size
-    val lastModified: Long get() = builder?.lastModified ?: queryParams.lastModified
+    val size: Long get() = builder?.size ?: queryParams.size ?: 0
+    val lastModified: Long get() = builder?.lastModified ?: queryParams.lastModified ?: 0
     val isDirectory: Boolean get() = builder?.isDirectory ?: queryParams.isDirectory
 
     fun canAccess(): Boolean {
@@ -150,8 +198,13 @@ class CachedFile(
                         uri,
                         cursor.getString(uriIndex)
                     )
-                    val sizeQuery = cursor.getLong(sizeIndex)
-                    val lastModifiedQuery = cursor.getLong(lastModifiedIndex)
+                    // Null rather than zero where the provider says nothing: a
+                    // child arrives with its metadata already filled in, and the
+                    // parse cache has to be able to tell unknown from empty.
+                    val sizeQuery = if (cursor.isNull(sizeIndex)) null
+                    else cursor.getLong(sizeIndex)
+                    val lastModifiedQuery = if (cursor.isNull(lastModifiedIndex)) null
+                    else cursor.getLong(lastModifiedIndex)
                     val isDirectoryQuery = cursor.getString(isDirectoryIndex) ==
                             DocumentsContract.Document.MIME_TYPE_DIR
 
@@ -290,11 +343,10 @@ class CachedFile(
                     if (name != null) {
                         return QueryParams(
                             name = name,
-                            size = builder?.size ?: longOf(sizeColumn) ?: 0,
+                            size = builder?.size ?: longOf(sizeColumn),
                             lastModified = builder?.lastModified
                                 ?: longOf(lastModifiedColumn)
-                                ?: longOf(MEDIA_STORE_DATE_MODIFIED)?.times(1000)
-                                ?: 0,
+                                ?: longOf(MEDIA_STORE_DATE_MODIFIED)?.times(1000),
                             isDirectory = when (mimeType) {
                                 null -> builder?.isDirectory ?: false
                                 else -> mimeType == DocumentsContract.Document.MIME_TYPE_DIR
@@ -309,8 +361,8 @@ class CachedFile(
 
         return QueryParams(
             name = "unknown_${UUID.randomUUID()}",
-            size = 0,
-            lastModified = 0,
+            size = null,
+            lastModified = null,
             isDirectory = false
         )
     }

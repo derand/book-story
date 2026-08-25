@@ -10,6 +10,7 @@ import android.app.Application
 import android.net.Uri
 import android.os.Build
 import android.provider.DocumentsContract
+import java.util.concurrent.ConcurrentHashMap
 import androidx.core.net.toUri
 import ua.acclorite.book_story.core.helpers.rethrowIfCancellation
 import ua.acclorite.book_story.core.helpers.runCatchingCancellable
@@ -34,6 +35,14 @@ class FileProviderImpl @Inject constructor(
      */
     private var nestingCache: Pair<Set<SafRoot>, List<SafRoot>>? = null
 
+    /**
+     * Which granted tree last authorised a document of each authority, so the
+     * next book is not offered to the wrong one first. Nothing depends on it
+     * being right: a stale entry costs the same round trip a wrong guess always
+     * did, and the loop moves on.
+     */
+    private val lastServingTree = ConcurrentHashMap<String, Uri>()
+
     override fun getFileFromBook(book: Book): Result<CachedFile> = runCatchingCancellable {
         // A book being previewed is reached by the URI another app handed over,
         // not by descending a granted tree: there is no grant, and that is the
@@ -53,6 +62,34 @@ class FileProviderImpl @Inject constructor(
             val file = CachedFileCompat.fromFile(application, java.io.File(book.filePath))
             if (file.canAccess()) return@runCatchingCancellable file
             throw NoSuchElementException("The stored copy of ${book.title} is gone.")
+        }
+
+        // The identity the provider itself issued, when the book carries one: the
+        // document URI is built from it and tried against each granted tree of
+        // that authority, so finding the file costs one query instead of a
+        // listing per level. Only a tree above the document authorises it — the
+        // others fail with "is not a descendant of", which is a refusal and not
+        // an answer, so the loop simply moves on.
+        book.documentId?.let { documentId ->
+            application.contentResolver.persistedUriPermissions
+                .map { it.uri }
+                .filter { it.authority == book.documentAuthority }
+                // The tree that answered last, first. Only a tree above the
+                // document authorises it, and the refusal from one that is not
+                // above it costs a round trip like any other query; with several
+                // trees granted on one provider, most books sit under the same one.
+                .sortedByDescending { it == lastServingTree[book.documentAuthority.orEmpty()] }
+                .forEach { tree ->
+                    val file = CachedFileCompat.fromUri(
+                        application,
+                        DocumentsContract.buildDocumentUriUsingTree(tree, documentId)
+                    )
+                    if (file.canAccess()) {
+                        lastServingTree[book.documentAuthority.orEmpty()] = tree
+                        return@runCatchingCancellable file
+                    }
+                }
+            bookTimingNote { "find file: the document id is granted by no tree" }
         }
 
         val storages = application.contentResolver.persistedUriPermissions

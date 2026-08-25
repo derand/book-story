@@ -57,7 +57,9 @@ class OpenBookFromUriUseCase @Inject constructor(
 
         bookRepository.findLibraryBookForFile(
             filePath = file.path,
-            fileName = file.name
+            fileName = file.name,
+            documentAuthority = file.documentAuthority,
+            documentId = file.documentId
         ).getOrNull()?.let { existing ->
             logI(TAG, "Already in the library as [${existing.id}].")
             return Result.Open(existing.id)
@@ -68,7 +70,12 @@ class OpenBookFromUriUseCase @Inject constructor(
         // holding the intent that started it, or the user taps the file again —
         // and a duplicate would cost a full parse and leave a stray row behind.
         bookRepository.findPreviews().getOrNull()
-            ?.findForFile(filePath = file.path, fileName = file.name)
+            ?.findForFile(
+                filePath = file.path,
+                fileName = file.name,
+                documentAuthority = file.documentAuthority,
+                documentId = file.documentId
+            )
             ?.let { existing ->
                 logI(TAG, "Already being previewed as [${existing.id}].")
                 return Result.Open(existing.id)

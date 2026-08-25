@@ -13,10 +13,12 @@ import ua.acclorite.book_story.core.CoverImage
 import ua.acclorite.book_story.core.helpers.mapCatchingCancellable
 import ua.acclorite.book_story.core.helpers.runCatchingCancellable
 import ua.acclorite.book_story.core.log.bookTimingNote
+import ua.acclorite.book_story.core.log.logE
 import ua.acclorite.book_story.core.log.timed
 import ua.acclorite.book_story.data.cache.ImageMemoryBudget
 import ua.acclorite.book_story.data.cache.ParseCache
 import ua.acclorite.book_story.data.cache.ReaderImageFiles
+import ua.acclorite.book_story.data.local.dto.BookEntity
 import ua.acclorite.book_story.data.local.room.BookDatabase
 import ua.acclorite.book_story.data.model.file.CachedFile
 import ua.acclorite.book_story.data.settings.SettingsManager
@@ -37,6 +39,8 @@ import ua.acclorite.book_story.domain.service.FileProvider
 import kotlin.coroutines.coroutineContext
 import javax.inject.Inject
 import javax.inject.Singleton
+
+private const val TAG = "BookRepository"
 
 @Singleton
 class BookRepositoryImpl @Inject constructor(
@@ -72,6 +76,44 @@ class BookRepositoryImpl @Inject constructor(
     @Volatile
     private var lastOpenedFile: OpenedBookFile? = null
 
+    /**
+     * The file this book names, and the identity it turned out to have.
+     *
+     * A row written before a document id was stored — every book already in a
+     * library — learns its identity the first time it is resolved, which is the
+     * first time anything can know it. Nothing is derived from the path: this is
+     * what the provider answered about the file actually found. From then on the
+     * book is reached by that id in one query, instead of by descending a tree a
+     * listing at a time.
+     *
+     * The limit is inherited, not introduced: where a path is ambiguous the
+     * fallback can find the wrong file, and now it remembers the wrong file. The
+     * same open would have shown the same wrong book before, and only a path
+     * could ever have been ambiguous.
+     */
+    private suspend fun fileOf(book: Book): CachedFile {
+        val file = fileProvider.getFileFromBook(book).getOrThrow()
+
+        val documentId = file.documentId
+        if (documentId != null &&
+            book.id > 0 &&
+            (book.documentId != documentId || book.documentAuthority != file.documentAuthority)
+        ) {
+            runCatchingCancellable {
+                database.bookDao.findBookById(book.id)?.let { entity ->
+                    database.bookDao.updateBook(
+                        entity.copy(
+                            documentAuthority = file.documentAuthority,
+                            documentId = documentId
+                        )
+                    )
+                }
+            }.onFailure { logE(TAG, "Could not remember the identity: ${it.message}") }
+        }
+
+        return file
+    }
+
     override suspend fun getLibraryBooks(): Result<List<Book>> = runCatchingCancellable {
         withContext(Dispatchers.IO) {
             database.bookDao.getLibraryBooks().map { bookMapper.toBook(it) }
@@ -94,13 +136,18 @@ class BookRepositoryImpl @Inject constructor(
                     // Walks every persisted SAF tree looking for the book's path,
                     // a ContentResolver query per directory — hence timed on its own.
                     timed("  open: find file") {
-                        fileProvider.getFileFromBook(book).getOrThrow()
+                        fileOf(book)
                     }.also { lastOpenedFile = OpenedBookFile(bookId, it) }
+                        .let { book to it }
                 }
-                .mapCatchingCancellable { cachedFile ->
+                .mapCatchingCancellable { (book, cachedFile) ->
                     // A size-cap of 0 means the parse cache is disabled entirely.
                     val capMb = settings.parseCacheSizeMb.lastValue
-                    val cachingEnabled = capMb > 0
+                    // A source that reports neither its size nor its modification
+                    // time cannot be cached against: the two exist to notice the
+                    // file changing, and an entry that can never go stale can
+                    // never be invalidated either.
+                    val cachingEnabled = capMb > 0 && cachedFile.hasKnownMetadata
                     val maxBytes = capMb.toLong() * 1024 * 1024
                     val cacheImages = settings.cacheImagesInBooks.lastValue
 
@@ -109,20 +156,36 @@ class BookRepositoryImpl @Inject constructor(
                     // is a lazy property that may be a ContentResolver round-trip
                     // against the document URI; `size` and `lastModified` share
                     // one query, so whichever is asked for first pays for both.
-                    val path = timed("  open: key path") { cachedFile.cacheKeyPath }
+                    val key = timed("  open: key") { cachedFile.cacheKey }
                     val size = timed("  open: key size") { cachedFile.size }
                     val lastModified = timed("  open: key modified") {
                         cachedFile.lastModified
                     }
 
+                    // The book has just learned its identity, so the entry
+                    // written under the old one is moved rather than left to be
+                    // parsed again into the very same text.
+                    if (cachingEnabled && book.documentId == null &&
+                        cachedFile.documentId != null
+                    ) {
+                        parseCache.rekey(
+                            fromKey = cachedFile.legacyCacheKey,
+                            toKey = key,
+                            size = size,
+                            lastModified = lastModified
+                        )
+                    }
+
                     timed("getText", describe = { it.describeForTiming() }) {
                         val cached = if (cachingEnabled) parseCache.read(
-                            path, size, lastModified
+                            key, size, lastModified
                         ) else null
 
                         bookTimingNote {
                             val state = when {
-                                !cachingEnabled -> "cache off"
+                                capMb <= 0 -> "cache off"
+                                !cachedFile.hasKnownMetadata ->
+                                    "cache skipped — the provider reports no size or date"
                                 cached != null -> "cache HIT"
                                 else -> "cache MISS"
                             }
@@ -151,7 +214,7 @@ class BookRepositoryImpl @Inject constructor(
                                 if (cachingEnabled && fresh.text.isNotEmpty()) {
                                     timed("  cache write") {
                                         parseCache.write(
-                                            path,
+                                            key,
                                             size,
                                             lastModified,
                                             fresh,
@@ -202,10 +265,14 @@ class BookRepositoryImpl @Inject constructor(
                 .mapCatchingCancellable { cachedFile ->
                     val capMb = settings.parseCacheSizeMb.lastValue
                     val maxBytes = capMb.toLong() * 1024 * 1024
-                    val cacheImages = capMb > 0 && settings.cacheImagesInBooks.lastValue
+                    // The same condition the text obeys: an entry can only be
+                    // kept against a source that says how big it is and when it
+                    // changed, and a blob lives inside the text's entry.
+                    val cachingEnabled = capMb > 0 && cachedFile.hasKnownMetadata
+                    val cacheImages = cachingEnabled && settings.cacheImagesInBooks.lastValue
 
-                    val fromBlobs = if (capMb > 0) parseCache.imageBlobFiles(
-                        cachedFile.path, cachedFile.size, cachedFile.lastModified, srcs
+                    val fromBlobs = if (cachingEnabled) parseCache.imageBlobFiles(
+                        cachedFile.cacheKey, cachedFile.size, cachedFile.lastModified, srcs
                     ) else emptyMap()
                     fromBlobs.forEach { (src, file) -> onImage(src, BookImage.Ready.InFile(file)) }
 
@@ -222,7 +289,7 @@ class BookRepositoryImpl @Inject constructor(
                     fun publish(src: String, bytes: ByteArray) {
                         if (!pass.isActive) return
                         val blob = if (cacheImages) parseCache.writeImageBlob(
-                            cachedFile.path, cachedFile.size, cachedFile.lastModified,
+                            cachedFile.cacheKey, cachedFile.size, cachedFile.lastModified,
                             src, bytes
                         ) else null
                         wroteBlob = wroteBlob || blob != null
@@ -249,7 +316,7 @@ class BookRepositoryImpl @Inject constructor(
 
                     // One cap check for the whole pass, rather than one per image.
                     if (wroteBlob && pass.isActive) parseCache.trimToSizeKeeping(
-                        cachedFile.path, cachedFile.size, cachedFile.lastModified, maxBytes
+                        cachedFile.cacheKey, cachedFile.size, cachedFile.lastModified, maxBytes
                     )
                 }
         }
@@ -266,7 +333,7 @@ class BookRepositoryImpl @Inject constructor(
             return Result.success(opened.file)
         }
         return getBook(bookId).mapCatchingCancellable {
-            timed("  images: find file") { fileProvider.getFileFromBook(it).getOrThrow() }
+            timed("  images: find file") { fileOf(it) }
         }
     }
 
@@ -284,8 +351,8 @@ class BookRepositoryImpl @Inject constructor(
 
     override suspend fun storeBookFile(book: Book): Result<String> = runCatchingCancellable {
         withContext(Dispatchers.IO) {
-            val source = fileProvider.getFileFromBook(book).getOrThrow()
-            val sourcePath = source.cacheKeyPath
+            val source = fileOf(book)
+            val sourceKey = source.cacheKey
             val size = source.size
             val lastModified = source.lastModified
 
@@ -297,8 +364,8 @@ class BookRepositoryImpl @Inject constructor(
             // second open instant; without it the book is parsed again to
             // produce exactly the same text.
             parseCache.rekey(
-                fromPath = sourcePath,
-                toPath = stored.absolutePath,
+                fromKey = sourceKey,
+                toKey = stored.absolutePath,
                 size = size,
                 lastModified = lastModified
             )
@@ -332,7 +399,7 @@ class BookRepositoryImpl @Inject constructor(
     override suspend fun getFileFromBook(bookId: Int): Result<File> {
         return withContext(Dispatchers.IO) {
             getBook(bookId)
-                .mapCatchingCancellable { fileProvider.getFileFromBook(it).getOrThrow() }
+                .mapCatchingCancellable { fileOf(it) }
                 .mapCatchingCancellable { fileMapper.toFile(it) }
         }
     }
@@ -345,7 +412,9 @@ class BookRepositoryImpl @Inject constructor(
 
     override suspend fun findLibraryBookForFile(
         filePath: String,
-        fileName: String
+        fileName: String,
+        documentAuthority: String?,
+        documentId: String?
     ): Result<Book?> = runCatchingCancellable {
         withContext(Dispatchers.IO) {
             // Matched in Kotlin rather than in SQL: a LIKE over the path would
@@ -353,7 +422,12 @@ class BookRepositoryImpl @Inject constructor(
             // the same handful of rows every other screen already reads whole.
             database.bookDao.getLibraryBooks()
                 .map(bookMapper::toBook)
-                .findForFile(filePath = filePath, fileName = fileName)
+                .findForFile(
+                    filePath = filePath,
+                    fileName = fileName,
+                    documentAuthority = documentAuthority,
+                    documentId = documentId
+                )
         }
     }
 
@@ -365,10 +439,35 @@ class BookRepositoryImpl @Inject constructor(
 
     override suspend fun updateBook(book: Book): Result<Unit> = runCatchingCancellable {
         withContext(Dispatchers.IO) {
-            database.bookDao.updateBook(bookMapper.toBookEntity(book)).also {
+            database.bookDao.updateBook(withStoredIdentity(book)).also {
                 if (it == 0) throw Exception("Could not update book in database.")
             }
         }
+    }
+
+    /**
+     * The row to write, with the document identity the resolver learned rather
+     * than the one the caller is holding.
+     *
+     * Every screen updates a book by writing the whole row back from a [Book] it
+     * loaded earlier — the reader on leaving, the info screen on any edit — and
+     * that copy predates the identity being written, so a plain update would
+     * erase it on the very open that learned it. The identity is not the
+     * caller's to state: it belongs to the location, and it is dropped exactly
+     * when that changes, which is what the path dialog does and what keeping a
+     * book by copying its file does.
+     */
+    private suspend fun withStoredIdentity(book: Book): BookEntity {
+        val entity = bookMapper.toBookEntity(book)
+        if (book.documentId != null) return entity
+
+        val stored = database.bookDao.findBookById(book.id) ?: return entity
+        if (stored.documentId == null || stored.filePath != book.filePath) return entity
+
+        return entity.copy(
+            documentAuthority = stored.documentAuthority,
+            documentId = stored.documentId
+        )
     }
 
     override suspend fun deleteBook(book: Book): Result<Unit> = runCatchingCancellable {
@@ -381,9 +480,7 @@ class BookRepositoryImpl @Inject constructor(
 
     override suspend fun getDefaultCover(book: Book): Result<CoverImage?> = runCatchingCancellable {
         return withContext(Dispatchers.IO) {
-            fileProvider.getFileFromBook(book).mapCatchingCancellable {
-                coverParser.parse(it)
-            }
+            runCatchingCancellable { coverParser.parse(fileOf(book)) }
         }
     }
 }

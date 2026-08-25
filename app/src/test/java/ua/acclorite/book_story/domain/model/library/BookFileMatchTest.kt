@@ -18,10 +18,20 @@ import org.junit.Test
  */
 class BookFileMatchTest {
 
-    private fun book(id: Int, filePath: String) = Book.default.copy(
+    private fun book(
+        id: Int,
+        filePath: String,
+        documentAuthority: String? = null,
+        documentId: String? = null
+    ) = Book.default.copy(
         id = id,
-        filePath = filePath
+        filePath = filePath,
+        documentAuthority = documentAuthority,
+        documentId = documentId
     )
+
+    private val drive = "com.google.android.apps.docs.storage"
+    private val device = "com.android.externalstorage.documents"
 
     private val library = listOf(
         book(1, "/storage/emulated/0/Books/Solaris.fb2"),
@@ -87,5 +97,78 @@ class BookFileMatchTest {
         )
 
         assertNull(match)
+    }
+
+    @Test
+    fun `the identity wins over the path`() {
+        val books = listOf(
+            book(1, "/storage/Solaris.fb2", drive, "acc=1;doc=A"),
+            book(2, "/storage/Solaris.fb2", drive, "acc=1;doc=B")
+        )
+
+        // Two folders on one cloud provider compose every path under them from
+        // the same invented string, so the path cannot tell these apart.
+        assertEquals(
+            2,
+            books.findForFile(
+                filePath = "/storage/Solaris.fb2",
+                fileName = "Solaris.fb2",
+                documentAuthority = drive,
+                documentId = "acc=1;doc=B"
+            )?.id
+        )
+    }
+
+    @Test
+    fun `a book of the same provider with another id is not claimed by path or name`() {
+        val books = listOf(book(1, "/storage/Solaris.fb2", drive, "acc=1;doc=A"))
+
+        // The provider has said these are different documents, and no likeness
+        // of path or name outvotes that.
+        assertNull(
+            books.findForFile(
+                filePath = "/storage/Solaris.fb2",
+                fileName = "Solaris.fb2",
+                documentAuthority = drive,
+                documentId = "acc=1;doc=ELSEWHERE"
+            )
+        )
+    }
+
+    /**
+     * Two providers cannot be compared: the same file reached through each has
+     * two unrelated ids, and neither says anything about the other. The looser
+     * matches have to keep answering, or the book is imported a second time.
+     */
+    @Test
+    fun `a book identified by another provider is still matched by name`() {
+        val books = listOf(book(3, "/storage/emulated/0/Books/Nebula.epub", device, "primary:Books/Nebula.epub"))
+
+        assertEquals(
+            3,
+            books.findForFile(
+                filePath = "/mnt/media_rw/ABCD-1234/Nebula.epub",
+                fileName = "Nebula.epub",
+                documentAuthority = drive,
+                documentId = "acc=1;doc=A"
+            )?.id
+        )
+    }
+
+    /**
+     * Every row written before an identity was stored, until the first time it
+     * is opened. The path has to keep answering for those, or a whole library
+     * would offer itself for import again.
+     */
+    @Test
+    fun `a book with no identity still matches by path`() {
+        val match = library.findForFile(
+            filePath = "/storage/emulated/0/Books/Solaris.fb2",
+            fileName = "Solaris.fb2",
+            documentAuthority = drive,
+            documentId = "acc=1;doc=A"
+        )
+
+        assertEquals(1, match?.id)
     }
 }

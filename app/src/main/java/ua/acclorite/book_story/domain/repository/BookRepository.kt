@@ -76,14 +76,14 @@ interface BookRepository {
      * arriving from a file manager should reach that book rather than become a
      * second copy of it.
      *
-     * By path first. Failing that by file name, because a document URI does not
-     * always yield a path, and because the same book reached through two
-     * providers can carry two different ones. Size would be the better second
-     * key and is not available: a book row does not store it.
+     * By the document identity first, then by path, then by file name; see
+     * [ua.acclorite.book_story.domain.model.library.findForFile].
      */
     suspend fun findLibraryBookForFile(
         filePath: String,
-        fileName: String
+        fileName: String,
+        documentAuthority: String? = null,
+        documentId: String? = null
     ): Result<Book?>
 
     /**

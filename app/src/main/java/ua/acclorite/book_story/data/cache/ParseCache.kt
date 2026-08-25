@@ -29,7 +29,7 @@ private const val TAG = "ParseCache"
  * Lives in [Application.getCacheDir] — the OS may purge it under storage
  * pressure, so it is strictly best-effort: a miss simply re-parses. Each book is
  * a directory `parsed_books/<key>` keyed by the source file identity
- * (path + size + last-modified) plus [VERSION]; bumping [VERSION] on any parser
+ * (what identifies the document + size + last-modified) plus [VERSION]; bumping [VERSION] on any parser
  * or format change invalidates every stale entry. The directory holds the parsed
  * text ([TEXT_FILE]) and, when image caching is enabled, one file per image blob
  * under [IMG_DIR]. The size cap ([enforceCap]) bounds the whole tree — a book is
@@ -45,8 +45,8 @@ class ParseCache @Inject constructor(application: Application) {
     private val dir = File(application.cacheDir, DIR_NAME)
 
     /** Returns the cached [ParsedText] for this source, or null on a miss. */
-    fun read(path: String, size: Long, lastModified: Long): ParsedText? {
-        val entry = entryDir(path, size, lastModified)
+    fun read(key: String, size: Long, lastModified: Long): ParsedText? {
+        val entry = entryDir(key, size, lastModified)
         val text = textFile(entry)
         if (!text.exists()) return null
         return try {
@@ -67,8 +67,9 @@ class ParseCache @Inject constructor(application: Application) {
     /**
      * Moves an entry from one source to another, keeping the parsed book.
      *
-     * The key is a hash of the path, so a book that changes where it lives loses
-     * its entry even though the bytes are identical. That happens on purpose
+     * The key is a hash of the identity, so a book that changes where it lives,
+     * or that only now learned what its provider calls it, loses its entry even
+     * though the bytes are identical. That happens on purpose
      * when a previewed book is kept: the app copies the file into its own
      * storage, and the copy has a different path. Re-parsing a book that was
      * just parsed, to produce the very same result, is the only alternative.
@@ -77,15 +78,15 @@ class ParseCache @Inject constructor(application: Application) {
      * byte, and its modification time is set from the original.
      */
     fun rekey(
-        fromPath: String,
-        toPath: String,
+        fromKey: String,
+        toKey: String,
         size: Long,
         lastModified: Long
     ): Boolean {
-        val from = entryDir(fromPath, size, lastModified)
+        val from = entryDir(fromKey, size, lastModified)
         if (!textFile(from).exists()) return false
 
-        val to = entryDir(toPath, size, lastModified)
+        val to = entryDir(toKey, size, lastModified)
         to.deleteRecursively()
         return from.renameTo(to).also {
             if (!it) logE(TAG, "Could not move the cache entry to its new path.")
@@ -99,14 +100,14 @@ class ParseCache @Inject constructor(application: Application) {
      * evicted). Pass [Long.MAX_VALUE] for no cap.
      */
     fun write(
-        path: String,
+        key: String,
         size: Long,
         lastModified: Long,
         parsed: ParsedText,
         maxBytes: Long = Long.MAX_VALUE,
         images: Map<String, ByteArray>? = null
     ) {
-        val entry = entryDir(path, size, lastModified)
+        val entry = entryDir(key, size, lastModified)
         if (!entry.exists() && !entry.mkdirs()) {
             logE(TAG, "Could not create cache entry dir.")
             return
@@ -142,13 +143,13 @@ class ParseCache @Inject constructor(application: Application) {
      * no image memory at all here (see [ReaderImageFiles]).
      */
     fun imageBlobFiles(
-        path: String,
+        key: String,
         size: Long,
         lastModified: Long,
         srcs: Set<String>
     ): Map<String, File> {
         if (srcs.isEmpty()) return emptyMap()
-        val entry = entryDir(path, size, lastModified)
+        val entry = entryDir(key, size, lastModified)
         if (!entry.exists()) return emptyMap()
         val result = HashMap<String, File>(srcs.size)
         srcs.forEach { src ->
@@ -169,13 +170,13 @@ class ParseCache @Inject constructor(application: Application) {
      * [trimToSizeKeeping] once the pass is done.
      */
     fun writeImageBlob(
-        path: String,
+        key: String,
         size: Long,
         lastModified: Long,
         src: String,
         bytes: ByteArray
     ): File? {
-        val entry = entryDir(path, size, lastModified)
+        val entry = entryDir(key, size, lastModified)
         if (!textFile(entry).exists()) return null
         val blob = writeBlob(entry, src, bytes) ?: return null
         entry.setLastModified(System.currentTimeMillis())
@@ -189,20 +190,20 @@ class ParseCache @Inject constructor(application: Application) {
     fun trimToSize(maxBytes: Long) = enforceCap(maxBytes, keep = null)
 
     /** [trimToSize], but never evicting the book of this source. */
-    fun trimToSizeKeeping(path: String, size: Long, lastModified: Long, maxBytes: Long) =
-        enforceCap(maxBytes, keep = entryDir(path, size, lastModified))
+    fun trimToSizeKeeping(key: String, size: Long, lastModified: Long, maxBytes: Long) =
+        enforceCap(maxBytes, keep = entryDir(key, size, lastModified))
 
     /** Total size in bytes of every cached book (text + image blobs). */
     fun totalSizeBytes(): Long =
         entryDirs().sumOf { dirSize(it) }
 
     /** Size in bytes of the cached book for this source, or 0 if there is none. */
-    fun entrySizeBytes(path: String, size: Long, lastModified: Long): Long =
-        dirSize(entryDir(path, size, lastModified))
+    fun entrySizeBytes(key: String, size: Long, lastModified: Long): Long =
+        dirSize(entryDir(key, size, lastModified))
 
     /** Removes the cached book for this source, if any. */
-    fun remove(path: String, size: Long, lastModified: Long) {
-        entryDir(path, size, lastModified).deleteRecursively()
+    fun remove(key: String, size: Long, lastModified: Long) {
+        entryDir(key, size, lastModified).deleteRecursively()
     }
 
     /** Deletes every cached book. */
@@ -259,8 +260,8 @@ class ParseCache @Inject constructor(application: Application) {
         return entry.walkTopDown().filter { it.isFile }.sumOf { it.length() }
     }
 
-    private fun entryDir(path: String, size: Long, lastModified: Long): File =
-        File(dir, sha256Hex("$VERSION|$path|$size|$lastModified"))
+    private fun entryDir(key: String, size: Long, lastModified: Long): File =
+        File(dir, sha256Hex("$VERSION|$key|$size|$lastModified"))
 
     private fun textFile(entry: File): File = File(entry, TEXT_FILE)
 

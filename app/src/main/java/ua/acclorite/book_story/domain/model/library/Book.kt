@@ -39,7 +39,11 @@ data class Book(
     val inLibrary: Boolean = true,
 
     /** How a preview reaches its file; see the entity of the same name. */
-    val previewUri: String? = null
+    val previewUri: String? = null,
+
+    /** What identifies this book to its provider; see the entity of the same name. */
+    val documentAuthority: String? = null,
+    val documentId: String? = null
 ) : Parcelable {
     companion object {
         val default = Book(
