@@ -7,7 +7,11 @@
 package ua.acclorite.book_story.data.service
 
 import android.app.Application
+import android.net.Uri
+import android.os.Build
+import android.provider.DocumentsContract
 import androidx.core.net.toUri
+import ua.acclorite.book_story.core.helpers.rethrowIfCancellation
 import ua.acclorite.book_story.core.helpers.runCatchingCancellable
 import ua.acclorite.book_story.core.log.bookTimingNote
 import ua.acclorite.book_story.data.model.file.CachedFile
@@ -21,6 +25,14 @@ class FileProviderImpl @Inject constructor(
     private val application: Application,
     private val ownedBookFiles: OwnedBookFiles
 ) : FileProvider {
+
+    /**
+     * The last nesting decision, against the set of roots it was made for. Browse
+     * re-reads its list on every refresh, and each pair of roots can cost a round
+     * trip to a provider that is not on this device. Adding or removing a grant,
+     * or a source going dark, changes the set and so the key.
+     */
+    private var nestingCache: Pair<Set<SafRoot>, List<SafRoot>>? = null
 
     override fun getFileFromBook(book: Book): Result<CachedFile> = runCatchingCancellable {
         // A book being previewed is reached by the URI another app handed over,
@@ -111,25 +123,60 @@ class FileProviderImpl @Inject constructor(
     }
 
     override fun getStorageFiles(): Result<List<CachedFile>> = runCatchingCancellable {
-        application.contentResolver.persistedUriPermissions.mapNotNull { permission ->
-            val storage = CachedFileCompat.fromUri(
-                application,
-                permission.uri
-            )
-            if (!storage.isDirectory) return@mapNotNull null
+        // A tree that answers nothing is indistinguishable from an empty one: the
+        // query returns a null cursor and `isDirectory` falls back to false.
+        val readable = LinkedHashMap<SafRoot, CachedFile>()
+        val trees = LinkedHashMap<SafRoot, Uri>()
+        application.contentResolver.persistedUriPermissions.forEach { permission ->
+            val storage = CachedFileCompat.fromUri(application, permission.uri)
+            if (!storage.isDirectory) return@forEach
 
-            storage
-        }.let { storages ->
-            storages.filter { storage ->
-                storages.none {
-                    it.path != storage.path && storage.path.startsWith(
-                        it.path,
-                        ignoreCase = true
-                    )
-                }
-            }
+            val root = safRootOf(permission.uri)
+            readable.putIfAbsent(root, storage)
+            trees.putIfAbsent(root, permission.uri)
+        }
+
+        val listed = nestingCache
+            ?.takeIf { (asked, _) -> asked == readable.keys }
+            ?.second
+            ?: rootsToList(readable.keys.toList()) { parent, child ->
+                isChildDocument(trees.getValue(parent), trees.getValue(child))
+            }.also { nestingCache = readable.keys.toSet() to it }
+
+        listed.mapNotNull { readable[it] }
+    }
+
+    /**
+     * Whether the provider considers [childTree] to sit inside [parentTree], or
+     * null when it will not say — unsupported, or gone since the grant was taken.
+     */
+    private fun isChildDocument(parentTree: Uri, childTree: Uri): Boolean? {
+        // Public only since API 29, and `minSdk` is 26. Below it there is no way
+        // to ask at all, so the question goes unanswered and the id structure
+        // decides — the same route a provider that will not answer takes.
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return null
+
+        return try {
+            DocumentsContract.isChildDocument(
+                application.contentResolver,
+                documentUriOf(parentTree),
+                documentUriOf(childTree)
+            )
+        } catch (e: Throwable) {
+            e.rethrowIfCancellation()
+            null
         }
     }
+
+    private fun documentUriOf(treeUri: Uri): Uri = DocumentsContract.buildDocumentUriUsingTree(
+        treeUri,
+        DocumentsContract.getTreeDocumentId(treeUri)
+    )
+
+    private fun safRootOf(treeUri: Uri) = SafRoot(
+        authority = treeUri.authority,
+        treeDocumentId = DocumentsContract.getTreeDocumentId(treeUri)
+    )
 }
 
 /**
@@ -162,4 +209,80 @@ internal fun pathSegmentsUnder(rootPath: String, filePath: String): List<String>
     if (segments.any { it.isBlank() }) return null
 
     return segments
+}
+/**
+ * A granted tree, named the way its provider names it rather than by a path.
+ *
+ * A path is the wrong identity for a tree: `DocumentFileCompat.getAbsolutePath`
+ * synthesises one for any provider that is not `com.android.externalstorage`, and
+ * Google Drive answers `/storage` for every folder it hosts — a string that is a
+ * prefix of every real path on the device and identical for two unrelated folders.
+ * The authority and the tree's document id are what the platform actually
+ * promises: unique within a provider, and durable, since long-term permission
+ * grants are issued against them.
+ */
+internal data class SafRoot(val authority: String?, val treeDocumentId: String)
+
+/**
+ * The roots worth listing: duplicates collapsed, and any root that lies inside
+ * another dropped, so a book under two granted trees is offered once.
+ *
+ * [isDescendant] is the provider's own answer and is asked **only** about two
+ * roots of one authority — a folder on Drive cannot be inside a folder on device
+ * storage whatever their strings say, and `DocumentsContract.isChildDocument`
+ * throws when asked across authorities. It may return null where the provider
+ * cannot say, and then [documentIdContains] decides.
+ *
+ * The rule **fails open**: anything unknown keeps both roots. Listing a book
+ * twice is a small harm; the alternative, which is what comparing invented paths
+ * did, is the whole device library disappearing from Browse.
+ */
+internal fun rootsToList(
+    roots: List<SafRoot>,
+    isDescendant: (parent: SafRoot, child: SafRoot) -> Boolean?
+): List<SafRoot> {
+    val unique = roots.distinct()
+    if (unique.size < 2) return unique
+
+    // Each ordered pair is asked at most once: an answer can be a round trip to a
+    // provider that is not on this device.
+    val answers = mutableMapOf<Pair<SafRoot, SafRoot>, Boolean>()
+    fun contains(parent: SafRoot, child: SafRoot): Boolean =
+        answers.getOrPut(parent to child) {
+            if (parent.authority != child.authority) false
+            else isDescendant(parent, child)
+                ?: documentIdContains(parent.treeDocumentId, child.treeDocumentId)
+        }
+
+    return unique.filter { child ->
+        unique.none { parent ->
+            // A pair that claims to contain one another cannot be resolved into a
+            // parent and a child, and dropping both would empty the list — the
+            // very failure this function exists to prevent.
+            parent != child && contains(parent, child) && !contains(child, parent)
+        }
+    }
+}
+
+/**
+ * Whether [childId] names something under [parentId] by the structure of the ids
+ * themselves.
+ *
+ * This is the fallback for a provider that will not answer `isChildDocument`, and
+ * it is safe because it reads the provider's own id rather than a fabricated
+ * path: `externalstorage` composes ids hierarchically (`primary:Download` holds
+ * `primary:Download/books_story`), while an opaque id is never a prefix of
+ * another — every Drive child observed reported the tree's id as no prefix of its
+ * own.
+ *
+ * Compared exactly, not case-insensitively: an id is opaque, and only its issuer
+ * knows whether two spellings mean one document.
+ */
+internal fun documentIdContains(parentId: String, childId: String): Boolean {
+    if (parentId.isEmpty() || childId.length <= parentId.length) return false
+    if (!childId.startsWith(parentId)) return false
+
+    // A boundary, so that `primary:Download` does not claim `primary:DownloadOld`.
+    // A root id ending in ':' is a whole volume, whose children follow immediately.
+    return childId[parentId.length] == '/' || parentId.endsWith(':')
 }
