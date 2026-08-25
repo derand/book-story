@@ -31,6 +31,7 @@ import ua.acclorite.book_story.ui.navigator.NavigatorBackIconButton
 @Composable
 fun ReaderErrorPlaceholder(
     errorMessage: UIText,
+    offersPathChange: Boolean,
     leave: (ReaderEvent.OnLeave) -> Unit,
     navigateToBookInfo: (ReaderEvent.OnNavigateToBookInfo) -> Unit,
     navigateBack: (ReaderEvent.OnNavigateBack) -> Unit
@@ -67,7 +68,10 @@ fun ReaderErrorPlaceholder(
             ErrorPlaceholder(
                 errorMessage = errorMessage.asString(),
                 icon = painterResource(id = R.drawable.error),
-                actionTitle = stringResource(id = R.string.change_path),
+                actionTitle = when {
+                    offersPathChange -> stringResource(id = R.string.change_path)
+                    else -> null
+                },
                 action = {
                     leave(
                         ReaderEvent.OnLeave(

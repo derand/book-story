@@ -10,17 +10,21 @@ import android.app.Application
 import android.net.Uri
 import android.os.Build
 import android.provider.DocumentsContract
-import java.util.concurrent.ConcurrentHashMap
 import androidx.core.net.toUri
 import ua.acclorite.book_story.core.helpers.rethrowIfCancellation
 import ua.acclorite.book_story.core.helpers.runCatchingCancellable
 import ua.acclorite.book_story.core.log.bookTimingNote
+import ua.acclorite.book_story.core.log.logE
 import ua.acclorite.book_story.data.model.file.CachedFile
 import ua.acclorite.book_story.data.model.file.CachedFileCompat
 import ua.acclorite.book_story.data.storage.OwnedBookFiles
+import ua.acclorite.book_story.domain.model.file.BookSource
 import ua.acclorite.book_story.domain.model.library.Book
 import ua.acclorite.book_story.domain.service.FileProvider
+import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
+
+private const val TAG = "FileProvider"
 
 class FileProviderImpl @Inject constructor(
     private val application: Application,
@@ -157,6 +161,70 @@ class FileProviderImpl @Inject constructor(
             current = child
         }
         return null
+    }
+
+    override fun getStorageSources(): Result<List<BookSource>> = runCatchingCancellable {
+        application.contentResolver.persistedUriPermissions.map { permission ->
+            // Asked one source at a time. A provider is free to throw rather than
+            // answer — an unmounted card, a stale tree, an account that is gone —
+            // and one of them failing must not take the list with it: an empty
+            // list is what the settings screen shows when nothing is granted, so
+            // the user would lose the row holding the very grant they need to
+            // remove, and Browse would go back to inviting them to add folders.
+            runCatchingCancellable {
+                val storage = CachedFileCompat.fromUri(application, permission.uri)
+                // One query decides both: a provider that will not answer returns
+                // a null cursor, which reaches here as "not a directory" — the
+                // same shape an empty folder would have, and the reason a dead
+                // source used to pass for a working one.
+                storage.isDirectory to storage.name
+            }.fold(
+                onSuccess = { (available, name) ->
+                    BookSource(
+                        uri = permission.uri.toString(),
+                        provider = providerLabel(permission.uri.authority),
+                        authority = permission.uri.authority,
+                        treeDocumentId = treeDocumentIdOf(permission.uri),
+                        // The name only means anything when the provider
+                        // answered; what it falls back to is a generated
+                        // "unknown_<uuid>".
+                        name = name.takeIf { available },
+                        isAvailable = available
+                    )
+                },
+                onFailure = {
+                    logE(TAG, "Source ${permission.uri} could not be asked: ${it.message}")
+                    BookSource(
+                        uri = permission.uri.toString(),
+                        provider = providerLabel(permission.uri.authority),
+                        authority = permission.uri.authority,
+                        treeDocumentId = treeDocumentIdOf(permission.uri),
+                        name = null,
+                        isAvailable = false
+                    )
+                }
+            )
+        }
+    }
+
+    /** What the grant says the tree is, without asking anyone. */
+    private fun treeDocumentIdOf(treeUri: Uri): String? = runCatching {
+        DocumentsContract.getTreeDocumentId(treeUri)
+    }.getOrNull()
+
+    /**
+     * The label of the app publishing [authority], or null when nothing does —
+     * a provider uninstalled since the grant was taken, or one this app cannot
+     * see.
+     */
+    private fun providerLabel(authority: String?): String? {
+        if (authority == null) return null
+        return runCatching {
+            application.packageManager.resolveContentProvider(authority, 0)
+                ?.applicationInfo
+                ?.loadLabel(application.packageManager)
+                ?.toString()
+        }.getOrNull()
     }
 
     override fun getStorageFiles(): Result<List<CachedFile>> = runCatchingCancellable {

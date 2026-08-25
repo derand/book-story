@@ -150,6 +150,8 @@ object BrowseScreen : Screen, Parcelable {
             isLoading = state.value.isLoading,
             dialogHidden = state.value.dialog == null,
             filesEmpty = state.value.files.isEmpty(),
+            sourcesGranted = state.value.sourcesGranted,
+            sourcesAvailable = state.value.sourcesAvailable,
             showSearch = state.value.showSearch,
             searchQuery = state.value.searchQuery,
             focusRequester = focusRequester,

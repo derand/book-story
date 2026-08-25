@@ -61,6 +61,7 @@ fun ReaderContent(
     currentChapterProgress: Float,
     isLoading: Boolean,
     errorMessage: UIText?,
+    errorOffersPathChange: Boolean,
     checkpoints: List<Checkpoint>,
     search: ReaderSearch,
     showMenu: Boolean,
@@ -224,6 +225,7 @@ fun ReaderContent(
     } else {
         ReaderErrorPlaceholder(
             errorMessage = errorMessage,
+            offersPathChange = errorOffersPathChange,
             leave = leave,
             navigateToBookInfo = navigateToBookInfo,
             navigateBack = navigateBack

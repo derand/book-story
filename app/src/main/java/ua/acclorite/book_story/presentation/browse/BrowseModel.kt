@@ -27,6 +27,7 @@ import kotlinx.coroutines.withContext
 import ua.acclorite.book_story.R
 import ua.acclorite.book_story.core.ui.UIText
 import ua.acclorite.book_story.domain.model.file.File
+import ua.acclorite.book_story.domain.use_case.file_system.GetBookSourcesUseCase
 import ua.acclorite.book_story.domain.use_case.book.AddBookUseCase
 import ua.acclorite.book_story.domain.use_case.file_system.GetBookFromFileUseCase
 import ua.acclorite.book_story.domain.use_case.file_system.GetFilesUseCase
@@ -41,7 +42,8 @@ import kotlin.coroutines.coroutineContext
 class BrowseModel @Inject constructor(
     private val addBookUseCase: AddBookUseCase,
     private val getFilesUseCase: GetFilesUseCase,
-    private val getBookFromFileUseCase: GetBookFromFileUseCase
+    private val getBookFromFileUseCase: GetBookFromFileUseCase,
+    private val getBookSourcesUseCase: GetBookSourcesUseCase
 ) : ViewModel() {
 
     private val mutex = Mutex()
@@ -107,9 +109,25 @@ class BrowseModel @Inject constructor(
                                 selected = false
                             )
                         }
+
+                        // Only when there is nothing to show, because that is the
+                        // only thing the counts decide: which of the two empty
+                        // states this is. Asked unconditionally they would cost a
+                        // round trip per granted tree on every refresh — and a
+                        // refresh is every keystroke of the search, against a
+                        // provider that answers over a network.
+                        val sources = when {
+                            selectableFiles.isEmpty() -> getBookSourcesUseCase()
+                            else -> null
+                        }
+
                         _state.update {
                             it.copy(
                                 files = selectableFiles,
+                                sourcesGranted = sources?.size ?: it.sourcesGranted,
+                                sourcesAvailable = sources?.count { source ->
+                                    source.isAvailable
+                                } ?: it.sourcesAvailable,
                                 hasSelectedItems = false,
                                 isLoading = false
                             )

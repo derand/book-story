@@ -86,6 +86,9 @@ sealed class SettingsEvent {
 
     data object OnClearParseCache : SettingsEvent()
 
+    /** Re-asks every granted source whether it answers. */
+    data object OnRefreshBookSources : SettingsEvent()
+
     data object OnRefreshParseCacheSize : SettingsEvent()
 
     data object OnCopyDatabase : SettingsEvent()

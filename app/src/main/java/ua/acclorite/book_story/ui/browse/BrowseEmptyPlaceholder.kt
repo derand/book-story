@@ -6,6 +6,7 @@
 
 package ua.acclorite.book_story.ui.browse
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -21,6 +22,8 @@ import ua.acclorite.book_story.ui.theme.Transitions
 @Composable
 fun BoxScope.BrowseEmptyPlaceholder(
     filesEmpty: Boolean,
+    sourcesGranted: Int,
+    sourcesAvailable: Int,
     dialogHidden: Boolean,
     isLoading: Boolean,
     isRefreshing: Boolean,
@@ -36,7 +39,9 @@ fun BoxScope.BrowseEmptyPlaceholder(
         exit = Transitions.NoExitAnimation
     ) {
         EmptyPlaceholder(
-            message = stringResource(id = R.string.browse_empty),
+            message = stringResource(
+                id = browseEmptyMessage(sourcesGranted, sourcesAvailable)
+            ),
             icon = painterResource(id = R.drawable.empty_browse),
             actionTitle = stringResource(id = R.string.set_up_scanning),
             action = {
@@ -44,4 +49,19 @@ fun BoxScope.BrowseEmptyPlaceholder(
             }
         )
     }
+}
+
+/**
+ * What an empty Browse says.
+ *
+ * Nothing to show is two different situations, and only one of them is an
+ * invitation. Folders granted and none of them answering is a fault, and
+ * offering to "expand the library with your downloads" to someone whose three
+ * folders have all gone quiet explains nothing. The way through stays the same
+ * — the settings screen is where the state is now reported.
+ */
+@StringRes
+internal fun browseEmptyMessage(sourcesGranted: Int, sourcesAvailable: Int): Int = when {
+    sourcesGranted > 0 && sourcesAvailable == 0 -> R.string.browse_sources_unavailable
+    else -> R.string.browse_empty
 }
