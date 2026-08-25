@@ -18,6 +18,7 @@ import ua.acclorite.book_story.core.log.timed
 import ua.acclorite.book_story.data.cache.ImageMemoryBudget
 import ua.acclorite.book_story.data.cache.ParseCache
 import ua.acclorite.book_story.data.cache.ReaderImageFiles
+import ua.acclorite.book_story.data.local.dto.BookEntity
 import ua.acclorite.book_story.data.local.room.BookDatabase
 import ua.acclorite.book_story.data.model.file.CachedFile
 import ua.acclorite.book_story.data.settings.SettingsManager
@@ -438,10 +439,35 @@ class BookRepositoryImpl @Inject constructor(
 
     override suspend fun updateBook(book: Book): Result<Unit> = runCatchingCancellable {
         withContext(Dispatchers.IO) {
-            database.bookDao.updateBook(bookMapper.toBookEntity(book)).also {
+            database.bookDao.updateBook(withStoredIdentity(book)).also {
                 if (it == 0) throw Exception("Could not update book in database.")
             }
         }
+    }
+
+    /**
+     * The row to write, with the document identity the resolver learned rather
+     * than the one the caller is holding.
+     *
+     * Every screen updates a book by writing the whole row back from a [Book] it
+     * loaded earlier — the reader on leaving, the info screen on any edit — and
+     * that copy predates the identity being written, so a plain update would
+     * erase it on the very open that learned it. The identity is not the
+     * caller's to state: it belongs to the location, and it is dropped exactly
+     * when that changes, which is what the path dialog does and what keeping a
+     * book by copying its file does.
+     */
+    private suspend fun withStoredIdentity(book: Book): BookEntity {
+        val entity = bookMapper.toBookEntity(book)
+        if (book.documentId != null) return entity
+
+        val stored = database.bookDao.findBookById(book.id) ?: return entity
+        if (stored.documentId == null || stored.filePath != book.filePath) return entity
+
+        return entity.copy(
+            documentAuthority = stored.documentAuthority,
+            documentId = stored.documentId
+        )
     }
 
     override suspend fun deleteBook(book: Book): Result<Unit> = runCatchingCancellable {

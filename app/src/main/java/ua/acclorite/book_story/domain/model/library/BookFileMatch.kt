@@ -33,12 +33,16 @@ fun List<Book>.findForFile(
         }?.let { return it }
     }
 
-    // Which books the looser matches are allowed to consider. When the file
-    // carries an identity, every book that carries one has already had its
-    // chance above, and a different id is the provider saying these are
-    // different documents — no likeness of path or name outvotes that. When the
-    // file carries none, there is no such evidence and nothing is excluded.
-    val candidates = if (documentId == null) this else filter { it.documentId == null }
+    // Which books the looser matches are allowed to consider. A book identified
+    // by the *same* provider has already had its chance above, and a different
+    // id there is that provider saying these are different documents — no
+    // likeness of path or name outvotes it. Two providers say nothing about one
+    // another: the same file reached through each carries two unrelated ids, so
+    // such a book stays a candidate, as does one that has no identity yet.
+    val candidates = when (documentId) {
+        null -> this
+        else -> filter { it.documentId == null || it.documentAuthority != documentAuthority }
+    }
 
     if (filePath.isNotBlank()) {
         candidates.firstOrNull { it.filePath == filePath }?.let { return it }

@@ -10,6 +10,7 @@ import android.app.Application
 import android.net.Uri
 import android.os.Build
 import android.provider.DocumentsContract
+import java.util.concurrent.ConcurrentHashMap
 import androidx.core.net.toUri
 import ua.acclorite.book_story.core.helpers.rethrowIfCancellation
 import ua.acclorite.book_story.core.helpers.runCatchingCancellable
@@ -40,7 +41,7 @@ class FileProviderImpl @Inject constructor(
      * being right: a stale entry costs the same round trip a wrong guess always
      * did, and the loop moves on.
      */
-    private val lastServingTree = mutableMapOf<String?, Uri>()
+    private val lastServingTree = ConcurrentHashMap<String, Uri>()
 
     override fun getFileFromBook(book: Book): Result<CachedFile> = runCatchingCancellable {
         // A book being previewed is reached by the URI another app handed over,
@@ -77,14 +78,14 @@ class FileProviderImpl @Inject constructor(
                 // document authorises it, and the refusal from one that is not
                 // above it costs a round trip like any other query; with several
                 // trees granted on one provider, most books sit under the same one.
-                .sortedByDescending { it == lastServingTree[book.documentAuthority] }
+                .sortedByDescending { it == lastServingTree[book.documentAuthority.orEmpty()] }
                 .forEach { tree ->
                     val file = CachedFileCompat.fromUri(
                         application,
                         DocumentsContract.buildDocumentUriUsingTree(tree, documentId)
                     )
                     if (file.canAccess()) {
-                        lastServingTree[book.documentAuthority] = tree
+                        lastServingTree[book.documentAuthority.orEmpty()] = tree
                         return@runCatchingCancellable file
                     }
                 }
