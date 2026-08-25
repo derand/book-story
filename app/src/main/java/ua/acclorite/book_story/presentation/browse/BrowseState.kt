@@ -17,6 +17,18 @@ data class BrowseState(
     val files: List<SelectableFile> = emptyList(),
 
     val isLoading: Boolean = true,
+
+    /**
+     * Whether the user has granted any folder at all, and whether any of them
+     * answered when the list was last built.
+     *
+     * An empty list means two different things, and the screen used to say the
+     * same thing about both: an invitation to add a folder, shown to someone
+     * whose three folders have all gone quiet, with a button to the settings
+     * screen that already lists them.
+     */
+    val sourcesGranted: Int = 0,
+    val sourcesAvailable: Int = 0,
     val isRefreshing: Boolean = false,
 
     val selectedItemsCount: Int = 0,

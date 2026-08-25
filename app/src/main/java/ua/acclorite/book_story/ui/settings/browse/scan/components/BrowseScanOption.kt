@@ -6,8 +6,6 @@
 
 package ua.acclorite.book_story.ui.settings.browse.scan.components
 
-import android.content.Context
-import android.content.UriPermission
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.animateContentSize
@@ -23,11 +21,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.outlined.Clear
 import androidx.compose.material.icons.outlined.Folder
+import androidx.compose.material.icons.outlined.FolderOff
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -35,10 +33,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.anggrayudi.storage.file.DocumentFileCompat
-import com.anggrayudi.storage.file.getBasePath
-import com.anggrayudi.storage.file.getRootPath
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ua.acclorite.book_story.R
+import ua.acclorite.book_story.domain.model.file.BookSource
 import ua.acclorite.book_story.presentation.browse.BrowseScreen
 import ua.acclorite.book_story.presentation.settings.SettingsEvent
 import ua.acclorite.book_story.presentation.settings.SettingsModel
@@ -52,19 +49,13 @@ import ua.acclorite.book_story.ui.theme.dynamicListItemColor
 fun BrowseScanOption() {
     val settingsModel = hiltViewModel<SettingsModel>()
     val context = LocalContext.current
+    val state = settingsModel.state.collectAsStateWithLifecycle()
 
-    fun getPersistedUriPermissions(): List<UriPermission> {
-        return context.contentResolver?.persistedUriPermissions.let { permissions ->
-            if (permissions.isNullOrEmpty()) return@let emptyList()
-            permissions.sortedBy { it.uri.path?.lowercase() }
-        }
-    }
-
-    val persistedUriPermissions = remember {
-        mutableStateListOf<UriPermission>().apply {
-            clear()
-            addAll(getPersistedUriPermissions())
-        }
+    // Asking a source whether it answers is a query against its provider, and
+    // for one that is not on this device that is a round trip — so it is asked
+    // when the screen opens and when a grant changes, not while drawing.
+    LaunchedEffect(Unit) {
+        settingsModel.onEvent(SettingsEvent.OnRefreshBookSources)
     }
 
     val persistedUriIntent = rememberLauncherForActivityResult(
@@ -76,9 +67,6 @@ fun BrowseScanOption() {
                 uri = uri.toString()
             )
         )
-
-        persistedUriPermissions.clear()
-        persistedUriPermissions.addAll(getPersistedUriPermissions())
         BrowseScreen.refreshListChannel.trySend(Unit)
     }
 
@@ -87,20 +75,14 @@ fun BrowseScanOption() {
             .fillMaxWidth()
             .animateContentSize()
     ) {
-        persistedUriPermissions.forEachIndexed { index, permission ->
+        state.value.bookSources.forEachIndexed { index, source ->
             BrowseScanFolderItem(
                 index = index,
-                permission = permission,
-                context = context,
+                source = source,
                 releasePersistableUriPermission = {
                     settingsModel.onEvent(
-                        SettingsEvent.OnReleasePersistableUriPermission(
-                            uri = permission.uri.toString()
-                        )
+                        SettingsEvent.OnReleasePersistableUriPermission(uri = source.uri)
                     )
-
-                    persistedUriPermissions.clear()
-                    persistedUriPermissions.addAll(getPersistedUriPermissions())
                     BrowseScreen.refreshListChannel.trySend(Unit)
                 }
             )
@@ -124,11 +106,14 @@ fun BrowseScanOption() {
 @Composable
 private fun BrowseScanFolderItem(
     index: Int,
-    permission: UriPermission,
-    context: Context,
+    source: BookSource,
     releasePersistableUriPermission: () -> Unit
 ) {
-    val permissionFile = DocumentFileCompat.fromUri(context, permission.uri) ?: return
+    // Never dropped for being unreadable: a grant the user made is theirs to see
+    // and to remove, and a source that says nothing is exactly the one they need
+    // to be told about. The row used to vanish instead — `DocumentFileCompat`
+    // returning null took the whole item with it.
+    val unavailable = !source.isAvailable
 
     Row(
         modifier = Modifier
@@ -141,30 +126,66 @@ private fun BrowseScanFolderItem(
         horizontalArrangement = Arrangement.spacedBy(18.dp)
     ) {
         Icon(
-            imageVector = Icons.Outlined.Folder,
+            imageVector = when {
+                unavailable -> Icons.Outlined.FolderOff
+                else -> Icons.Outlined.Folder
+            },
             contentDescription = null,
             modifier = Modifier
                 .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.dynamicListItemColor(index))
+                .background(
+                    when {
+                        unavailable -> MaterialTheme.colorScheme.surfaceVariant
+                        else -> MaterialTheme.colorScheme.dynamicListItemColor(index)
+                    }
+                )
                 .padding(11.dp)
                 .size(22.dp),
-            tint = MaterialTheme.colorScheme.onSurface
+            tint = when {
+                unavailable -> MaterialTheme.colorScheme.onSurfaceVariant
+                else -> MaterialTheme.colorScheme.onSurface
+            }
         )
 
         Column(
             modifier = Modifier.weight(1f)
         ) {
+            // The folder as its provider names it, over the provider as it names
+            // itself. Both are answers; the path this used to show was a guess
+            // that only external storage can be guessed for, and it rendered a
+            // folder on Drive as an empty line over "/storage/emulated/0".
+            //
+            // A source that will not answer has no folder name to give — the
+            // name has to be asked for, and asking is what failed — so the
+            // provider moves up to the line that is always filled, and the
+            // second line carries the state and whatever tells this grant apart
+            // from the next one. Two folders gone dark on one provider would
+            // otherwise be the same row twice, with two buttons to remove them.
+            val providerName = source.provider
+                ?: source.authority
+                ?: stringResource(R.string.source_unknown_provider)
+
             StyledText(
-                text = permissionFile.getBasePath(context),
+                text = source.name ?: providerName,
                 style = MaterialTheme.typography.bodyLarge.copy(
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = when {
+                        unavailable -> MaterialTheme.colorScheme.onSurfaceVariant
+                        else -> MaterialTheme.colorScheme.onSurface
+                    }
                 )
             )
             StyledText(
-                text = permissionFile.getRootPath(context),
+                text = when {
+                    !unavailable -> providerName
+                    else -> listOfNotNull(
+                        stringResource(R.string.source_unavailable),
+                        source.treeDocumentId
+                    ).joinToString(" · ")
+                },
                 style = MaterialTheme.typography.bodyMedium.copy(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                ),
+                maxLines = 1
             )
         }
 

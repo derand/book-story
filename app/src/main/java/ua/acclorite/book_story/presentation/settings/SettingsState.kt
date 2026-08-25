@@ -9,6 +9,7 @@ package ua.acclorite.book_story.presentation.settings
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.Immutable
 import ua.acclorite.book_story.domain.model.library.Category
+import ua.acclorite.book_story.domain.model.file.BookSource
 import ua.acclorite.book_story.domain.model.reader.ColorPreset
 
 @Immutable
@@ -21,6 +22,13 @@ data class SettingsState(
     val categories: List<Category> = emptyList(),
 
     val parseCacheSizeBytes: Long = 0L,
+
+    /**
+     * The places books are read from, each with whether it answered when it was
+     * last asked. Read when the Browse settings open and after any grant
+     * changes; a source going quiet in between is what the next open reports.
+     */
+    val bookSources: List<BookSource> = emptyList(),
 
     /**
      * Where the last "Copy database" landed, or why it did not. Both null until

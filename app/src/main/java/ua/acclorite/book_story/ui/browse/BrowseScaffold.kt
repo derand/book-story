@@ -44,6 +44,8 @@ fun BrowseScaffold(
     isLoading: Boolean,
     dialogHidden: Boolean,
     filesEmpty: Boolean,
+    sourcesGranted: Int,
+    sourcesAvailable: Int,
     showSearch: Boolean,
     searchQuery: String,
     focusRequester: FocusRequester,
@@ -139,6 +141,8 @@ fun BrowseScaffold(
 
             BrowseEmptyPlaceholder(
                 filesEmpty = filesEmpty,
+                sourcesGranted = sourcesGranted,
+                sourcesAvailable = sourcesAvailable,
                 dialogHidden = dialogHidden,
                 isLoading = isLoading,
                 isRefreshing = isRefreshing,

@@ -16,6 +16,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
+import ua.acclorite.book_story.domain.model.file.BookSource
 import ua.acclorite.book_story.data.model.file.CachedFile
 import ua.acclorite.book_story.domain.model.library.Book
 import ua.acclorite.book_story.domain.service.FileProvider
@@ -50,6 +51,8 @@ class AddPreviewToLibraryUseCaseTest {
             }
 
         override fun getStorageFiles(): Result<List<CachedFile>> = Result.success(emptyList())
+
+        override fun getStorageSources(): Result<List<BookSource>> = Result.success(emptyList())
     }
 
     @Test

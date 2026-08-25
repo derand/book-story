@@ -34,6 +34,14 @@ data class ReaderState(
     val search: ReaderSearch = ReaderSearch(),
 
     val errorMessage: UIText? = null,
+
+    /**
+     * Whether re-pointing the book could plausibly help. False when what failed
+     * is the source rather than the book: offering to change the path of a book
+     * whose provider is merely quiet invites the user to break something that
+     * works.
+     */
+    val errorOffersPathChange: Boolean = true,
     val isLoading: Boolean = true,
 
     val showMenu: Boolean = false,

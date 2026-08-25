@@ -22,6 +22,7 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import ua.acclorite.book_story.domain.model.reader.ColorPreset
 import ua.acclorite.book_story.domain.model.reader.ColorPresetType
+import ua.acclorite.book_story.domain.use_case.file_system.GetBookSourcesUseCase
 import ua.acclorite.book_story.domain.use_case.category.AddCategoryUseCase
 import ua.acclorite.book_story.domain.use_case.category.DeleteCategoryUseCase
 import ua.acclorite.book_story.domain.use_case.category.GetCategoriesUseCase
@@ -62,10 +63,30 @@ class SettingsModel @Inject constructor(
     private val getParseCacheSizeUseCase: GetParseCacheSizeUseCase,
     private val clearParseCacheUseCase: ClearParseCacheUseCase,
     private val copyDatabaseUseCase: CopyDatabaseUseCase,
-    private val deleteStatisticsUseCase: DeleteStatisticsUseCase
+    private val deleteStatisticsUseCase: DeleteStatisticsUseCase,
+    private val getBookSourcesUseCase: GetBookSourcesUseCase
 ) : ViewModel() {
 
     private val mutex = Mutex()
+
+    /**
+     * Held across reading the sources *and* storing them, so two refreshes
+     * cannot interleave.
+     *
+     * `onEvent` launches a coroutine per event and nothing orders them, so
+     * removing two folders quickly used to let the earlier refresh finish last
+     * and put a row back that was already gone — with a Clear button pointing at
+     * a grant that no longer existed.
+     *
+     * A lock of its own rather than [mutex], which `update` below takes and
+     * which is not reentrant.
+     */
+    private val bookSourcesMutex = Mutex()
+
+    private suspend fun refreshBookSources() = bookSourcesMutex.withLock {
+        val sources = getBookSourcesUseCase()
+        _state.update { it.copy(bookSources = sources) }
+    }
 
     private val _state = MutableStateFlow(SettingsState())
     val state = _state.asStateFlow()
@@ -137,10 +158,16 @@ class SettingsModel @Inject constructor(
 
                 is SettingsEvent.OnGrantPersistableUriPermission -> {
                     grantPersistableUriPermissionUseCase(event.uri)
+                    refreshBookSources()
                 }
 
                 is SettingsEvent.OnReleasePersistableUriPermission -> {
                     releasePersistableUriPermissionUseCase(event.uri)
+                    refreshBookSources()
+                }
+
+                is SettingsEvent.OnRefreshBookSources -> {
+                    refreshBookSources()
                 }
 
                 is SettingsEvent.OnCreateCategory -> {

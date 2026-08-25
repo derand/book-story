@@ -135,6 +135,23 @@
     <string name="share">Share</string>
     <string name="ok">OK</string>
     <string name="change_path">Change path</string>
+    <!-- A granted source that does not answer, shown where it is listed. -->
+    <string name="source_unavailable">Not responding</string>
+    <!-- A granted source whose provider app is gone. -->
+    <string name="source_unknown_provider">Unknown app</string>
+    <!-- Browse, when folders are granted but none of them answered. -->
+    <string name="browse_sources_unavailable">
+        None of your book folders are responding right now
+    </string>
+    <!-- The reader, when the book's source is what failed rather than the book. -->
+    <string name="error_source_unavailable">
+        %1$s is not responding. The book is still there; try again once it is back.
+    </string>
+    <!-- The reader, when the app that held the book is not installed any more. -->
+    <string name="error_source_gone">
+        The app this book came from is no longer installed. Point the book at the
+        file again, or remove it from the library.
+    </string>
     <string name="add_folder">Add folder</string>
     <string name="edit">Edit</string>
     <string name="create_category">Create category</string>

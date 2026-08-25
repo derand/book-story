@@ -30,6 +30,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import ua.acclorite.book_story.domain.model.library.Book
+import androidx.core.net.toUri
 import ua.acclorite.book_story.R
 import ua.acclorite.book_story.core.helpers.coerceAndPreventNaN
 import ua.acclorite.book_story.core.log.BookOpenTrace
@@ -44,6 +46,7 @@ import ua.acclorite.book_story.domain.model.statistics.ReadingCoverage
 import ua.acclorite.book_story.domain.model.statistics.SessionWords
 import ua.acclorite.book_story.domain.model.statistics.wordCount
 import ua.acclorite.book_story.domain.model.statistics.wordPrefixSums
+import ua.acclorite.book_story.domain.use_case.file_system.GetBookSourcesUseCase
 import ua.acclorite.book_story.domain.use_case.book.AddPreviewToLibraryUseCase
 import ua.acclorite.book_story.domain.use_case.book.DiscardPreviewsUseCase
 import ua.acclorite.book_story.domain.use_case.book.GetBookUseCase
@@ -85,6 +88,7 @@ private const val SEARCH_LANDING_FRACTION = 0.3f
 class ReaderModel @Inject constructor(
     private val updateBookUseCase: UpdateBookUseCase,
     private val getTextUseCase: GetTextUseCase,
+    private val getBookSourcesUseCase: GetBookSourcesUseCase,
     private val getBookUseCase: GetBookUseCase,
     private val getHistoryForBookUseCase: GetHistoryForBookUseCase,
     private val getChapterProgressUseCase: GetChapterProgressUseCase,
@@ -211,12 +215,12 @@ class ReaderModel @Inject constructor(
                         ensureActive()
 
                         if (text.isEmpty()) {
+                            val failure = failureMessage(_state.value.book)
                             _state.update {
                                 it.copy(
                                     isLoading = false,
-                                    errorMessage = UIText.StringResource(
-                                        resId = R.string.error_could_not_get_text
-                                    )
+                                    errorMessage = failure.first,
+                                    errorOffersPathChange = failure.second
                                 )
                             }
                             _effects.emit(ReaderEffect.OnSystemBarsVisibility(show = true))
@@ -866,6 +870,36 @@ class ReaderModel @Inject constructor(
                 _effects.emit(ReaderEffect.OnCannotAddToLibrary)
             }
         }
+    }
+
+    /**
+     * What to tell the reader when a book produced no text, and whether offering
+     * to re-point it could help.
+     *
+     * The reason never reaches this screen — every failure arrives as an empty
+     * text — but the book carries its authority, and the sources can be asked
+     * afterwards. That separates three situations the one old message ran
+     * together:
+     *
+     * - the source is quiet. Nothing about the book is wrong and nothing about
+     *   its path is wrong, so it says so and offers no path to change;
+     * - no app publishes that authority any anymore. Nothing is coming back, and
+     *   pointing the book at a file it can still reach is the only thing that
+     *   helps — so that is offered, and the wait is not suggested;
+     * - anything else keeps the old message, which is honest about not knowing.
+     */
+    private suspend fun failureMessage(book: Book): Pair<UIText, Boolean> {
+        val couldNotGetText =
+            UIText.StringResource(R.string.error_could_not_get_text) to true
+        val authority = book.documentAuthority ?: return couldNotGetText
+
+        val sources = getBookSourcesUseCase().filter { it.authority == authority }
+        if (sources.isEmpty() || sources.any { it.isAvailable }) return couldNotGetText
+
+        val provider = sources.firstNotNullOfOrNull { it.provider }
+            ?: return UIText.StringResource(R.string.error_source_gone) to true
+
+        return UIText.StringResource(R.string.error_source_unavailable, provider) to false
     }
 
     private fun startSession() {
