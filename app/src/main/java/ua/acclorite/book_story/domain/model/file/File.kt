@@ -15,5 +15,12 @@ data class File(
     val path: String,
     val size: Long,
     val lastModified: Long,
-    val isDirectory: Boolean
+    val isDirectory: Boolean,
+
+    /**
+     * What the provider calls this document, when there is a provider behind it;
+     * see [ua.acclorite.book_story.data.local.dto.BookEntity.documentId].
+     */
+    val documentAuthority: String? = null,
+    val documentId: String? = null
 )

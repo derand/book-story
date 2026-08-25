@@ -411,7 +411,9 @@ class BookRepositoryImpl @Inject constructor(
 
     override suspend fun findLibraryBookForFile(
         filePath: String,
-        fileName: String
+        fileName: String,
+        documentAuthority: String?,
+        documentId: String?
     ): Result<Book?> = runCatchingCancellable {
         withContext(Dispatchers.IO) {
             // Matched in Kotlin rather than in SQL: a LIKE over the path would
@@ -419,7 +421,12 @@ class BookRepositoryImpl @Inject constructor(
             // the same handful of rows every other screen already reads whole.
             database.bookDao.getLibraryBooks()
                 .map(bookMapper::toBook)
-                .findForFile(filePath = filePath, fileName = fileName)
+                .findForFile(
+                    filePath = filePath,
+                    fileName = fileName,
+                    documentAuthority = documentAuthority,
+                    documentId = documentId
+                )
         }
     }
 

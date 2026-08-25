@@ -10,22 +10,40 @@ package ua.acclorite.book_story.domain.model.library
 /**
  * The book among these holding the given file, if any.
  *
- * By path first, because that is what identifies a book everywhere else in the
- * app. By file name second, because a file arriving from another app does not
- * always come with a path — a document URI yields one only when the providing
- * app exposes real storage — and because the same file reached through two
- * providers can carry two different paths.
+ * By the document identity first, which is what a provider promises about a
+ * file: unique to it, and durable. Where one of the two sides has none — a book
+ * row not yet resolved since the identity was stored, a file the app owns a
+ * copy of — the path decides, and then the file name.
  *
- * Size would be the better second key and is not available: a book row does not
- * store one. The name match is therefore deliberately loose, and it errs the
- * safe way: matching wrongly opens the user's own book instead of a preview,
- * while failing to match costs a parse and an extra row.
+ * By file name last, because a file arriving from another app does not always
+ * come with either — a document URI yields a path only when the providing app
+ * exposes real storage. That match is deliberately loose, and it errs the safe
+ * way: matching wrongly opens the user's own book instead of a preview, while
+ * failing to match costs a parse and an extra row.
  */
-fun List<Book>.findForFile(filePath: String, fileName: String): Book? {
+fun List<Book>.findForFile(
+    filePath: String,
+    fileName: String,
+    documentAuthority: String? = null,
+    documentId: String? = null
+): Book? {
+    if (documentId != null) {
+        firstOrNull {
+            it.documentId == documentId && it.documentAuthority == documentAuthority
+        }?.let { return it }
+    }
+
+    // Which books the looser matches are allowed to consider. When the file
+    // carries an identity, every book that carries one has already had its
+    // chance above, and a different id is the provider saying these are
+    // different documents — no likeness of path or name outvotes that. When the
+    // file carries none, there is no such evidence and nothing is excluded.
+    val candidates = if (documentId == null) this else filter { it.documentId == null }
+
     if (filePath.isNotBlank()) {
-        firstOrNull { it.filePath == filePath }?.let { return it }
+        candidates.firstOrNull { it.filePath == filePath }?.let { return it }
     }
 
     if (fileName.isBlank()) return null
-    return firstOrNull { it.filePath.substringAfterLast('/') == fileName }
+    return candidates.firstOrNull { it.filePath.substringAfterLast('/') == fileName }
 }

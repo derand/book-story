@@ -37,7 +37,9 @@ class FileMapperImpl @Inject constructor(
             path = cachedFile.path,
             size = cachedFile.size,
             lastModified = cachedFile.lastModified,
-            isDirectory = cachedFile.isDirectory
+            isDirectory = cachedFile.isDirectory,
+            documentAuthority = cachedFile.documentAuthority,
+            documentId = cachedFile.documentId
         )
     }
 }

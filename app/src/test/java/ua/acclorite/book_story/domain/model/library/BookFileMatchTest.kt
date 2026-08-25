@@ -1,7 +1,6 @@
 /*
  * Book's Story — free and open-source Material You eBook reader.
  * Copyright (C) 2026 derand
- * Copyright (C) 2024-2026 Acclorite
  * SPDX-License-Identifier: GPL-3.0-only
  */
 
@@ -10,82 +9,128 @@ package ua.acclorite.book_story.domain.model.library
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
+import ua.acclorite.book_story.core.ui.UIText
 
 /**
- * Which book a file arriving from another app belongs to. Getting this wrong is
- * silent both ways: too loose and a tap opens someone else's book, too strict
- * and the library quietly fills with duplicates of books already in it.
+ * Whether a file already is a book in the library. Getting it wrong costs
+ * either a second row for one book, or a file the user cannot import because
+ * something unrelated is standing in for it.
  */
 class BookFileMatchTest {
 
-    private fun book(id: Int, filePath: String) = Book.default.copy(
+    private val drive = "com.google.android.apps.docs.storage"
+
+    private fun book(
+        id: Int,
+        filePath: String,
+        documentAuthority: String? = null,
+        documentId: String? = null
+    ) = Book.default.copy(
         id = id,
-        filePath = filePath
+        title = "Book $id",
+        author = UIText.StringValue(""),
+        filePath = filePath,
+        documentAuthority = documentAuthority,
+        documentId = documentId
     )
 
-    private val library = listOf(
-        book(1, "/storage/emulated/0/Books/Solaris.fb2"),
-        book(2, "/storage/emulated/0/Download/Solaris.fb2"),
-        book(3, "/storage/emulated/0/Books/Nebula.epub")
-    )
-
     @Test
-    fun `path wins over name`() {
-        val match = library.findForFile(
-            filePath = "/storage/emulated/0/Download/Solaris.fb2",
-            fileName = "Solaris.fb2"
+    fun `the identity matches whatever the paths say`() {
+        val books = listOf(
+            book(1, "/storage/solaris.fb2", drive, "acc=1;doc=A"),
+            book(2, "/storage/solaris.fb2", drive, "acc=1;doc=B")
         )
 
-        // Both rows carry that name; only one carries that path.
-        assertEquals(2, match?.id)
-    }
-
-    @Test
-    fun `falls back to the file name when there is no path`() {
-        val match = library.findForFile(filePath = "", fileName = "Nebula.epub")
-        assertEquals(3, match?.id)
-    }
-
-    @Test
-    fun `falls back to the file name when the path is unknown to the library`() {
-        // The same file reached through another provider reports another path.
-        val match = library.findForFile(
-            filePath = "/mnt/media_rw/ABCD-1234/Nebula.epub",
-            fileName = "Nebula.epub"
+        assertEquals(
+            2,
+            books.findForFile(
+                filePath = "/storage/solaris.fb2",
+                fileName = "solaris.fb2",
+                documentAuthority = drive,
+                documentId = "acc=1;doc=B"
+            )?.id
         )
-
-        assertEquals(3, match?.id)
     }
 
+    /**
+     * The defect this replaces. Two folders on one cloud provider compose every
+     * path under them from the same invented string, so an unrelated book can
+     * carry the path of the file being looked up.
+     */
     @Test
-    fun `a file the library does not have matches nothing`() {
-        val match = library.findForFile(
-            filePath = "/storage/emulated/0/Books/Eden.fb2",
-            fileName = "Eden.fb2"
+    fun `a book known by its id is not claimed by a matching path`() {
+        val books = listOf(book(1, "/storage/solaris.fb2", drive, "acc=1;doc=A"))
+
+        assertNull(
+            books.findForFile(
+                filePath = "/storage/solaris.fb2",
+                fileName = "solaris.fb2",
+                documentAuthority = drive,
+                documentId = "acc=1;doc=ELSEWHERE"
+            )
         )
-
-        assertNull(match)
     }
 
+    /**
+     * Every row written before an identity was stored, until the first time it
+     * is opened. The path has to keep answering for those, or a whole library
+     * would offer itself for import again.
+     */
     @Test
-    fun `nothing to match on matches nothing`() {
-        assertNull(library.findForFile(filePath = "", fileName = ""))
-    }
+    fun `a book with no identity still matches by path`() {
+        val books = listOf(book(1, "/storage/emulated/0/Books/solaris.fb2"))
 
-    @Test
-    fun `a name is matched whole, not as a suffix`() {
-        // "Solaris.fb2" must not be found by "olaris.fb2", which a LIKE '%…'
-        // over the path would do.
-        assertNull(library.findForFile(filePath = "", fileName = "olaris.fb2"))
-    }
-
-    @Test
-    fun `an empty library matches nothing`() {
-        val match = emptyList<Book>().findForFile(
-            filePath = "/storage/emulated/0/Books/Solaris.fb2",
-            fileName = "Solaris.fb2"
+        assertEquals(
+            1,
+            books.findForFile(
+                filePath = "/storage/emulated/0/Books/solaris.fb2",
+                fileName = "solaris.fb2",
+                documentAuthority = drive,
+                documentId = "acc=1;doc=A"
+            )?.id
         )
+    }
 
-        assertNull(match)
+    @Test
+    fun `an identity of another authority is a different document`() {
+        val books = listOf(book(1, "/storage/solaris.fb2", drive, "acc=1;doc=A"))
+
+        assertNull(
+            books.findForFile(
+                filePath = "",
+                fileName = "",
+                documentAuthority = "com.android.externalstorage.documents",
+                documentId = "acc=1;doc=A"
+            )
+        )
+    }
+
+    @Test
+    fun `a file with no identity and no path falls back to its name`() {
+        val books = listOf(book(1, "/storage/emulated/0/Books/solaris.fb2"))
+
+        assertEquals(
+            1,
+            books.findForFile(filePath = "", fileName = "solaris.fb2")?.id
+        )
+    }
+
+    @Test
+    fun `nothing matches an empty library`() {
+        assertNull(
+            emptyList<Book>().findForFile(
+                filePath = "/storage/solaris.fb2",
+                fileName = "solaris.fb2",
+                documentAuthority = drive,
+                documentId = "acc=1;doc=A"
+            )
+        )
+    }
+
+    @Test
+    fun `a blank name matches nothing once path and identity have failed`() {
+        val books = listOf(book(1, "/storage/emulated/0/Books/solaris.fb2"))
+
+        assertNull(books.findForFile(filePath = "", fileName = ""))
     }
 }

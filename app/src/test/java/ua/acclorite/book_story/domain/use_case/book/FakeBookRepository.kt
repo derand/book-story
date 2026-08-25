@@ -83,7 +83,9 @@ class FakeBookRepository(
 
     override suspend fun findLibraryBookForFile(
         filePath: String,
-        fileName: String
+        fileName: String,
+        documentAuthority: String?,
+        documentId: String?
     ): Result<Book?> = unused("findLibraryBookForFile")
 
     override suspend fun getDefaultCover(book: Book): Result<CoverImage?> =
