@@ -22,6 +22,20 @@
         tools:node="remove"
         tools:ignore="ScopedStorage" />
 
+    <!-- Package visibility (API 30+) hides other apps from this one, and a
+         persisted URI grant is no exemption: after a reboot every query against
+         a third-party documents provider — a cloud client, an SMB client —
+         answers "Unknown authority" with a null cursor, so a folder the user
+         granted long ago simply returns nothing. This declares the one interest
+         the app has. It is not a permission: it prompts for nothing, appears in
+         no permission list, and grants no network access — a cloud-hosted book
+         is fetched by the provider's own process, not by this one. -->
+    <queries>
+        <intent>
+            <action android:name="android.content.action.DOCUMENTS_PROVIDER" />
+        </intent>
+    </queries>
+
     <application
         android:name=".Application"
         android:allowBackup="false"
