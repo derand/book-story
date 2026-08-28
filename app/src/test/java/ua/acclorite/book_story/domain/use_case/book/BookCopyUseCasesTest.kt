@@ -116,6 +116,37 @@ class BookCopyUseCasesTest {
     }
 
     @Test
+    fun `refreshing replaces the copy and keeps the origin`() = runBlocking {
+        val repository = FakeBookRepository(books = listOf(copiedBook))
+        repository.refreshedPath = "/data/user/0/app/files/owned_books/7/a-book.fb2"
+
+        val refreshed = RefreshBookCopyUseCase(repository)(copiedBook)
+
+        assertEquals("/data/user/0/app/files/owned_books/7/a-book.fb2", refreshed?.filePath)
+        assertEquals("/storage/a-book.fb2", refreshed?.originPath)
+        // The place in the book is not the source's to move.
+        assertEquals(copiedBook.scrollIndex, refreshed?.scrollIndex)
+        assertEquals(copiedBook.progress, refreshed?.progress)
+    }
+
+    @Test
+    fun `a copy whose source will not answer keeps the copy it has`() = runBlocking {
+        val repository = FakeBookRepository(books = listOf(copiedBook))
+        repository.refreshedPath = null
+
+        assertNull(RefreshBookCopyUseCase(repository)(copiedBook))
+        assertNull(repository.updated)
+    }
+
+    @Test
+    fun `a book that is not a copy has nothing to refresh from`() = runBlocking {
+        val repository = FakeBookRepository(books = listOf(cloudBook))
+
+        assertNull(RefreshBookCopyUseCase(repository)(cloudBook))
+        assertNull(repository.refreshedFor)
+    }
+
+    @Test
     fun `releasing a book that is not a copy does nothing`() = runBlocking {
         val repository = FakeBookRepository(books = listOf(cloudBook))
 

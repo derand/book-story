@@ -33,6 +33,11 @@ fun BookInfoEffects(effects: SharedFlow<BookInfoEffect>, book: Book) {
                         .showToast(context = context)
                 }
 
+                is BookInfoEffect.OnLocalCopyRefreshed -> {
+                    context.getString(R.string.local_copy_refreshed)
+                        .showToast(context = context)
+                }
+
                 is BookInfoEffect.OnErrorLocalCopy -> {
                     context.getString(R.string.error_local_copy)
                         .showToast(context = context)

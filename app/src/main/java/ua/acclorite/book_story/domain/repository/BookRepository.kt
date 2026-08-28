@@ -69,6 +69,12 @@ interface BookRepository {
      */
     suspend fun releaseBookFile(book: Book): Result<String>
 
+    /**
+     * Copies [book] from its origin again, replacing the copy the app holds,
+     * and hands back the path of the new one.
+     */
+    suspend fun refreshBookFile(book: Book): Result<String>
+
     suspend fun getFileFromBook(
         bookId: Int
     ): Result<File>

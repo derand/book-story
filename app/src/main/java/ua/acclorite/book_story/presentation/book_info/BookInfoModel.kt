@@ -24,6 +24,7 @@ import ua.acclorite.book_story.domain.use_case.book.CanResetCoverImageUseCase
 import ua.acclorite.book_story.domain.use_case.book.DeleteBookUseCase
 import ua.acclorite.book_story.domain.use_case.book.GetBookUseCase
 import ua.acclorite.book_story.domain.use_case.book.GetFileFromBookUseCase
+import ua.acclorite.book_story.domain.use_case.book.RefreshBookCopyUseCase
 import ua.acclorite.book_story.domain.use_case.book.ReleaseBookCopyUseCase
 import ua.acclorite.book_story.domain.use_case.book.ResetCoverImageUseCase
 import ua.acclorite.book_story.domain.use_case.book.StoreBookCopyUseCase
@@ -49,7 +50,8 @@ class BookInfoModel @Inject constructor(
     private val getBookStatisticsUseCase: GetBookStatisticsUseCase,
     private val setBookFinishedUseCase: SetBookFinishedUseCase,
     private val storeBookCopyUseCase: StoreBookCopyUseCase,
-    private val releaseBookCopyUseCase: ReleaseBookCopyUseCase
+    private val releaseBookCopyUseCase: ReleaseBookCopyUseCase,
+    private val refreshBookCopyUseCase: RefreshBookCopyUseCase
 ) : ViewModel() {
 
     private val mutex = Mutex()
@@ -359,6 +361,35 @@ class BookInfoModel @Inject constructor(
                                     loadingFile = false
                                 )
                             }
+                        }
+
+                        _state.update { it.copy(changingLocalCopy = false) }
+                    }
+                }
+
+                is BookInfoEvent.OnRefreshLocalCopy -> {
+                    withContext(Dispatchers.Default) {
+                        if (_state.value.changingLocalCopy) return@withContext
+                        _state.update { it.copy(changingLocalCopy = true) }
+
+                        val refreshed = refreshBookCopyUseCase(_state.value.book)
+                        if (refreshed == null) {
+                            _effects.emit(BookInfoEffect.OnErrorLocalCopy)
+                        } else {
+                            _state.update {
+                                it.copy(
+                                    book = refreshed,
+                                    loadingFile = true
+                                )
+                            }
+                            val file = getFileFromBookUseCase(_state.value.book.id)
+                            _state.update {
+                                it.copy(
+                                    file = file,
+                                    loadingFile = false
+                                )
+                            }
+                            _effects.emit(BookInfoEffect.OnLocalCopyRefreshed)
                         }
 
                         _state.update { it.copy(changingLocalCopy = false) }

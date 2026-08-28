@@ -8,7 +8,15 @@
 package ua.acclorite.book_story.ui.book_info
 
 import android.text.format.Formatter
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import ua.acclorite.book_story.R
@@ -16,6 +24,7 @@ import ua.acclorite.book_story.domain.model.file.File
 import ua.acclorite.book_story.domain.model.file.SourceLocality
 import ua.acclorite.book_story.domain.model.library.Book
 import ua.acclorite.book_story.presentation.book_info.BookInfoEvent
+import ua.acclorite.book_story.ui.common.components.common.StyledText
 import ua.acclorite.book_story.ui.common.components.settings.SwitchWithTitle
 
 /**
@@ -34,7 +43,8 @@ fun BookInfoLayoutLocalCopy(
     book: Book,
     file: File?,
     changingLocalCopy: Boolean,
-    toggleLocalCopy: (BookInfoEvent.OnToggleLocalCopy) -> Unit
+    toggleLocalCopy: (BookInfoEvent.OnToggleLocalCopy) -> Unit,
+    refreshLocalCopy: (BookInfoEvent.OnRefreshLocalCopy) -> Unit
 ) {
     val context = LocalContext.current
 
@@ -63,5 +73,33 @@ fun BookInfoLayoutLocalCopy(
         }
     ) {
         toggleLocalCopy(BookInfoEvent.OnToggleLocalCopy)
+    }
+
+    // Only where there is something to refresh *from*. A copy does not notice
+    // its original changing and cannot, so this is the whole answer to an
+    // edited book, and it is asked for rather than guessed at.
+    if (book.isOwnCopy && canGoBack) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(enabled = !changingLocalCopy) {
+                    refreshLocalCopy(BookInfoEvent.OnRefreshLocalCopy)
+                }
+                .padding(horizontal = 18.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.Center
+        ) {
+            StyledText(
+                text = stringResource(id = R.string.refresh_local_copy),
+                style = MaterialTheme.typography.titleMedium.copy(
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            )
+            StyledText(
+                text = stringResource(id = R.string.refresh_local_copy_desc),
+                style = MaterialTheme.typography.bodySmall.copy(
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            )
+        }
     }
 }

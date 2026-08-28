@@ -39,6 +39,7 @@ fun BookInfoLayout(
     showMoveDialog: (BookInfoEvent.OnShowMoveDialog) -> Unit,
     showDeleteDialog: (BookInfoEvent.OnShowDeleteDialog) -> Unit,
     toggleLocalCopy: (BookInfoEvent.OnToggleLocalCopy) -> Unit,
+    refreshLocalCopy: (BookInfoEvent.OnRefreshLocalCopy) -> Unit,
     setFinished: (BookInfoEvent.OnSetFinished) -> Unit,
     navigateToReader: (BookInfoEvent.OnNavigateToReader) -> Unit
 ) {
@@ -83,7 +84,8 @@ fun BookInfoLayout(
                 book = book,
                 file = file,
                 changingLocalCopy = changingLocalCopy,
-                toggleLocalCopy = toggleLocalCopy
+                toggleLocalCopy = toggleLocalCopy,
+                refreshLocalCopy = refreshLocalCopy
             )
         }
 

@@ -440,6 +440,53 @@ class BookRepositoryImpl @Inject constructor(
     }
 
     /**
+     * Takes the copy again from where it came from.
+     *
+     * A copy does not notice its original changing, and cannot: once stored,
+     * the book is found by a path in the app's own directory and nothing looks
+     * at the source again. So this is the only way an edited book reaches a
+     * reader who chose to keep a copy — asked for, never guessed at.
+     */
+    override suspend fun refreshBookFile(book: Book): Result<String> = runCatchingCancellable {
+        withContext(Dispatchers.IO) {
+            val originPath = book.originPath
+                ?: throw IllegalStateException("${book.title} has no origin to refresh from.")
+
+            val source = fileOf(
+                book.copy(
+                    filePath = originPath,
+                    documentAuthority = book.originAuthority,
+                    documentId = book.originDocumentId
+                )
+            )
+            if (!source.canAccess()) {
+                throw IllegalStateException("${source.name} cannot be read.")
+            }
+
+            // The entry of the copy being replaced, dropped explicitly. The new
+            // copy carries the source's size and date, so it would miss anyway
+            // — but a book's worth of parsed text would sit in the cache until
+            // eviction got to it.
+            val old = java.io.File(book.filePath)
+            parseCache.remove(book.filePath, old.length(), old.lastModified())
+
+            val stored = ownedBookFiles.store(source, book.id)
+                ?: throw IllegalStateException("Could not store ${source.name}.")
+
+            // Whatever the source was parsed into is the new copy's to use: the
+            // bytes are the same bytes.
+            parseCache.rekey(
+                fromKey = source.cacheKey,
+                toKey = stored.absolutePath,
+                size = source.size,
+                lastModified = source.lastModified
+            )
+
+            stored.absolutePath
+        }
+    }
+
+    /**
      * The other direction of [storeBookFile], and it asks the same question in
      * reverse: the original has to answer *before* the copy is deleted, or the
      * book would be left with neither.

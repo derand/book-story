@@ -68,6 +68,9 @@ sealed class BookInfoEvent {
      */
     data object OnToggleLocalCopy : BookInfoEvent()
 
+    /** Take the app's copy of this book from its source again. */
+    data object OnRefreshLocalCopy : BookInfoEvent()
+
     data object OnShowMoveDialog : BookInfoEvent()
 
     data class OnActionMoveDialog(

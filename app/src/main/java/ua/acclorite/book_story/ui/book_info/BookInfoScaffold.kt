@@ -36,6 +36,7 @@ fun BookInfoScaffold(
     showMoveDialog: (BookInfoEvent.OnShowMoveDialog) -> Unit,
     showDeleteDialog: (BookInfoEvent.OnShowDeleteDialog) -> Unit,
     toggleLocalCopy: (BookInfoEvent.OnToggleLocalCopy) -> Unit,
+    refreshLocalCopy: (BookInfoEvent.OnRefreshLocalCopy) -> Unit,
     setFinished: (BookInfoEvent.OnSetFinished) -> Unit,
     navigateToReader: (BookInfoEvent.OnNavigateToReader) -> Unit,
     navigateBack: (BookInfoEvent.OnNavigateBack) -> Unit
@@ -69,6 +70,7 @@ fun BookInfoScaffold(
             showMoveDialog = showMoveDialog,
             showDeleteDialog = showDeleteDialog,
             toggleLocalCopy = toggleLocalCopy,
+            refreshLocalCopy = refreshLocalCopy,
             setFinished = setFinished,
             navigateToReader = navigateToReader
         )

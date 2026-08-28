@@ -107,6 +107,7 @@ data class BookInfoScreen(val bookId: Int) : Screen, Parcelable {
                 actionMoveDialog = screenModel::onEvent,
                 showDeleteDialog = screenModel::onEvent,
                 toggleLocalCopy = screenModel::onEvent,
+                refreshLocalCopy = screenModel::onEvent,
                 setFinished = screenModel::onEvent,
                 actionDeleteDialog = screenModel::onEvent,
                 navigateToReader = screenModel::onEvent,

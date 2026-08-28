@@ -41,6 +41,7 @@ fun BookInfoContent(
     showMoveDialog: (BookInfoEvent.OnShowMoveDialog) -> Unit,
     showDeleteDialog: (BookInfoEvent.OnShowDeleteDialog) -> Unit,
     toggleLocalCopy: (BookInfoEvent.OnToggleLocalCopy) -> Unit,
+    refreshLocalCopy: (BookInfoEvent.OnRefreshLocalCopy) -> Unit,
     setFinished: (BookInfoEvent.OnSetFinished) -> Unit,
     actionDeleteDialog: (BookInfoEvent.OnActionDeleteDialog) -> Unit,
     actionMoveDialog: (BookInfoEvent.OnActionMoveDialog) -> Unit,
@@ -96,6 +97,7 @@ fun BookInfoContent(
         showMoveDialog = showMoveDialog,
         showDeleteDialog = showDeleteDialog,
         toggleLocalCopy = toggleLocalCopy,
+        refreshLocalCopy = refreshLocalCopy,
         setFinished = setFinished,
         navigateToReader = navigateToReader,
         navigateBack = navigateBack
