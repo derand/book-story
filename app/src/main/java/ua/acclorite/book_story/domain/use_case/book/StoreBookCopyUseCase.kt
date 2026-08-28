@@ -37,34 +37,43 @@ class StoreBookCopyUseCase @Inject constructor(
 ) {
 
     suspend operator fun invoke(book: Book): Book? {
-        if (book.isOwnCopy) {
-            logI(TAG, "[${book.title}] is already a copy.")
-            return book
-        }
-
-        val path = bookRepository.storeBookFile(book).getOrElse {
-            logW(TAG, "Could not store [${book.title}]: ${it.message}")
+        // The row is re-read rather than trusted: what a caller holds was true
+        // when it was handed over, and this writes the *whole* row back. A book
+        // that was just inserted has already gained a cover the caller's copy
+        // does not know about, and writing that copy back would erase it.
+        val current = bookRepository.getBook(book.id).getOrElse {
+            logW(TAG, "Could not read [${book.title}] back: ${it.message}")
             return null
         }
 
-        val stored = book.copy(
+        if (current.isOwnCopy) {
+            logI(TAG, "[${current.title}] is already a copy.")
+            return current
+        }
+
+        val path = bookRepository.storeBookFile(current).getOrElse {
+            logW(TAG, "Could not store [${current.title}]: ${it.message}")
+            return null
+        }
+
+        val stored = current.copy(
             filePath = path,
             documentAuthority = null,
             documentId = null,
-            originAuthority = book.documentAuthority,
-            originDocumentId = book.documentId,
-            originPath = book.filePath
+            originAuthority = current.documentAuthority,
+            originDocumentId = current.documentId,
+            originPath = current.filePath
         )
 
         bookRepository.updateBook(stored).onFailure {
-            logW(TAG, "Could not point [${book.title}] at its copy: ${it.message}")
+            logW(TAG, "Could not point [${current.title}] at its copy: ${it.message}")
             // The row still names the original, so the copy is unreachable and
             // would be a leak of the whole book's size.
-            bookRepository.deleteBookFile(book.id)
+            bookRepository.deleteBookFile(current.id)
             return null
         }
 
-        logI(TAG, "[${book.title}] is now read from the app's own copy.")
+        logI(TAG, "[${current.title}] is now read from the app's own copy.")
         return stored
     }
 }
