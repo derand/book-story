@@ -118,9 +118,6 @@ class SettingsManager @Inject constructor(
     val parseCacheSizeMb = setting<Int, Int>(
         key = intPreferencesKey("parse_cache_size_mb"), default = 150
     )
-    val cacheImagesInBooks = setting<Boolean, Boolean>(
-        key = booleanPreferencesKey("cache_images_in_books"), default = false
-    )
 
     /**
      * Whether reading is measured at all. Gates the *writes* only — turning it

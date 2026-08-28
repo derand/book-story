@@ -31,8 +31,7 @@ private const val TAG = "ParseCache"
  * a directory `parsed_books/<key>` keyed by the source file identity
  * (what identifies the document + size + last-modified) plus [VERSION]; bumping [VERSION] on any parser
  * or format change invalidates every stale entry. The directory holds the parsed
- * text ([TEXT_FILE]) and, when image caching is enabled, one file per image blob
- * under [IMG_DIR]. The size cap ([enforceCap]) bounds the whole tree — a book is
+ * text ([TEXT_FILE]) and one file per image blob under [IMG_DIR]. The size cap ([enforceCap]) bounds the whole tree — a book is
  * evicted (text + its blobs together) as a unit, least-recently-used first.
  *
  * The parsed text stores images as metadata only (see [ParsedTextCodec]); a

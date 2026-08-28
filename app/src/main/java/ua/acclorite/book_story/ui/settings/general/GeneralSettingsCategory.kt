@@ -23,7 +23,6 @@ import ua.acclorite.book_story.BuildConfig
 import ua.acclorite.book_story.R
 import ua.acclorite.book_story.ui.settings.components.SettingsSubcategory
 import ua.acclorite.book_story.ui.settings.general.components.AppLanguageOption
-import ua.acclorite.book_story.ui.settings.general.components.CacheImagesOption
 import ua.acclorite.book_story.ui.settings.general.components.ClearParseCacheOption
 import ua.acclorite.book_story.ui.settings.general.components.CollectStatisticsOption
 import ua.acclorite.book_story.ui.settings.general.components.CopyDatabaseOption
@@ -56,10 +55,6 @@ fun LazyListScope.GeneralSettingsCategory(
     ) {
         item {
             ParseCacheSizeOption()
-        }
-
-        item {
-            CacheImagesOption()
         }
 
         item {
