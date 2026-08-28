@@ -29,7 +29,10 @@ class BookMapperImpl @Inject constructor() : BookMapper {
             inLibrary = book.inLibrary,
             previewUri = book.previewUri,
             documentAuthority = book.documentAuthority,
-            documentId = book.documentId
+            documentId = book.documentId,
+            originAuthority = book.originAuthority,
+            originDocumentId = book.originDocumentId,
+            originPath = book.originPath
         )
     }
 
@@ -52,7 +55,10 @@ class BookMapperImpl @Inject constructor() : BookMapper {
             inLibrary = bookEntity.inLibrary,
             previewUri = bookEntity.previewUri,
             documentAuthority = bookEntity.documentAuthority,
-            documentId = bookEntity.documentId
+            documentId = bookEntity.documentId,
+            originAuthority = bookEntity.originAuthority,
+            originDocumentId = bookEntity.originDocumentId,
+            originPath = bookEntity.originPath
         )
     }
 }

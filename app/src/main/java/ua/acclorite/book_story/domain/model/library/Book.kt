@@ -43,8 +43,17 @@ data class Book(
 
     /** What identifies this book to its provider; see the entity of the same name. */
     val documentAuthority: String? = null,
-    val documentId: String? = null
+    val documentId: String? = null,
+
+    /** Where the app's own copy of this book came from; see the entity. */
+    val originAuthority: String? = null,
+    val originDocumentId: String? = null,
+    val originPath: String? = null
 ) : Parcelable {
+
+    /** Whether the app holds this book's file itself, rather than reading it in place. */
+    val isOwnCopy: Boolean get() = originPath != null || originDocumentId != null
+
     companion object {
         val default = Book(
             id = -1,
