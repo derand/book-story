@@ -21,6 +21,7 @@ fun BookInfoContent(
     book: Book,
     statistics: BookStatistics?,
     file: File?,
+    changingLocalCopy: Boolean,
     loadingFile: Boolean,
     categories: List<Category>,
     bottomSheet: BottomSheet?,
@@ -39,6 +40,7 @@ fun BookInfoContent(
     actionPathDialog: (BookInfoEvent.OnActionPathDialog) -> Unit,
     showMoveDialog: (BookInfoEvent.OnShowMoveDialog) -> Unit,
     showDeleteDialog: (BookInfoEvent.OnShowDeleteDialog) -> Unit,
+    toggleLocalCopy: (BookInfoEvent.OnToggleLocalCopy) -> Unit,
     setFinished: (BookInfoEvent.OnSetFinished) -> Unit,
     actionDeleteDialog: (BookInfoEvent.OnActionDeleteDialog) -> Unit,
     actionMoveDialog: (BookInfoEvent.OnActionMoveDialog) -> Unit,
@@ -82,6 +84,8 @@ fun BookInfoContent(
 
     BookInfoScaffold(
         book = book,
+        file = file,
+        changingLocalCopy = changingLocalCopy,
         statistics = statistics,
         listState = listState,
         showTitleDialog = showTitleDialog,
@@ -91,6 +95,7 @@ fun BookInfoContent(
         showDetailsBottomSheet = showDetailsBottomSheet,
         showMoveDialog = showMoveDialog,
         showDeleteDialog = showDeleteDialog,
+        toggleLocalCopy = toggleLocalCopy,
         setFinished = setFinished,
         navigateToReader = navigateToReader,
         navigateBack = navigateBack

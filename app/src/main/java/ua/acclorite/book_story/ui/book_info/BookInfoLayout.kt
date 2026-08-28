@@ -17,6 +17,7 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import ua.acclorite.book_story.domain.model.file.File
 import ua.acclorite.book_story.domain.model.library.Book
 import ua.acclorite.book_story.domain.model.statistics.BookStatistics
 import ua.acclorite.book_story.presentation.book_info.BookInfoEvent
@@ -26,6 +27,8 @@ import ua.acclorite.book_story.ui.common.data.ScrollbarData
 @Composable
 fun BookInfoLayout(
     book: Book,
+    file: File?,
+    changingLocalCopy: Boolean,
     statistics: BookStatistics?,
     listState: LazyListState,
     paddingValues: PaddingValues,
@@ -35,6 +38,7 @@ fun BookInfoLayout(
     showDescriptionDialog: (BookInfoEvent.OnShowDescriptionDialog) -> Unit,
     showMoveDialog: (BookInfoEvent.OnShowMoveDialog) -> Unit,
     showDeleteDialog: (BookInfoEvent.OnShowDeleteDialog) -> Unit,
+    toggleLocalCopy: (BookInfoEvent.OnToggleLocalCopy) -> Unit,
     setFinished: (BookInfoEvent.OnSetFinished) -> Unit,
     navigateToReader: (BookInfoEvent.OnNavigateToReader) -> Unit
 ) {
@@ -70,6 +74,16 @@ fun BookInfoLayout(
             BookInfoLayoutActions(
                 showMoveDialog = showMoveDialog,
                 showDeleteDialog = showDeleteDialog
+            )
+        }
+
+        item {
+            Spacer(Modifier.height(18.dp))
+            BookInfoLayoutLocalCopy(
+                book = book,
+                file = file,
+                changingLocalCopy = changingLocalCopy,
+                toggleLocalCopy = toggleLocalCopy
             )
         }
 

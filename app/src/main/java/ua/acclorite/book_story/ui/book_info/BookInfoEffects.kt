@@ -33,6 +33,11 @@ fun BookInfoEffects(effects: SharedFlow<BookInfoEffect>, book: Book) {
                         .showToast(context = context)
                 }
 
+                is BookInfoEffect.OnErrorLocalCopy -> {
+                    context.getString(R.string.error_local_copy)
+                        .showToast(context = context)
+                }
+
                 is BookInfoEffect.OnErrorResetCover -> {
                     context.getString(R.string.error_could_not_reset_cover)
                         .showToast(context = context)

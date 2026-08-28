@@ -439,6 +439,51 @@ class BookRepositoryImpl @Inject constructor(
         }
     }
 
+    /**
+     * The other direction of [storeBookFile], and it asks the same question in
+     * reverse: the original has to answer *before* the copy is deleted, or the
+     * book would be left with neither.
+     */
+    override suspend fun releaseBookFile(book: Book): Result<String> = runCatchingCancellable {
+        withContext(Dispatchers.IO) {
+            val originPath = book.originPath
+                ?: throw IllegalStateException("${book.title} has no origin to go back to.")
+
+            // Resolved through the identity it was copied from, which is what
+            // finds a book whose path is a cloud provider's invention.
+            val source = fileOf(
+                book.copy(
+                    filePath = originPath,
+                    documentAuthority = book.originAuthority,
+                    documentId = book.originDocumentId
+                )
+            )
+            if (!source.canAccess()) {
+                throw IllegalStateException("${source.name} cannot be read.")
+            }
+
+            // The copy carries the original's size and date, so the parse cache
+            // entry moves back exactly as it moved here, and reading in place
+            // again costs no re-parse.
+            val copy = java.io.File(book.filePath)
+            parseCache.rekey(
+                fromKey = book.filePath,
+                toKey = source.cacheKey,
+                size = copy.length(),
+                lastModified = copy.lastModified()
+            )
+
+            ownedBookFiles.delete(book.id)
+
+            // The path recorded when the copy was made, not the one the file
+            // reports now: a cloud provider's `path` is invented, and asking
+            // for it again can answer with the root of the tree rather than
+            // the document — which would leave the book pointing at a
+            // directory.
+            originPath
+        }
+    }
+
     /** What the timing log says about a parsed book: how much text, how many images. */
     private fun ParsedText.describeForTiming(): String {
         val images = text.filterIsInstance<ReaderText.Image>()

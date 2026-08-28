@@ -30,6 +30,9 @@ sealed class BookInfoEffect {
 
     data object OnBookMoved : BookInfoEffect()
 
+    /** The copy could not be made, or could not be given up. */
+    data object OnErrorLocalCopy : BookInfoEffect()
+
     data object OnNavigateBack : BookInfoEffect()
 
     data object OnNavigateToLibrarySettings : BookInfoEffect()

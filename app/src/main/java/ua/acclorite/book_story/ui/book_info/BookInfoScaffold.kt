@@ -17,12 +17,15 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import ua.acclorite.book_story.domain.model.library.Book
+import ua.acclorite.book_story.domain.model.file.File
 import ua.acclorite.book_story.domain.model.statistics.BookStatistics
 import ua.acclorite.book_story.presentation.book_info.BookInfoEvent
 
 @Composable
 fun BookInfoScaffold(
     book: Book,
+    file: File?,
+    changingLocalCopy: Boolean,
     statistics: BookStatistics?,
     listState: LazyListState,
     showChangeCoverBottomSheet: (BookInfoEvent.OnShowChangeCoverBottomSheet) -> Unit,
@@ -32,6 +35,7 @@ fun BookInfoScaffold(
     showDescriptionDialog: (BookInfoEvent.OnShowDescriptionDialog) -> Unit,
     showMoveDialog: (BookInfoEvent.OnShowMoveDialog) -> Unit,
     showDeleteDialog: (BookInfoEvent.OnShowDeleteDialog) -> Unit,
+    toggleLocalCopy: (BookInfoEvent.OnToggleLocalCopy) -> Unit,
     setFinished: (BookInfoEvent.OnSetFinished) -> Unit,
     navigateToReader: (BookInfoEvent.OnNavigateToReader) -> Unit,
     navigateBack: (BookInfoEvent.OnNavigateBack) -> Unit
@@ -53,6 +57,8 @@ fun BookInfoScaffold(
     ) { paddingValues ->
         BookInfoLayout(
             book = book,
+            file = file,
+            changingLocalCopy = changingLocalCopy,
             statistics = statistics,
             listState = listState,
             paddingValues = paddingValues,
@@ -62,6 +68,7 @@ fun BookInfoScaffold(
             showChangeCoverBottomSheet = showChangeCoverBottomSheet,
             showMoveDialog = showMoveDialog,
             showDeleteDialog = showDeleteDialog,
+            toggleLocalCopy = toggleLocalCopy,
             setFinished = setFinished,
             navigateToReader = navigateToReader
         )

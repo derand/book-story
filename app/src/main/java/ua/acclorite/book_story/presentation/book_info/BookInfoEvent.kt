@@ -62,6 +62,12 @@ sealed class BookInfoEvent {
 
     data object OnActionDeleteDialog : BookInfoEvent()
 
+    /**
+     * Start keeping the app's own copy of this book, or give the copy up and go
+     * back to reading the original where it lives.
+     */
+    data object OnToggleLocalCopy : BookInfoEvent()
+
     data object OnShowMoveDialog : BookInfoEvent()
 
     data class OnActionMoveDialog(

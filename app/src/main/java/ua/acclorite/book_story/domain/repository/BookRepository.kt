@@ -62,6 +62,13 @@ interface BookRepository {
     /** Drops the app's own copy of a book's file, if it has one. */
     suspend fun deleteBookFile(bookId: Int): Result<Unit>
 
+    /**
+     * Gives up the app's copy of [book] and hands back the path of the original
+     * it was made from, which has to be reachable for this to be possible at
+     * all.
+     */
+    suspend fun releaseBookFile(book: Book): Result<String>
+
     suspend fun getFileFromBook(
         bookId: Int
     ): Result<File>
