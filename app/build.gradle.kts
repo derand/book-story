@@ -50,10 +50,6 @@ android {
         // debug, because release-debug is the variant performance is measured on —
         // a debug build runs several times slower, so its timings are only ever
         // comparable with each other.
-        // THEME_TRACE logs the system's night mode as each layer of the process
-        // sees it, under the "ThemeTrace" tag. Same variants as BOOK_TIMING, and
-        // for a stronger reason: the bug it chases takes hours of ordinary
-        // reading to appear, and release-debug is what that reading happens on.
         // DB_EXPORT puts a "Copy database" row in General settings. The reading
         // app is release-debug, which is not debuggable on purpose, so `run-as`
         // cannot reach its database and no question about real reading data can
@@ -62,7 +58,6 @@ android {
         getByName("debug") {
             applicationIdSuffix = ".debug"
             buildConfigField("boolean", "BOOK_TIMING", "true")
-            buildConfigField("boolean", "THEME_TRACE", "true")
             buildConfigField("boolean", "DB_EXPORT", "true")
         }
 
@@ -70,7 +65,6 @@ android {
             isMinifyEnabled = true
             isShrinkResources = false
             buildConfigField("boolean", "BOOK_TIMING", "false")
-            buildConfigField("boolean", "THEME_TRACE", "false")
             buildConfigField("boolean", "DB_EXPORT", "false")
 
             proguardFiles("proguard-rules.pro")
@@ -81,7 +75,6 @@ android {
             applicationIdSuffix = ".release.debug"
             signingConfig = signingConfigs.getByName("debug")
             buildConfigField("boolean", "BOOK_TIMING", "true")
-            buildConfigField("boolean", "THEME_TRACE", "true")
             buildConfigField("boolean", "DB_EXPORT", "true")
         }
     }

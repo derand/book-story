@@ -10,7 +10,6 @@ package ua.acclorite.book_story.presentation.main
 
 import android.annotation.SuppressLint
 import android.content.Intent
-import android.content.res.Configuration
 import android.database.CursorWindow
 import android.os.Bundle
 import android.view.ActionMode
@@ -26,8 +25,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.collections.immutable.persistentListOf
 import ua.acclorite.book_story.R
-import ua.acclorite.book_story.core.log.ThemeTraceComposed
-import ua.acclorite.book_story.core.log.themeTrace
 import ua.acclorite.book_story.data.model.file.CachedFile
 import ua.acclorite.book_story.data.settings.SettingsManager
 import ua.acclorite.book_story.presentation.browse.BrowseModel
@@ -84,8 +81,6 @@ class MainActivity : AppCompatActivity() {
         enableEdgeToEdge()
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
-        themeTrace("onCreate", this)
-
         // Only on a fresh launch. The activity keeps the intent that started it,
         // so every recreation would otherwise open the same file again — and
         // after the process was killed that re-open fails anyway, since the
@@ -132,7 +127,6 @@ class MainActivity : AppCompatActivity() {
 
                 if (settings.initialized.collectAsStateWithLifecycle().value) {
                     val isDark = settings.darkTheme.value.isDark()
-                    ThemeTraceComposed(isDark)
 
                     BookStoryTheme(
                         theme = settings.theme.value,
@@ -225,23 +219,6 @@ class MainActivity : AppCompatActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         receiveFile(intent)
-    }
-
-    // The three moments a lost uiMode change could have been noticed, and was
-    // not — see issue #50. Compile to nothing when THEME_TRACE is off.
-    override fun onStart() {
-        super.onStart()
-        themeTrace("onStart", this)
-    }
-
-    override fun onResume() {
-        super.onResume()
-        themeTrace("onResume", this)
-    }
-
-    override fun onConfigurationChanged(newConfig: Configuration) {
-        super.onConfigurationChanged(newConfig)
-        themeTrace("onConfigurationChanged", this)
     }
 
     // The text-selection toolbar is an action mode on the window, whoever put it
