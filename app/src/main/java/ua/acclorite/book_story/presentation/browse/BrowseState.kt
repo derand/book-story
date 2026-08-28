@@ -9,6 +9,7 @@ package ua.acclorite.book_story.presentation.browse
 import androidx.compose.runtime.Immutable
 import ua.acclorite.book_story.core.BottomSheet
 import ua.acclorite.book_story.core.Dialog
+import ua.acclorite.book_story.presentation.browse.model.AddingBooks
 import ua.acclorite.book_story.presentation.browse.model.SelectableFile
 import ua.acclorite.book_story.presentation.browse.model.SelectableNullableBook
 
@@ -42,5 +43,14 @@ data class BrowseState(
     val bottomSheet: BottomSheet? = null,
 
     val selectedBooksAddDialog: List<SelectableNullableBook> = emptyList(),
-    val loadingAddDialog: Boolean = false
+    val loadingAddDialog: Boolean = false,
+
+    /**
+     * How far adding has got, or null while nothing is being added.
+     *
+     * Adding used to be instant enough to say nothing about; copying the books
+     * in is not — a handful of them from a cloud folder is minutes — and work
+     * that long has to be visible and stoppable.
+     */
+    val addingBooks: AddingBooks? = null
 )

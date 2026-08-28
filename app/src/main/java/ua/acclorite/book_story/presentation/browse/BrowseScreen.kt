@@ -133,6 +133,7 @@ object BrowseScreen : Screen, Parcelable {
             selectedBooksAddDialog = state.value.selectedBooksAddDialog,
             refreshState = refreshState,
             loadingAddDialog = state.value.loadingAddDialog,
+            addingBooks = state.value.addingBooks,
             dialog = state.value.dialog,
             bottomSheet = state.value.bottomSheet,
             listState = listState,
@@ -167,6 +168,7 @@ object BrowseScreen : Screen, Parcelable {
             dismissAddDialog = screenModel::onEvent,
             selectAddDialog = screenModel::onEvent,
             actionAddDialog = screenModel::onEvent,
+            cancelAddingBooks = screenModel::onEvent,
             updatePinnedPaths = screenModel::onEvent,
             navigateToLibrary = screenModel::onEvent,
             navigateToBrowseSettings = screenModel::onEvent
