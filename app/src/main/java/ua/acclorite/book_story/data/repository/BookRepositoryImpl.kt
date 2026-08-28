@@ -150,7 +150,6 @@ class BookRepositoryImpl @Inject constructor(
                     // never be invalidated either.
                     val cachingEnabled = capMb > 0 && cachedFile.hasKnownMetadata
                     val maxBytes = capMb.toLong() * 1024 * 1024
-                    val cacheImages = settings.cacheImagesInBooks.lastValue
 
                     // The parse-cache key, resolved before the cache is consulted
                     // so its cost is not counted as cache time. Each of the three
@@ -220,9 +219,12 @@ class BookRepositoryImpl @Inject constructor(
                                             lastModified,
                                             fresh,
                                             maxBytes = maxBytes,
-                                            images = if (cacheImages) {
-                                                fresh.collectImageBytes()
-                                            } else null
+                                            // The parse read these bytes and the
+                                            // pass is about to write them out
+                                            // anyway; written here they are
+                                            // written once, and to the entry that
+                                            // outlives the process.
+                                            images = fresh.collectImageBytes()
                                         )
                                     }
                                 }
@@ -242,10 +244,10 @@ class BookRepositoryImpl @Inject constructor(
      * 3. [parsed] bytes a fresh parse just produced;
      * 4. a scan of the source book file for whatever is left.
      *
-     * Bytes from 3 and 4 have to be put somewhere: a parse-cache blob when image
-     * caching is on (so the next open lands in 1), memory while the budget lasts,
-     * a session file after that (so the next open lands in 2). Only the budgeted
-     * few are bytes; the rest of the book is files.
+     * Bytes from 3 and 4 have to be put somewhere: a parse-cache blob whenever
+     * this book has a cache entry to hold one (so the next open lands in 1),
+     * otherwise memory while the budget lasts and a session file after that (so
+     * the next open in this process lands in 2).
      *
      * Runs off the reader's critical path — the text is already on screen.
      */
@@ -283,7 +285,6 @@ class BookRepositoryImpl @Inject constructor(
                     // kept against a source that says how big it is and when it
                     // changed, and a blob lives inside the text's entry.
                     val cachingEnabled = capMb > 0 && cachedFile.hasKnownMetadata
-                    val cacheImages = cachingEnabled && settings.cacheImagesInBooks.lastValue
 
                     val fromBlobs = timed(
                         "  images: blobs",
@@ -318,7 +319,7 @@ class BookRepositoryImpl @Inject constructor(
                     var memoryKb = 0L
                     fun publish(src: String, bytes: ByteArray) {
                         if (!pass.isActive) return
-                        val blob = if (cacheImages) parseCache.writeImageBlob(
+                        val blob = if (cachingEnabled) parseCache.writeImageBlob(
                             cachedFile.cacheKey, cachedFile.size, cachedFile.lastModified,
                             src, bytes
                         ) else null

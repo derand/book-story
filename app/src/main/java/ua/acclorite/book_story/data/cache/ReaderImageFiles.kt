@@ -19,8 +19,9 @@ private const val TAG = "ReaderImageFiles"
 
 /**
  * Transient on-disk home for the images of the book being read, for the case
- * where the parse cache does not already hold them as blobs — "Cache images in
- * books" turned off, or the parse cache disabled entirely.
+ * where the parse cache cannot hold them as blobs — the cache turned off, or a
+ * source that reports neither its size nor its date and so cannot be cached
+ * against at all.
  *
  * It exists so the reader can hand the image loader a *file* instead of a byte
  * array: a local file is read directly and not copied into any cache of the
