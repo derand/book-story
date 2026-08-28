@@ -18,6 +18,8 @@
 
     <!-- Dialog Labels -->
     <string name="add_books">Add books?</string>
+    <string name="keep_local_copy_option">Keep my own copy</string>
+    <string name="keep_local_copy_option_desc">Copy the file into the app, so opening the book never depends on the folder it came from. Uses more space.</string>
     <string name="delete_books">Delete books?</string>
     <string name="delete_book">Delete book?</string>
     <string name="delete_history">Delete reading history?</string>

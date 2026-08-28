@@ -20,11 +20,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import ua.acclorite.book_story.R
+import ua.acclorite.book_story.domain.model.file.SourceLocality
 import ua.acclorite.book_story.presentation.browse.BrowseEvent
 import ua.acclorite.book_story.presentation.browse.model.NullableBook
 import ua.acclorite.book_story.presentation.browse.model.SelectableNullableBook
 import ua.acclorite.book_story.ui.common.components.dialog.Dialog
 import ua.acclorite.book_story.ui.common.components.progress_indicator.CircularProgressIndicator
+import ua.acclorite.book_story.ui.common.components.settings.SwitchWithTitle
+import ua.acclorite.book_story.ui.common.helpers.LocalSettings
 import ua.acclorite.book_story.ui.common.helpers.showToast
 
 @Composable
@@ -36,6 +39,19 @@ fun BrowseAddDialog(
     selectAddDialog: (BrowseEvent.OnSelectAddDialog) -> Unit
 ) {
     val context = LocalContext.current
+    val settings = LocalSettings.current
+
+    // Shown when at least one of the books being added comes from somewhere the
+    // app cannot count on later — a cloud provider, or one that names no
+    // location at all. A selection entirely from device storage does not raise
+    // the question, so it is not asked, and nothing is copied behind the user's
+    // back: when the switch is not there, the add behaves exactly as before.
+    val offersCopy = selectedBooksAddDialog.any { selectable ->
+        val data = selectable.data
+        data is NullableBook.NotNull &&
+                SourceLocality.offersLocalCopy(data.book.documentAuthority)
+    }
+
     Dialog(
         title = stringResource(id = R.string.add_books),
         icon = Icons.Default.AddChart,
@@ -47,6 +63,21 @@ fun BrowseAddDialog(
         },
         withContent = true,
         items = {
+            if (!loadingAddDialog && offersCopy) {
+                item {
+                    SwitchWithTitle(
+                        selected = settings.keepLocalCopy.value,
+                        title = stringResource(id = R.string.keep_local_copy_option),
+                        description = stringResource(
+                            id = R.string.keep_local_copy_option_desc
+                        ),
+                        horizontalPadding = 0.dp
+                    ) {
+                        settings.keepLocalCopy.update(!settings.keepLocalCopy.lastValue)
+                    }
+                }
+            }
+
             if (loadingAddDialog) {
                 item {
                     Box(

@@ -28,7 +28,10 @@ import ua.acclorite.book_story.R
 import ua.acclorite.book_story.core.ui.UIText
 import ua.acclorite.book_story.domain.model.file.File
 import ua.acclorite.book_story.domain.use_case.file_system.GetBookSourcesUseCase
+import ua.acclorite.book_story.data.settings.SettingsManager
+import ua.acclorite.book_story.domain.model.file.SourceLocality
 import ua.acclorite.book_story.domain.use_case.book.AddBookUseCase
+import ua.acclorite.book_story.domain.use_case.book.StoreBookCopyUseCase
 import ua.acclorite.book_story.domain.use_case.file_system.GetBookFromFileUseCase
 import ua.acclorite.book_story.domain.use_case.file_system.GetFilesUseCase
 import ua.acclorite.book_story.presentation.browse.model.NullableBook
@@ -41,9 +44,11 @@ import kotlin.coroutines.coroutineContext
 @HiltViewModel
 class BrowseModel @Inject constructor(
     private val addBookUseCase: AddBookUseCase,
+    private val storeBookCopyUseCase: StoreBookCopyUseCase,
     private val getFilesUseCase: GetFilesUseCase,
     private val getBookFromFileUseCase: GetBookFromFileUseCase,
-    private val getBookSourcesUseCase: GetBookSourcesUseCase
+    private val getBookSourcesUseCase: GetBookSourcesUseCase,
+    private val settings: SettingsManager
 ) : ViewModel() {
 
     private val mutex = Mutex()
@@ -328,11 +333,32 @@ class BrowseModel @Inject constructor(
                         _state.value.selectedBooksAddDialog.mapNotNull {
                             if (it.data is NullableBook.NotNull && it.selected) return@mapNotNull it.data
                             return@mapNotNull null
-                        }.ifEmpty { return@withContext }.forEach { nullableBook ->
-                            addBookUseCase(
-                                nullableBook.book,
-                                nullableBook.coverImage
-                            )
+                        }.ifEmpty { return@withContext }.let { books ->
+                            // The same rule the dialog showed the switch by, over
+                            // the same list: what was on screen is what happens.
+                            // When it is on, it applies to every book selected —
+                            // the user asked to keep their own copies, not for the
+                            // app to decide which ones deserve one.
+                            val keepCopy = settings.keepLocalCopy.lastValue &&
+                                    books.any {
+                                        SourceLocality.offersLocalCopy(
+                                            it.book.documentAuthority
+                                        )
+                                    }
+
+                            books.forEach { nullableBook ->
+                                val id = addBookUseCase(
+                                    nullableBook.book,
+                                    nullableBook.coverImage
+                                )
+                                if (keepCopy && id != null) {
+                                    // A copy that could not be made leaves the book
+                                    // reading its original in place: worth less than
+                                    // was asked for, but never worth losing the book
+                                    // over.
+                                    storeBookCopyUseCase(nullableBook.book.copy(id = id))
+                                }
+                            }
                         }
 
                         LibraryScreen.refreshListChannel.trySend(0)
