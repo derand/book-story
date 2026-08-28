@@ -12,6 +12,7 @@ import kotlinx.coroutines.withContext
 import ua.acclorite.book_story.core.CoverImage
 import ua.acclorite.book_story.core.helpers.mapCatchingCancellable
 import ua.acclorite.book_story.core.helpers.runCatchingCancellable
+import ua.acclorite.book_story.core.log.BOOK_TIMING
 import ua.acclorite.book_story.core.log.bookTimingNote
 import ua.acclorite.book_story.core.log.logE
 import ua.acclorite.book_story.core.log.timed
@@ -261,6 +262,19 @@ class BookRepositoryImpl @Inject constructor(
             // has to check for itself, or it would keep writing files into a
             // directory the closing reader has just deleted.
             val pass = coroutineContext.job
+            // The pass runs off the critical path, so what a reader notices is
+            // not its total but when the *first* image lands. Both are measured
+            // from here, before the file is resolved.
+            val passStart = if (BOOK_TIMING) System.nanoTime() else 0L
+            var firstImageMs = -1L
+            var delivered = 0
+            fun deliver(src: String, image: BookImage.Ready) {
+                delivered++
+                if (BOOK_TIMING && firstImageMs < 0) {
+                    firstImageMs = (System.nanoTime() - passStart) / 1_000_000
+                }
+                onImage(src, image)
+            }
             resolveOpenedFile(bookId)
                 .mapCatchingCancellable { cachedFile ->
                     val capMb = settings.parseCacheSizeMb.lastValue
@@ -271,21 +285,37 @@ class BookRepositoryImpl @Inject constructor(
                     val cachingEnabled = capMb > 0 && cachedFile.hasKnownMetadata
                     val cacheImages = cachingEnabled && settings.cacheImagesInBooks.lastValue
 
-                    val fromBlobs = if (cachingEnabled) parseCache.imageBlobFiles(
-                        cachedFile.cacheKey, cachedFile.size, cachedFile.lastModified, srcs
-                    ) else emptyMap()
-                    fromBlobs.forEach { (src, file) -> onImage(src, BookImage.Ready.InFile(file)) }
+                    val fromBlobs = timed(
+                        "  images: blobs",
+                        describe = { "${it.size} of ${srcs.size}" }
+                    ) {
+                        if (cachingEnabled) parseCache.imageBlobFiles(
+                            cachedFile.cacheKey, cachedFile.size, cachedFile.lastModified, srcs
+                        ) else emptyMap()
+                    }
+                    fromBlobs.forEach { (src, file) -> deliver(src, BookImage.Ready.InFile(file)) }
 
                     // Written while this book was open earlier in the session and
                     // kept on purpose; re-extracting them would only overwrite
                     // identical files.
-                    val fromSession = readerImageFiles.existing(bookId, srcs - fromBlobs.keys)
+                    val fromSession = timed(
+                        "  images: session files",
+                        describe = { "${it.size} of ${srcs.size - fromBlobs.size}" }
+                    ) {
+                        readerImageFiles.existing(bookId, srcs - fromBlobs.keys)
+                    }
                     fromSession.forEach { (src, file) ->
-                        onImage(src, BookImage.Ready.InFile(file))
+                        deliver(src, BookImage.Ready.InFile(file))
                     }
 
                     val budget = ImageMemoryBudget()
                     var wroteBlob = false
+                    // Where the bytes this pass produced ended up, in KB — the
+                    // three are exclusive, so they say what the pass cost the
+                    // disk and what it cost memory.
+                    var blobKb = 0L
+                    var sessionKb = 0L
+                    var memoryKb = 0L
                     fun publish(src: String, bytes: ByteArray) {
                         if (!pass.isActive) return
                         val blob = if (cacheImages) parseCache.writeImageBlob(
@@ -296,28 +326,56 @@ class BookRepositoryImpl @Inject constructor(
                         when {
                             // A blob is written for the sake of the *next* session,
                             // so the budget has nothing to save here.
-                            blob != null -> onImage(src, BookImage.Ready.InFile(blob))
-                            budget.claim(bytes.size) ->
-                                onImage(src, BookImage.Ready.InMemory(bytes))
+                            blob != null -> {
+                                blobKb += bytes.size / 1024
+                                deliver(src, BookImage.Ready.InFile(blob))
+                            }
+                            budget.claim(bytes.size) -> {
+                                memoryKb += bytes.size / 1024
+                                deliver(src, BookImage.Ready.InMemory(bytes))
+                            }
                             else -> readerImageFiles.write(bookId, src, bytes)
-                                ?.let { onImage(src, BookImage.Ready.InFile(it)) }
+                                ?.let {
+                                    sessionKb += bytes.size / 1024
+                                    deliver(src, BookImage.Ready.InFile(it))
+                                }
                         }
                     }
 
                     var stillMissing = srcs - fromBlobs.keys - fromSession.keys
+                    val fromParsed = stillMissing.count { parsed.containsKey(it) }
                     // A fresh parse already read these; handing them over now is
                     // what lets the reader drop them from the text.
                     stillMissing.forEach { src -> parsed[src]?.let { publish(src, it) } }
 
                     stillMissing = stillMissing - parsed.keys
+                    val scanned = stillMissing.size
                     if (stillMissing.isNotEmpty()) {
-                        bookImageLoader.loadImages(cachedFile, stillMissing, ::publish)
+                        // The only source that reads the book file — a disk read
+                        // locally, a network read from a cloud provider. Includes
+                        // writing each image out, since the scan publishes as it
+                        // goes.
+                        timed("  images: scan source", describe = { "$scanned asked for" }) {
+                            bookImageLoader.loadImages(cachedFile, stillMissing, ::publish)
+                        }
                     }
 
                     // One cap check for the whole pass, rather than one per image.
-                    if (wroteBlob && pass.isActive) parseCache.trimToSizeKeeping(
-                        cachedFile.cacheKey, cachedFile.size, cachedFile.lastModified, maxBytes
-                    )
+                    if (wroteBlob && pass.isActive) timed("  images: cap") {
+                        parseCache.trimToSizeKeeping(
+                            cachedFile.cacheKey, cachedFile.size, cachedFile.lastModified, maxBytes
+                        )
+                    }
+
+                    bookTimingNote {
+                        val ms = (System.nanoTime() - passStart) / 1_000_000
+                        "images: $delivered of ${srcs.size} in $ms ms, first at " +
+                            "$firstImageMs ms — ${fromBlobs.size} blob, " +
+                            "${fromSession.size} session, $fromParsed parsed, " +
+                            "$scanned scanned; wrote $blobKb KB blob, " +
+                            "$sessionKb KB session, $memoryKb KB memory" +
+                            if (pass.isActive) "" else " (cancelled)"
+                    }
                 }
         }
     }
