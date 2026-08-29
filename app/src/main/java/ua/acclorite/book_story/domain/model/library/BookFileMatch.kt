@@ -15,6 +15,11 @@ package ua.acclorite.book_story.domain.model.library
  * row not yet resolved since the identity was stored, a file the app owns a
  * copy of — the path decides, and then the file name.
  *
+ * A book the app keeps a copy of is asked about its **origin** as well as about
+ * itself, because the file this is being asked about is the original: the copy
+ * sits in the app's own directory, which no other app hands over. Without that
+ * the user's own book, once copied, would be met as a stranger.
+ *
  * By file name last, because a file arriving from another app does not always
  * come with either — a document URI yields a path only when the providing app
  * exposes real storage. That match is deliberately loose, and it errs the safe
@@ -31,6 +36,10 @@ fun List<Book>.findForFile(
         firstOrNull {
             it.documentId == documentId && it.documentAuthority == documentAuthority
         }?.let { return it }
+
+        firstOrNull {
+            it.originDocumentId == documentId && it.originAuthority == documentAuthority
+        }?.let { return it }
     }
 
     // Which books the looser matches are allowed to consider. A book identified
@@ -38,14 +47,21 @@ fun List<Book>.findForFile(
     // id there is that provider saying these are different documents — no
     // likeness of path or name outvotes it. Two providers say nothing about one
     // another: the same file reached through each carries two unrelated ids, so
-    // such a book stays a candidate, as does one that has no identity yet.
+    // such a book stays a candidate, as does one that has no identity yet. The
+    // provider a copy is held to is the one its origin names, that being the
+    // only provider this file could have reached it through.
     val candidates = when (documentId) {
         null -> this
-        else -> filter { it.documentId == null || it.documentAuthority != documentAuthority }
+        else -> filter {
+            val provider = it.originAuthority ?: it.documentAuthority
+            (it.documentId == null && it.originDocumentId == null) ||
+                    provider != documentAuthority
+        }
     }
 
     if (filePath.isNotBlank()) {
-        candidates.firstOrNull { it.filePath == filePath }?.let { return it }
+        candidates.firstOrNull { it.filePath == filePath || it.originPath == filePath }
+            ?.let { return it }
     }
 
     if (fileName.isBlank()) return null
