@@ -41,6 +41,14 @@ class Navigator @AssistedInject constructor(
         initialValue = initialScreen
     )
 
+    /**
+     * Whether anything is under the current screen — i.e. whether [pop] would
+     * do something. A screen that can be reached both as the app's first one
+     * and from somewhere else asks this to know which of the two it is.
+     */
+    val canPop: Boolean
+        get() = items.value.count() > 1
+
     val lastEvent = savedStateHandle.getStateFlow("stack_event", StackEvent.DEFAULT)
     private fun changeStackEvent(stackEvent: StackEvent) {
         savedStateHandle["stack_event"] = stackEvent

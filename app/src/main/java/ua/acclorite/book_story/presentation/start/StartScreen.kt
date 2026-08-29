@@ -81,19 +81,31 @@ object StartScreen : Screen, Parcelable {
             },
             navigateBack = {
                 if ((currentPage.intValue - 1) < 0) {
-                    activity.finish()
+                    // Leaving the first page leaves the guide. That is leaving
+                    // the app only when the guide *is* the app's first screen;
+                    // asked for again from Settings, it has Settings under it.
+                    if (navigator.canPop) navigator.pop() else activity.finish()
                 } else {
                     stackEvent.value = StackEvent.POP
                     currentPage.intValue -= 1
                 }
             },
             navigateToBrowse = {
-                navigator.push(
-                    BrowseScreen,
-                    saveInBackStack = false
-                )
-                BrowseScreen.refreshListChannel.trySend(Unit)
                 settings.showStartScreen.update(false)
+                BrowseScreen.refreshListChannel.trySend(Unit)
+
+                // The scan settings the guide just showed are Browse's, so the
+                // list is refreshed either way; where "Done" lands is not the
+                // same question. A first run has nowhere to go back to and
+                // opens the app proper; a re-run returns to Settings.
+                if (navigator.canPop) {
+                    navigator.pop()
+                } else {
+                    navigator.push(
+                        BrowseScreen,
+                        saveInBackStack = false
+                    )
+                }
             }
         )
     }
