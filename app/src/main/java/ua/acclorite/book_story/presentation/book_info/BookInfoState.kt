@@ -22,6 +22,9 @@ data class BookInfoState(
 
     val canResetCover: Boolean = false,
 
+    /** True while the book's copy is being made or given up; both take real time. */
+    val changingLocalCopy: Boolean = false,
+
     /** Null until read back; [BookStatistics.none] when nothing was ever read. */
     val statistics: BookStatistics? = null,
 

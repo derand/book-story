@@ -115,6 +115,15 @@ class SettingsManager @Inject constructor(
     val showNavigationLabels = setting<Boolean, Boolean>(
         key = booleanPreferencesKey("show_navigation_labels"), default = true
     )
+    /**
+     * Whether adding books also stores the app's own copy of them.
+     *
+     * Remembered between adds on purpose: it answers "how do I want my books
+     * kept", which is a habit, not a decision to retake for every book.
+     */
+    val keepLocalCopy = setting<Boolean, Boolean>(
+        key = booleanPreferencesKey("keep_local_copy"), default = false
+    )
     val parseCacheSizeMb = setting<Int, Int>(
         key = intPreferencesKey("parse_cache_size_mb"), default = 150
     )

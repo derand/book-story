@@ -31,13 +31,15 @@ fun SwitchWithTitle(
     selected: Boolean,
     title: String,
     description: String? = null,
+    /** A row that cannot be acted on yet, or at all: it says so and does nothing. */
+    enabled: Boolean = true,
     horizontalPadding: Dp = 18.dp,
     verticalPadding: Dp = 8.dp,
     onClick: () -> Unit
 ) {
     Row(
         modifier = modifier
-            .clickable { onClick() }
+            .clickable(enabled = enabled) { onClick() }
             .padding(horizontal = horizontalPadding, vertical = verticalPadding),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -68,6 +70,7 @@ fun SwitchWithTitle(
         Spacer(modifier = Modifier.width(18.dp))
         Switch(
             checked = selected,
+            enabled = enabled,
             onCheckedChange = null,
             colors = SwitchDefaults.colors(
                 checkedThumbColor = MaterialTheme.colorScheme.secondary,

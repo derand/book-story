@@ -113,13 +113,18 @@ class AddPreviewToLibraryUseCase @Inject constructor(
 
         // No document identity: the book is a file in the app's own directory now,
         // and the id it arrived with belongs to a provider that no longer has
-        // anything to do with it.
+        // anything to do with it. It is not forgotten, though — moved to the
+        // origin, which says what was copied and is never used to resolve a
+        // book.
         val promoted = book.copy(
             inLibrary = true,
             previewUri = null,
             filePath = path,
             documentAuthority = null,
-            documentId = null
+            documentId = null,
+            originAuthority = book.documentAuthority,
+            originDocumentId = book.documentId,
+            originPath = book.filePath
         )
         bookRepository.updateBook(promoted).onFailure {
             logW(TAG, "Could not add [${book.title}]: ${it.message}")

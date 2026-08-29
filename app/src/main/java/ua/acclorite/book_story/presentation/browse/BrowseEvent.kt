@@ -43,6 +43,15 @@ sealed class BrowseEvent {
 
     data object OnDismissAddDialog : BrowseEvent()
 
+    /**
+     * Stop adding books, leaving the ones already added where they are.
+     *
+     * It takes effect between books, not inside one: copying a file is blocking
+     * I/O with nowhere to notice, and a half-copied book in the library would be
+     * worse than one book more than was wanted.
+     */
+    data object OnCancelAddingBooks : BrowseEvent()
+
     data class OnSelectAddDialog(
         val book: SelectableNullableBook
     ) : BrowseEvent()

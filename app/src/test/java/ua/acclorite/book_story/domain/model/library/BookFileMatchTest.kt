@@ -171,4 +171,59 @@ class BookFileMatchTest {
 
         assertEquals(1, match?.id)
     }
+
+    private fun copy(
+        id: Int,
+        originPath: String,
+        originAuthority: String? = null,
+        originDocumentId: String? = null
+    ) = Book.default.copy(
+        id = id,
+        filePath = "/data/user/0/app/files/owned_books/$id/" + originPath.substringAfterLast('/'),
+        originPath = originPath,
+        originAuthority = originAuthority,
+        originDocumentId = originDocumentId
+    )
+
+    @Test
+    fun `a copy answers for the document it was taken from`() {
+        val books = listOf(copy(9, "/storage/audit/ymusic.epub", drive, "doc=2"))
+
+        val match = books.findForFile(
+            filePath = "/storage/audit/ymusic.epub",
+            fileName = "ymusic.epub",
+            documentAuthority = drive,
+            documentId = "doc=2"
+        )
+
+        assertEquals(9, match?.id)
+    }
+
+    @Test
+    fun `a copy answers for the path it was taken from`() {
+        val books = listOf(copy(9, "/storage/emulated/0/Books/Solaris.fb2"))
+
+        val match = books.findForFile(
+            filePath = "/storage/emulated/0/Books/Solaris.fb2",
+            fileName = "Solaris.fb2"
+        )
+
+        assertEquals(9, match?.id)
+    }
+
+    @Test
+    fun `another document from the copy's own provider is not its own`() {
+        val books = listOf(copy(9, "/storage/audit/ymusic.epub", drive, "doc=2"))
+
+        // The provider says these are two documents, and the invented path
+        // under one tree must not outvote it.
+        val match = books.findForFile(
+            filePath = "/storage/audit/silpo.epub",
+            fileName = "silpo.epub",
+            documentAuthority = drive,
+            documentId = "doc=3"
+        )
+
+        assertNull(match)
+    }
 }

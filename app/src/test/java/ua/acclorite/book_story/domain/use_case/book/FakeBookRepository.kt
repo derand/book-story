@@ -36,6 +36,13 @@ class FakeBookRepository(
     var storedFor: Book? = null
         private set
 
+    /** The book whose copy was given up, if any. */
+    var releasedFor: Book? = null
+        private set
+
+    /** Set to make releasing succeed with this path; null makes it fail. */
+    var releasedPath: String? = null
+
     override suspend fun getLibraryBooks(): Result<List<Book>> = Result.success(books)
 
     override suspend fun findPreviews(): Result<List<Book>> = Result.success(previews)
@@ -60,10 +67,32 @@ class FakeBookRepository(
 
     override suspend fun deleteBookFile(bookId: Int): Result<Unit> = Result.success(Unit)
 
+    /** Set to make refreshing succeed with this path; null makes it fail. */
+    var refreshedPath: String? = null
+
+    /** The book whose copy was taken again from its source, if any. */
+    var refreshedFor: Book? = null
+        private set
+
+    override suspend fun refreshBookFile(book: Book): Result<String> {
+        refreshedFor = book
+        return refreshedPath?.let { Result.success(it) }
+            ?: Result.failure(IllegalStateException("Could not refresh it."))
+    }
+
+    override suspend fun releaseBookFile(book: Book): Result<String> {
+        releasedFor = book
+        return releasedPath?.let { Result.success(it) }
+            ?: Result.failure(IllegalStateException("Could not release it."))
+    }
+
     private fun unused(name: String): Nothing =
         throw UnsupportedOperationException("$name is not part of this fake.")
 
-    override suspend fun getBook(bookId: Int): Result<Book> = unused("getBook")
+    override suspend fun getBook(bookId: Int): Result<Book> =
+        (books + previews).firstOrNull { it.id == bookId }
+            ?.let { Result.success(it) }
+            ?: Result.failure(NoSuchElementException("No book [$bookId]."))
 
     override suspend fun getText(bookId: Int): Result<ParsedText> = unused("getText")
 

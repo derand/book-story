@@ -64,5 +64,27 @@ data class BookEntity(
      * cannot be turned back into the id it was invented from.
      */
     val documentAuthority: String? = null,
-    val documentId: String? = null
+    val documentId: String? = null,
+
+    /**
+     * Where a book the app keeps a copy of came from, kept so the copy is not a
+     * one-way door.
+     *
+     * [documentAuthority] and [documentId] are cleared when a copy is stored,
+     * and they have to be: from then on the book is found by [filePath] in the
+     * app's own directory, and an identity pointing elsewhere would send the
+     * next open to the wrong file. But then nothing remembered the original, so
+     * neither refreshing the copy from it nor giving the copy up and reading in
+     * place was possible. These three say what was copied, and are read for
+     * nothing else — never to resolve a book.
+     *
+     * All null for a book that is not a copy, and null for the copies that
+     * were made before this was recorded. Whatever is here is what was known
+     * when the copy was taken, which is not a promise that it still answers —
+     * an absent or dead origin is what makes the controls that need it absent,
+     * or honest about failing, rather than silently wrong.
+     */
+    val originAuthority: String? = null,
+    val originDocumentId: String? = null,
+    val originPath: String? = null
 )

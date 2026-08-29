@@ -18,6 +18,16 @@
 
     <!-- Dialog Labels -->
     <string name="add_books">Add books?</string>
+    <string name="keep_local_copy_option">Keep my own copy</string>
+    <string name="adding_books_progress">Adding %1$d of %2$d</string>
+    <string name="keep_local_copy_book_desc">Opening this book depends on the folder it came from.</string>
+    <string name="keep_local_copy_book_kept_desc">Read from the app\'s own copy, %1$s. Turn off to read the original where it lives.</string>
+    <string name="keep_local_copy_book_kept_desc_no_origin">Read from the app\'s own copy, %1$s. There is no original to go back to.</string>
+    <string name="error_local_copy">Could not change where this book is read from</string>
+    <string name="refresh_local_copy">Refresh from source</string>
+    <string name="refresh_local_copy_desc">Copy the book again from where it came from. Your place in it is kept.</string>
+    <string name="local_copy_refreshed">Copied from the source again</string>
+    <string name="keep_local_copy_option_desc">Copy the file into the app, so opening the book never depends on the folder it came from. Uses more space.</string>
     <string name="delete_books">Delete books?</string>
     <string name="delete_book">Delete book?</string>
     <string name="delete_history">Delete reading history?</string>

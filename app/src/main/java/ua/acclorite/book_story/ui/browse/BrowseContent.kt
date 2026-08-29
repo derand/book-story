@@ -14,6 +14,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.focus.FocusRequester
 import ua.acclorite.book_story.core.BottomSheet
 import ua.acclorite.book_story.core.Dialog
+import ua.acclorite.book_story.presentation.browse.model.AddingBooks
 import ua.acclorite.book_story.presentation.browse.BrowseEvent
 import ua.acclorite.book_story.presentation.browse.model.BrowseLayout
 import ua.acclorite.book_story.presentation.browse.model.SelectableFile
@@ -26,6 +27,7 @@ fun BrowseContent(
     selectedBooksAddDialog: List<SelectableNullableBook>,
     refreshState: PullRefreshState,
     loadingAddDialog: Boolean,
+    addingBooks: AddingBooks?,
     dialog: Dialog?,
     bottomSheet: BottomSheet?,
     listState: LazyListState,
@@ -59,6 +61,7 @@ fun BrowseContent(
     showAddDialog: (BrowseEvent.OnShowAddDialog) -> Unit,
     dismissAddDialog: (BrowseEvent.OnDismissAddDialog) -> Unit,
     actionAddDialog: (BrowseEvent.OnActionAddDialog) -> Unit,
+    cancelAddingBooks: (BrowseEvent.OnCancelAddingBooks) -> Unit,
     selectAddDialog: (BrowseEvent.OnSelectAddDialog) -> Unit,
     updatePinnedPaths: (BrowseEvent.OnUpdatePinnedPaths) -> Unit,
     navigateToLibrary: (BrowseEvent.OnNavigateToLibrary) -> Unit,
@@ -67,7 +70,9 @@ fun BrowseContent(
     BrowseDialog(
         dialog = dialog,
         loadingAddDialog = loadingAddDialog,
+        addingBooks = addingBooks,
         actionAddDialog = actionAddDialog,
+        cancelAddingBooks = cancelAddingBooks,
         dismissAddDialog = dismissAddDialog,
         selectedBooksAddDialog = selectedBooksAddDialog,
         selectAddDialog = selectAddDialog
