@@ -452,7 +452,6 @@
     <string name="history_content_desc">Історія читання</string>
     <string name="browse_content_desc">Додавайте книги</string>
     <string name="arrow_content_desc">Стрілка</string>
-    <string name="reset_start_content_desc">Скинути початковий посібник</string>
     <string name="open_in_web_content_desc">Відкрити в браузері</string>
     <string name="delete_color_preset_content_desc">Видалити пресет кольорів</string>
     <string name="create_color_preset_content_desc">Створити новий пресет кольорів</string>

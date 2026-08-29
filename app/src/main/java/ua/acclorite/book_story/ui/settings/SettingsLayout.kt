@@ -16,6 +16,7 @@ import androidx.compose.material.icons.outlined.DisplaySettings
 import androidx.compose.material.icons.outlined.Explore
 import androidx.compose.material.icons.outlined.LocalLibrary
 import androidx.compose.material.icons.outlined.Palette
+import androidx.compose.material.icons.outlined.RestartAlt
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -31,7 +32,8 @@ fun SettingsLayout(
     navigateToAppearanceSettings: () -> Unit,
     navigateToReaderSettings: () -> Unit,
     navigateToLibrarySettings: () -> Unit,
-    navigateToBrowseSettings: () -> Unit
+    navigateToBrowseSettings: () -> Unit,
+    navigateToStart: () -> Unit
 ) {
     LazyColumnWithScrollbar(
         Modifier
@@ -92,6 +94,17 @@ fun SettingsLayout(
                 description = stringResource(id = R.string.browse_settings_desc)
             ) {
                 navigateToBrowseSettings()
+            }
+        }
+
+        item {
+            SettingsLayoutItem(
+                index = 5,
+                icon = Icons.Outlined.RestartAlt,
+                title = stringResource(id = R.string.start_guide_settings),
+                description = stringResource(id = R.string.start_guide_settings_desc)
+            ) {
+                navigateToStart()
             }
         }
     }

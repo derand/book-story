@@ -228,7 +228,6 @@
     <string name="history_content_desc">阅读历史</string>
     <string name="browse_content_desc">添加书籍</string>
     <string name="arrow_content_desc">箭头</string>
-    <string name="reset_start_content_desc">重置引导页面</string>
     <string name="delete_books_content_desc">删除所选书籍</string>
     <string name="revert_content_desc">撤销</string>
     <string name="file_icon_content_desc">文件</string>

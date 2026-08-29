@@ -162,7 +162,6 @@
     <string name="history_content_desc">Historial de lectura</string>
     <string name="revert_content_desc">Revertir</string>
     <string name="checkbox_content_desc">Casilla de verificación</string>
-    <string name="reset_start_content_desc">Restablecer la guía de inicio</string>
     <string name="delete_color_preset_content_desc">Borrar color predefinido</string>
     <string name="create_color_preset_content_desc">Crear un nuevo color predeterminado</string>
     <string name="tryzub_badge">Tryzub</string>
