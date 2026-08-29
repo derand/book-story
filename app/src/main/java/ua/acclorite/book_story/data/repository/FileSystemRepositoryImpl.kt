@@ -15,6 +15,7 @@ import ua.acclorite.book_story.core.data.ExtensionsData
 import ua.acclorite.book_story.core.helpers.mapCatchingCancellable
 import ua.acclorite.book_story.core.helpers.runCatchingCancellable
 import ua.acclorite.book_story.data.local.room.BookDatabase
+import ua.acclorite.book_story.data.mapper.book.BookMapper
 import ua.acclorite.book_story.data.mapper.file.FileMapper
 import ua.acclorite.book_story.data.model.file.CachedFile
 import ua.acclorite.book_story.data.model.file.CachedFileCompat
@@ -22,6 +23,8 @@ import ua.acclorite.book_story.data.parser.cover.CoverParser
 import ua.acclorite.book_story.data.parser.file.FileParser
 import ua.acclorite.book_story.domain.model.file.File
 import ua.acclorite.book_story.domain.model.library.Book
+import ua.acclorite.book_story.domain.model.library.LibraryFiles
+import ua.acclorite.book_story.domain.model.library.libraryFiles
 import ua.acclorite.book_story.domain.repository.FileSystemRepository
 import ua.acclorite.book_story.domain.service.FileProvider
 import javax.inject.Inject
@@ -31,6 +34,7 @@ import javax.inject.Singleton
 class FileSystemRepositoryImpl @Inject constructor(
     private val application: Application,
     private val database: BookDatabase,
+    private val bookMapper: BookMapper,
     private val fileMapper: FileMapper,
     private val fileParser: FileParser,
     private val coverParser: CoverParser,
@@ -40,20 +44,9 @@ class FileSystemRepositoryImpl @Inject constructor(
     override suspend fun searchFiles(query: String): Result<List<File>> {
         return withContext(Dispatchers.IO) {
             fileProvider.getStorageFiles().mapCatchingCancellable { storages ->
-                val library = database.bookDao.getLibraryBooks()
-                val existing = LibraryFiles(
-                    identities = library.mapNotNull { book ->
-                        book.documentId?.let { "${book.documentAuthority}|$it" }
-                    }.toSet(),
-                    // Only the books that have no identity yet, so a file known by
-                    // its id is never taken for one whose path merely looks the
-                    // same — which two folders on one cloud provider produce, since
-                    // every path under them is invented from the same string.
-                    pathsWithoutIdentity = library
-                        .filter { it.documentId == null }
-                        .map { it.filePath.lowercase() }
-                        .toSet()
-                )
+                val existing = database.bookDao.getLibraryBooks()
+                    .map { bookMapper.toBook(it) }
+                    .libraryFiles()
 
                 storages.map { storage ->
                     storage.getFilesFromStorage(
@@ -65,12 +58,6 @@ class FileSystemRepositoryImpl @Inject constructor(
         }
     }
 
-    /** What the library already holds, in the two terms a listed file can match. */
-    private data class LibraryFiles(
-        val identities: Set<String>,
-        val pathsWithoutIdentity: Set<String>
-    )
-
     private fun CachedFile.isValid(query: String, existing: LibraryFiles): Boolean {
         // The same question the parsers ask, so the listing cannot offer a file
         // that then refuses to open — and so a book named the way Drive names
@@ -78,15 +65,11 @@ class FileSystemRepositoryImpl @Inject constructor(
         if (ExtensionsData.formatOf(name) == null) return false
         if (query.isNotBlank() && !name.contains(query.trim(), ignoreCase = true)) return false
 
-        val identity = documentId?.let { "$documentAuthority|$it" }
-        if (identity != null && identity in existing.identities) return false
-
-        // The path still answers for a book that has no identity yet — every row
-        // written before one was stored, until the first time it is opened. It is
-        // asked only about those, so a book known by its id is never claimed by a
-        // path that merely looks like its own.
-        if (path.lowercase() in existing.pathsWithoutIdentity) return false
-        return true
+        return !existing.holds(
+            filePath = path,
+            documentAuthority = documentAuthority,
+            documentId = documentId
+        )
     }
 
     private fun CachedFile.getFilesFromStorage(
