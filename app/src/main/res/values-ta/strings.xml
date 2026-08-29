@@ -53,7 +53,6 @@
     <string name="checkbox_content_desc">தேர்வுப்பெட்டி</string>
     <string name="library_content_desc">உங்கள் நூலகம்</string>
     <string name="delete_history_element_content_desc">வரலாற்று உறுப்பை நீக்கு</string>
-    <string name="reset_start_content_desc">தொடக்க வழிகாட்டியை மீட்டமைக்கவும்</string>
     <string name="reading_speed_reader_settings">வாசிப்பு விரைவு</string>
     <string name="system_reader_settings">மண்டலம்</string>
     <string name="language_option">பயன்பாட்டு மொழி</string>

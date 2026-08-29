@@ -286,7 +286,6 @@
     <string name="title_changed">نجح تغيير العنوان.</string>
     <string name="highlighted_reading_level">المستوى</string>
     <string name="filter_content_desc">تصفية</string>
-    <string name="reset_start_content_desc">إعادة تعيين دليل البدء</string>
     <string name="tryzub_badge">Tryzub</string>
     <string name="start_language_preferences">تفضيلات اللغة</string>
     <string name="file_icon_content_desc">الملف</string>

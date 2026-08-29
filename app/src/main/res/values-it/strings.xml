@@ -234,7 +234,6 @@
     <string name="start_done_desc">Hai completato con successo le impostazioni di base dell\'app. Vuoi imparare a usare l\'app leggendo la schermata di Aiuto?</string>
     <string name="add_files_content_desc">Aggiungi file</string>
     <string name="library_content_desc">La tua libreria</string>
-    <string name="reset_start_content_desc">Ripristina la guida all\'avvio</string>
     <string name="cover_reset">L\'immagine di copertina è stata reimpostata correttamente.</string>
     <string name="credits_ideas">Idea</string>
     <string name="contributors_option">Contributori</string>

@@ -255,7 +255,6 @@
     <string name="color_effects_background">Cor do fundo</string>
     <string name="purple_gray_theme">Ceres</string>
     <string name="book_deleted">Esse livro foi apagado com sucesso.</string>
-    <string name="reset_start_content_desc">Redefinir guia de introdução</string>
     <string name="progress_bar_font_size_option">Tamanho da fonte</string>
     <string name="select_all_files_content_desc">Selecionar todos os arquivos</string>
     <string name="create_color_preset_content_desc">Criar novo padrão de cores</string>

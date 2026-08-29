@@ -159,7 +159,6 @@
     <string name="history_content_desc">Leseverlauf</string>
     <string name="browse_content_desc">Bücher hinzufügen</string>
     <string name="arrow_content_desc">Pfeil</string>
-    <string name="reset_start_content_desc">Startanleitung zurücksetzen</string>
     <string name="open_in_web_content_desc">Im Internet öffnen</string>
     <string name="delete_color_preset_content_desc">Farbvoreinstellung löschen</string>
     <string name="create_color_preset_content_desc">Neue Farbvorgabe erstellen</string>

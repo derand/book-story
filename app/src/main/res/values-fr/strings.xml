@@ -158,7 +158,6 @@
     <string name="library_content_desc">Votre librairie</string>
     <string name="browse_content_desc">Ajouter les livres</string>
     <string name="arrow_content_desc">Flèche</string>
-    <string name="reset_start_content_desc">Guide de réinitialisation</string>
     <string name="open_in_web_content_desc">Ouvrir en ligne</string>
     <string name="delete_color_preset_content_desc">Supprimer le préréglage de couleur</string>
     <string name="shuffle_color_preset_content_desc">Mélanger les couleurs</string>

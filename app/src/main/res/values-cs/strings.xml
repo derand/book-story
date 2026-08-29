@@ -334,7 +334,6 @@
     <string name="revert_content_desc">Vrátit</string>
     <string name="delete_history_element_content_desc">Odstranit prvek historie</string>
     <string name="arrow_content_desc">Šipka</string>
-    <string name="reset_start_content_desc">Resetovat průvodce spuštěním</string>
     <string name="delete_color_preset_content_desc">Odstranit předvolbu barvy</string>
     <string name="create_color_preset_content_desc">Vytvořit nové přednastavení barev</string>
     <string name="shuffle_color_preset_content_desc">Míchání barev</string>
