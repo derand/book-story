@@ -82,7 +82,14 @@ fun BrowseAddDialog(
         items = {
             if (addingBooks != null) {
                 item {
-                    Column(modifier = Modifier.fillMaxWidth()) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            // The same inset every other row of the dialog keeps:
+                            // the title, the description, the book list and the
+                            // buttons are all 24 dp from the edge.
+                            .padding(horizontal = 24.dp, vertical = 12.dp)
+                    ) {
                         StyledText(
                             text = stringResource(
                                 id = R.string.adding_books_progress,
@@ -122,7 +129,8 @@ fun BrowseAddDialog(
                         description = stringResource(
                             id = R.string.keep_local_copy_option_desc
                         ),
-                        horizontalPadding = 0.dp
+                        horizontalPadding = 24.dp,
+                        verticalPadding = 12.dp
                     ) {
                         settings.keepLocalCopy.update(!settings.keepLocalCopy.lastValue)
                     }
