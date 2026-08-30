@@ -11,7 +11,7 @@ import androidx.compose.ui.res.stringResource
 import ua.acclorite.book_story.R
 import ua.acclorite.book_story.presentation.library.model.LibraryLayout
 import ua.acclorite.book_story.presentation.library.model.LibraryTitlePosition
-import ua.acclorite.book_story.ui.common.components.settings.ChipsWithTitle
+import ua.acclorite.book_story.ui.common.components.settings.SegmentedButtonWithTitle
 import ua.acclorite.book_story.ui.common.helpers.LocalSettings
 import ua.acclorite.book_story.ui.common.model.ListItem
 import ua.acclorite.book_story.ui.theme.ExpandingTransition
@@ -21,9 +21,9 @@ fun LibraryTitlePositionOption() {
     val settings = LocalSettings.current
 
     ExpandingTransition(visible = settings.libraryLayout.value == LibraryLayout.GRID) {
-        ChipsWithTitle(
+        SegmentedButtonWithTitle(
             title = stringResource(id = R.string.title_position_option),
-            chips = LibraryTitlePosition.entries.map { item ->
+            buttons = LibraryTitlePosition.entries.map { item ->
                 ListItem(
                     item = item,
                     title = stringResource(id = item.title),

@@ -11,7 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import ua.acclorite.book_story.R
 import ua.acclorite.book_story.presentation.reader.model.ReaderTapPaging
-import ua.acclorite.book_story.ui.common.components.settings.ChipsWithTitle
+import ua.acclorite.book_story.ui.common.components.settings.SegmentedButtonWithTitle
 import ua.acclorite.book_story.ui.common.helpers.LocalSettings
 import ua.acclorite.book_story.ui.common.model.ListItem
 
@@ -19,9 +19,9 @@ import ua.acclorite.book_story.ui.common.model.ListItem
 fun TapPagingOption() {
     val settings = LocalSettings.current
 
-    ChipsWithTitle(
+    SegmentedButtonWithTitle(
         title = stringResource(id = R.string.tap_paging_option),
-        chips = ReaderTapPaging.entries.map { item ->
+        buttons = ReaderTapPaging.entries.map { item ->
             ListItem(
                 item = item,
                 title = stringResource(id = item.title),
