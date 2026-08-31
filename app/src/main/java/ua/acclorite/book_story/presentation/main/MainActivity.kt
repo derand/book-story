@@ -13,6 +13,7 @@ import android.content.Intent
 import android.database.CursorWindow
 import android.os.Bundle
 import android.view.ActionMode
+import android.view.KeyEvent
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
@@ -42,6 +43,7 @@ import ua.acclorite.book_story.ui.common.components.navigation_rail.NavigationRa
 import ua.acclorite.book_story.ui.common.helpers.ProvideSettings
 import ua.acclorite.book_story.ui.main.MainActivityKeyboardManager
 import ua.acclorite.book_story.ui.main.TextActionMode
+import ua.acclorite.book_story.ui.main.VolumeKeyPaging
 import ua.acclorite.book_story.ui.main.MainFileOpenEffects
 import ua.acclorite.book_story.ui.navigator.Navigator
 import ua.acclorite.book_story.ui.navigator.NavigatorTabs
@@ -219,6 +221,16 @@ class MainActivity : AppCompatActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         receiveFile(intent)
+    }
+
+    // Volume keys turn pages while the reader asks for them, and it asks here
+    // rather than through a modifier because a key event reaching the view
+    // hierarchy has already passed the window that handles the volume; see
+    // [VolumeKeyPaging]. Nothing else in the app takes a hardware key, so the
+    // question is only ever asked of one listener.
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if (VolumeKeyPaging.intercept(event)) return true
+        return super.dispatchKeyEvent(event)
     }
 
     // The text-selection toolbar is an action mode on the window, whoever put it

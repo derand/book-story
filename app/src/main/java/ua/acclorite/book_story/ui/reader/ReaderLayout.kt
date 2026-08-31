@@ -47,6 +47,7 @@ import ua.acclorite.book_story.presentation.reader.model.ReaderFontThickness
 import ua.acclorite.book_story.presentation.reader.model.ReaderHorizontalGesture
 import ua.acclorite.book_story.presentation.reader.model.ReaderTapPaging
 import ua.acclorite.book_story.presentation.reader.model.ReaderTextAlignment
+import ua.acclorite.book_story.presentation.reader.model.ReaderVolumePaging
 import ua.acclorite.book_story.ui.common.components.common.AnimatedVisibility
 import ua.acclorite.book_story.ui.common.components.common.LazyColumnWithScrollbar
 import ua.acclorite.book_story.ui.common.components.common.SelectionContainer
@@ -67,6 +68,7 @@ fun ReaderLayout(
     horizontalGestureAlphaAnim: Boolean,
     horizontalGesturePullAnim: Boolean,
     tapPaging: ReaderTapPaging,
+    volumePaging: ReaderVolumePaging,
     disableScrolling: Boolean,
     pageTurnOverlap: Float,
     pageTurnAnimation: Boolean,
@@ -154,8 +156,9 @@ fun ReaderLayout(
         with(density) { lineHeightPx.toDp() }
     }
 
-    // Both triggers of a page turn — the tap zones and the horizontal swipe —
-    // go through one pager, so the same action cannot behave two ways.
+    // Every trigger of a page turn — the tap zones, the horizontal swipe and
+    // the volume keys — goes through one pager, so the same action cannot
+    // behave two ways.
     val pager = rememberReaderPager(
         listState = listState,
         overlap = lineHeightPx * pageTurnOverlap,
@@ -200,6 +203,15 @@ fun ReaderLayout(
             )
         },
     ) { toolbarHidden ->
+        // The keys are attached on the same terms as the tap zones, and on one
+        // more: while the menu is open they belong to the system again, which
+        // is the only way to change the volume with this on.
+        ReaderVolumeKeys(
+            enabled = !isLoading && toolbarHidden && !showMenu,
+            volumePaging = volumePaging,
+            pager = pager
+        )
+
         Column(
             Modifier
                 .fillMaxSize()
@@ -260,7 +272,12 @@ fun ReaderLayout(
                     // to nothing until the selection was dismissed — the same
                     // dead end this guard exists for, only lasting a moment.
                     canTurnPage = horizontalGesture != ReaderHorizontalGesture.OFF ||
-                            (tapZones != null && toolbarHidden)
+                            (tapZones != null && toolbarHidden) ||
+                            // The menu is not counted here, unlike above: it is
+                            // dismissed by the same tap that would have turned a
+                            // page, so the reader is one tap from the trigger
+                            // rather than stranded without one.
+                            (volumePaging != ReaderVolumePaging.OFF && toolbarHidden)
                 ),
                 contentPadding = PaddingValues(
                     top = (WindowInsets.displayCutout.asPaddingValues()

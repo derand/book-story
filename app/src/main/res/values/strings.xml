@@ -340,6 +340,7 @@
     <string name="horizontal_gesture_disable_scrolling_option">Disable scrolling</string>
     <string name="horizontal_gesture_disable_scrolling_option_desc">Completely disable reader scrolling</string>
     <string name="tap_paging_option">Tap to turn page</string>
+    <string name="volume_paging_option">Volume keys turn page</string>
     <string name="page_turn_overlap_option">Overlap (lines)</string>
     <string name="page_turn_animation_option">Page turn animation</string>
     <string name="page_turn_animation_option_desc">
@@ -449,6 +450,11 @@
     <string name="tap_paging_off">Off</string>
     <string name="tap_paging_on">On</string>
     <string name="tap_paging_inverse">On (Inverse)</string>
+
+    <!-- Volume paging properties -->
+    <string name="volume_paging_off">Off</string>
+    <string name="volume_paging_on">On</string>
+    <string name="volume_paging_inverse">On (Inverse)</string>
 
     <!-- Highlighted Reading properties -->
     <string name="highlighted_reading_level">level</string>

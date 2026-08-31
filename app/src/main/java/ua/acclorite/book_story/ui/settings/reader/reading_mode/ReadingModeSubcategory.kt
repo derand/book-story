@@ -23,6 +23,7 @@ import ua.acclorite.book_story.ui.settings.reader.reading_mode.components.Horizo
 import ua.acclorite.book_story.ui.settings.reader.reading_mode.components.PageTurnAnimationOption
 import ua.acclorite.book_story.ui.settings.reader.reading_mode.components.PageTurnOverlapOption
 import ua.acclorite.book_story.ui.settings.reader.reading_mode.components.TapPagingOption
+import ua.acclorite.book_story.ui.settings.reader.reading_mode.components.VolumePagingOption
 
 fun LazyListScope.ReadingModeSubcategory(
     titleColor: @Composable () -> Color = { MaterialTheme.colorScheme.primary },
@@ -44,9 +45,13 @@ fun LazyListScope.ReadingModeSubcategory(
             TapPagingOption()
         }
 
+        item {
+            VolumePagingOption()
+        }
+
         // The overlap, the animation and giving up the scroll describe the page
-        // turn itself, so they sit under both of the gestures that ask for one;
-        // what follows belongs to the swipe alone.
+        // turn itself, so they sit under every trigger that asks for one; what
+        // follows belongs to the swipe alone.
         item {
             PageTurnOverlapOption()
         }

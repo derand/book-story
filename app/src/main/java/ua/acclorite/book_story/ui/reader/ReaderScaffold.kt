@@ -45,6 +45,7 @@ import ua.acclorite.book_story.presentation.reader.model.ReaderSearch
 import ua.acclorite.book_story.presentation.reader.model.ReaderHorizontalGesture
 import ua.acclorite.book_story.presentation.reader.model.ReaderTapPaging
 import ua.acclorite.book_story.presentation.reader.model.ReaderTextAlignment
+import ua.acclorite.book_story.presentation.reader.model.ReaderVolumePaging
 import ua.acclorite.book_story.presentation.settings.SettingsEvent
 import ua.acclorite.book_story.ui.common.components.common.AnimatedVisibility
 import ua.acclorite.book_story.ui.reader.model.FontWithName
@@ -82,6 +83,7 @@ fun ReaderScaffold(
     horizontalGestureAlphaAnim: Boolean,
     horizontalGesturePullAnim: Boolean,
     tapPaging: ReaderTapPaging,
+    volumePaging: ReaderVolumePaging,
     disableScrolling: Boolean,
     pageTurnOverlap: Float,
     pageTurnAnimation: Boolean,
@@ -229,6 +231,7 @@ fun ReaderScaffold(
             horizontalGestureAlphaAnim = horizontalGestureAlphaAnim,
             horizontalGesturePullAnim = horizontalGesturePullAnim,
             tapPaging = tapPaging,
+            volumePaging = volumePaging,
             disableScrolling = disableScrolling,
             pageTurnOverlap = pageTurnOverlap,
             pageTurnAnimation = pageTurnAnimation,
