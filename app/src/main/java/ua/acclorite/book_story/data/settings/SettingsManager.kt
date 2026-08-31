@@ -40,6 +40,7 @@ import ua.acclorite.book_story.presentation.reader.model.ReaderProgressCount
 import ua.acclorite.book_story.presentation.reader.model.ReaderScreenOrientation
 import ua.acclorite.book_story.presentation.reader.model.ReaderTapPaging
 import ua.acclorite.book_story.presentation.reader.model.ReaderTextAlignment
+import ua.acclorite.book_story.presentation.reader.model.ReaderVolumePaging
 import ua.acclorite.book_story.ui.reader.data.ReaderData
 import ua.acclorite.book_story.ui.reader.model.FontWithName
 import ua.acclorite.book_story.ui.theme.model.DarkTheme
@@ -253,6 +254,10 @@ class SettingsManager @Inject constructor(
         key = stringPreferencesKey("tap_paging"), default = ReaderTapPaging.OFF,
         serialize = { it.name }, deserialize = { ReaderTapPaging.valueOf(it) }
     )
+    val volumePaging = setting<ReaderVolumePaging, String>(
+        key = stringPreferencesKey("volume_paging"), default = ReaderVolumePaging.OFF,
+        serialize = { it.name }, deserialize = { ReaderVolumePaging.valueOf(it) }
+    )
     /**
      * Lines of the page just read that stay on screen after a turn, which is
      * what decides the step: a screenful, less these. Chosen in halves, because
@@ -293,12 +298,14 @@ class SettingsManager @Inject constructor(
 
     /**
      * Whether anything can turn a page. The step and the animation belong to the
-     * turn itself rather than to the gesture that asked for it, so either
-     * trigger being on is enough for their settings to matter.
+     * turn itself rather than to the trigger that asked for it, so any one of
+     * the three being on is enough for their settings to matter — and the third
+     * is not a gesture at all, which is exactly why it is easy to forget here.
      */
     val pageTurnEnabled: Boolean
         @Composable get() = horizontalGesture.value != ReaderHorizontalGesture.OFF ||
-                tapPaging.value != ReaderTapPaging.OFF
+                tapPaging.value != ReaderTapPaging.OFF ||
+                volumePaging.value != ReaderVolumePaging.OFF
     val bottomBarPadding = setting<Int, Int>(
         key = intPreferencesKey("bottom_bar_padding"), default = 0
     )

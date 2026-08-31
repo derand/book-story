@@ -33,6 +33,7 @@ import ua.acclorite.book_story.presentation.reader.model.ReaderHorizontalGesture
 import ua.acclorite.book_story.presentation.reader.model.ReaderSearch
 import ua.acclorite.book_story.presentation.reader.model.ReaderTapPaging
 import ua.acclorite.book_story.presentation.reader.model.ReaderTextAlignment
+import ua.acclorite.book_story.presentation.reader.model.ReaderVolumePaging
 import ua.acclorite.book_story.presentation.settings.SettingsEvent
 import ua.acclorite.book_story.ui.reader.model.FontWithName
 import ua.acclorite.book_story.ui.theme.model.HorizontalAlignment
@@ -73,6 +74,7 @@ fun ReaderContent(
     horizontalGestureAlphaAnim: Boolean,
     horizontalGesturePullAnim: Boolean,
     tapPaging: ReaderTapPaging,
+    volumePaging: ReaderVolumePaging,
     disableScrolling: Boolean,
     pageTurnOverlap: Float,
     pageTurnAnimation: Boolean,
@@ -168,6 +170,18 @@ fun ReaderContent(
             horizontalGestureAlphaAnim = horizontalGestureAlphaAnim,
             horizontalGesturePullAnim = horizontalGesturePullAnim,
             tapPaging = tapPaging,
+            // Anything drawn over the reader takes the keys back with it. The
+            // image viewer and a note's sheet both open with the menu hidden,
+            // so the menu alone does not answer for them, and turning pages
+            // under a picture the reader is looking at is a page turn nobody
+            // sees — while the volume, which the overlay leaves alone, is what
+            // the keys are expected to do there.
+            volumePaging = when {
+                bottomSheet != null || drawer != null || fullscreenImage != null ->
+                    ReaderVolumePaging.OFF
+
+                else -> volumePaging
+            },
             disableScrolling = disableScrolling,
             pageTurnOverlap = pageTurnOverlap,
             pageTurnAnimation = pageTurnAnimation,
