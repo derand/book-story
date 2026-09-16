@@ -17,6 +17,7 @@ import ua.acclorite.book_story.data.model.file.CachedFileCompat
 import ua.acclorite.book_story.data.parser.document.DocumentParser
 import ua.acclorite.book_story.data.parser.document.MarkdownParser
 import ua.acclorite.book_story.data.parser.text.HtmlTextParser
+import ua.acclorite.book_story.data.parser.text.MarkdownTextParser
 import ua.acclorite.book_story.data.parser.text.TextParser
 import ua.acclorite.book_story.data.parser.text.XmlTextParser
 import ua.acclorite.book_story.domain.model.reader.ParsedText
@@ -57,10 +58,12 @@ class DocumentSnapshotTest {
 
     @Test
     fun markdownTagCoverageBookMatchesItsSnapshot() {
-        // A .md file goes through the HTML parser today (see TextParserImpl)
         assertSnapshot(
             "md/tags-test.snapshot.txt",
-            parse(HtmlTextParser(documentParser), "md/tags-test.md").text.dump()
+            parse(
+                MarkdownTextParser(MarkdownParser(CommonmarkParser.builder().build())),
+                "md/tags-test.md"
+            ).text.dump()
         )
     }
 

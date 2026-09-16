@@ -172,10 +172,6 @@ internal fun String.clearInlineMarks(): String {
         .replace(INLINE_MARKS_REGEX, "")
 }
 
-/** A GFM table delimiter row, e.g. "| --- | :--: |". */
-private val TABLE_DELIMITER_REGEX =
-    Regex("""^\s*\|?\s*:?-{1,}:?\s*(\|\s*:?-{1,}:?\s*)*\|?\s*$""")
-
 // Compiled once — all of these run in the per-line hot loop over the whole book
 // (parseDocument), so per-line Regex() compilation added up to a large share of
 // parse time. Kept at file scope like TABLE_DELIMITER_REGEX above.
@@ -619,7 +615,18 @@ class DocumentParser @Inject constructor(
             body.wholeText()
         }
         val rawLines = timed("      lines", describe = { "${it.size} lines" }) { flat.lines() }
-        val lines = timed("      md tables") { extractMarkdownTables(rawLines, tables) }
+        val lines = timed("      md tables") {
+            // Pipe tables typed as text: re-emitted by a table marker line
+            splitMarkdownTables(rawLines, markdownParser).map { line ->
+                when (line) {
+                    is MarkdownLine.Text -> line.line
+                    is MarkdownLine.Table -> {
+                        tables.add(line.table)
+                        "[[[table|${tables.size - 1}]]]"
+                    }
+                }
+            }
+        }
 
         timed("      line loop") {
             lines.forEach { line ->
@@ -838,67 +845,6 @@ class DocumentParser @Inject constructor(
     }
 
     /**
-     * Finds GFM pipe tables in the line stream (a header row, a delimiter row
-     * of dashes, then body rows) and replaces each with a table marker,
-     * appending the parsed table to [tables]. Unlike HTML/FB2 tables these
-     * have no DOM element — markdown tables reach here as plain text lines.
-     */
-    private fun extractMarkdownTables(
-        lines: List<String>,
-        tables: MutableList<ReaderText.Table>
-    ): List<String> {
-        val result = mutableListOf<String>()
-        var i = 0
-        while (i < lines.size) {
-            val header = lines[i]
-            val delimiter = lines.getOrNull(i + 1)
-
-            if (
-                header.contains('|') &&
-                delimiter != null &&
-                delimiter.contains('-') &&
-                TABLE_DELIMITER_REGEX.matches(delimiter)
-            ) {
-                val rowLines = mutableListOf(header)
-                var j = i + 2
-                while (j < lines.size && lines[j].contains('|') && lines[j].isNotBlank()) {
-                    rowLines.add(lines[j])
-                    j++
-                }
-
-                val rows = rowLines.map { row ->
-                    splitTableRow(row).map { cell -> markdownParser.parse(cell) }
-                }
-                val alignments = splitTableRow(delimiter).map { it.delimiterAlignment() }
-                result.add("[[[table|${tables.size}]]]")
-                tables.add(ReaderText.Table(rows, hasHeader = true, alignments = alignments))
-                i = j
-            } else {
-                result.add(header)
-                i++
-            }
-        }
-        return result
-    }
-
-    /**
-     * Reads the alignment out of one cell of a markdown delimiter row: a colon
-     * marks the side the text is pulled to — `:---` start, `---:` end, `:--:`
-     * both, i.e. centred. A plain `---` states nothing.
-     */
-    private fun String.delimiterAlignment(): TableAlignment {
-        val cell = trim()
-        val start = cell.startsWith(':')
-        val end = cell.endsWith(':')
-        return when {
-            start && end -> TableAlignment.Center
-            end -> TableAlignment.End
-            start -> TableAlignment.Start
-            else -> TableAlignment.Unspecified
-        }
-    }
-
-    /**
      * Reads the alignment of an FB2/HTML `<td>`/`<th>`: the `align` attribute
      * FB2 2.0 defines, falling back to an inline `text-align`, which is how an
      * EPUB usually says it (`align` has been deprecated HTML since HTML 4).
@@ -914,14 +860,6 @@ class DocumentParser @Inject constructor(
             // Anything else, "justify" included: nothing this renderer can say.
             else -> TableAlignment.Unspecified
         }
-    }
-
-    /** Splits a markdown table row into cells, dropping the outer pipes. */
-    private fun splitTableRow(line: String): List<String> {
-        var row = line.trim()
-        if (row.startsWith("|")) row = row.substring(1)
-        if (row.endsWith("|")) row = row.dropLast(1)
-        return row.split("|").map { it.trim() }
     }
 
     /**
