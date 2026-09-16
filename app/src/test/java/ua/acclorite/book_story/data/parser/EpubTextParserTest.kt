@@ -104,10 +104,9 @@ class EpubTextParserTest {
     // --- chapter titles ---
 
     @Test
-    fun knownDefect_aNestedNavPointComesOutFlat() {
-        // Should be depth 1. The NCX is read by jsoup's HTML parser, which does
-        // not take <content src="…"/> as self-closing, so the nested navPoint
-        // ends up inside <content> instead of inside its parent navPoint.
+    fun theTocNamesTheChapterAndANestedNavPointIsOneLevelDeep() {
+        // Read as HTML, <content src="…"/> was left open and the nested
+        // navPoint ended up inside it, so every chapter came out at depth 0
         val book = epub(
             "OEBPS/content.opf" to opf("one.xhtml", "two.xhtml"),
             "OEBPS/toc.ncx" to ncx(
@@ -119,7 +118,7 @@ class EpubTextParserTest {
 
         val chapters = parse(book).text.filterIsInstance<ReaderText.Chapter>()
         assertEquals(listOf("Частина", "Розділ"), chapters.map { it.title })
-        assertEquals(listOf(0, 0), chapters.map { it.depth })
+        assertEquals(listOf(0, 1), chapters.map { it.depth })
     }
 
     @Test
@@ -175,12 +174,12 @@ class EpubTextParserTest {
     // --- the document itself ---
 
     @Test
-    fun knownDefect_aSelfClosingTitleSwallowsTheText() {
+    fun aSelfClosingTitleKeepsTheWholeText() {
         // Valid XHTML, and found in published books. Read as HTML, <title> is
-        // never self-closing, so what follows it is read as the page title.
-        // jsoup rewinds out of that only within its read-ahead window: a short
-        // document comes back whole, one past roughly 2 KB loses the text that
-        // went into the title.
+        // never self-closing, so what followed it was read as the page title;
+        // jsoup rewinds out of that only within its read-ahead window, so a
+        // document past roughly 2 KB lost the text that went into the title.
+        // Hence the size: a short document never showed it.
         val paragraphs = (1..200).map { n -> "Абзац номер $n." }
         val book = epub(
             "OEBPS/content.opf" to opf("one.xhtml"),
@@ -192,10 +191,45 @@ class EpubTextParserTest {
                     "</body></html>"
         )
 
-        val parsed = parse(book).text.paragraphs()
+        assertEquals(paragraphs, parse(book).text.paragraphs())
+    }
+
+    @Test
+    fun scriptAndStyleInTheBodyAreNotText() {
+        // HTML keeps what they hold out of the text; XML would make it text
+        val book = epub(
+            "OEBPS/content.opf" to opf("one.xhtml"),
+            "OEBPS/toc.ncx" to ncx(navPoint("Розділ", "one.xhtml")),
+            "OEBPS/one.xhtml" to xhtml(
+                "<style>p { margin: 0 }</style><p>Абзац.</p><script>var x = 1;</script>"
+            )
+        )
+
+        assertEquals(listOf("Абзац."), parse(book).text.paragraphs())
+    }
+
+    @Test
+    fun notQuiteXmlStillParses() {
+        // What real books get wrong: an HTML entity no DTD declares, an
+        // unclosed <br>, a tag in upper case. None of it may cost text.
+        val book = epub(
+            "OEBPS/content.opf" to opf("one.xhtml"),
+            "OEBPS/toc.ncx" to ncx(navPoint("Розділ", "one.xhtml")),
+            "OEBPS/one.xhtml" to xhtml(
+                "<p>один&nbsp;два</p><p>рядок<br>далі</p><P>великі <I>літери</I></P>"
+            )
+        )
+
+        val text = parse(book).text.filterIsInstance<ReaderText.Text>()
+        assertEquals(
+            listOf("один два", "рядок", "далі", "великі літери"),
+            text.map { it.line.text }
+        )
         assertTrue(
-            "fewer paragraphs than written (${parsed.size} of ${paragraphs.size})",
-            parsed.size < paragraphs.size
+            "upper-case <I> is still italic",
+            text.last().line.spanStyles.any { span ->
+                span.item.fontStyle == androidx.compose.ui.text.font.FontStyle.Italic
+            }
         )
     }
 

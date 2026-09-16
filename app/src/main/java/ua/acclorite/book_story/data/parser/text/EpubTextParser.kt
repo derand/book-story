@@ -176,8 +176,17 @@ class EpubTextParser @Inject constructor(
         val content = withContext(Dispatchers.IO) {
             zip.getInputStream(entry)
         }.bufferedReader().use { it.readText() }
+        // An EPUB content document is XHTML, and read as HTML it is not the same
+        // document: HTML has no self-closing <title/> or <a id="…"/>, and a
+        // <title/> left open took the text after it into the page title. jsoup's
+        // XML parser is lenient where real books are not well-formed (an
+        // undeclared &nbsp;, an unclosed tag), so it needs no HTML fallback.
+        val document = Jsoup.parse(content, "", Parser.xmlParser()).apply {
+            // HTML keeps what these hold out of the text; XML makes it text
+            select("script, style").remove()
+        }
         var readerText = documentParser.parseDocument(
-            document = Jsoup.parse(content, Parser.htmlParser()),
+            document = document,
             zipFile = zip,
             imageEntries = imageEntries,
             includeChapter = false,
@@ -236,7 +245,9 @@ class EpubTextParser @Inject constructor(
                 getInputStream(it)
             }.bufferedReader().use { it.readText() }
         }
-        val tocDocument = tocContent?.let { Jsoup.parse(it) }
+        // XML, not HTML: read as HTML, <content src="…"/> is left open and a
+        // nested navPoint ends up inside it rather than inside its parent
+        val tocDocument = tocContent?.let { Jsoup.parse(it, "", Parser.xmlParser()) }
 
         if (tocDocument == null) return null
         val titleMap = mutableMapOf<Source, ReaderText.Chapter>()
