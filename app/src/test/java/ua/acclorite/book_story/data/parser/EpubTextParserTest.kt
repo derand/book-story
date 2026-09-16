@@ -195,6 +195,25 @@ class EpubTextParserTest {
     }
 
     @Test
+    fun aLineBreakInsideAParagraphDoesNotSplitIt() {
+        // Both line endings, and the page anchor print editions leave between
+        // two lines of one paragraph
+        val book = epub(
+            "OEBPS/content.opf" to opf("one.xhtml"),
+            "OEBPS/toc.ncx" to ncx(navPoint("Розділ", "one.xhtml")),
+            "OEBPS/one.xhtml" to xhtml(
+                "<p>перший рядок\nдругий</p>" +
+                        "<p>до якоря \r\n\r\n<a id=\"p17\"/>після якоря</p>"
+            )
+        )
+
+        assertEquals(
+            listOf("перший рядок другий", "до якоря після якоря"),
+            parse(book).text.paragraphs()
+        )
+    }
+
+    @Test
     fun scriptAndStyleInTheBodyAreNotText() {
         // HTML keeps what they hold out of the text; XML would make it text
         val book = epub(

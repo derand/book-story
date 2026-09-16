@@ -286,6 +286,7 @@ class ParseCache @Inject constructor(application: Application) {
         // 6: <i> is italicised, <s>/<del>/<strike> struck through.
         // 7: a chapter holding only an image is no longer dropped.
         // 8: EPUB documents and toc.ncx are read as XML (lost text, flat TOC).
+        //    Same release: a CRLF line break no longer splits a paragraph.
         const val VERSION = 8
     }
 }
