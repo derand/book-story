@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE ncx PUBLIC "-//NISO//DTD ncx 2005-1//EN" "http://www.daisy.org/z3986/2005/ncx-2005-1.dtd">
+<ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1">
+  <head><meta name="dtb:uid" content="urn:uuid:1f0a5c6e-0000-4000-8000-epubtagstest1"/></head>
+  <docTitle><text>EPUB Tag Coverage Test</text></docTitle>
+  <navMap>
+    <navPoint id="nav-c01" playOrder="1">
+      <navLabel><text>01. Інлайнове форматування</text></navLabel>
+      <content src="01-inline.xhtml"/>
+    </navPoint>
+    <navPoint id="nav-c02" playOrder="2">
+      <navLabel><text>02. Літеральні зірочки й підкреслення</text></navLabel>
+      <content src="02-literals.xhtml"/>
+    </navPoint>
+    <navPoint id="nav-c03" playOrder="3">
+      <navLabel><text>03. Блоки й розділювачі</text></navLabel>
+      <content src="03-blocks.xhtml"/>
+    </navPoint>
+    <navPoint id="nav-c04" playOrder="4">
+      <navLabel><text>04. Посилання</text></navLabel>
+      <content src="04-links.xhtml"/>
+    </navPoint>
+    <navPoint id="nav-c05" playOrder="5">
+      <navLabel><text>05. Таблиці</text></navLabel>
+      <content src="05-table.xhtml"/>
+    </navPoint>
+    <navPoint id="nav-c06" playOrder="6">
+      <navLabel><text>06. Зображення</text></navLabel>
+      <content src="06-image.xhtml"/>
+      <navPoint id="nav-c07" playOrder="7">
+        <navLabel><text>07.1. Вкладений розділ</text></navLabel>
+        <content src="07-nested.xhtml"/>
+      </navPoint>
+    </navPoint>
+    <navPoint id="nav-c08" playOrder="8">
+      <navLabel><text>08. Розділ лише з картинкою</text></navLabel>
+      <content src="08-image-only.xhtml"/>
+    </navPoint>
+    <navPoint id="nav-c09" playOrder="9">
+      <navLabel><text>09. Блокові теги без переносів</text></navLabel>
+      <content src="09-blocks-glued.xhtml"/>
+    </navPoint>
+  </navMap>
+</ncx>

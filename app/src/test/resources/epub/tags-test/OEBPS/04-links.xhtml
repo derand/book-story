@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="uk" lang="uk">
+<head><meta charset="utf-8"/><title>04. Посилання</title></head>
+<body>
+<h1>04. Посилання</h1>
+<p>4.1. Зовнішнє посилання: <a href="https://example.org/some_page_with_underscores">приклад посилання</a> — підкреслене й клікабельне, підкреслення в URL має вціліти.</p>
+<p>4.2. Посилання з http має стати https: <a href="http://example.org/plain">старий протокол</a>.</p>
+<p>4.3. Внутрішнє посилання на якір нижче: <a href="#anchor1">перейти до позначки</a>.</p>
+<p>4.4. Посилання з форматуванням усередині: <a href="https://example.org/x"><strong>жирний</strong> текст посилання</a> — без видимих зірочок.</p>
+<p id="anchor1">4.5. Це позначка anchor1 — сюди веде 4.3.</p>
+<p>ОЧІКУВАНО: 4.1, 4.2, 4.4 відкривають браузер; 4.3 нікуди не веде поза книжкою.</p>
+</body>
+</html>

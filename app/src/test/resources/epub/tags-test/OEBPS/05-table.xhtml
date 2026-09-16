@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="uk" lang="uk">
+<head><meta charset="utf-8"/><title>05. Таблиці</title></head>
+<body>
+<h1>05. Таблиці</h1>
+<p>5.1. Проста таблиця без вирівнювання:</p>
+<table>
+  <tr><th>Колонка</th><th>Значення</th></tr>
+  <tr><td>Перша</td><td>1</td></tr>
+  <tr><td>Друга</td><td>1234</td></tr>
+</table>
+<p>5.2. Вирівнювання через атрибут align:</p>
+<table>
+  <tr><th align="left">Ліво</th><th align="center">Центр</th><th align="right">Право</th></tr>
+  <tr><td align="left">а</td><td align="center">б</td><td align="right">1</td></tr>
+  <tr><td align="left">аа</td><td align="center">бб</td><td align="right">1234</td></tr>
+</table>
+<p>5.3. Вирівнювання через style="text-align", і колонка, де align стоїть ЛИШЕ в тілі:</p>
+<table>
+  <tr><th style="text-align:center">Центр</th><th>Заголовок без align</th></tr>
+  <tr><td style="text-align:center">по центру</td><td align="right">праворуч</td></tr>
+  <tr><td style="text-align:center">теж</td><td align="right">1234</td></tr>
+</table>
+<p>5.4. Таблиця з форматуванням усередині комірок:</p>
+<table>
+  <tr><th>Стиль</th><th>Приклад</th></tr>
+  <tr><td>курсив</td><td><i>курсивом</i></td></tr>
+  <tr><td>жирний</td><td><strong>жирним</strong></td></tr>
+  <tr><td>індекс</td><td>H<sub>2</sub>O</td></tr>
+</table>
+<p>ОЧІКУВАНО: колонки за шириною вмісту; у 5.3 права колонка вирівняна праворуч навіть у заголовку.</p>
+</body>
+</html>
