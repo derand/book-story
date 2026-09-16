@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>HTML Tag Coverage Test</title>
+<style>p { margin: 0 }</style>
+</head>
+<body>
+<p>HTML Tag Coverage Test</p>
+<p>An HTML file has no table of contents: the first visible line above becomes the chapter title. Every block below says what it must look like.</p>
+
+<h1>1. Headings h1–h6</h1>
+<h2>Heading h2</h2>
+<h3>Heading h3</h3>
+<h4>Heading h4</h4>
+<h5>Heading h5</h5>
+<h6>Heading h6</h6>
+<p>EXPECTED: all six headings bold, each on a line of its own.</p>
+
+<h2>2. Inline tags</h2>
+<p><em>em</em>, <i>i</i>, <strong>strong</strong>, <b>b</b>, <s>s</s>, <del>del</del>, <strike>strike</strike>, H<sub>2</sub>O, mc<sup>2</sup>, <code>code</code>, <u>u stays plain</u>.</p>
+<p>Nested: <em>italic with <strong>bold</strong> inside</em>; intra-word: un<i>be</i>lievable; a space inside the tag: word <i>yours </i>next.</p>
+
+<h2>3. Blocks glued in the source</h2>
+<h3>A heading glued to its paragraph</h3><p>This paragraph follows the heading with no line break.</p>
+<div>First div.</div><div>Second div.</div>
+<ul><li>List item one</li><li>List item two</li></ul>
+<ol><li>Numbered one</li><li>Numbered two</li></ol>
+<blockquote>A quote.</blockquote><p>A paragraph right after the quote.</p>
+<section><p>A paragraph inside a section element.</p></section>
+<p>EXPECTED: every heading, div, list item, quote and paragraph above on a line of its own.</p>
+
+<h2>4. Line breaks</h2>
+<p>Line one<br>line two<br/>line three.</p>
+<div>Text straight in a div,
+wrapped in the source
+over three lines.</div>
+<p>A paragraph
+wrapped in the source.</p>
+<pre>preformatted line one
+    preformatted line two, indented</pre>
+<p>EXPECTED: the br lines separate; the wrapped div and paragraph each one line; the pre keeps its two lines and the indentation.</p>
+
+<h2>5. Separators</h2>
+<p>Before the rule.</p>
+<hr>
+<p>* * *</p>
+<p>***</p>
+<p>---</p>
+<p>EXPECTED: a graphic separator, then the three literal separators visible as text.</p>
+
+<h2>6. Links</h2>
+<p>External: <a href="https://example.org/some_page">example link</a>; http upgraded: <a href="http://example.org/plain">old protocol</a>; internal: <a href="#mark">to the mark</a>; formatted: <a href="https://example.org/x"><strong>bold</strong> link</a>.</p>
+<p id="mark">The mark.</p>
+
+<h2>7. The author's own characters</h2>
+<p>Asterisks and underscores: (*), (*1) and (*2), snake_case_identifier, https://example.org/wiki/Some_Long_Title.</p>
+<p>Valid markdown the author typed: **not bold**, _not italic_, `not code`, [not a link](https://example.org).</p>
+<p># not a heading</p>
+<p>1. not a list item</p>
+<p>Entities: &amp; &lt; &gt; &quot; &#8212; &nbsp;non-breaking.</p>
+<p>Private-use characters:  and the Apple logo .</p>
+<p>EXPECTED: every character above visible as typed; nothing becomes a style, a link, a heading or a list.</p>
+
+<h2>8. Table</h2>
+<table>
+<tr><th align="left">Left</th><th style="text-align:center">Center</th><th>Silent</th></tr>
+<tr><td>a</td><td><i>b</i></td><td align="right">1</td></tr>
+</table>
+
+<script>document.title = "must not be text";</script>
+<p>The end.</p>
+</body>
+</html>

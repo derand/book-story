@@ -11,7 +11,6 @@ import kotlinx.coroutines.runBlocking
 import org.commonmark.parser.Parser as CommonmarkParser
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
-import org.junit.Assert.fail
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -58,7 +57,7 @@ class EpubTextParserTest {
 
     @Test
     fun tagCoverageBookMatchesItsSnapshot() {
-        val source = resource("epub/tags-test")
+        val source = resourceFile("epub/tags-test")
         val book = temp.newFile("tags-test.epub")
         ZipOutputStream(book.outputStream()).use { out ->
             source.walkTopDown()
@@ -370,29 +369,4 @@ class EpubTextParserTest {
     private fun xhtml(body: String): String =
         """<?xml version="1.0" encoding="UTF-8"?>""" +
                 """<html xmlns="http://www.w3.org/1999/xhtml"><body>$body</body></html>"""
-
-    private fun resource(path: String): File {
-        val url = javaClass.classLoader!!.getResource(path)
-            ?: error("test resource not found: $path")
-        return File(url.toURI())
-    }
-
-    /**
-     * Compares [actual] with the snapshot stored under test resources. On a
-     * mismatch the actual output is written next to the build, so a deliberate
-     * change is accepted by copying that file over the snapshot and reviewing
-     * the diff.
-     */
-    private fun assertSnapshot(path: String, actual: String) {
-        val expected = javaClass.classLoader!!.getResource(path)?.readText()
-        if (expected == actual) return
-
-        val written = File("build/snapshots", path.replace(".txt", ".actual.txt"))
-        written.parentFile?.mkdirs()
-        written.writeText(actual)
-
-        val message = if (expected == null) "no snapshot at src/test/resources/$path"
-        else "output differs from src/test/resources/$path"
-        fail("$message; actual output written to ${written.absolutePath}")
-    }
 }
