@@ -3,7 +3,7 @@
   <metadata xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:opf="http://www.idpf.org/2007/opf">
     <dc:title>EPUB Tag Coverage Test</dc:title>
     <dc:creator opf:role="aut">derand</dc:creator>
-    <dc:language>uk</dc:language>
+    <dc:language>en</dc:language>
     <dc:identifier id="bookid">urn:uuid:1f0a5c6e-0000-4000-8000-epubtagstest1</dc:identifier>
     <dc:description>Hand-written EPUB exercising the inline and block tags the reader handles. All text original.</dc:description>
   </metadata>
