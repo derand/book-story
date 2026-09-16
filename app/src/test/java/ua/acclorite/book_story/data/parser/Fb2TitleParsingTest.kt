@@ -12,7 +12,6 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.BaselineShift
 import kotlinx.coroutines.runBlocking
-import org.commonmark.parser.Parser as CommonmarkParser
 import org.jsoup.Jsoup
 import org.jsoup.parser.Parser
 import org.junit.Assert.assertEquals
@@ -23,7 +22,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import ua.acclorite.book_story.data.parser.document.DocumentParser
-import ua.acclorite.book_story.data.parser.document.MarkdownParser
 import ua.acclorite.book_story.domain.model.reader.ReaderText
 import ua.acclorite.book_story.domain.model.reader.ReaderTextRole
 
@@ -34,11 +32,7 @@ import ua.acclorite.book_story.domain.model.reader.ReaderTextRole
 @RunWith(RobolectricTestRunner::class)
 class Fb2TitleParsingTest {
 
-    // The default builder enables every block type, while the app narrows them
-    // (see AppModule): a stricter parser than production, on purpose.
-    private val documentParser = DocumentParser(
-        MarkdownParser(CommonmarkParser.builder().build())
-    )
+    private val documentParser = DocumentParser()
 
     @Test
     fun plainTitleCarriesNoStyling() {
@@ -149,8 +143,8 @@ class Fb2TitleParsingTest {
             .lines.first { line -> line.role == ReaderTextRole.Title }
 
         assertEquals("Назва з курсивом", title.line.text)
-        // The bold run is split at every inline mark, so cover, not span, is
-        // what matters: every character of the title has to be bold.
+        // The bold run may be split where an inner style begins or ends, so
+        // cover, not span, is what matters: every character has to be bold.
         val bold = title.line.spanStyles.filter { span ->
             span.item.fontWeight == FontWeight.Medium
         }

@@ -8,7 +8,6 @@
 package ua.acclorite.book_story.data.parser
 
 import kotlinx.coroutines.runBlocking
-import org.commonmark.parser.Parser as CommonmarkParser
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -19,7 +18,6 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import ua.acclorite.book_story.data.model.file.CachedFileCompat
 import ua.acclorite.book_story.data.parser.document.DocumentParser
-import ua.acclorite.book_story.data.parser.document.MarkdownParser
 import ua.acclorite.book_story.data.parser.text.EpubTextParser
 import ua.acclorite.book_story.domain.model.reader.ParsedText
 import ua.acclorite.book_story.domain.model.reader.ReaderText
@@ -44,7 +42,7 @@ class EpubTextParserTest {
     val temp = TemporaryFolder()
 
     private val parser = EpubTextParser(
-        DocumentParser(MarkdownParser(CommonmarkParser.builder().build()))
+        DocumentParser()
     )
 
     /** A 3x2 PNG. */

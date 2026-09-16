@@ -10,7 +10,6 @@ package ua.acclorite.book_story.data.parser
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import kotlinx.coroutines.runBlocking
-import org.commonmark.parser.Parser as CommonmarkParser
 import org.jsoup.Jsoup
 import org.jsoup.parser.Parser
 import org.junit.Assert.assertEquals
@@ -19,7 +18,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import ua.acclorite.book_story.data.parser.document.DocumentParser
-import ua.acclorite.book_story.data.parser.document.MarkdownParser
 import ua.acclorite.book_story.domain.model.reader.ReaderText
 
 /**
@@ -30,9 +28,7 @@ import ua.acclorite.book_story.domain.model.reader.ReaderText
 @RunWith(RobolectricTestRunner::class)
 class DocumentWalkTest {
 
-    private val documentParser = DocumentParser(
-        MarkdownParser(CommonmarkParser.builder().build())
-    )
+    private val documentParser = DocumentParser()
 
     // --- lines ---
 

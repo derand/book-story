@@ -29,7 +29,7 @@ import ua.acclorite.book_story.domain.model.reader.TableAlignment
 class TableAlignmentParsingTest {
 
     private val markdownParser = MarkdownParser(CommonmarkParser.builder().build())
-    private val documentParser = DocumentParser(markdownParser)
+    private val documentParser = DocumentParser()
 
     // --- markdown ---
 

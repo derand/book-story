@@ -34,9 +34,7 @@ import ua.acclorite.book_story.domain.model.reader.ParsedText
 @RunWith(RobolectricTestRunner::class)
 class DocumentSnapshotTest {
 
-    private val documentParser = DocumentParser(
-        MarkdownParser(CommonmarkParser.builder().build())
-    )
+    private val documentParser = DocumentParser()
 
     @Test
     fun fb2TagCoverageBookMatchesItsSnapshot() {

@@ -10,7 +10,6 @@ package ua.acclorite.book_story.data.parser
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import kotlinx.coroutines.runBlocking
-import org.commonmark.parser.Parser as CommonmarkParser
 import org.jsoup.Jsoup
 import org.jsoup.parser.Parser
 import org.junit.Assert.assertEquals
@@ -19,7 +18,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import ua.acclorite.book_story.data.parser.document.DocumentParser
-import ua.acclorite.book_story.data.parser.document.MarkdownParser
 import ua.acclorite.book_story.domain.model.reader.ReaderText
 
 /**
@@ -32,11 +30,7 @@ import ua.acclorite.book_story.domain.model.reader.ReaderText
 @RunWith(RobolectricTestRunner::class)
 class LiteralMarkdownCharsTest {
 
-    // The default builder enables every block type, while the app narrows them
-    // (see AppModule): a stricter parser than production, on purpose.
-    private val documentParser = DocumentParser(
-        MarkdownParser(CommonmarkParser.builder().build())
-    )
+    private val documentParser = DocumentParser()
 
     @Test
     fun loneAsteriskSurvives() {
@@ -138,7 +132,7 @@ class LiteralMarkdownCharsTest {
     @Test
     fun paddedEmphasisTagKeepsItsSpaces() {
         // "** жирний **" was never valid markdown, hence the normalize regexes;
-        // a sentinel is a toggle, so the padding is simply part of the run
+        // with no markup in between, the padding is simply part of the run
         val paragraph = paragraphs("<p>Це <strong> жирний </strong>текст.</p>").single()
 
         assertEquals("Це  жирний текст.", paragraph.line.text)

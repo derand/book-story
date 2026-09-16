@@ -10,6 +10,7 @@ package ua.acclorite.book_story.data.parser
 import kotlinx.coroutines.runBlocking
 import org.commonmark.parser.Parser as CommonmarkParser
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -67,6 +68,18 @@ class MarkdownTextParserTest {
             "Title",
             text.filterIsInstance<ReaderText.Chapter>().single().title
         )
+    }
+
+    @Test
+    fun privateUseCharactersAreShownAsTheyAre() {
+        // U+E011–U+E019 once carried styling from the DOM formats into
+        // MarkdownParser, which cut them out of every line it parsed — a .md or
+        // .txt book included. Nothing is reserved any more (#29)
+        val text = parse("Title\nText\uE018with\uE019private\uE011use, \uF8FF.")
+
+        val line = text.filterIsInstance<ReaderText.Text>().single().line
+        assertEquals("Text\uE018with\uE019private\uE011use, \uF8FF.", line.text)
+        assertTrue("no styling switched on", line.spanStyles.isEmpty())
     }
 
     private fun parse(content: String): List<ReaderText> = runBlocking {
