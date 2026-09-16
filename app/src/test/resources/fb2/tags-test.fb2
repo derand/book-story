@@ -215,7 +215,7 @@ physical lines — the reader must show one continuous paragraph.</p>
 
 <section>
   <title><p>17) A title that starts like a list item</p></title>
-  <p>EXPECTED: “17)” at the start of the title does not vanish (markdown must not eat the list marker). The same goes for “1.”, “-” and “#”.</p>
+  <p>EXPECTED: “17)” at the start of the title does not vanish (titles used to go through markdown, which ate the list marker). The same goes for “1.”, “-” and “#”.</p>
 </section>
 
 <section>
@@ -253,9 +253,9 @@ physical lines — the reader must show one continuous paragraph.</p>
   <p>20.6. A lone underscore in parentheses: (_) — must be visible.</p>
   <p>20.7. Spaces around <strong> bold </strong> text — the words must not run together.</p>
   <p>20.8. Private-use characters the book brought itself, from the block the parser once used for its own marks:  — and the Apple logo, U+F8FF: . They must NOT switch on italic, bold or strike-through. As of #29 the first ones are shown as they are, like any other character the book holds.</p>
-  <p>20.9. KNOWN LIMIT: two bare asterisks in parentheses, both surrounded by punctuation, are an emphasis pair to CommonMark. The next line is the only one in this section where the characters DISAPPEAR and the text between them turns italic. Not a regression; only the move to a DOM walk (#29) cures it.</p>
+  <p>20.9. Two bare asterisks in parentheses, both surrounded by punctuation, are an emphasis pair to CommonMark: before the DOM walk (#29) the next line lost both and the text between them turned italic. This book is not markdown, so they must stay.</p>
   <p>See (*) and also (*).</p>
-  <p>EXPECTED: nothing lost in 20.1–20.8; only the line under 20.9 shows a loss.</p>
+  <p>EXPECTED: nothing lost in 20.1–20.9, the line under 20.9 included, and nothing styled but the bold in 20.7.</p>
 </section>
 
 <section>

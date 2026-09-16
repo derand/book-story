@@ -86,6 +86,7 @@ class DocumentParserImageBytesTest {
         documentParser.parseDocument(
             document = document,
             base64Images = mapOf("pic.png" to png),
+            sectionTitles = true,
             keepImageBytes = keepImageBytes
         ).filterIsInstance<ReaderText.Image>().single()
     }

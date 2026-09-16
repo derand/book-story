@@ -20,14 +20,14 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import ua.acclorite.book_story.data.parser.document.DocumentParser
 import ua.acclorite.book_story.data.parser.document.MarkdownParser
-import ua.acclorite.book_story.data.parser.text.markChapterTitles
 import ua.acclorite.book_story.domain.model.reader.ReaderText
 
 /**
  * Punctuation the author typed reaches the reader untouched. The parser used
  * to encode styling as literal "**"/"_" and then strip every "*"/"_" left in
  * the text, which deleted the book's own asterisks and underscores along with
- * its own leftovers — "(*)" came out as "()".
+ * its own leftovers — "(*)" came out as "()" (#28). Since the DOM walk (#29) no
+ * markup language stands between the book and the reader at all.
  */
 @RunWith(RobolectricTestRunner::class)
 class LiteralMarkdownCharsTest {
@@ -145,26 +145,35 @@ class LiteralMarkdownCharsTest {
     }
 
     @Test
-    fun sentinelsCarriedByTheBookAreDropped() {
+    fun privateUseCharactersAreShownAsTheyAre() {
         // A book of its own may use the private-use area (Apple's logo, legacy
-        // CJK fonts): those characters must not toggle our styles
+        // CJK fonts). The block U+E011–U+E019 was once this parser's own and its
+        // characters were cut out of the text; nothing is reserved any more
         val paragraph = paragraphs(
-            "<p>Текст\uE018з\uE019приватної\uE011зони.</p>"
+            "<p>Текст\uE018з\uE019приватної\uE011зони, \uF8FF.</p>"
         ).single()
 
-        assertEquals("Текстзприватноїзони.", paragraph.line.text)
-        assertTrue("no styling leaked", paragraph.line.spanStyles.isEmpty())
+        assertEquals("Текст\uE018з\uE019приватної\uE011зони, \uF8FF.", paragraph.line.text)
+        assertTrue("no styling switched on", paragraph.line.spanStyles.isEmpty())
     }
 
     @Test
-    fun knownLimit_authorsValidMarkdownIsStillConsumed() {
+    fun authorsValidMarkdownStaysLiteral() {
         // Two bare "(*)" in one paragraph are a valid emphasis pair by
-        // CommonMark's flanking rules, so the asterisks are eaten and the
-        // text between them turns italic. Inherent to running the markdown
-        // parser over prose at all — see #29, which removes that step.
-        val paragraph = paragraphs("<p>Дивись (*) і теж (*).</p>").single()
+        // CommonMark's flanking rules, and so is every other piece of markdown
+        // below — none of it is markup in a book that is not markdown (#29)
+        val paragraph = paragraphs(
+            "<p>Дивись (*) і теж (*); **не жирний**, _не курсив_, `не код`, " +
+                    "[не посилання](https://example.org).</p>"
+        ).single()
 
-        assertEquals("Дивись () і теж ().", paragraph.line.text)
+        assertEquals(
+            "Дивись (*) і теж (*); **не жирний**, _не курсив_, `не код`, " +
+                    "[не посилання](https://example.org).",
+            paragraph.line.text
+        )
+        assertTrue("nothing was styled", paragraph.line.spanStyles.isEmpty())
+        assertTrue("nothing became a link", !paragraph.line.hasLinkAnnotations(0, paragraph.line.length))
     }
 
     @Test
@@ -192,14 +201,13 @@ class LiteralMarkdownCharsTest {
         parse("<section><title><p>Розділ</p></title>$body</section>")
             .filterIsInstance<ReaderText.Text>()
 
-    /** Runs the FB2 body through the same two steps as [XmlTextParser]. */
+    /** Runs the FB2 body through the parser the way [XmlTextParser] does. */
     private fun parse(body: String): List<ReaderText> = runBlocking {
         val document = Jsoup.parse(
             """<FictionBook><body>$body</body></FictionBook>""",
             "",
             Parser.xmlParser()
         )
-        document.markChapterTitles()
-        documentParser.parseDocument(document)
+        documentParser.parseDocument(document, sectionTitles = true)
     }
 }

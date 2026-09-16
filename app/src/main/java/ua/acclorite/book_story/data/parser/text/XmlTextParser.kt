@@ -18,7 +18,6 @@ import ua.acclorite.book_story.core.log.timed
 import ua.acclorite.book_story.data.model.file.CachedFile
 import ua.acclorite.book_story.data.parser.document.DocumentParser
 import androidx.compose.ui.text.AnnotatedString
-import ua.acclorite.book_story.data.parser.document.EMPTY_LINE_MARKER
 import ua.acclorite.book_story.data.parser.document.flattenTitleToInline
 import ua.acclorite.book_story.domain.model.reader.ParsedText
 import ua.acclorite.book_story.domain.model.reader.ReaderText
@@ -73,15 +72,6 @@ class XmlTextParser @Inject constructor(
                 }.filterKeys { it.isNotBlank() }
                 document.select("binary").remove()
 
-                document.markChapterTitles()
-
-                // FB2 <empty-line/> is a blank paragraph. It carries no text, so
-                // it is turned into a marker that survives text extraction and is
-                // resolved back to a blank line by [DocumentParser].
-                document.select("empty-line").forEach { emptyLine ->
-                    emptyLine.replaceWith(TextNode("\n$EMPTY_LINE_MARKER\n"))
-                }
-
                 // FB2 stores footnote texts in extra bodies (<body name="notes">
                 // etc.). Collect them for the in-text note popups; the bodies
                 // themselves are not rendered — a note belongs next to the
@@ -101,6 +91,7 @@ class XmlTextParser @Inject constructor(
                     documentParser.parseDocument(
                         document = document,
                         base64Images = base64Images,
+                        sectionTitles = true,
                         keepImageBytes = keepImageBytes
                     )
                 }

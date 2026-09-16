@@ -24,7 +24,6 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import ua.acclorite.book_story.data.parser.document.DocumentParser
 import ua.acclorite.book_story.data.parser.document.MarkdownParser
-import ua.acclorite.book_story.data.parser.text.markChapterTitles
 import ua.acclorite.book_story.domain.model.reader.ReaderText
 import ua.acclorite.book_story.domain.model.reader.ReaderTextRole
 
@@ -176,14 +175,13 @@ class Fb2TitleParsingTest {
         parse("<section>$title<p>Текст секції.</p></section>")
             .filterIsInstance<ReaderText.Chapter>()
 
-    /** Runs the FB2 body through the same two steps as [XmlTextParser]. */
+    /** Runs the FB2 body through the parser the way [XmlTextParser] does. */
     private fun parse(body: String): List<ReaderText> = runBlocking {
         val document = Jsoup.parse(
             """<FictionBook><body>$body</body></FictionBook>""",
             "",
             Parser.xmlParser()
         )
-        document.markChapterTitles()
-        documentParser.parseDocument(document)
+        documentParser.parseDocument(document, sectionTitles = true)
     }
 }
