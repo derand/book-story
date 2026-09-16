@@ -196,7 +196,12 @@ private val SEPARATOR_TEXT_REGEX = Regex("""^([-*_])(\s*\1){2,}$""")
  */
 private const val YIELD_INTERVAL = 64
 
-private val NEWLINES_REGEX = Regex("\\n+")
+// \r as well: a file saved with CRLF keeps it through an XML parse, and
+// lines() splits on a lone \r just as it does on \n
+private val NEWLINES_REGEX = Regex("[\\r\\n]+")
+
+/** A line break inside a paragraph with the indentation around it: one space. */
+private val PARAGRAPH_BREAK_REGEX = Regex("[ \\t]*[\\r\\n]+[ \\t]*")
 private val WHITESPACE_REGEX = Regex("\\s+")
 
 /**
@@ -376,7 +381,7 @@ class DocumentParser @Inject constructor(
                         pace()
                         val html = element.html()
                         if (html.indexOf('\n') >= 0) {
-                            element.html(html.replace(NEWLINES_REGEX, " "))
+                            element.html(html.replace(PARAGRAPH_BREAK_REGEX, " "))
                         }
                         element.append("\n")
                     }

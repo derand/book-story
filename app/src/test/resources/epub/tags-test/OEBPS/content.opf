@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<package xmlns="http://www.idpf.org/2007/opf" version="2.0" unique-identifier="bookid">
+  <metadata xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:opf="http://www.idpf.org/2007/opf">
+    <dc:title>EPUB Tag Coverage Test</dc:title>
+    <dc:creator opf:role="aut">derand</dc:creator>
+    <dc:language>en</dc:language>
+    <dc:identifier id="bookid">urn:uuid:1f0a5c6e-0000-4000-8000-epubtagstest1</dc:identifier>
+    <dc:description>Hand-written EPUB exercising the inline and block tags the reader handles. All text original.</dc:description>
+  </metadata>
+  <manifest>
+    <item id="c01" href="01-inline.xhtml" media-type="application/xhtml+xml"/>
+    <item id="c02" href="02-literals.xhtml" media-type="application/xhtml+xml"/>
+    <item id="c03" href="03-blocks.xhtml" media-type="application/xhtml+xml"/>
+    <item id="c04" href="04-links.xhtml" media-type="application/xhtml+xml"/>
+    <item id="c05" href="05-table.xhtml" media-type="application/xhtml+xml"/>
+    <item id="c06" href="06-image.xhtml" media-type="application/xhtml+xml"/>
+    <item id="c07" href="07-nested.xhtml" media-type="application/xhtml+xml"/>
+    <item id="c08" href="08-image-only.xhtml" media-type="application/xhtml+xml"/>
+    <item id="c09" href="09-blocks-glued.xhtml" media-type="application/xhtml+xml"/>
+    <item id="c10" href="10-no-toc-entry.xhtml" media-type="application/xhtml+xml"/>
+    <item id="ncx" href="toc.ncx" media-type="application/x-dtbncx+xml"/>
+    <item id="img-square" href="square.png" media-type="image/png"/>
+  </manifest>
+  <spine toc="ncx">
+    <itemref idref="c01"/>
+    <itemref idref="c02"/>
+    <itemref idref="c03"/>
+    <itemref idref="c04"/>
+    <itemref idref="c05"/>
+    <itemref idref="c06"/>
+    <itemref idref="c07"/>
+    <itemref idref="c08"/>
+    <itemref idref="c09"/>
+    <itemref idref="c10"/>
+  </spine>
+</package>

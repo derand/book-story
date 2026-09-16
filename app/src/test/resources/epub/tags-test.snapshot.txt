@@ -1,0 +1,105 @@
+Chapter depth=0 "01. Inline formatting"
+Text "Every line below must show its style."
+Text "{i}em: this text must be italic{/i}"
+Text "{i}i: this text must be italic{/i}"
+Text "{w500}strong: this text must be bold{/w500}"
+Text "{w500}b: this text must be bold{/w500}"
+Text "{s}s: this text must be struck through{/s}"
+Text "{s}del: this text must be struck through{/s}"
+Text "{s}strike: this text must be struck through{/s}"
+Text "H{sub}2{/sub}O — “2” as a subscript"
+Text "E = mc{sup}2{/sup} — “2” as a superscript"
+Text "10{sup}30{/sup} years — superscript digits in a number"
+Text "1{sup}st{/sup}, XX{sup}th{/sup} — sup made of LETTERS"
+Text "x{sub}i{/sub} + y{sub}n{/sub} — sub made of LETTERS"
+Text "{mono}code: this text must be monospace{/mono}"
+Text "Mixed: {i}italic with {w500}bold{/w500} inside{/i} and back."
+Text "Italic inside a word: un{i}be{/i}lievable — must work, because it is a mark, not “_”."
+Text "Italic with a space inside the tag: word {i}yours {/i}next — the space must stay, the words must not run together."
+Text "Bold with spaces around: text {w500} bold {/w500}next — the words must not run together."
+Text "DELIBERATELY UNSUPPORTED: u: underline — must stay plain text WITHOUT an underline, because the reader draws links with an underline."
+Text "EXPECTED: every line styled except the last one."
+Chapter depth=0 "02. Literal asterisks and underscores"
+Text "The author's punctuation must reach the reader unchanged."
+Text "2.1. Asterisk footnote: (*) — the asterisk in parentheses must be visible."
+Text "2.2. Numbered footnote: a month passed after the event (*1)."
+Text "2.3. Two numbered ones in one paragraph: footnotes (*1) and (*2) — both intact."
+Text "2.4. Underscores in a URL: https://example.org/wiki/Some_Long_Title_With_Underscores"
+Text "2.5. Underscores inside a word: snake_case_identifier"
+Text "2.6. A lone underscore in parentheses: (_)"
+Text "2.7. Private-use characters the book brought itself: Textfromtheprivatearea. — they must disappear WITHOUT switching a style on."
+Text "2.8. KNOWN LIMIT: two bare asterisks in parentheses, both surrounded by punctuation, are an emphasis pair to CommonMark. The next line is the only one here where the characters DISAPPEAR and the text between them turns italic. Only the move to a DOM walk cures it."
+Text "See ({i}) and also ({/i})."
+Text "EXPECTED: nothing lost in 2.1–2.7; only the line under 2.8 shows a loss."
+Chapter depth=0 "03. Blocks and separators"
+Text "{w500}Heading h2 — must be bold{/w500}"
+Text "{w500}Heading h3 — must be bold{/w500}"
+Text "Below is a horizontal rule (hr); it must become a graphic separator:"
+Separator
+Text "Below are three asterisks as the author's text; they must stay visible:"
+Text "* * *"
+Text "And five asterisks with spaces:"
+Text "* * * * *"
+Text "And three hyphens:"
+Text "---"
+Text "A paragraph with manual line breaks inside the tag: this line started on a new line in the source, and so did this one — it must all merge into one paragraph with no breaks."
+Text "A paragraph with entities: & < > \" — «quotes» — all must be visible."
+Text "The empty paragraph below must not break the layout:"
+Text "EXPECTED: h2/h3 bold; hr a separator; the four text variants of asterisks and hyphens visible as text."
+Chapter depth=0 "04. Links"
+Text "4.1. External link: {url=https://example.org/some_page_with_underscores}example link{/url} — underlined and tappable, the underscores in the URL must survive."
+Text "4.2. A link with http must become https: {url=https://example.org/plain}old protocol{/url}."
+Text "4.3. Internal link to the anchor below: {link=anchor:anchor1}go to the mark{/link}."
+Text "4.4. A link with formatting inside: {url=https://example.org/x}{w500}bold{/w500} link text{/url} — no visible asterisks."
+Text "4.5. This is the mark anchor1 — 4.3 leads here."
+Text "EXPECTED: 4.1, 4.2, 4.4 open the browser; 4.3 leads nowhere outside the book."
+Chapter depth=0 "05. Tables"
+Text "5.1. A plain table without alignment:"
+Table header=true align=[Unspecified, Unspecified]
+  | "Column" | "Value" |
+  | "First" | "1" |
+  | "Second" | "1234" |
+Text "5.2. Alignment through the align attribute:"
+Table header=true align=[Start, Center, End]
+  | "Left" | "Center" | "Right" |
+  | "a" | "b" | "1" |
+  | "aa" | "bb" | "1234" |
+Text "5.3. Alignment through style=\"text-align\", and a column where align is ONLY in the body:"
+Table header=true align=[Center, End]
+  | "Center" | "Heading without align" |
+  | "centered" | "to the right" |
+  | "too" | "1234" |
+Text "5.4. A table with formatting inside the cells:"
+Table header=true align=[Unspecified, Unspecified]
+  | "Style" | "Example" |
+  | "italic" | "{i}in italics{/i}" |
+  | "bold" | "{w500}in bold{/w500}" |
+  | "index" | "H{sub}2{/sub}O" |
+Text "EXPECTED: columns sized to their content; in 5.3 the right column is right-aligned even in the header."
+Chapter depth=0 "06. Images"
+Text "Below is a 48×32 picture with a caption (alt). Tapping it must open the fullscreen viewer."
+Image square.png 48x32 bytes=112
+  caption Text "{i}An italic image caption{/i}"
+Text "The same picture without a caption:"
+Image square.png 48x32 bytes=112
+Text "EXPECTED: both pictures visible; the first has an italic caption under it."
+Chapter depth=1 "07.1. Nested chapter"
+Text "This file is declared as a nested navPoint in toc.ncx, so the chapter list must show it indented (depth 1)."
+Text "EXPECTED: in the table of contents “07.1. Nested chapter” is nested under “06. Images”."
+Chapter depth=0 "08. A chapter with only a picture"
+Image square.png 48x32 bytes=112
+Chapter depth=0 "09. Block tags without line breaks"
+Text "{w500}09. Block tags without line breaks{/w500}In the source this paragraph comes RIGHT after the h1, with no space and no line break. It must start on a new line, not stick to the heading."
+Text "{w500}Subheading h2{/w500}This paragraph is also stuck to the h2 in the source."
+Text "{w500}Subheading h3{/w500}And this one to the h3."
+Text "Line one"
+Text "line two"
+Text "line three — three separate lines, not one run."
+Text "Contents of the first div.Contents of the second div — must be a separate line."
+Text "List item oneList item twoList item three"
+Text "A quote in a blockquote — a block of its own.A paragraph right after the blockquote."
+Text "Heading h4A paragraph after the h4."
+Text "EXPECTED: every heading, every div, every list item, every quote and every line after a br on a line of its own. As of #34 most of them run together."
+Chapter depth=0 "10. Title from h1The first paragraph of this chapter, stuck to the heading in the source."
+Text "This file has NO navPoint of its own in toc.ncx. So the reader takes the chapter title from the fallback — “the first visible line”."
+Text "EXPECTED: the chapter list shows “10. Title from h1”. As of #34 it shows “10. Title from h1The first paragraph of this chapter, stuck to the heading in the source.” — exactly the join that breaks real books."

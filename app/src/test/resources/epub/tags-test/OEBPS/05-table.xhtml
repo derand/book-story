@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head><meta charset="utf-8"/><title>05. Tables</title></head>
+<body>
+<h1>05. Tables</h1>
+<p>5.1. A plain table without alignment:</p>
+<table>
+  <tr><th>Column</th><th>Value</th></tr>
+  <tr><td>First</td><td>1</td></tr>
+  <tr><td>Second</td><td>1234</td></tr>
+</table>
+<p>5.2. Alignment through the align attribute:</p>
+<table>
+  <tr><th align="left">Left</th><th align="center">Center</th><th align="right">Right</th></tr>
+  <tr><td align="left">a</td><td align="center">b</td><td align="right">1</td></tr>
+  <tr><td align="left">aa</td><td align="center">bb</td><td align="right">1234</td></tr>
+</table>
+<p>5.3. Alignment through style="text-align", and a column where align is ONLY in the body:</p>
+<table>
+  <tr><th style="text-align:center">Center</th><th>Heading without align</th></tr>
+  <tr><td style="text-align:center">centered</td><td align="right">to the right</td></tr>
+  <tr><td style="text-align:center">too</td><td align="right">1234</td></tr>
+</table>
+<p>5.4. A table with formatting inside the cells:</p>
+<table>
+  <tr><th>Style</th><th>Example</th></tr>
+  <tr><td>italic</td><td><i>in italics</i></td></tr>
+  <tr><td>bold</td><td><strong>in bold</strong></td></tr>
+  <tr><td>index</td><td>H<sub>2</sub>O</td></tr>
+</table>
+<p>EXPECTED: columns sized to their content; in 5.3 the right column is right-aligned even in the header.</p>
+</body>
+</html>

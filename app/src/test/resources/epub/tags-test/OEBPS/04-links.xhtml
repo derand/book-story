@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head><meta charset="utf-8"/><title>04. Links</title></head>
+<body>
+<h1>04. Links</h1>
+<p>4.1. External link: <a href="https://example.org/some_page_with_underscores">example link</a> — underlined and tappable, the underscores in the URL must survive.</p>
+<p>4.2. A link with http must become https: <a href="http://example.org/plain">old protocol</a>.</p>
+<p>4.3. Internal link to the anchor below: <a href="#anchor1">go to the mark</a>.</p>
+<p>4.4. A link with formatting inside: <a href="https://example.org/x"><strong>bold</strong> link text</a> — no visible asterisks.</p>
+<p id="anchor1">4.5. This is the mark anchor1 — 4.3 leads here.</p>
+<p>EXPECTED: 4.1, 4.2, 4.4 open the browser; 4.3 leads nowhere outside the book.</p>
+</body>
+</html>

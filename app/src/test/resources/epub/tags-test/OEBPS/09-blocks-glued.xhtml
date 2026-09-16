@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head><meta charset="utf-8"/><title>09. Block tags without line breaks</title></head>
+<body>
+<h1>09. Block tags without line breaks</h1><p>In the source this paragraph comes RIGHT after the h1, with no space and no line break. It must start on a new line, not stick to the heading.</p>
+<h2>Subheading h2</h2><p>This paragraph is also stuck to the h2 in the source.</p>
+<h3>Subheading h3</h3><p>And this one to the h3.</p>
+<p>Line one<br/>line two<br/>line three — three separate lines, not one run.</p>
+<div>Contents of the first div.</div><div>Contents of the second div — must be a separate line.</div>
+<ul><li>List item one</li><li>List item two</li><li>List item three</li></ul>
+<blockquote>A quote in a blockquote — a block of its own.</blockquote><p>A paragraph right after the blockquote.</p>
+<h4>Heading h4</h4><p>A paragraph after the h4.</p>
+<p>EXPECTED: every heading, every div, every list item, every quote and every line after a br on a line of its own. As of #34 most of them run together.</p>
+</body>
+</html>
