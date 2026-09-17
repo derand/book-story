@@ -11,9 +11,9 @@
 <p>2.4. Underscores in a URL: https://example.org/wiki/Some_Long_Title_With_Underscores</p>
 <p>2.5. Underscores inside a word: snake_case_identifier</p>
 <p>2.6. A lone underscore in parentheses: (_)</p>
-<p>2.7. Private-use characters the book brought itself: Textfromtheprivatearea. — they must disappear WITHOUT switching a style on.</p>
-<p>2.8. KNOWN LIMIT: two bare asterisks in parentheses, both surrounded by punctuation, are an emphasis pair to CommonMark. The next line is the only one here where the characters DISAPPEAR and the text between them turns italic. Only the move to a DOM walk cures it.</p>
+<p>2.7. Private-use characters the book brought itself, from the block the parser once used for its own marks:  — and the Apple logo, U+F8FF: . They must NOT switch on a style. As of #29 the first ones are shown as they are, like any other character the book holds.</p>
+<p>2.8. Two bare asterisks in parentheses, both surrounded by punctuation, are an emphasis pair to CommonMark: before the DOM walk (#29) the next line lost both and the text between them turned italic. This book is not markdown, so they must stay.</p>
 <p>See (*) and also (*).</p>
-<p>EXPECTED: nothing lost in 2.1–2.7; only the line under 2.8 shows a loss.</p>
+<p>EXPECTED: nothing lost in 2.1–2.8, the line under 2.8 included, and nothing styled.</p>
 </body>
 </html>

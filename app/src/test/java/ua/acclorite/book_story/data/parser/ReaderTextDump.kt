@@ -149,7 +149,7 @@ private fun String.quoted(): String = buildString {
 
 /**
  * Appends [char], spelling out what would otherwise be invisible or ambiguous
- * in a snapshot: line breaks, tabs, non-breaking spaces, private-use sentinels.
+ * in a snapshot: line breaks, tabs, non-breaking spaces, private-use characters.
  */
 private fun StringBuilder.appendVisible(char: Char) {
     when {

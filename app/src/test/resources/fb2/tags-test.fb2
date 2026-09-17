@@ -1,0 +1,336 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FictionBook xmlns="http://www.gribuser.ru/xml/fictionbook/2.0" xmlns:l="http://www.w3.org/1999/xlink">
+<description>
+  <title-info>
+    <genre>sci_tech</genre>
+    <author><first-name>FB2</first-name><last-name>Tag Test</last-name></author>
+    <book-title>FB2 Tag Coverage Test</book-title>
+    <annotation><p>A test book: every section checks one FB2 tag. Under each example it says what must be visible.</p></annotation>
+    <lang>en</lang>
+    <coverpage><image l:href="#cover.png"/></coverpage>
+  </title-info>
+  <document-info>
+    <author><nickname>derand</nickname></author>
+    <program-used>hand-written</program-used>
+    <date value="2026-07-21">2026-07-21</date>
+    <id>fb2-tag-test-0001</id>
+    <version>1.1</version>
+  </document-info>
+</description>
+
+<body>
+
+<title><p>FB2 Tag Coverage Test</p></title>
+
+<section>
+  <title><p>01. Inline formatting</p></title>
+  <p>Every line below must show its style.</p>
+  <p><emphasis>emphasis: this text must be italic</emphasis></p>
+  <p><strong>strong: this text must be bold</strong></p>
+  <p><strikethrough>strikethrough: this text must be struck through</strikethrough></p>
+  <p>H<sub>2</sub>O — “2” must be a subscript (sub)</p>
+  <p>E = mc<sup>2</sup> — “2” must be a superscript (sup)</p>
+  <p>1<sup>st</sup> place, XX<sup>th</sup> century — sup made of LETTERS (must be superscript)</p>
+  <p>x<sub>i</sub> + y<sub>n</sub> — sub made of LETTERS (must be subscript)</p>
+  <p><code>code: this text must be monospace</code></p>
+  <p><style name="poem">style name="poem": an arbitrary named style</style></p>
+  <p>Mixed: <emphasis>italic with <strong>bold</strong> inside</emphasis> and back.</p>
+  <p>Formatting <emphasis>inside</emphasis> an ordinary sentence must not break the line.</p>
+</section>
+
+<section>
+  <title><p>02. empty-line</p></title>
+  <p>Line A. ONE empty line must follow.</p>
+  <empty-line/>
+  <p>Line B. THREE empty lines must follow.</p>
+  <empty-line/>
+  <empty-line/>
+  <empty-line/>
+  <p>Line C. End of section 02.</p>
+</section>
+
+<section>
+  <title><p>03. Asterisk separators</p></title>
+  <p>Next — a separator of three asterisks without spaces:</p>
+  <p>***</p>
+  <p>Next — three asterisks with spaces (this is the variant that used to vanish):</p>
+  <p>* * *</p>
+  <p>Next — five asterisks with spaces:</p>
+  <p>* * * * *</p>
+  <p>Next — three hyphens:</p>
+  <p>---</p>
+  <p>End of section 03. All four variants above must be visible.</p>
+</section>
+
+<section>
+  <title><p>04. subtitle</p></title>
+  <p>A paragraph before the subtitle.</p>
+  <subtitle>This is a subtitle — it must be a separate highlighted line</subtitle>
+  <p>A paragraph after the subtitle. It must not stick to the subtitle.</p>
+  <subtitle>A second subtitle right after a paragraph</subtitle>
+  <subtitle>A third subtitle right after the second</subtitle>
+  <p>End of section 04.</p>
+</section>
+
+<section>
+  <title><p>05. poem / stanza / v</p></title>
+  <p>Next — a poem of two stanzas. Every line of the poem must be on a line of its own.</p>
+  <poem>
+    <title><p>Poem title</p></title>
+    <epigraph><p>An epigraph inside the poem</p><text-author>Epigraph author</text-author></epigraph>
+    <stanza>
+      <v>First line of the first stanza</v>
+      <v>Second line of the first stanza</v>
+      <v>Third line of the first stanza</v>
+    </stanza>
+    <stanza>
+      <v>First line of the second stanza</v>
+      <v>Second line of the second stanza</v>
+    </stanza>
+    <text-author>Poem author</text-author>
+  </poem>
+  <p>End of section 05. Above there must be 5 verse lines, not one merged mess.</p>
+</section>
+
+<section>
+  <title><p>06. cite / text-author</p></title>
+  <p>A paragraph before the quote.</p>
+  <cite>
+    <p>First paragraph of the quote. It must look different from ordinary text.</p>
+    <p>Second paragraph of the quote.</p>
+    <text-author>Quote source</text-author>
+  </cite>
+  <p>A paragraph after the quote.</p>
+</section>
+
+<section>
+  <title><p>07. epigraph</p></title>
+  <epigraph>
+    <p>An epigraph at the start of the section.</p>
+    <text-author>Epigraph author</text-author>
+  </epigraph>
+  <p>Main text of section 07.</p>
+</section>
+
+<section>
+  <title><p>08. Footnotes (a type="note")</p></title>
+  <p>This sentence has a footnote<a l:href="#note1" type="note">[1]</a> right after the word.</p>
+  <p>And this is a second footnote<a l:href="#note2" type="note">[2]</a> in another sentence.</p>
+  <p>An external link for comparison: <a l:href="https://example.com">example.com</a></p>
+  <p>An internal link without type: <a l:href="#note1">to note 1</a></p>
+  <p>TAP ZONE TEST (justify). This paragraph is deliberately long, to take several lines and stretch across the width: it is on stretched lines that the offset between the drawn footnote number and its tap zone becomes noticeable, because justify adds width only when drawing, not in the layout geometry. Somewhere around here, near the right edge of one of the INNER lines, stands the footnote marker<a l:href="#note5" type="note">[5]</a>, and after it some more text follows on purpose, so that this line is full (justified) rather than the last one of the paragraph. EXPECTED: with justified alignment on, a tap exactly on the visible “[5]” opens the note instead of toggling the reader menu. If “[5]” landed on the first or last line, change the font size or the orientation so that it becomes an inner one.</p>
+  <p>A LARGE FOOTNOTE (scroll check). Here is a footnote with a very long multi-paragraph text<a l:href="#note6" type="note">[6]</a> — the popup must scroll, and the whole text must be reachable down to an explicit end marker in the last paragraph.</p>
+  <p>End of section 08. The note texts live in a separate body name="notes" at the end of the file.</p>
+</section>
+
+<section>
+  <title><p>09. table</p></title>
+  <p>Next — a 3x3 table with a header.</p>
+  <table>
+    <tr><th>Tag</th><th>Status</th><th>Note</th></tr>
+    <tr><td>emphasis</td><td>italic</td><td>most common</td></tr>
+    <tr><td>empty-line</td><td>gap</td><td>blank line</td></tr>
+  </table>
+  <p>Next — a table with align on the cells: left / center / right / no align.</p>
+  <table>
+    <tr><th align="left">Left</th><th align="center">Center</th><th align="right">Right</th><th>Silent</th></tr>
+    <tr><td>a</td><td>b</td><td>1</td><td>x</td></tr>
+    <tr><td>a longer line</td><td>a longer line</td><td>1234</td><td>a longer line</td></tr>
+    <tr><td>c</td><td>d</td><td>22</td><td>y</td></tr>
+  </table>
+  <p>Next — the same through style="text-align" (the way EPUBs write it), and a column where align is only in the body, not in the header.</p>
+  <table>
+    <tr><th>Through style</th><th>Align only in the body</th></tr>
+    <tr><td style="text-align: center">centered</td><td align="right">to the right</td></tr>
+    <tr><td style="text-align:center">also centered</td><td>also to the right</td></tr>
+  </table>
+  <p>End of section 09.</p>
+</section>
+
+<section>
+  <title><p>10. Images</p></title>
+  <p>Next — a 120x80 image with a caption in title.</p>
+  <image l:href="#pic1.png" title="Caption of image 1" alt="alt text 1"/>
+  <p>Text between the images.</p>
+  <image l:href="#pic2.png"/>
+  <p>The 160x60 image above has no caption.</p>
+  <p>Next — an image inside a paragraph (inline): before <image l:href="#pic1.png"/> after.</p>
+  <p>End of section 10.</p>
+</section>
+
+<section>
+  <title><p>11. Nested sections</p></title>
+  <p>This is the text of the parent section 11.</p>
+  <section>
+    <title><p>11.1. Nested section</p></title>
+    <p>Text of the nested section — indented (nested) in the table of contents.</p>
+    <section>
+      <title><p>11.1.1. Twice nested section</p></title>
+      <p>Text of the twice nested section.</p>
+    </section>
+  </section>
+</section>
+
+<section>
+  <title><p>12. A file without line breaks</p></title>
+  <p>The section below is written on one line with no indentation — many converters produce exactly that. Paragraphs and poems must not stick together.</p>
+</section>
+<section><title><p>12.1. All on one line</p></title><p>Paragraph one.</p><p>Paragraph two.</p><subtitle>A one-line subtitle</subtitle><p>Paragraph three.</p><empty-line/><p>Paragraph four after empty-line.</p><poem><stanza><v>Poem line one</v><v>Poem line two</v></stanza><text-author>Author</text-author></poem><p>Paragraph five. End of section 12.1.</p></section>
+
+<section>
+  <title><p>13. Manual line breaks inside p</p></title>
+  <p>In the source this paragraph
+is split into three
+physical lines — the reader must show one continuous paragraph.</p>
+  <p>And this paragraph  has   double    spaces and a tab	inside.</p>
+  <p>End of section 13.</p>
+</section>
+
+<section>
+  <title><p>14. Edge cases from real books</p></title>
+  <p>14.1. A footnote marker with formatting inside<a l:href="#note3" type="note"><strong>[3]</strong></a> — must be a superscript “[3]”, with NO visible asterisks around it.</p>
+  <p>14.2. A footnote pointing at a multi-paragraph note<a l:href="#note4" type="note">[4]</a> — the popup must show both paragraphs.</p>
+  <subtitle><emphasis>14.3. A subtitle with italics inside — one style, no doubled underscores or asterisks</emphasis></subtitle>
+  <p>A paragraph between the subtitles.</p>
+  <subtitle><strong><sub>14.4. A subtitle with strong+sub inside</sub></strong></subtitle>
+  <p>14.5. A reading gloss (furigana): 東京<sup>とうきょう</sup> — a superscript reading over the word (sup of non-Latin letters).</p>
+  <p>14.6. style name around a link: <style name="catalog work_5714"><a l:href="https://example.com/work5714">Work title</a></style> — must stay a tappable link, the style tag itself is transparent.</p>
+  <p>14.7. style name around plain text: <style name="emphasis_alt">just text in a style</style> — must be visible as ordinary text.</p>
+  <p>14.8. The empty paragraph below must not break the layout:</p>
+  <p></p>
+  <p>End of section 14.</p>
+</section>
+
+<section>
+  <title><p>15. Formatting in a title: <emphasis>italic</emphasis>, <strong>bold</strong>, <strikethrough>struck</strikethrough>, H<sub>2</sub>O, mc<sup>2</sup></p></title>
+  <p>EXPECTED: the title above shows italic, bold, struck-through text and indices (as in section 01), with NO visible asterisks.</p>
+  <p>In the table of contents (side panel) this title must be plain text without markup.</p>
+</section>
+
+<section>
+  <title><p>16. A footnote in a title<a l:href="#note7" type="note">[7]</a></p></title>
+  <p>EXPECTED: “[7]” in the title is superscript and tappable; a tap opens note 7 instead of toggling the menu.</p>
+  <p>In the table of contents the title must be WITHOUT “[7]”.</p>
+</section>
+
+<section>
+  <title><p>17) A title that starts like a list item</p></title>
+  <p>EXPECTED: “17)” at the start of the title does not vanish (titles used to go through markdown, which ate the list marker). The same goes for “1.”, “-” and “#”.</p>
+</section>
+
+<section>
+  <title>
+    <p>18. A title of two paragraphs</p>
+    <p>second line of the title</p>
+  </title>
+  <p>EXPECTED: both lines joined into ONE title with a space, not split into two chapters.</p>
+</section>
+
+<section>
+  <title><p>19. Formatting in a poem and a quote title</p></title>
+  <poem>
+    <title><p>A poem title with <emphasis>italic</emphasis> and <strong>bold</strong></p></title>
+    <stanza>
+      <v>A poem line</v>
+    </stanza>
+  </poem>
+  <cite>
+    <title><p>A quote title with <emphasis>italic</emphasis></p></title>
+    <p>Quote text.</p>
+  </cite>
+  <p>EXPECTED: the poem and quote titles are bold; the italic/bold inside shows as a style, with no asterisks.</p>
+</section>
+
+
+<section>
+  <title><p>20. Literal asterisks and underscores (#28)</p></title>
+  <p>The author's punctuation must reach the reader unchanged. Before the #28 fix the parser cut every “*” and “_” out of the text, its own along with the author's.</p>
+  <p>20.1. Asterisk footnote: (*) — the asterisk in parentheses must be visible.</p>
+  <p>20.2. Numbered footnote: a month passed after the event (*1) — “(*1)” intact.</p>
+  <p>20.3. Two numbered ones in one paragraph: footnotes (*1) and (*2) — both intact, because a closing asterisk before a digit cannot close emphasis.</p>
+  <p>20.4. Underscores in a URL: https://example.org/wiki/Some_Long_Title_With_Underscores — every “_” in place.</p>
+  <p>20.5. Underscores inside a word: snake_case_identifier — “_” in place.</p>
+  <p>20.6. A lone underscore in parentheses: (_) — must be visible.</p>
+  <p>20.7. Spaces around <strong> bold </strong> text — the words must not run together.</p>
+  <p>20.8. Private-use characters the book brought itself, from the block the parser once used for its own marks:  — and the Apple logo, U+F8FF: . They must NOT switch on italic, bold or strike-through. As of #29 the first ones are shown as they are, like any other character the book holds.</p>
+  <p>20.9. Two bare asterisks in parentheses, both surrounded by punctuation, are an emphasis pair to CommonMark: before the DOM walk (#29) the next line lost both and the text between them turned italic. This book is not markdown, so they must stay.</p>
+  <p>See (*) and also (*).</p>
+  <p>EXPECTED: nothing lost in 20.1–20.9, the line under 20.9 included, and nothing styled but the bold in 20.7.</p>
+</section>
+
+<section>
+  <title><p>21. HTML spellings of inline tags (#31)</p></title>
+  <p>These are not FB2 tags — this is how EPUB and HTML write them, and they go through the same parser. Added in #31, kept here because this book is the easiest place to check them.</p>
+  <p><i>i: this text must be italic</i></p>
+  <p><em>em: this text must be italic</em></p>
+  <p><b>b: this text must be bold</b></p>
+  <p><s>s: this text must be struck through</s></p>
+  <p><del>del: this text must be struck through</del></p>
+  <p><strike>strike: this text must be struck through</strike></p>
+  <p>Italic <i>inside</i> a sentence and <b><i>bold italic</i></b> together.</p>
+  <p>Italic inside a word: un<i>be</i>lievable — must work, because it is a mark, not “_”.</p>
+  <p>DELIBERATELY UNSUPPORTED: <u>u: underline</u> — must stay plain text WITHOUT an underline, because the reader draws links with an underline.</p>
+  <p>EXPECTED: every line above styled except the last one.</p>
+</section>
+<section>
+  <title><p>22. An illustration at the end of a chapter (#75)</p></title>
+  <p>This section ends with an image — chapter 23 starts right after it, with no paragraph in between. This is where the chapter break lives: the empty space under the picture belongs to the break, not to the picture.</p>
+  <p>EXPECTED: a tap on the empty space under the image does NOT open the image viewer — it means the same as a tap on the page (paging at the edges, the menu in the middle). A tap on the picture itself opens it, as before.</p>
+  <image l:href="#pic2.png"/>
+</section>
+
+<section>
+  <title><p>23. A chapter right after an illustration</p></title>
+  <p>This chapter's title has a larger margin above than below it — that is how the reader sees that the previous chapter has ended.</p>
+  <p>End of section 23.</p>
+</section>
+</body>
+
+<body name="notes">
+  <title><p>Notes</p></title>
+  <section id="note1">
+    <title><p>1</p></title>
+    <p>Text of the first note. If this section is not visible at all, the whole body name="notes" is being dropped.</p>
+  </section>
+  <section id="note2">
+    <title><p>2</p></title>
+    <p>Text of the second note.</p>
+  </section>
+  <section id="note3">
+    <title><p>3</p></title>
+    <p>Text of the third note — checks a marker with <strong>bold</strong> inside.</p>
+  </section>
+  <section id="note4">
+    <title><p>4</p></title>
+    <p>First paragraph of the fourth note.</p>
+    <p>A second paragraph with <emphasis>italics</emphasis>. The popup must show BOTH paragraphs.</p>
+  </section>
+  <section id="note5">
+    <title><p>5</p></title>
+    <p>Text of the fifth note. Used to check the tap zone of a footnote on a stretched (justified) line — a tap exactly on the visible “[5]” must open this very note, not toggle the menu.</p>
+  </section>
+  <section id="note6">
+    <title><p>6</p></title>
+    <p>This is a deliberately large note for checking scrolling in the popup. Its text purposely does not fit on one screen, so the bottom panel must scroll, and the formatting must survive in every paragraph.</p>
+    <p>Paragraph 1. Here we check that an empty line stays between paragraphs, and that a line break inside a paragraph is folded by the reader into one continuous flow of words without stray breaks in unexpected places.</p>
+    <p>Paragraph 2. Formatting inside a note: a <strong>bold fragment</strong>, an <emphasis>italic fragment</emphasis> and a <strikethrough>struck-through fragment</strikethrough> must be rendered, not shown as markup characters.</p>
+    <p>Paragraph 3. Indices must work too: the formula H<sub>2</sub>O with a subscript “2” and x<sup>n</sup> with a superscript exponent must look right even inside a note.</p>
+    <p>Paragraph 4. Filler with no meaning, only to add height: line after line, sentence after sentence, until the total length surely exceeds the screen height and makes the panel scroll.</p>
+    <p>Paragraph 5. One more paragraph of the same kind. The goal is simple — make sure no fragment of text is cut off at the bottom and that scrolling reaches the very end of the content.</p>
+    <p>Paragraph 6. A check that long paragraphs wrap by words on their own and do not run past the panel horizontally, even when the text contains long-long-long compound words.</p>
+    <p>Paragraph 7. An intermediate paragraph, to be sure to go past one screen even on a large tablet in landscape, where noticeably more lines fit on a screen.</p>
+    <p>Paragraph 8. A little more text for height. If this paragraph is visible only after scrolling, that is already a good sign the mechanism works as it should.</p>
+    <p>Paragraph 9. The second to last paragraph. Next comes one final paragraph with an explicit end marker, visible only if the note is scrolled all the way down.</p>
+    <p>🔚 Paragraph 10 (THE END). If you can see this line, scrolling of a large note works to the end, and no paragraph got lost.</p>
+  </section>
+  <section id="note7">
+    <title><p>7</p></title>
+    <p>Text of the seventh note — the footnote in the TITLE of section 16 points to it.</p>
+  </section>
+</body>
+
+<binary id="cover.png" content-type="image/png">iVBORw0KGgoAAAANSUhEUgAAAHgAAABQCAIAAABd+SbeAAAAqElEQVR4nO3QAQkAIADAMHOayYiGsYXCHTzA2Zhr60Lj+cEngQbdCjToVqBBtwINuhVo0K1Ag24FGnQr0KBbgQbdCjToVqBBtwINuhVo0K1Ag24FGnQr0KBbgQbdCjToVqBBtwINuhVo0K1Ag24FGnQr0KBbgQbdCjToVqBBtwINuhVo0K1Ag24FGnQr0KBbgQbdCjToVqBBtwINuhVo0K1Ag24FGnSrA8Y67tCl637rAAAAAElFTkSuQmCC</binary>
+<binary id="pic1.png" content-type="image/png">iVBORw0KGgoAAAANSUhEUgAAAHgAAABQCAIAAABd+SbeAAAAqElEQVR4nO3QAQkAIADAMHOayYiGsYXCHTzA2Zhr60Lj+cEngQbdCjToVqBBtwINuhVo0K1Ag24FGnQr0KBbgQbdCjToVqBBtwINuhVo0K1Ag24FGnQr0KBbgQbdCjToVqBBtwINuhVo0K1Ag24FGnQr0KBbgQbdCjToVqBBtwINuhVo0K1Ag24FGnQr0KBbgQbdCjToVqBBtwINuhVo0K1Ag24FGnSrA8Y67tCl637rAAAAAElFTkSuQmCC</binary>
+<binary id="pic2.png" content-type="image/png">iVBORw0KGgoAAAANSUhEUgAAAKAAAAA8CAIAAABuCSZCAAAAp0lEQVR4nO3RAQkAIBDAwM9pJiMaxhQijIMLMNicvQib7wU8ZXCcwXEGxxkcZ3CcwXEGxxkcZ3CcwXEGxxkcZ3CcwXEGxxkcZ3CcwXEGxxkcZ3CcwXEGxxkcZ3CcwXEGxxkcZ3CcwXEGxxkcZ3CcwXEGxxkcZ3CcwXEGxxkcZ3CcwXEGxxkcZ3CcwXEGxxkcZ3CcwXEGxxkcZ3CcwXEGxxkcZ3CcwXEXicPu0BgyJuwAAAAASUVORK5CYII=</binary>
+
+</FictionBook>

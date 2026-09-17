@@ -19,6 +19,7 @@ private const val TAG = "TextParser"
 class TextParserImpl @Inject constructor(
     // Markdown parser (Markdown)
     private val txtTextParser: TxtTextParser,
+    private val markdownTextParser: MarkdownTextParser,
     private val pdfTextParser: PdfTextParser,
 
     // Document parser (HTML+Markdown)
@@ -61,7 +62,7 @@ class TextParserImpl @Inject constructor(
                 }
 
                 ".md" -> {
-                    htmlTextParser.parse(cachedFile, keepImageBytes)
+                    markdownTextParser.parse(cachedFile, keepImageBytes)
                 }
 
                 else -> {

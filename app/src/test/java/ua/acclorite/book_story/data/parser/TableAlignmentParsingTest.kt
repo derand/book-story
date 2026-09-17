@@ -15,7 +15,9 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import ua.acclorite.book_story.data.parser.document.DocumentParser
+import ua.acclorite.book_story.data.parser.document.MarkdownLine
 import ua.acclorite.book_story.data.parser.document.MarkdownParser
+import ua.acclorite.book_story.data.parser.document.splitMarkdownTables
 import ua.acclorite.book_story.domain.model.reader.ReaderText
 import ua.acclorite.book_story.domain.model.reader.TableAlignment
 
@@ -26,9 +28,8 @@ import ua.acclorite.book_story.domain.model.reader.TableAlignment
 @RunWith(RobolectricTestRunner::class)
 class TableAlignmentParsingTest {
 
-    private val documentParser = DocumentParser(
-        MarkdownParser(CommonmarkParser.builder().build())
-    )
+    private val markdownParser = MarkdownParser(CommonmarkParser.builder().build())
+    private val documentParser = DocumentParser()
 
     // --- markdown ---
 
@@ -185,9 +186,15 @@ class TableAlignmentParsingTest {
 
     // --- helpers ---
 
-    /** A markdown table reaches the parser as plain text lines, not as a DOM. */
+    /**
+     * A markdown table is found in the line stream of a `.md` book, never inside
+     * an FB2/HTML/EPUB paragraph — there, text is text (#29).
+     */
     private fun markdownTable(vararg lines: String): ReaderText.Table =
-        parse(lines.joinToString("\n"))
+        splitMarkdownTables(lines.toList(), markdownParser)
+            .filterIsInstance<MarkdownLine.Table>()
+            .single()
+            .table
 
     private fun htmlTable(html: String): ReaderText.Table = parse(html)
 

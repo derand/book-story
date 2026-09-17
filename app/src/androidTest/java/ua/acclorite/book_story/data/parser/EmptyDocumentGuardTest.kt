@@ -12,7 +12,6 @@ import android.util.Base64
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.runBlocking
-import org.commonmark.parser.Parser as CommonmarkParser
 import org.jsoup.Jsoup
 import org.jsoup.parser.Parser
 import org.junit.After
@@ -22,7 +21,6 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import ua.acclorite.book_story.data.parser.document.DocumentParser
-import ua.acclorite.book_story.data.parser.document.MarkdownParser
 import ua.acclorite.book_story.domain.model.reader.ReaderText
 import java.io.File
 import java.io.FileOutputStream
@@ -39,9 +37,7 @@ import java.util.zip.ZipOutputStream
 @RunWith(AndroidJUnit4::class)
 class EmptyDocumentGuardTest {
 
-    private val documentParser = DocumentParser(
-        MarkdownParser(CommonmarkParser.builder().build())
-    )
+    private val documentParser = DocumentParser()
 
     /** A 3x2 PNG. */
     private val png = "iVBORw0KGgoAAAANSUhEUgAAAAMAAAACCAIAAAASFvFNAAAAEElEQVR4nGP4" +
