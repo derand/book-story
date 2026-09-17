@@ -84,6 +84,27 @@ class DocumentWalkTest {
     }
 
     @Test
+    fun aCiteInsideASentenceStaysOnItsLine() {
+        // HTML's <cite> names a work; only FB2's, made of paragraphs, is a block
+        val line = listOf("As argued in The Republic, justice is a virtue.")
+        val body = "<p>As argued in <cite>The Republic</cite>, justice is a virtue.</p>"
+
+        assertEquals(line, html(body).lines())
+        assertEquals(line, xhtml(body).lines())
+    }
+
+    @Test
+    fun aCiteMadeOfParagraphsIsABlock() {
+        assertEquals(
+            listOf("Before.", "Quoted one.", "Quoted two.", "Author", "After."),
+            xhtml(
+                "<p>Before.</p><cite><p>Quoted one.</p><p>Quoted two.</p>" +
+                        "<text-author>Author</text-author></cite><p>After.</p>"
+            ).lines()
+        )
+    }
+
+    @Test
     fun anUnclosedHrOrImgDoesNotSwallowTheTextAfterIt() {
         // Read as XML, as an EPUB is: the void element holds what follows it
         val text = xhtml("<p>before<hr>after</p>")

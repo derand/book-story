@@ -59,9 +59,18 @@ private val BLOCK_ELEMENTS = setOf(
     "li", "main", "menu", "nav", "ol", "p", "pre", "section", "summary", "tbody", "td",
     "tfoot", "th", "thead", "tr", "ul",
     // FB2
-    "annotation", "cite", "epigraph", "fictionbook", "poem", "stanza", "subtitle",
+    "annotation", "epigraph", "fictionbook", "poem", "stanza", "subtitle",
     "text-author", "title", "v"
 )
+
+/**
+ * Whether [this] starts a line of its own. <cite> is both: FB2's is a quotation
+ * made of paragraphs, HTML's names a work inside a sentence.
+ */
+private fun Element.startsLine(): Boolean = when (val name = normalName()) {
+    "cite" -> children().any { child -> child.normalName() in BLOCK_ELEMENTS }
+    else -> name in BLOCK_ELEMENTS
+}
 
 /** Elements a heading flattened onto one line or a table cell cannot hold. */
 private val NOT_INLINE_ELEMENTS = setOf("empty-line", "hr", "image", "img", "table")
@@ -245,7 +254,7 @@ private fun inlineLine(
         },
         exit = { node ->
             repeat(opened.removeAt(opened.lastIndex)) { line.pop() }
-            if (node !== element && node is Element && node.normalName() in BLOCK_ELEMENTS) {
+            if (node !== element && node is Element && node.startsLine()) {
                 line.append(" ")
             }
         }
@@ -460,7 +469,7 @@ internal class DocumentWalk(
             }
         }
 
-        val block = name in BLOCK_ELEMENTS
+        val block = element.startsLine()
         if (block) flush()
 
         var runs = 0
