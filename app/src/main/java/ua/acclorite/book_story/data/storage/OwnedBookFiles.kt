@@ -65,13 +65,23 @@ class OwnedBookFiles @Inject constructor(
      */
     fun store(source: CachedFile, bookId: Int): File? {
         val directory = File(root, bookId.toString())
+
+        // Before anything is deleted: a name that cannot be stored must not
+        // cost the book the copy it already has.
+        val destination = storedFileIn(directory, source.name)
+        if (destination == null) {
+            // The name itself stays out of the log: it is a book's file name,
+            // and it came from outside.
+            logI(TAG, "Could not store [$bookId]: its name names no file.")
+            return null
+        }
+
         directory.deleteRecursively()
         if (!directory.mkdirs()) {
             logI(TAG, "Could not make a directory for [$bookId].")
             return null
         }
 
-        val destination = File(directory, source.name)
         try {
             source.openInputStream()?.use { input ->
                 destination.outputStream().buffered().use(input::copyTo)
@@ -95,5 +105,40 @@ class OwnedBookFiles @Inject constructor(
     /** Drops the book's file, if it has one. */
     fun delete(bookId: Int) {
         File(root, bookId.toString()).deleteRecursively()
+    }
+}
+
+/**
+ * The file a book called [name] is stored as inside [directory], or null when
+ * [name] names nothing that can be written there.
+ *
+ * The name is another app's: it is the `DISPLAY_NAME` that app's provider chose
+ * to report, and nothing promises it is a name rather than a path. Composed into
+ * a destination as it came, `../../x.epub` writes outside the book's own
+ * directory — over another book's copy, which the reader would then show under a
+ * familiar title. A hostile app is the loud case and not the likely one: a
+ * provider that answers with a path rather than a plain name reaches the same
+ * line meaning nothing by it, and the copy escapes or fails to be written.
+ *
+ * So the last component is taken — the file's own name, whatever the provider
+ * wrapped it in, and the extension the parsers read the format from is kept —
+ * and the result is then checked to sit directly in [directory]. That check is
+ * the guarantee the caller needs, and it does not depend on this function having
+ * thought of every spelling.
+ */
+internal fun storedFileIn(directory: File, name: String): File? {
+    // A blank name names nothing, and "." and ".." name a directory.
+    val fileName = name.substringAfterLast('/')
+    if (fileName.isBlank() || fileName == "." || fileName == "..") return null
+
+    val destination = File(directory, fileName)
+    return destination.takeIf {
+        // Canonical on both sides: `filesDir` itself is reached through a
+        // symlink (`/data/user/0/<pkg>` for `/data/data/<pkg>`), so comparing
+        // anything else would refuse every name there is. A name the file system
+        // will not take at all — one holding a NUL — throws here rather than
+        // answering, and that is a refusal like any other.
+        runCatching { it.canonicalFile.parentFile == directory.canonicalFile }
+            .getOrDefault(false)
     }
 }
