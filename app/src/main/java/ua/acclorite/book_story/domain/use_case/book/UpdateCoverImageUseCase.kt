@@ -6,6 +6,7 @@
 
 package ua.acclorite.book_story.domain.use_case.book
 
+import android.net.Uri
 import androidx.core.net.toUri
 import ua.acclorite.book_story.core.CoverImage
 import ua.acclorite.book_story.core.helpers.mapCatchingCancellable
@@ -22,6 +23,21 @@ class UpdateCoverImageUseCase @Inject constructor(
     private val bookRepository: BookRepository,
     private val coverImageHandler: CoverImageHandler
 ) {
+
+    /**
+     * The image the user picked, read before it replaces the cover.
+     *
+     * Reading it here rather than where it was picked is the whole point: it is
+     * an arbitrary photo, it is decoded at the size a cover is drawn at, and
+     * neither of those belongs in a picker's callback on the main thread.
+     */
+    suspend operator fun invoke(bookId: Int, coverUri: Uri) {
+        val coverImage = coverImageHandler.decodeCover(coverUri).getOrElse {
+            logE(TAG, "Could not read the chosen image for [$bookId]: ${it.message}")
+            return
+        }
+        invoke(bookId, coverImage)
+    }
 
     suspend operator fun invoke(bookId: Int, coverImage: CoverImage?) {
         logI(TAG, "Updating cover image of [$bookId].")

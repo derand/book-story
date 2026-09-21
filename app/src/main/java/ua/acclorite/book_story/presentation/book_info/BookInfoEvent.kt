@@ -6,7 +6,7 @@
 
 package ua.acclorite.book_story.presentation.book_info
 
-import android.graphics.Bitmap
+import android.net.Uri
 import androidx.compose.runtime.Immutable
 import ua.acclorite.book_story.core.ui.UIText
 import ua.acclorite.book_story.domain.model.library.Category
@@ -17,8 +17,13 @@ sealed class BookInfoEvent {
 
     data object OnShowChangeCoverBottomSheet : BookInfoEvent()
 
+    /**
+     * The image the user picked, as the picker returned it. Reading it is the
+     * model's to do: it is an arbitrary photo from the gallery, and decoding
+     * one in the picker's callback is decoding it on the main thread.
+     */
     data class OnChangeCover(
-        val image: Bitmap
+        val image: Uri
     ) : BookInfoEvent()
 
     data object OnResetCover : BookInfoEvent()
