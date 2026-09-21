@@ -6,7 +6,6 @@
 
 package ua.acclorite.book_story.data.parser.cover
 
-import android.graphics.BitmapFactory
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.jsoup.Jsoup
@@ -69,9 +68,7 @@ class EpubCoverParser @Inject constructor() : CoverParser {
                     zip.entries().asSequence().first { entry ->
                         if (entry.name.endsWith(coverImagePath)) {
                             val imageBytes = zip.getInputStream(entry).readBytes()
-                            coverImage = BitmapFactory.decodeByteArray(
-                                imageBytes, 0, imageBytes.size
-                            )
+                            coverImage = decodeCover(imageBytes)
                             return@first true
                         } else return@first false
                     }

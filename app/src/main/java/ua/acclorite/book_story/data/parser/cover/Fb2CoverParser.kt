@@ -6,7 +6,6 @@
 
 package ua.acclorite.book_story.data.parser.cover
 
-import android.graphics.BitmapFactory
 import android.util.Base64
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -43,7 +42,7 @@ class Fb2CoverParser @Inject constructor() : CoverParser {
                     ?: return@use null
 
                     val bytes = Base64.decode(binary.wholeText(), Base64.DEFAULT)
-                    BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+                    decodeCover(bytes)
                 }
             }
         } catch (e: Exception) {

@@ -6,7 +6,6 @@
 
 package ua.acclorite.book_story.ui.book_info
 
-import android.graphics.BitmapFactory
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -21,7 +20,6 @@ import androidx.compose.material.icons.filled.Restore
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import ua.acclorite.book_story.R
@@ -39,20 +37,14 @@ fun BookInfoChangeCoverBottomSheet(
     checkCoverReset: (BookInfoEvent.OnCheckCoverReset) -> Unit,
     dismissBottomSheet: (BookInfoEvent.OnDismissBottomSheet) -> Unit
 ) {
-    val context = LocalContext.current
     val photoPicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia(),
+        // The picked image is handed on as it came. Reading it is the model's,
+        // on a thread of its own: this callback runs on the main one, and what
+        // the gallery returns is a photo of whatever size the camera makes.
         onResult = { uri ->
             if (uri != null) {
-                val image = context.contentResolver?.openInputStream(uri)?.use {
-                    BitmapFactory.decodeStream(it)
-                } ?: return@rememberLauncherForActivityResult
-
-                changeCover(
-                    BookInfoEvent.OnChangeCover(
-                        image = image
-                    )
-                )
+                changeCover(BookInfoEvent.OnChangeCover(image = uri))
             }
         }
     )
