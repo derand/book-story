@@ -9,6 +9,7 @@ package ua.acclorite.book_story.data.cache
 
 import android.app.Application
 import ua.acclorite.book_story.core.log.logE
+import ua.acclorite.book_story.core.log.messageForLog
 import ua.acclorite.book_story.domain.model.reader.ParsedText
 import java.io.BufferedInputStream
 import java.io.BufferedOutputStream
@@ -57,7 +58,7 @@ class ParseCache @Inject constructor(application: Application) {
             parsed
         } catch (e: Exception) {
             // Corrupt/partial/old entry — drop it and treat as a miss.
-            logE(TAG, "Could not read cache entry, dropping it: ${e.message}")
+            logE(TAG, "Could not read cache entry, dropping it: ${e.messageForLog()}")
             entry.deleteRecursively()
             null
         }
@@ -124,7 +125,7 @@ class ParseCache @Inject constructor(application: Application) {
                 tmp.delete()
             }
         } catch (e: Exception) {
-            logE(TAG, "Could not write cache entry: ${e.message}")
+            logE(TAG, "Could not write cache entry: ${e.messageForLog()}")
             tmp.delete()
             return
         }
@@ -226,7 +227,7 @@ class ParseCache @Inject constructor(application: Application) {
             }
             blob
         } catch (e: Exception) {
-            logE(TAG, "Could not write image blob: ${e.message}")
+            logE(TAG, "Could not write image blob: ${e.messageForLog()}")
             tmp.delete()
             null
         }

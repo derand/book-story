@@ -10,6 +10,7 @@ package ua.acclorite.book_story.domain.use_case.file_system
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import ua.acclorite.book_story.core.log.logE
+import ua.acclorite.book_story.core.log.messageForLog
 import ua.acclorite.book_story.domain.model.file.BookSource
 import ua.acclorite.book_story.domain.service.FileProvider
 import javax.inject.Inject
@@ -32,7 +33,7 @@ class GetBookSourcesUseCase @Inject constructor(
         fileProvider.getStorageSources().fold(
             onSuccess = { it },
             onFailure = {
-                logE(TAG, "Could not read the granted sources: ${it.message}")
+                logE(TAG, "Could not read the granted sources: ${it.messageForLog()}")
                 emptyList()
             }
         )

@@ -8,6 +8,7 @@
 package ua.acclorite.book_story.domain.use_case.statistics
 
 import ua.acclorite.book_story.core.log.logW
+import ua.acclorite.book_story.core.log.messageForLog
 import ua.acclorite.book_story.domain.model.statistics.ReadBook
 import ua.acclorite.book_story.domain.repository.StatisticsRepository
 import javax.inject.Inject
@@ -21,7 +22,7 @@ class GetReadBookUseCase @Inject constructor(
     /** The book's reading record, or null when it has never been read here. */
     suspend operator fun invoke(bookId: Int): ReadBook? =
         statisticsRepository.getReadBook(bookId).getOrElse {
-            logW(TAG, "Could not read record of [$bookId]: ${it.message}")
+            logW(TAG, "Could not read record of [$bookId]: ${it.messageForLog()}")
             null
         }
 }

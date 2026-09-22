@@ -9,6 +9,7 @@ package ua.acclorite.book_story.domain.use_case.book
 import ua.acclorite.book_story.core.helpers.mapCatchingCancellable
 import ua.acclorite.book_story.core.log.logE
 import ua.acclorite.book_story.core.log.logI
+import ua.acclorite.book_story.core.log.messageForLog
 import ua.acclorite.book_story.domain.model.reader.ParsedText
 import ua.acclorite.book_story.domain.model.reader.ReaderText
 import ua.acclorite.book_story.domain.repository.BookRepository
@@ -39,7 +40,7 @@ class GetTextUseCase @Inject constructor(
                 return it
             },
             onFailure = {
-                logE(TAG, "Could not load text with exception: ${it.message}")
+                logE(TAG, "Could not load text with exception: ${it.messageForLog()}")
                 return ParsedText.EMPTY
             }
         )

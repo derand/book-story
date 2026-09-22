@@ -8,6 +8,7 @@
 package ua.acclorite.book_story.domain.use_case.statistics
 
 import ua.acclorite.book_story.core.log.logW
+import ua.acclorite.book_story.core.log.messageForLog
 import ua.acclorite.book_story.domain.model.statistics.LibraryStatistics
 import ua.acclorite.book_story.domain.repository.StatisticsRepository
 import javax.inject.Inject
@@ -20,7 +21,7 @@ class GetLibraryStatisticsUseCase @Inject constructor(
 
     suspend operator fun invoke(): LibraryStatistics =
         statisticsRepository.getLibraryStatistics().getOrElse {
-            logW(TAG, "Could not read library statistics: ${it.message}")
+            logW(TAG, "Could not read library statistics: ${it.messageForLog()}")
             LibraryStatistics.none
         }
 }

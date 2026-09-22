@@ -9,6 +9,7 @@ package ua.acclorite.book_story.domain.use_case.book
 
 import ua.acclorite.book_story.core.log.logI
 import ua.acclorite.book_story.core.log.logW
+import ua.acclorite.book_story.core.log.messageForLog
 import ua.acclorite.book_story.domain.model.library.Book
 import ua.acclorite.book_story.domain.repository.BookRepository
 import javax.inject.Inject
@@ -42,17 +43,17 @@ class StoreBookCopyUseCase @Inject constructor(
         // that was just inserted has already gained a cover the caller's copy
         // does not know about, and writing that copy back would erase it.
         val current = bookRepository.getBook(book.id).getOrElse {
-            logW(TAG, "Could not read [${book.title}] back: ${it.message}")
+            logW(TAG, "Could not read [${book.id}] back: ${it.messageForLog()}")
             return null
         }
 
         if (current.isOwnCopy) {
-            logI(TAG, "[${current.title}] is already a copy.")
+            logI(TAG, "[${current.id}] is already a copy.")
             return current
         }
 
         val path = bookRepository.storeBookFile(current).getOrElse {
-            logW(TAG, "Could not store [${current.title}]: ${it.message}")
+            logW(TAG, "Could not store [${current.id}]: ${it.messageForLog()}")
             return null
         }
 
@@ -66,14 +67,14 @@ class StoreBookCopyUseCase @Inject constructor(
         )
 
         bookRepository.updateBook(stored).onFailure {
-            logW(TAG, "Could not point [${current.title}] at its copy: ${it.message}")
+            logW(TAG, "Could not point [${current.id}] at its copy: ${it.messageForLog()}")
             // The row still names the original, so the copy is unreachable and
             // would be a leak of the whole book's size.
             bookRepository.deleteBookFile(current.id)
             return null
         }
 
-        logI(TAG, "[${current.title}] is now read from the app's own copy.")
+        logI(TAG, "[${current.id}] is now read from the app's own copy.")
         return stored
     }
 }

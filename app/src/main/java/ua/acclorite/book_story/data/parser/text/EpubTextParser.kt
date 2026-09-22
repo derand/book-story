@@ -24,6 +24,7 @@ import ua.acclorite.book_story.core.helpers.rethrowIfCancellation
 import ua.acclorite.book_story.core.log.logE
 import ua.acclorite.book_story.core.log.logI
 import ua.acclorite.book_story.core.log.logW
+import ua.acclorite.book_story.core.log.messageForLog
 import ua.acclorite.book_story.data.model.file.CachedFile
 import ua.acclorite.book_story.data.parser.document.DocumentParser
 import ua.acclorite.book_story.domain.model.reader.ParsedText
@@ -46,7 +47,7 @@ class EpubTextParser @Inject constructor(
 ) : TextParser {
 
     override suspend fun parse(cachedFile: CachedFile, keepImageBytes: Boolean): ParsedText {
-        logI(TAG, "Started EPUB parsing: ${cachedFile.name}.")
+        logI(TAG, "Started EPUB parsing: ${cachedFile.size} bytes.")
 
         return try {
             yield()
@@ -100,7 +101,7 @@ class EpubTextParser @Inject constructor(
             ParsedText(readerText)
         } catch (e: Exception) {
             e.rethrowIfCancellation()
-            logE(TAG, "Could not parse text with message: ${e.message}.")
+            logE(TAG, "Could not parse text with message: ${e.messageForLog()}.")
             ParsedText.EMPTY
         }
     }

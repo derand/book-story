@@ -14,6 +14,7 @@ import java.security.MessageDigest
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
+import ua.acclorite.book_story.core.log.messageForLog
 
 private const val TAG = "ReaderImageFiles"
 
@@ -67,7 +68,7 @@ class ReaderImageFiles @Inject constructor(application: Application) {
             }
             file
         } catch (e: Exception) {
-            logE(TAG, "Could not write reader image: ${e.message}")
+            logE(TAG, "Could not write reader image: ${e.messageForLog()}")
             tmp.delete()
             null
         }

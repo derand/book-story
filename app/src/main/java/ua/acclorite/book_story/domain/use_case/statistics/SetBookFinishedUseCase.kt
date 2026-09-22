@@ -8,6 +8,7 @@
 package ua.acclorite.book_story.domain.use_case.statistics
 
 import ua.acclorite.book_story.core.log.logW
+import ua.acclorite.book_story.core.log.messageForLog
 import ua.acclorite.book_story.domain.model.library.Book
 import ua.acclorite.book_story.domain.repository.StatisticsRepository
 import javax.inject.Inject
@@ -30,7 +31,7 @@ class SetBookFinishedUseCase @Inject constructor(
             author = book.author.getAsString() ?: "",
             finished = finished
         ).onFailure {
-            logW(TAG, "Could not set finished on [${book.id}]: ${it.message}")
+            logW(TAG, "Could not set finished on [${book.id}]: ${it.messageForLog()}")
         }
     }
 }

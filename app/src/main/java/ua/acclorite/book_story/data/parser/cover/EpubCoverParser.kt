@@ -13,6 +13,7 @@ import org.jsoup.parser.Parser
 import ua.acclorite.book_story.core.CoverImage
 import ua.acclorite.book_story.core.helpers.rethrowIfCancellation
 import ua.acclorite.book_story.core.log.logE
+import ua.acclorite.book_story.core.log.messageForLog
 import ua.acclorite.book_story.data.model.file.CachedFile
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
@@ -77,7 +78,7 @@ class EpubCoverParser @Inject constructor() : CoverParser {
             coverImage
         } catch (e: Exception) {
             e.rethrowIfCancellation()
-            logE(TAG, "Could not parse cover image with message: ${e.message}.")
+            logE(TAG, "Could not parse cover image with message: ${e.messageForLog()}.")
             null
         }
     }

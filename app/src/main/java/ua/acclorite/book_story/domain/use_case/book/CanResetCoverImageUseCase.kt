@@ -11,6 +11,7 @@ import android.graphics.BitmapFactory
 import ua.acclorite.book_story.core.helpers.mapCatchingCancellable
 import ua.acclorite.book_story.core.log.logE
 import ua.acclorite.book_story.core.log.logI
+import ua.acclorite.book_story.core.log.messageForLog
 import ua.acclorite.book_story.domain.repository.BookRepository
 import ua.acclorite.book_story.domain.service.CoverImageHandler
 import javax.inject.Inject
@@ -52,7 +53,7 @@ class CanResetCoverImageUseCase @Inject constructor(
             onFailure = {
                 logE(
                     TAG,
-                    "Could not check if can reset cover image of [$bookId] with error: ${it.message}"
+                    "Could not check if can reset cover image of [$bookId] with error: ${it.messageForLog()}"
                 )
                 return false
             }

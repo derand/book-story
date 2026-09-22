@@ -11,6 +11,7 @@ import ua.acclorite.book_story.core.helpers.mapCatchingCancellable
 import ua.acclorite.book_story.core.log.logE
 import ua.acclorite.book_story.core.log.logI
 import ua.acclorite.book_story.core.log.logW
+import ua.acclorite.book_story.core.log.messageForLog
 import ua.acclorite.book_story.domain.repository.BookRepository
 import ua.acclorite.book_story.domain.service.CoverImageHandler
 import javax.inject.Inject
@@ -32,7 +33,7 @@ class ResetCoverImageUseCase @Inject constructor(
 
             // Deleting old cover
             book.coverImage?.let { coverImageHandler.deleteCover(it) }?.onFailure {
-                logW(TAG, "Could not delete old cover image with error: ${it.message}")
+                logW(TAG, "Could not delete old cover image with error: ${it.messageForLog()}")
             }
 
             // Resetting cover
@@ -49,7 +50,7 @@ class ResetCoverImageUseCase @Inject constructor(
                 return true
             },
             onFailure = {
-                logE(TAG, "Could not reset cover image of [$bookId] with error: ${it.message}")
+                logE(TAG, "Could not reset cover image of [$bookId] with error: ${it.messageForLog()}")
                 return false
             }
         )

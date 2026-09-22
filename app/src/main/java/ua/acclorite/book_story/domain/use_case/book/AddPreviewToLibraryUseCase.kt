@@ -9,6 +9,7 @@ package ua.acclorite.book_story.domain.use_case.book
 
 import ua.acclorite.book_story.core.log.logI
 import ua.acclorite.book_story.core.log.logW
+import ua.acclorite.book_story.core.log.messageForLog
 import ua.acclorite.book_story.domain.model.library.Book
 import ua.acclorite.book_story.domain.repository.BookRepository
 import ua.acclorite.book_story.domain.service.FileProvider
@@ -54,7 +55,7 @@ class AddPreviewToLibraryUseCase @Inject constructor(
         // ids out of MediaStore row numbers, and downloading a book is the
         // commonest way to get one. Keeping such a book means keeping the file.
         if (book.filePath.isBlank()) {
-            logI(TAG, "[${book.title}] has no location; storing a copy of it.")
+            logI(TAG, "[${book.id}] has no location; storing a copy of it.")
             return store(book)
         }
 
@@ -68,7 +69,7 @@ class AddPreviewToLibraryUseCase @Inject constructor(
         val reachable = fileProvider.getFileFromBook(book.copy(previewUri = null)).getOrNull()
         if (reachable == null) {
             val folder = book.filePath.substringBeforeLast('/', missingDelimiterValue = "")
-            logI(TAG, "[${book.title}] is not reachable yet; asking for [$folder].")
+            logI(TAG, "[${book.id}] is not reachable yet; asking for the folder above it.")
             return Result.NeedsGrant(folder.ifBlank { null })
         }
 
@@ -87,11 +88,11 @@ class AddPreviewToLibraryUseCase @Inject constructor(
             documentId = reachable.documentId
         )
         bookRepository.updateBook(promoted).onFailure {
-            logW(TAG, "Could not add [${book.title}]: ${it.message}")
+            logW(TAG, "Could not add [${book.id}]: ${it.messageForLog()}")
             return Result.Failed
         }
 
-        logI(TAG, "Added [${book.title}] to the library.")
+        logI(TAG, "Added [${book.id}] to the library.")
         return Result.Added(promoted)
     }
 
@@ -107,7 +108,7 @@ class AddPreviewToLibraryUseCase @Inject constructor(
      */
     private suspend fun store(book: Book): Result {
         val path = bookRepository.storeBookFile(book).getOrElse {
-            logW(TAG, "Could not store [${book.title}]: ${it.message}")
+            logW(TAG, "Could not store [${book.id}]: ${it.messageForLog()}")
             return Result.Failed
         }
 
@@ -127,12 +128,12 @@ class AddPreviewToLibraryUseCase @Inject constructor(
             originPath = book.filePath
         )
         bookRepository.updateBook(promoted).onFailure {
-            logW(TAG, "Could not add [${book.title}]: ${it.message}")
+            logW(TAG, "Could not add [${book.id}]: ${it.messageForLog()}")
             bookRepository.deleteBookFile(book.id)
             return Result.Failed
         }
 
-        logI(TAG, "Added [${book.title}] to the library, holding its file.")
+        logI(TAG, "Added [${book.id}] to the library, holding its file.")
         return Result.Added(promoted)
     }
 }

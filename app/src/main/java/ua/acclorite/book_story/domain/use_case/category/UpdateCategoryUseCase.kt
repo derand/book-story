@@ -7,6 +7,7 @@
 package ua.acclorite.book_story.domain.use_case.category
 
 import ua.acclorite.book_story.core.log.logI
+import ua.acclorite.book_story.core.log.messageForLog
 import ua.acclorite.book_story.domain.model.library.Category
 import ua.acclorite.book_story.domain.repository.CategoryRepository
 import javax.inject.Inject
@@ -25,7 +26,7 @@ class UpdateCategoryUseCase @Inject constructor(
                 logI(TAG, "Successfully updated [${category.id}].")
             },
             onFailure = {
-                logI(TAG, "Could not update [${category.id}] with error: ${it.message}")
+                logI(TAG, "Could not update [${category.id}] with error: ${it.messageForLog()}")
             }
         )
     }

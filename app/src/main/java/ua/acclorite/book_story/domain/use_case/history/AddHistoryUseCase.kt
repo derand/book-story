@@ -8,6 +8,7 @@ package ua.acclorite.book_story.domain.use_case.history
 
 import ua.acclorite.book_story.core.log.logE
 import ua.acclorite.book_story.core.log.logI
+import ua.acclorite.book_story.core.log.messageForLog
 import ua.acclorite.book_story.domain.model.history.History
 import ua.acclorite.book_story.domain.repository.HistoryRepository
 import javax.inject.Inject
@@ -28,7 +29,7 @@ class AddHistoryUseCase @Inject constructor(
             onFailure = {
                 logE(
                     TAG,
-                    "Could not insert history for [${history.book.id}] with error: ${it.message}"
+                    "Could not insert history for [${history.book.id}] with error: ${it.messageForLog()}"
                 )
             }
         )

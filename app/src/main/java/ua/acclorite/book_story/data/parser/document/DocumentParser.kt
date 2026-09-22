@@ -19,6 +19,8 @@ import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
 import ua.acclorite.book_story.core.helpers.containsVisibleText
 import ua.acclorite.book_story.core.helpers.rethrowIfCancellation
+import ua.acclorite.book_story.core.log.logE
+import ua.acclorite.book_story.core.log.messageForLog
 import ua.acclorite.book_story.core.log.timed
 import ua.acclorite.book_story.domain.model.reader.ReaderImage
 import ua.acclorite.book_story.domain.model.reader.ReaderText
@@ -29,6 +31,8 @@ import java.util.zip.CRC32
 import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
 import javax.inject.Inject
+
+private const val TAG = "DocumentParser"
 
 /**
  * How many items of a phase run between two [yield] calls.
@@ -208,7 +212,7 @@ class DocumentParser @Inject constructor() {
             )
         } catch (e: Exception) {
             e.rethrowIfCancellation()
-            e.printStackTrace()
+            logE(TAG, e.messageForLog())
             null
         }
     }

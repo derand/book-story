@@ -13,6 +13,7 @@ import ua.acclorite.book_story.core.helpers.mapCatchingCancellable
 import ua.acclorite.book_story.core.log.logE
 import ua.acclorite.book_story.core.log.logI
 import ua.acclorite.book_story.core.log.logW
+import ua.acclorite.book_story.core.log.messageForLog
 import ua.acclorite.book_story.domain.repository.BookRepository
 import ua.acclorite.book_story.domain.service.CoverImageHandler
 import javax.inject.Inject
@@ -33,7 +34,7 @@ class UpdateCoverImageUseCase @Inject constructor(
      */
     suspend operator fun invoke(bookId: Int, coverUri: Uri) {
         val coverImage = coverImageHandler.decodeCover(coverUri).getOrElse {
-            logE(TAG, "Could not read the chosen image for [$bookId]: ${it.message}")
+            logE(TAG, "Could not read the chosen image for [$bookId]: ${it.messageForLog()}")
             return
         }
         invoke(bookId, coverImage)
@@ -47,7 +48,7 @@ class UpdateCoverImageUseCase @Inject constructor(
 
             // Deleting old cover
             book.coverImage?.let { coverImageHandler.deleteCover(it) }?.onFailure {
-                logW(TAG, "Could not delete old cover image with error: ${it.message}")
+                logW(TAG, "Could not delete old cover image with error: ${it.messageForLog()}")
             }
 
             // Saving new cover
@@ -63,7 +64,7 @@ class UpdateCoverImageUseCase @Inject constructor(
                 logI(TAG, "Successfully updated cover image of [$bookId].")
             },
             onFailure = {
-                logE(TAG, "Could not update cover image of [$bookId] with error: ${it.message}")
+                logE(TAG, "Could not update cover image of [$bookId] with error: ${it.messageForLog()}")
             }
         )
     }

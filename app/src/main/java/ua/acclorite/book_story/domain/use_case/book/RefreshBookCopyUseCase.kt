@@ -9,6 +9,7 @@ package ua.acclorite.book_story.domain.use_case.book
 
 import ua.acclorite.book_story.core.log.logI
 import ua.acclorite.book_story.core.log.logW
+import ua.acclorite.book_story.core.log.messageForLog
 import ua.acclorite.book_story.domain.model.library.Book
 import ua.acclorite.book_story.domain.repository.BookRepository
 import javax.inject.Inject
@@ -36,27 +37,27 @@ class RefreshBookCopyUseCase @Inject constructor(
 
     suspend operator fun invoke(book: Book): Book? {
         val current = bookRepository.getBook(book.id).getOrElse {
-            logW(TAG, "Could not read [${book.title}] back: ${it.message}")
+            logW(TAG, "Could not read [${book.id}] back: ${it.messageForLog()}")
             return null
         }
 
         if (!current.isOwnCopy || current.originPath == null) {
-            logI(TAG, "[${current.title}] has nothing to refresh from.")
+            logI(TAG, "[${current.id}] has nothing to refresh from.")
             return null
         }
 
         val path = bookRepository.refreshBookFile(current).getOrElse {
-            logW(TAG, "Could not refresh [${current.title}]: ${it.message}")
+            logW(TAG, "Could not refresh [${current.id}]: ${it.messageForLog()}")
             return null
         }
 
         val refreshed = current.copy(filePath = path)
         bookRepository.updateBook(refreshed).onFailure {
-            logW(TAG, "Could not point [${current.title}] at the new copy: ${it.message}")
+            logW(TAG, "Could not point [${current.id}] at the new copy: ${it.messageForLog()}")
             return null
         }
 
-        logI(TAG, "[${current.title}] was taken from its source again.")
+        logI(TAG, "[${current.id}] was taken from its source again.")
         return refreshed
     }
 }

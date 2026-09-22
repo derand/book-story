@@ -8,6 +8,7 @@ package ua.acclorite.book_story.domain.use_case.book
 
 import ua.acclorite.book_story.core.log.logE
 import ua.acclorite.book_story.core.log.logI
+import ua.acclorite.book_story.core.log.messageForLog
 import ua.acclorite.book_story.domain.model.library.Book
 import ua.acclorite.book_story.domain.repository.BookRepository
 import javax.inject.Inject
@@ -19,14 +20,14 @@ class UpdateBookUseCase @Inject constructor(
 ) {
 
     suspend operator fun invoke(book: Book) {
-        logI(TAG, "Updating [${book.title}].")
+        logI(TAG, "Updating [${book.id}].")
 
         bookRepository.updateBook(book).fold(
             onSuccess = {
-                logI(TAG, "Successfully updated [${book.title}].")
+                logI(TAG, "Successfully updated [${book.id}].")
             },
             onFailure = {
-                logE(TAG, "Could not update [${book.title}] with error: ${it.message}")
+                logE(TAG, "Could not update [${book.id}] with error: ${it.messageForLog()}")
             }
         )
     }

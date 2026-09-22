@@ -8,6 +8,7 @@
 package ua.acclorite.book_story.domain.use_case.statistics
 
 import ua.acclorite.book_story.core.log.logW
+import ua.acclorite.book_story.core.log.messageForLog
 import ua.acclorite.book_story.domain.model.statistics.ReadingSession
 import ua.acclorite.book_story.domain.repository.StatisticsRepository
 import javax.inject.Inject
@@ -40,7 +41,7 @@ class UpdateReadBookUseCase @Inject constructor(
             coveragePercent = coveragePercent,
             reachedEnd = reachedEnd
         ).onFailure {
-            logW(TAG, "Could not update record of [${session.bookId}]: ${it.message}")
+            logW(TAG, "Could not update record of [${session.bookId}]: ${it.messageForLog()}")
         }
     }
 }

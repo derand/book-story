@@ -9,6 +9,7 @@ package ua.acclorite.book_story.domain.use_case.book
 
 import ua.acclorite.book_story.core.log.logI
 import ua.acclorite.book_story.core.log.logW
+import ua.acclorite.book_story.core.log.messageForLog
 import ua.acclorite.book_story.domain.model.library.Book
 import ua.acclorite.book_story.domain.repository.BookRepository
 import javax.inject.Inject
@@ -32,17 +33,17 @@ class DiscardPreviewsUseCase @Inject constructor(
     suspend fun discard(book: Book) {
         if (book.inLibrary) return
 
-        logI(TAG, "Discarding preview [${book.title}].")
+        logI(TAG, "Discarding preview [${book.id}].")
         deleteBookUseCase(book)
         bookRepository.dropBookImages(book.id).onFailure {
-            logW(TAG, "Could not drop images of [${book.title}]: ${it.message}")
+            logW(TAG, "Could not drop images of [${book.id}]: ${it.messageForLog()}")
         }
     }
 
     /** Discards every preview there is. By design there never should be one. */
     suspend fun sweep() {
         val previews = bookRepository.findPreviews().getOrElse {
-            logW(TAG, "Could not look for previews: ${it.message}")
+            logW(TAG, "Could not look for previews: ${it.messageForLog()}")
             return
         }
 
