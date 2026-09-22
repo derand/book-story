@@ -27,6 +27,10 @@ import org.commonmark.node.Text
 import org.commonmark.parser.Parser
 import ua.acclorite.book_story.core.helpers.rethrowIfCancellation
 import javax.inject.Inject
+import ua.acclorite.book_story.core.log.logE
+import ua.acclorite.book_story.core.log.messageForLog
+
+private const val TAG = "MarkdownParser"
 
 class MarkdownParser @Inject constructor(
     private val commonmarkParser: Parser
@@ -45,7 +49,7 @@ class MarkdownParser @Inject constructor(
                 .trim() as AnnotatedString
         } catch (e: Exception) {
             e.rethrowIfCancellation()
-            e.printStackTrace()
+            logE(TAG, e.messageForLog())
             buildAnnotatedString { append(markdown) }
         }
     }

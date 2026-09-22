@@ -8,6 +8,7 @@
 package ua.acclorite.book_story.domain.use_case.statistics
 
 import ua.acclorite.book_story.core.log.logW
+import ua.acclorite.book_story.core.log.messageForLog
 import ua.acclorite.book_story.data.settings.SettingsManager
 import ua.acclorite.book_story.domain.model.statistics.ReadingCoverage
 import ua.acclorite.book_story.domain.repository.StatisticsRepository
@@ -30,7 +31,7 @@ class SaveBookCoverageUseCase @Inject constructor(
         if (!settings.collectStatistics.lastValue) return
 
         statisticsRepository.saveCoverage(coverage).onFailure {
-            logW(TAG, "Could not save coverage of [${coverage.bookId}]: ${it.message}")
+            logW(TAG, "Could not save coverage of [${coverage.bookId}]: ${it.messageForLog()}")
         }
     }
 }

@@ -15,6 +15,7 @@ import ua.acclorite.book_story.core.helpers.runCatchingCancellable
 import ua.acclorite.book_story.core.log.BOOK_TIMING
 import ua.acclorite.book_story.core.log.bookTimingNote
 import ua.acclorite.book_story.core.log.logE
+import ua.acclorite.book_story.core.log.messageForLog
 import ua.acclorite.book_story.core.log.timed
 import ua.acclorite.book_story.data.cache.ImageMemoryBudget
 import ua.acclorite.book_story.data.cache.ParseCache
@@ -109,7 +110,7 @@ class BookRepositoryImpl @Inject constructor(
                         )
                     )
                 }
-            }.onFailure { logE(TAG, "Could not remember the identity: ${it.message}") }
+            }.onFailure { logE(TAG, "Could not remember the identity: ${it.messageForLog()}") }
         }
 
         return file

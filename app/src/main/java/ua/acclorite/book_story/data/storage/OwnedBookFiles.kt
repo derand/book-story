@@ -9,6 +9,7 @@ package ua.acclorite.book_story.data.storage
 
 import android.app.Application
 import ua.acclorite.book_story.core.log.logI
+import ua.acclorite.book_story.core.log.messageForLog
 import ua.acclorite.book_story.data.model.file.CachedFile
 import java.io.File
 import javax.inject.Inject
@@ -87,7 +88,7 @@ class OwnedBookFiles @Inject constructor(
                 destination.outputStream().buffered().use(input::copyTo)
             } ?: throw IllegalStateException("Could not open ${source.name}.")
         } catch (e: Exception) {
-            logI(TAG, "Could not store [$bookId]: ${e.message}")
+            logI(TAG, "Could not store [$bookId]: ${e.messageForLog()}")
             directory.deleteRecursively()
             return null
         }

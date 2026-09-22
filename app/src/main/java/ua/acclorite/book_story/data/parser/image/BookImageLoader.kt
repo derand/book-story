@@ -10,6 +10,7 @@ package ua.acclorite.book_story.data.parser.image
 import android.util.Base64
 import ua.acclorite.book_story.core.data.ExtensionsData
 import ua.acclorite.book_story.core.log.logE
+import ua.acclorite.book_story.core.log.messageForLog
 import ua.acclorite.book_story.data.model.file.CachedFile
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -71,7 +72,7 @@ class BookImageLoader @Inject constructor() {
                 scanFb2Binaries(stream, srcs, onImage)
             }
         } catch (e: Exception) {
-            logE(TAG, "Could not load FB2 images: ${e.message}")
+            logE(TAG, "Could not load FB2 images: ${e.messageForLog()}")
         }
     }
 
@@ -92,12 +93,12 @@ class BookImageLoader @Inject constructor() {
                     try {
                         onImage(src, zip.getInputStream(entry).use { it.readBytes() })
                     } catch (e: Exception) {
-                        logE(TAG, "Could not read EPUB image [$src]: ${e.message}")
+                        logE(TAG, "Could not read EPUB image [$src]: ${e.messageForLog()}")
                     }
                 }
             }
         } catch (e: Exception) {
-            logE(TAG, "Could not load EPUB images: ${e.message}")
+            logE(TAG, "Could not load EPUB images: ${e.messageForLog()}")
         }
     }
 
@@ -145,7 +146,7 @@ class BookImageLoader @Inject constructor() {
             try {
                 onImage(id, Base64.decode(encoded, Base64.DEFAULT))
             } catch (e: Exception) {
-                logE(TAG, "Could not decode <binary> [$id]: ${e.message}")
+                logE(TAG, "Could not decode <binary> [$id]: ${e.messageForLog()}")
             }
         }
     }

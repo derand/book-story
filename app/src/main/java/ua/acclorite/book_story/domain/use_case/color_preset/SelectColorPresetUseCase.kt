@@ -8,6 +8,7 @@ package ua.acclorite.book_story.domain.use_case.color_preset
 
 import ua.acclorite.book_story.core.log.logE
 import ua.acclorite.book_story.core.log.logI
+import ua.acclorite.book_story.core.log.messageForLog
 import ua.acclorite.book_story.domain.model.reader.ColorPreset
 import ua.acclorite.book_story.domain.repository.ColorPresetRepository
 import javax.inject.Inject
@@ -28,7 +29,7 @@ class SelectColorPresetUseCase @Inject constructor(
             onFailure = {
                 logE(
                     TAG,
-                    "Could not select [${colorPreset.id}] color preset with error: ${it.message}"
+                    "Could not select [${colorPreset.id}] color preset with error: ${it.messageForLog()}"
                 )
             }
         )

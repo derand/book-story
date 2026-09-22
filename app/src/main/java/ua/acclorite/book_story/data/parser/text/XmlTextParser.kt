@@ -12,6 +12,7 @@ import org.jsoup.parser.Parser
 import ua.acclorite.book_story.core.helpers.rethrowIfCancellation
 import ua.acclorite.book_story.core.log.logE
 import ua.acclorite.book_story.core.log.logI
+import ua.acclorite.book_story.core.log.messageForLog
 import ua.acclorite.book_story.core.log.timed
 import ua.acclorite.book_story.data.model.file.CachedFile
 import ua.acclorite.book_story.data.parser.document.DocumentParser
@@ -27,7 +28,7 @@ class XmlTextParser @Inject constructor(
 ) : TextParser {
 
     override suspend fun parse(cachedFile: CachedFile, keepImageBytes: Boolean): ParsedText {
-        logI(TAG, "Started XML parsing: ${cachedFile.name}.")
+        logI(TAG, "Started XML parsing: ${cachedFile.size} bytes.")
 
         return try {
             val notes = mutableMapOf<String, AnnotatedString>()
@@ -82,7 +83,7 @@ class XmlTextParser @Inject constructor(
             ParsedText(readerText, notes)
         } catch (e: Exception) {
             e.rethrowIfCancellation()
-            logE(TAG, "Could not parse text with message: ${e.message}.")
+            logE(TAG, "Could not parse text with message: ${e.messageForLog()}.")
             ParsedText.EMPTY
         }
     }

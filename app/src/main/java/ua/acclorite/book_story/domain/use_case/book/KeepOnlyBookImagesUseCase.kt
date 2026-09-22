@@ -8,6 +8,7 @@
 package ua.acclorite.book_story.domain.use_case.book
 
 import ua.acclorite.book_story.core.log.logE
+import ua.acclorite.book_story.core.log.messageForLog
 import ua.acclorite.book_story.domain.repository.BookRepository
 import javax.inject.Inject
 
@@ -26,7 +27,7 @@ class KeepOnlyBookImagesUseCase @Inject constructor(
     suspend operator fun invoke(bookId: Int) {
         if (bookId == -1) return
         bookRepository.keepOnlyBookImages(bookId).onFailure {
-            logE(TAG, "Could not drop images of books other than [$bookId]: ${it.message}")
+            logE(TAG, "Could not drop images of books other than [$bookId]: ${it.messageForLog()}")
         }
     }
 }

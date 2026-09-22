@@ -14,6 +14,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.platform.LocalContext
+import ua.acclorite.book_story.core.log.logE
+import ua.acclorite.book_story.core.log.messageForLog
 
 inline fun Intent.launchActivity(
     activity: ComponentActivity,
@@ -30,7 +32,7 @@ inline fun Intent.launchActivity(
 
         activity.baseContext.startActivity(intent)
     } catch (e: Exception) {
-        e.printStackTrace()
+        logE("LifecycleHelpers", e.messageForLog())
         error()
         return
     }

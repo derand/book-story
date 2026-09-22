@@ -12,6 +12,7 @@ import com.tom_roush.pdfbox.pdmodel.PDDocument
 import ua.acclorite.book_story.R
 import ua.acclorite.book_story.core.helpers.rethrowIfCancellation
 import ua.acclorite.book_story.core.log.logE
+import ua.acclorite.book_story.core.log.messageForLog
 import ua.acclorite.book_story.core.ui.UIText
 import ua.acclorite.book_story.data.model.file.CachedFile
 import ua.acclorite.book_story.domain.model.library.Book
@@ -52,7 +53,7 @@ class PdfFileParser @Inject constructor(
             )
         } catch (e: Exception) {
             e.rethrowIfCancellation()
-            logE(TAG, "Could not parse file with message: ${e.message}.")
+            logE(TAG, "Could not parse file with message: ${e.messageForLog()}.")
             null
         }
     }

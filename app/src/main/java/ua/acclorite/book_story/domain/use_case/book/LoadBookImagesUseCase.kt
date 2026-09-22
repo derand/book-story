@@ -9,6 +9,7 @@ package ua.acclorite.book_story.domain.use_case.book
 
 import ua.acclorite.book_story.core.log.logE
 import ua.acclorite.book_story.core.log.logI
+import ua.acclorite.book_story.core.log.messageForLog
 import ua.acclorite.book_story.domain.model.reader.BookImage
 import ua.acclorite.book_story.domain.repository.BookRepository
 import javax.inject.Inject
@@ -35,7 +36,7 @@ class LoadBookImagesUseCase @Inject constructor(
 
         bookRepository.loadBookImages(bookId, srcs, parsed, onImage).fold(
             onSuccess = { logI(TAG, "Finished loading images of [$bookId].") },
-            onFailure = { logE(TAG, "Could not load images: ${it.message}") }
+            onFailure = { logE(TAG, "Could not load images: ${it.messageForLog()}") }
         )
     }
 }

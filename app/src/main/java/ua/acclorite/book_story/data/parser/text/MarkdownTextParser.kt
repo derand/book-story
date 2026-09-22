@@ -16,6 +16,7 @@ import ua.acclorite.book_story.core.helpers.containsVisibleText
 import ua.acclorite.book_story.core.helpers.rethrowIfCancellation
 import ua.acclorite.book_story.core.log.logE
 import ua.acclorite.book_story.core.log.logI
+import ua.acclorite.book_story.core.log.messageForLog
 import ua.acclorite.book_story.data.model.file.CachedFile
 import ua.acclorite.book_story.data.parser.document.MarkdownLine
 import ua.acclorite.book_story.data.parser.document.MarkdownParser
@@ -50,7 +51,7 @@ class MarkdownTextParser @Inject constructor(
 
     @Suppress("UNUSED_PARAMETER")
     override suspend fun parse(cachedFile: CachedFile, keepImageBytes: Boolean): ParsedText {
-        logI(TAG, "Started Markdown parsing: ${cachedFile.name}.")
+        logI(TAG, "Started Markdown parsing: ${cachedFile.size} bytes.")
 
         return try {
             val lines = withContext(Dispatchers.IO) {
@@ -105,7 +106,7 @@ class MarkdownTextParser @Inject constructor(
             ParsedText(readerText)
         } catch (e: Exception) {
             e.rethrowIfCancellation()
-            logE(TAG, "Could not parse text with message: ${e.message}.")
+            logE(TAG, "Could not parse text with message: ${e.messageForLog()}.")
             ParsedText.EMPTY
         }
     }

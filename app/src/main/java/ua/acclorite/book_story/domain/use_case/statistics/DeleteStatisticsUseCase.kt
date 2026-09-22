@@ -9,6 +9,7 @@ package ua.acclorite.book_story.domain.use_case.statistics
 
 import ua.acclorite.book_story.core.log.logI
 import ua.acclorite.book_story.core.log.logW
+import ua.acclorite.book_story.core.log.messageForLog
 import ua.acclorite.book_story.domain.repository.StatisticsRepository
 import javax.inject.Inject
 
@@ -30,7 +31,7 @@ class DeleteStatisticsUseCase @Inject constructor(
     suspend operator fun invoke() {
         statisticsRepository.deleteAllStatistics().fold(
             onSuccess = { logI(TAG, "Deleted all statistics.") },
-            onFailure = { logW(TAG, "Could not delete statistics: ${it.message}") }
+            onFailure = { logW(TAG, "Could not delete statistics: ${it.messageForLog()}") }
         )
     }
 }

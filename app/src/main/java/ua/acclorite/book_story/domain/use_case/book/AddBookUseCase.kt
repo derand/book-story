@@ -11,6 +11,7 @@ import ua.acclorite.book_story.core.CoverImage
 import ua.acclorite.book_story.core.log.logE
 import ua.acclorite.book_story.core.log.logI
 import ua.acclorite.book_story.core.log.logW
+import ua.acclorite.book_story.core.log.messageForLog
 import ua.acclorite.book_story.domain.model.library.Book
 import ua.acclorite.book_story.domain.repository.BookRepository
 import ua.acclorite.book_story.domain.service.CoverImageHandler
@@ -25,16 +26,16 @@ class AddBookUseCase @Inject constructor(
 
     /** The id of the inserted row, or null if it could not be inserted. */
     suspend operator fun invoke(book: Book, coverImage: CoverImage?): Int? {
-        logI(TAG, "Inserting [${book.title}].")
+        logI(TAG, "Inserting a book.")
 
         val coverImageUri = coverImage?.let { coverImage ->
             coverImageHandler.saveCover(coverImage).fold(
                 onSuccess = {
-                    logI(TAG, "Successfully saved cover image of [${book.title}].")
+                    logI(TAG, "Successfully saved the cover image.")
                     it.toUri()
                 },
                 onFailure = {
-                    logW(TAG, "Could not save cover image with error: ${it.message}")
+                    logW(TAG, "Could not save cover image with error: ${it.messageForLog()}")
                     null
                 }
             )
@@ -42,11 +43,11 @@ class AddBookUseCase @Inject constructor(
 
         return bookRepository.addBook(book = book.copy(coverImage = coverImageUri)).fold(
             onSuccess = { id ->
-                logI(TAG, "Successfully inserted [${book.title}].")
+                logI(TAG, "Successfully inserted [$id].")
                 id
             },
             onFailure = {
-                logE(TAG, "Could not insert [${book.title}] with error: ${it.message}")
+                logE(TAG, "Could not insert the book with error: ${it.messageForLog()}")
                 null
             }
         )

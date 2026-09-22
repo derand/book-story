@@ -9,6 +9,7 @@ package ua.acclorite.book_story.domain.use_case.statistics
 
 import ua.acclorite.book_story.core.log.logE
 import ua.acclorite.book_story.core.log.logI
+import ua.acclorite.book_story.core.log.messageForLog
 import ua.acclorite.book_story.data.settings.SettingsManager
 import ua.acclorite.book_story.domain.model.statistics.ReadingSession
 import ua.acclorite.book_story.domain.repository.StatisticsRepository
@@ -58,7 +59,7 @@ class RecordReadingSessionUseCase @Inject constructor(
                 logI(TAG, "Successfully recorded session for [$bookId].")
             },
             onFailure = {
-                logE(TAG, "Could not record session for [$bookId] with error: ${it.message}")
+                logE(TAG, "Could not record session for [$bookId] with error: ${it.messageForLog()}")
             }
         )
 

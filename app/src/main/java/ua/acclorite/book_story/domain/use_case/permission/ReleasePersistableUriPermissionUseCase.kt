@@ -8,6 +8,8 @@ package ua.acclorite.book_story.domain.use_case.permission
 
 import ua.acclorite.book_story.core.log.logE
 import ua.acclorite.book_story.core.log.logI
+import ua.acclorite.book_story.core.log.messageForLog
+import ua.acclorite.book_story.core.log.withoutLocations
 import ua.acclorite.book_story.domain.repository.PermissionRepository
 import javax.inject.Inject
 
@@ -18,16 +20,17 @@ class ReleasePersistableUriPermissionUseCase @Inject constructor(
 ) {
 
     suspend operator fun invoke(uri: String) {
-        logI(TAG, "Releasing persistable URI permission from \"$uri\".")
+        val source = withoutLocations(uri)
+        logI(TAG, "Releasing persistable URI permission from \"$source\".")
 
         permissionRepository.releasePersistableUriPermission(uri).fold(
             onSuccess = {
-                logI(TAG, "Successfully released persistable URI permission from \"$uri\".")
+                logI(TAG, "Successfully released persistable URI permission from \"$source\".")
             },
             onFailure = {
                 logE(
                     TAG,
-                    "Could not release persistable URI permission from \"$uri\" with error: ${it.message}."
+                    "Could not release persistable URI permission from \"$source\" with error: ${it.messageForLog()}."
                 )
             }
         )

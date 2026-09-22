@@ -9,6 +9,8 @@ package ua.acclorite.book_story.domain.use_case.book
 
 import ua.acclorite.book_story.core.log.logE
 import ua.acclorite.book_story.core.log.logI
+import ua.acclorite.book_story.core.log.messageForLog
+import ua.acclorite.book_story.core.log.withoutLocations
 import ua.acclorite.book_story.domain.model.library.findForFile
 import ua.acclorite.book_story.domain.repository.BookRepository
 import ua.acclorite.book_story.domain.repository.FileSystemRepository
@@ -48,10 +50,10 @@ class OpenBookFromUriUseCase @Inject constructor(
     }
 
     suspend operator fun invoke(uri: String): Result {
-        logI(TAG, "Opening [$uri].")
+        logI(TAG, "Opening [${withoutLocations(uri)}].")
 
         val file = fileSystemRepository.getFileFromUri(uri).getOrElse {
-            logE(TAG, "Could not read the file: ${it.message}")
+            logE(TAG, "Could not read the file: ${it.messageForLog()}")
             return Result.Unreadable
         }
 
@@ -91,7 +93,7 @@ class OpenBookFromUriUseCase @Inject constructor(
         )
             ?: return Result.Unsupported
 
-        logI(TAG, "Previewing [${parsed.first.title}] as [$id].")
+        logI(TAG, "Previewing the book as [$id].")
         return Result.Open(id)
     }
 }

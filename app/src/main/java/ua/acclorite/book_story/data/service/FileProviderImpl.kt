@@ -15,6 +15,7 @@ import ua.acclorite.book_story.core.helpers.rethrowIfCancellation
 import ua.acclorite.book_story.core.helpers.runCatchingCancellable
 import ua.acclorite.book_story.core.log.bookTimingNote
 import ua.acclorite.book_story.core.log.logE
+import ua.acclorite.book_story.core.log.messageForLog
 import ua.acclorite.book_story.data.model.file.CachedFile
 import ua.acclorite.book_story.data.model.file.CachedFileCompat
 import ua.acclorite.book_story.data.storage.OwnedBookFiles
@@ -193,7 +194,10 @@ class FileProviderImpl @Inject constructor(
                     )
                 },
                 onFailure = {
-                    logE(TAG, "Source ${permission.uri} could not be asked: ${it.message}")
+                    logE(
+                        TAG,
+                        "A source could not be asked: ${it.messageForLog()}"
+                    )
                     BookSource(
                         uri = permission.uri.toString(),
                         provider = providerLabel(permission.uri.authority),

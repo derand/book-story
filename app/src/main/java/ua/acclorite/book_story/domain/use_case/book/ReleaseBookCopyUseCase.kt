@@ -9,6 +9,7 @@ package ua.acclorite.book_story.domain.use_case.book
 
 import ua.acclorite.book_story.core.log.logI
 import ua.acclorite.book_story.core.log.logW
+import ua.acclorite.book_story.core.log.messageForLog
 import ua.acclorite.book_story.domain.model.library.Book
 import ua.acclorite.book_story.domain.repository.BookRepository
 import javax.inject.Inject
@@ -34,12 +35,12 @@ class ReleaseBookCopyUseCase @Inject constructor(
 
     suspend operator fun invoke(book: Book): Book? {
         val current = bookRepository.getBook(book.id).getOrElse {
-            logW(TAG, "Could not read [${book.title}] back: ${it.message}")
+            logW(TAG, "Could not read [${book.id}] back: ${it.messageForLog()}")
             return null
         }
 
         if (!current.isOwnCopy) {
-            logI(TAG, "[${current.title}] is not a copy.")
+            logI(TAG, "[${current.id}] is not a copy.")
             return current
         }
 
@@ -47,7 +48,7 @@ class ReleaseBookCopyUseCase @Inject constructor(
         // copy deleted: a row updated over a deleted file is a book that cannot
         // be opened, while a copy outliving a failed update is a few megabytes.
         val path = bookRepository.releaseBookFile(current).getOrElse {
-            logW(TAG, "Could not release [${current.title}]: ${it.message}")
+            logW(TAG, "Could not release [${current.id}]: ${it.messageForLog()}")
             return null
         }
 
@@ -61,11 +62,11 @@ class ReleaseBookCopyUseCase @Inject constructor(
         )
 
         bookRepository.updateBook(released).onFailure {
-            logW(TAG, "Could not point [${current.title}] back: ${it.message}")
+            logW(TAG, "Could not point [${current.id}] back: ${it.messageForLog()}")
             return null
         }
 
-        logI(TAG, "[${current.title}] is read where it lives again.")
+        logI(TAG, "[${current.id}] is read where it lives again.")
         return released
     }
 }

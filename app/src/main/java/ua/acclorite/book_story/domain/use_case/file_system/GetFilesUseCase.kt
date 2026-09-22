@@ -11,6 +11,7 @@ import ua.acclorite.book_story.core.helpers.compareByWithOrder
 import ua.acclorite.book_story.core.helpers.runCatchingCancellable
 import ua.acclorite.book_story.core.log.logE
 import ua.acclorite.book_story.core.log.logI
+import ua.acclorite.book_story.core.log.messageForLog
 import ua.acclorite.book_story.data.settings.SettingsManager
 import ua.acclorite.book_story.domain.model.file.File
 import ua.acclorite.book_story.domain.repository.FileSystemRepository
@@ -25,7 +26,7 @@ class GetFilesUseCase @Inject constructor(
 ) {
 
     suspend operator fun invoke(query: String = ""): List<File> {
-        logI(TAG, "Searching for files with query: \"$query\".")
+        logI(TAG, "Searching for files with a ${query.length}-char query.")
 
         fun List<File>.filterFiles(): List<File> {
             return if (settings.browseIncludedFilterItems.lastValue.isEmpty()) this
@@ -69,7 +70,7 @@ class GetFilesUseCase @Inject constructor(
                 it
             },
             onFailure = {
-                logE(TAG, "Could not find files with error: ${it.message}")
+                logE(TAG, "Could not find files with error: ${it.messageForLog()}")
                 emptyList()
             }
         )

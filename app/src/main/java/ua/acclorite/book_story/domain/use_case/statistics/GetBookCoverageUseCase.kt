@@ -9,6 +9,7 @@ package ua.acclorite.book_story.domain.use_case.statistics
 
 import ua.acclorite.book_story.core.log.logI
 import ua.acclorite.book_story.core.log.logW
+import ua.acclorite.book_story.core.log.messageForLog
 import ua.acclorite.book_story.domain.model.statistics.ReadingCoverage
 import ua.acclorite.book_story.domain.repository.StatisticsRepository
 import javax.inject.Inject
@@ -30,7 +31,7 @@ class GetBookCoverageUseCase @Inject constructor(
         bookWords: Int
     ): ReadingCoverage {
         val stored = statisticsRepository.getCoverage(bookId).getOrElse {
-            logW(TAG, "Could not read coverage of [$bookId]: ${it.message}")
+            logW(TAG, "Could not read coverage of [$bookId]: ${it.messageForLog()}")
             null
         } ?: return ReadingCoverage.empty(bookId, itemCount, bookWords)
 

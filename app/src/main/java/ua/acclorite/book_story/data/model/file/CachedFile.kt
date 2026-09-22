@@ -12,12 +12,16 @@ import android.provider.DocumentsContract
 import androidx.compose.runtime.Immutable
 import com.anggrayudi.storage.file.DocumentFileCompat
 import com.anggrayudi.storage.file.getAbsolutePath
+import ua.acclorite.book_story.core.log.logE
+import ua.acclorite.book_story.core.log.messageForLog
 import ua.acclorite.book_story.core.log.timed
 import java.io.BufferedOutputStream
 import java.io.File
 import java.io.FileOutputStream
 import java.io.InputStream
 import java.util.UUID
+
+private const val TAG = "CachedFile"
 
 /**
  * Cached File.
@@ -139,7 +143,7 @@ class CachedFile(
             return try {
                 it.inputStream()
             } catch (e: Exception) {
-                e.printStackTrace()
+                logE(TAG, e.messageForLog())
                 null
             }
         }
@@ -148,7 +152,7 @@ class CachedFile(
             context.contentResolver.openInputStream(uri)
                 ?: throw Exception("Failed to open InputStream for URI: $uri")
         } catch (e: Exception) {
-            e.printStackTrace()
+            logE(TAG, e.messageForLog())
             null
         }
     }
@@ -224,7 +228,7 @@ class CachedFile(
                     cachedFiles.add(queryFile)
                 }
             } catch (e: Exception) {
-                e.printStackTrace()
+                logE(TAG, e.messageForLog())
             }
         }
 
@@ -278,7 +282,7 @@ class CachedFile(
                 }
             } ?: throw IllegalStateException("Failed to open InputStream.")
         } catch (e: Exception) {
-            e.printStackTrace()
+            logE(TAG, e.messageForLog())
             return@timed null
         }
 
@@ -355,7 +359,7 @@ class CachedFile(
                     }
                 }
             } catch (e: Exception) {
-                e.printStackTrace()
+                logE(TAG, e.messageForLog())
             }
         }
 

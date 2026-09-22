@@ -14,6 +14,7 @@ import org.jsoup.parser.Parser
 import ua.acclorite.book_story.core.CoverImage
 import ua.acclorite.book_story.core.helpers.rethrowIfCancellation
 import ua.acclorite.book_story.core.log.logE
+import ua.acclorite.book_story.core.log.messageForLog
 import ua.acclorite.book_story.data.model.file.CachedFile
 import javax.inject.Inject
 
@@ -47,7 +48,7 @@ class Fb2CoverParser @Inject constructor() : CoverParser {
             }
         } catch (e: Exception) {
             e.rethrowIfCancellation()
-            logE(TAG, "Could not parse cover with message: ${e.message}.")
+            logE(TAG, "Could not parse cover with message: ${e.messageForLog()}.")
             null
         }
     }

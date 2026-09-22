@@ -8,6 +8,7 @@ package ua.acclorite.book_story.domain.use_case.book
 
 import ua.acclorite.book_story.core.log.logE
 import ua.acclorite.book_story.core.log.logI
+import ua.acclorite.book_story.core.log.messageForLog
 import ua.acclorite.book_story.domain.model.file.File
 import ua.acclorite.book_story.domain.repository.BookRepository
 import javax.inject.Inject
@@ -27,7 +28,7 @@ class GetFileFromBookUseCase @Inject constructor(
                 it
             },
             onFailure = {
-                logE(TAG, "Could not get file from book [$bookId] with error: ${it.message}")
+                logE(TAG, "Could not get file from book [$bookId] with error: ${it.messageForLog()}")
                 null
             }
         )

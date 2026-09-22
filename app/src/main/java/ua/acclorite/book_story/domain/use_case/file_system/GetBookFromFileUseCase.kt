@@ -9,6 +9,7 @@ package ua.acclorite.book_story.domain.use_case.file_system
 import ua.acclorite.book_story.core.CoverImage
 import ua.acclorite.book_story.core.log.logE
 import ua.acclorite.book_story.core.log.logI
+import ua.acclorite.book_story.core.log.messageForLog
 import ua.acclorite.book_story.domain.model.file.File
 import ua.acclorite.book_story.domain.model.library.Book
 import ua.acclorite.book_story.domain.repository.FileSystemRepository
@@ -21,15 +22,15 @@ class GetBookFromFileUseCase @Inject constructor(
 ) {
 
     suspend operator fun invoke(file: File): Pair<Book, CoverImage?>? {
-        logI(TAG, "Getting book from [${file.name}] file.")
+        logI(TAG, "Getting book from a ${file.size} byte file.")
 
         return fileSystemRepository.getBookFromFile(file).fold(
             onSuccess = {
-                logI(TAG, "Successfully got [${it.first.title}] book from file.")
+                logI(TAG, "Successfully got a book from the file.")
                 it
             },
             onFailure = {
-                logE(TAG, "Could not get book from file with error: ${it.message}")
+                logE(TAG, "Could not get book from file with error: ${it.messageForLog()}")
                 null
             }
         )

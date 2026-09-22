@@ -9,6 +9,7 @@ package ua.acclorite.book_story.domain.use_case.debug
 import ua.acclorite.book_story.BuildConfig
 import ua.acclorite.book_story.core.log.logW
 import ua.acclorite.book_story.core.helpers.runCatchingCancellable
+import ua.acclorite.book_story.core.log.messageForLog
 import ua.acclorite.book_story.data.debug.DatabaseCopier
 import javax.inject.Inject
 
@@ -35,7 +36,7 @@ class CopyDatabaseUseCase @Inject constructor(
         return runCatchingCancellable {
             databaseCopier.copy().path
         }.onFailure {
-            logW(TAG, "Could not copy the database: ${it.message}")
+            logW(TAG, "Could not copy the database: ${it.messageForLog()}")
         }
     }
 }

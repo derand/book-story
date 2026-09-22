@@ -8,6 +8,7 @@ package ua.acclorite.book_story.domain.use_case.category
 
 import ua.acclorite.book_story.core.log.logE
 import ua.acclorite.book_story.core.log.logI
+import ua.acclorite.book_story.core.log.messageForLog
 import ua.acclorite.book_story.domain.model.library.Category
 import ua.acclorite.book_story.domain.repository.CategoryRepository
 import javax.inject.Inject
@@ -19,14 +20,14 @@ class AddCategoryUseCase @Inject constructor(
 ) {
 
     suspend operator fun invoke(title: String) {
-        logI(TAG, "Inserting [${title}] category.")
+        logI(TAG, "Inserting a category.")
 
         categoryRepository.addCategory(Category(title = title)).fold(
             onSuccess = {
-                logI(TAG, "Successfully inserted [${title}] category.")
+                logI(TAG, "Successfully inserted the category.")
             },
             onFailure = {
-                logE(TAG, "Could not insert [${title}] category with error: ${it.message}")
+                logE(TAG, "Could not insert the category with error: ${it.messageForLog()}")
             }
         )
     }

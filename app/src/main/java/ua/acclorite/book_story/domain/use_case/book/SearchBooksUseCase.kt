@@ -8,6 +8,7 @@ package ua.acclorite.book_story.domain.use_case.book
 
 import ua.acclorite.book_story.core.log.logE
 import ua.acclorite.book_story.core.log.logI
+import ua.acclorite.book_story.core.log.messageForLog
 import ua.acclorite.book_story.domain.model.library.Book
 import ua.acclorite.book_story.domain.model.library.bookSearchTokens
 import ua.acclorite.book_story.domain.model.library.matchesSearch
@@ -23,7 +24,7 @@ class SearchBooksUseCase @Inject constructor(
 ) {
 
     suspend operator fun invoke(query: String): List<Book> {
-        logI(TAG, "Searching for books with query: \"$query\".")
+        logI(TAG, "Searching for books with a ${query.length}-char query.")
 
         val tokens = bookSearchTokens(query)
         return bookRepository.getLibraryBooks().fold(
@@ -39,7 +40,7 @@ class SearchBooksUseCase @Inject constructor(
                 }
             },
             onFailure = {
-                logE(TAG, "Could not find books with error: ${it.message}")
+                logE(TAG, "Could not find books with error: ${it.messageForLog()}")
                 emptyList()
             }
         )
