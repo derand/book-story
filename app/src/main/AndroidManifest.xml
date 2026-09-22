@@ -36,9 +36,24 @@
         </intent>
     </queries>
 
+    <!-- allowBackup="false" turns off the cloud backup and nothing else: since
+         API 31 a transfer to a new device is a separate mode, and a mode with
+         no rules is fully enabled. @xml/data_extraction_rules excludes it, and
+         holds the decision that it excludes (#110).
+
+         The tools:ignore below no longer mutes "you have no extraction rules"
+         — that was the warning this file answers. It mutes the other half of
+         the same check: "minSdkVersion is API 26, so you should also set
+         android:fullBackupContent". Not here. Below API 31 that attribute only
+         chooses *which files* a backup takes, and this app takes none —
+         allowBackup="false" governed every form of backup back then, transfers
+         and adb backup included, as lint's own explanation of the check says.
+         A @xml/backup_rules beside it would configure a backup that does not
+         happen. -->
     <application
         android:name=".Application"
         android:allowBackup="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
         android:enableOnBackInvokedCallback="true"
         android:icon="@mipmap/app_icon"
         android:label="@string/app_name"
