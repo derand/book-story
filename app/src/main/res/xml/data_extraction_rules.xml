@@ -1,0 +1,51 @@
+<!--
+  ~ Book's Story — free and open-source Material You eBook reader.
+  ~ Copyright (C) 2026 derand
+  ~ Copyright (C) 2024-2026 Acclorite
+  ~ SPDX-License-Identifier: GPL-3.0-only
+  -->
+
+<!--
+    What may leave this device: nothing.
+
+    `android:allowBackup="false"` turns off the *cloud* backup and nothing
+    else. Since API 31, transferring app data to a new device during its setup
+    is a separate mode, allowed until these rules say otherwise — so until this
+    file existed the manifest claimed more than it did (#110).
+
+    The decision behind it, taken 2026-09-20: the case being solved is
+    reinstalling on the *same* device, which is #96 and nothing else. Carrying
+    a library to a new tablet may become a task later, and allowing it then
+    means deleting the excludes below on purpose, rather than discovering that
+    it had been on all along.
+
+    Three things that are not obvious, and were checked rather than reasoned:
+
+    * A missing section means that mode is *fully enabled*, not off. Leaving
+      `<device-transfer>` out is what the app did until now.
+    * `domain="root"` does not stand for the rest. Each domain is walked
+      separately, files/, databases/ and shared_prefs/ are filtered out of the
+      root walk (`BackupAgent.onFullBackup`), and `external` is not under the
+      app's private root at all. Hence all nine.
+    * `path` is optional. Absent, it defaults to the empty string, which is the
+      whole domain directory (`FullBackup.parseRules`).
+
+    `<cloud-backup>` is deliberately absent: `allowBackup="false"` already
+    covers it, and this app is not in Google's backup at all (checked with
+    `dumpsys backup` on the tablet). `<cross-platform-transfer>` (API 36.1, to
+    iOS) is opt-in — it takes a `platform` and the bundle id of a counterpart
+    app, and there is no such app — so there is nothing to exclude there.
+-->
+<data-extraction-rules>
+    <device-transfer>
+        <exclude domain="root" />
+        <exclude domain="file" />
+        <exclude domain="database" />
+        <exclude domain="sharedpref" />
+        <exclude domain="external" />
+        <exclude domain="device_root" />
+        <exclude domain="device_file" />
+        <exclude domain="device_database" />
+        <exclude domain="device_sharedpref" />
+    </device-transfer>
+</data-extraction-rules>
