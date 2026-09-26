@@ -199,6 +199,13 @@
     <string name="start_guide_settings_desc">Proceed through the initial setup again</string>
     <string name="library_settings">Library</string>
     <string name="library_settings_desc">Categories, display, tabs</string>
+    <string name="backup_settings">Backup</string>
+    <string name="backup_settings_desc">Back up and restore the library</string>
+    <string name="export_backup_option">Back up</string>
+    <string name="export_backup_option_desc">Saves the library, reading statistics, settings and the books the app keeps copies of to one file</string>
+    <string name="export_backup_in_progress">Backing up…</string>
+    <string name="export_backup_done">Saved: %1$d books, %2$d reading sessions, %3$s</string>
+    <string name="export_backup_failed">Could not back up: %1$s</string>
 
     <!-- Settings subcategories -->
     <string name="font_reader_settings">Font</string>

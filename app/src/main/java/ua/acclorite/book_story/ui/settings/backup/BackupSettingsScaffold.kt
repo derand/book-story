@@ -1,10 +1,11 @@
 /*
  * Book's Story — free and open-source Material You eBook reader.
+ * Copyright (C) 2026 derand
  * Copyright (C) 2024-2026 Acclorite
  * SPDX-License-Identifier: GPL-3.0-only
  */
 
-package ua.acclorite.book_story.ui.settings
+package ua.acclorite.book_story.ui.settings.backup
 
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -21,16 +22,9 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScaffold(
+fun BackupSettingsScaffold(
     listState: LazyListState,
     scrollBehavior: TopAppBarScrollBehavior,
-    navigateToGeneralSettings: () -> Unit,
-    navigateToAppearanceSettings: () -> Unit,
-    navigateToReaderSettings: () -> Unit,
-    navigateToLibrarySettings: () -> Unit,
-    navigateToBrowseSettings: () -> Unit,
-    navigateToBackupSettings: () -> Unit,
-    navigateToStart: () -> Unit,
     navigateBack: () -> Unit
 ) {
     Scaffold(
@@ -40,22 +34,15 @@ fun SettingsScaffold(
             .windowInsetsPadding(WindowInsets.navigationBars),
         containerColor = MaterialTheme.colorScheme.surface,
         topBar = {
-            SettingsTopBar(
+            BackupSettingsTopBar(
                 scrollBehavior = scrollBehavior,
                 navigateBack = navigateBack
             )
         }
     ) { paddingValues ->
-        SettingsLayout(
+        BackupSettingsLayout(
             listState = listState,
-            paddingValues = paddingValues,
-            navigateToGeneralSettings = navigateToGeneralSettings,
-            navigateToAppearanceSettings = navigateToAppearanceSettings,
-            navigateToReaderSettings = navigateToReaderSettings,
-            navigateToLibrarySettings = navigateToLibrarySettings,
-            navigateToBrowseSettings = navigateToBrowseSettings,
-            navigateToBackupSettings = navigateToBackupSettings,
-            navigateToStart = navigateToStart
+            paddingValues = paddingValues
         )
     }
 }

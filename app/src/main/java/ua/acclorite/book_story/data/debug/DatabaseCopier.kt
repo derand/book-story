@@ -8,7 +8,7 @@ package ua.acclorite.book_story.data.debug
 
 import android.app.Application
 import ua.acclorite.book_story.core.log.logI
-import ua.acclorite.book_story.data.local.room.BookDatabase
+import ua.acclorite.book_story.data.local.room.DatabaseSnapshot
 import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -29,42 +29,19 @@ private const val DIRECTORY = "debug"
 @Singleton
 class DatabaseCopier @Inject constructor(
     private val application: Application,
-    private val database: BookDatabase
+    private val snapshot: DatabaseSnapshot
 ) {
 
     /**
-     * Checkpoints the write-ahead log and copies the database out, returning
-     * where it landed.
-     *
-     * **The checkpoint is the whole point of the ordering.** SQLite keeps
-     * recent writes in `-wal`, and the main file on its own can be a 4 KB
-     * header holding nothing — a copy taken without checkpointing would be
-     * missing exactly the sessions worth asking about. `TRUNCATE` folds the
-     * log back in and empties it; the `-wal`/`-shm` files are copied anyway if
-     * anything is still there, so a copy is complete or it is nothing.
+     * Copies the database out as one consistent file — see [DatabaseSnapshot]
+     * for why that takes a checkpoint — and returns where it landed.
      */
     fun copy(): File {
-        database.openHelper.writableDatabase.let { db ->
-            db.query("PRAGMA wal_checkpoint(TRUNCATE)").use { cursor ->
-                // The result says whether it blocked; reading it is what runs it.
-                if (cursor.moveToFirst()) {
-                    logI(TAG, "Checkpointed: ${cursor.getInt(0)} busy.")
-                }
-            }
-        }
-
-        val source = File(database.openHelper.writableDatabase.path!!)
         val destination = File(application.getExternalFilesDir(null), DIRECTORY).apply {
             mkdirs()
         }
 
-        val copied = File(destination, source.name)
-        source.copyTo(copied, overwrite = true)
-
-        for (suffix in listOf("-wal", "-shm")) {
-            val extra = File(source.path + suffix)
-            if (extra.exists()) extra.copyTo(File(destination, extra.name), overwrite = true)
-        }
+        val copied = snapshot.copyTo(File(destination, snapshot.file.name))
 
         logI(TAG, "Copied ${copied.length()} bytes to ${copied.path}.")
         return copied
