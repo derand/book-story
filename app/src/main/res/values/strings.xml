@@ -206,6 +206,20 @@
     <string name="export_backup_in_progress">Backing up…</string>
     <string name="export_backup_done">Saved: %1$d books, %2$d reading sessions, %3$s</string>
     <string name="export_backup_failed">Could not back up: %1$s</string>
+    <string name="restore_backup_option">Restore</string>
+    <string name="restore_backup_option_desc">Replaces the library, reading statistics and settings with the ones in a backup file</string>
+    <string name="restore_backup_in_progress">Reading the backup…</string>
+    <string name="restore_backup_not_a_backup">Not restored: this file is not a Book\'s Story backup</string>
+    <string name="restore_backup_too_new">Not restored: the backup is from a newer version of the app. Update the app first</string>
+    <string name="restore_backup_damaged">Not restored: the backup is damaged (%1$s)</string>
+    <string name="restore_backup_failed">Not restored: %1$s</string>
+    <string name="restore_backup_dialog">Restore this backup?</string>
+    <string name="restore_backup_dialog_desc">The backup becomes your library: the books, the reading statistics and the settings in it replace the current ones, which are lost unless you save them first. The app restarts to finish.\n\nIn the backup, made %1$s: %2$d books, %3$d reading sessions, %4$d covers, %5$d books kept by the app.</string>
+    <string name="restore_backup_dialog_action">Restore</string>
+    <string name="restore_backup_dialog_save_first">Save current first</string>
+    <string name="restore_backup_dialog_saving">Saving the current library…</string>
+    <string name="restore_backup_dialog_saved">The current library is saved: %1$d books, %2$d reading sessions, %3$s.</string>
+    <string name="restore_backup_dialog_restarting">Restarting…</string>
 
     <!-- Settings subcategories -->
     <string name="font_reader_settings">Font</string>

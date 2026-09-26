@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.coerceAtLeast
 import androidx.compose.ui.unit.dp
 import ua.acclorite.book_story.ui.settings.backup.components.ExportBackupOption
+import ua.acclorite.book_story.ui.settings.backup.components.RestoreBackupOption
 
 fun LazyListScope.BackupSettingsCategory(
     topPadding: Dp = 16.dp,
@@ -28,6 +29,10 @@ fun LazyListScope.BackupSettingsCategory(
 
     item {
         ExportBackupOption()
+    }
+
+    item {
+        RestoreBackupOption()
     }
 
     item {
