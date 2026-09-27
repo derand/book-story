@@ -35,6 +35,18 @@ object BackupEntries {
 }
 
 /**
+ * The names the live library goes by, which a backup reads and a restore
+ * writes. Each must match its owner: `AppModule` (the database), `DataStoreImpl`
+ * (the settings), `CoverImageHandlerImpl` and `OwnedBookFiles`.
+ */
+object LiveFiles {
+    const val DATABASE = "book_db"
+    const val DATA_STORE = "data_store"
+    const val COVERS = "covers"
+    const val OWNED_BOOKS = "owned_books"
+}
+
+/**
  * What a backup says about itself, written first so a restore can decide
  * whether to go on before reading anything else.
  *
@@ -81,7 +93,21 @@ data class BackupManifest(
         /** What the provider calls the folder. */
         val name: String?,
         val authority: String?
-    )
+    ) {
+        internal fun toJson(): JsonObject = buildJsonObject {
+            put("provider", provider)
+            put("name", name)
+            put("authority", authority)
+        }
+
+        internal companion object {
+            fun fromJson(json: JsonObject): Source = Source(
+                provider = json.optionalString("provider"),
+                name = json.optionalString("name"),
+                authority = json.optionalString("authority")
+            )
+        }
+    }
 
     fun toJson(): String = json.encodeToString(
         JsonObject.serializer(),
@@ -100,13 +126,7 @@ data class BackupManifest(
                 put("ownedBooks", counts.ownedBooks)
             })
             put("sources", buildJsonArray {
-                sources.forEach { source ->
-                    add(buildJsonObject {
-                        put("provider", source.provider)
-                        put("name", source.name)
-                        put("authority", source.authority)
-                    })
-                }
+                sources.forEach { add(it.toJson()) }
             })
         }
     )
@@ -121,10 +141,8 @@ data class BackupManifest(
          */
         fun fromJson(text: String): BackupManifest {
             val root = Json.parseToJsonElement(text).jsonObject
-            fun JsonObject.string(key: String): String? =
-                get(key)?.jsonPrimitive?.takeIf { it.isString }?.content
             fun JsonObject.requireString(key: String): String =
-                string(key) ?: throw IllegalArgumentException("No \"$key\" in the manifest.")
+                optionalString(key) ?: throw IllegalArgumentException("No \"$key\" in the manifest.")
             fun JsonObject.requireInt(key: String): Int =
                 get(key)?.jsonPrimitive?.int
                     ?: throw IllegalArgumentException("No \"$key\" in the manifest.")
@@ -147,15 +165,11 @@ data class BackupManifest(
                     covers = counts.requireInt("covers"),
                     ownedBooks = counts.requireInt("ownedBooks")
                 ),
-                sources = root["sources"]?.jsonArray.orEmpty().map { element ->
-                    val source = element.jsonObject
-                    Source(
-                        provider = source.string("provider"),
-                        name = source.string("name"),
-                        authority = source.string("authority")
-                    )
-                }
+                sources = root["sources"]?.jsonArray.orEmpty().map { Source.fromJson(it.jsonObject) }
             )
         }
     }
 }
+
+internal fun JsonObject.optionalString(key: String): String? =
+    get(key)?.jsonPrimitive?.takeIf { it.isString }?.content

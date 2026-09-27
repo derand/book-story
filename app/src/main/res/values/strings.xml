@@ -220,6 +220,16 @@
     <string name="restore_backup_dialog_saving">Saving the current library…</string>
     <string name="restore_backup_dialog_saved">The current library is saved: %1$d books, %2$d reading sessions, %3$s.</string>
     <string name="restore_backup_dialog_restarting">Restarting…</string>
+    <string name="restore_done_dialog">Library restored</string>
+    <string name="restore_done_dialog_desc">The backup is now your library: %1$d books, %2$d reading sessions.</string>
+    <!-- %1$s: the list of folders, one per line, each from restore_done_dialog_folder. -->
+    <string name="restore_done_dialog_missing">Access to book folders does not carry over, so books from these folders will not open until you add the folders again in Settings → Browse. Add the same folders as before: a book on Google Drive is found only through the folder it was added from.\n\n%1$s</string>
+    <!-- One missing folder: %1$s its name, %2$s the app holding it ("Drive"). -->
+    <string name="restore_done_dialog_folder">• %1$s (%2$s)</string>
+    <string name="restore_done_dialog_add_folders">Add folders</string>
+    <string name="restore_done_dialog_later">Later</string>
+    <string name="restore_failed_dialog">Restore failed</string>
+    <string name="restore_failed_dialog_desc">The backup could not be put in place, so the library may be partly replaced by it. The backup file itself is unchanged: you can restore it again in Settings → Backup.</string>
 
     <!-- Settings subcategories -->
     <string name="font_reader_settings">Font</string>

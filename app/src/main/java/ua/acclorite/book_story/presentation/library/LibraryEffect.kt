@@ -14,6 +14,7 @@ sealed class LibraryEffect {
     data object OnBooksMoved : LibraryEffect()
     data object OnBooksDeleted : LibraryEffect()
     data object OnNavigateToLibrarySettings : LibraryEffect()
+    data object OnNavigateToBrowseSettings : LibraryEffect()
     data object OnNavigateToBrowse : LibraryEffect()
     data class OnNavigateToBookInfo(val id: Int) : LibraryEffect()
     data class OnNavigateToReader(val id: Int) : LibraryEffect()

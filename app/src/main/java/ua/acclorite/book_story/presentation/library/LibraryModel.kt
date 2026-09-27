@@ -23,6 +23,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import ua.acclorite.book_story.domain.use_case.backup.DismissRestoreNoticeUseCase
+import ua.acclorite.book_story.domain.use_case.backup.GetRestoreNoticeUseCase
 import ua.acclorite.book_story.domain.use_case.book.DeleteBookUseCase
 import ua.acclorite.book_story.domain.use_case.book.SearchBooksUseCase
 import ua.acclorite.book_story.domain.use_case.book.UpdateBookUseCase
@@ -36,7 +38,9 @@ import kotlin.coroutines.coroutineContext
 class LibraryModel @Inject constructor(
     private val updateBookUseCase: UpdateBookUseCase,
     private val searchBooksUseCase: SearchBooksUseCase,
-    private val deleteBookUseCase: DeleteBookUseCase
+    private val deleteBookUseCase: DeleteBookUseCase,
+    private val getRestoreNoticeUseCase: GetRestoreNoticeUseCase,
+    private val dismissRestoreNoticeUseCase: DismissRestoreNoticeUseCase
 ) : ViewModel() {
 
     private val mutex = Mutex()
@@ -54,6 +58,13 @@ class LibraryModel @Inject constructor(
                 hideSearch = true
             )
         )
+
+        // The first start after a restore says what happened: a restart that
+        // explains nothing looks like a crash.
+        viewModelScope.launch {
+            val notice = getRestoreNoticeUseCase() ?: return@launch
+            _state.update { it.copy(restoreNotice = notice) }
+        }
 
         /* Observe channel - - - - - - - - - - - */
         viewModelScope.launch {
@@ -285,6 +296,17 @@ class LibraryModel @Inject constructor(
                             dialog = null
                         )
                     }
+                }
+
+                is LibraryEvent.OnDismissRestoreNotice -> {
+                    _state.update { it.copy(restoreNotice = null) }
+                    dismissRestoreNoticeUseCase()
+                }
+
+                is LibraryEvent.OnRestoreNoticeAddFolders -> {
+                    _state.update { it.copy(restoreNotice = null) }
+                    dismissRestoreNoticeUseCase()
+                    _effects.emit(LibraryEffect.OnNavigateToBrowseSettings)
                 }
 
                 is LibraryEvent.OnShowFilterBottomSheet -> {

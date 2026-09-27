@@ -34,9 +34,16 @@ object RestoreFiles {
     /**
      * Present only while a confirmed restore waits for the next start. Written
      * after the staging is complete and deleted after the swap is, so a swap
-     * that was interrupted is simply done again.
+     * that was interrupted is simply done again. It holds the number of starts
+     * that have tried the swap, so one that fails every time is given up.
      */
     const val PENDING_MARKER = "restore-pending"
+
+    /**
+     * What the last swap did, for the Library to tell the user once: written
+     * by the swap, deleted when its dialog is dismissed.
+     */
+    const val DONE_NOTE = "restore-done.json"
 }
 
 /**
@@ -102,7 +109,7 @@ class RestoreStaging @Inject constructor(
     /** Hands the staged backup to the next start, which swaps it in. */
     fun markPending() {
         check(File(stagingDir, BackupEntries.MANIFEST).isFile) { "Nothing is staged." }
-        marker.writeText(System.currentTimeMillis().toString())
+        marker.writeText("0")
     }
 
     /**

@@ -23,9 +23,6 @@ import javax.inject.Singleton
 
 private const val TAG = "BackupWriter"
 
-/** The name `DataStoreImpl` gives `preferencesDataStore`. */
-private const val DATA_STORE_NAME = "data_store"
-
 /**
  * Writes everything an uninstall would take into one zip: the database, the
  * settings, the covers and the books the app keeps a copy of.
@@ -66,15 +63,15 @@ class BackupWriter @Inject constructor(
         try {
             // The database is copied out first and read from the copy, so the
             // counts in the manifest describe exactly the file in the archive.
-            val database = snapshot.copyTo(File(workDir, "book_db"))
+            val database = snapshot.copyTo(File(workDir, LiveFiles.DATABASE))
             val (schema, books, sessions) = readDatabase(database)
 
-            val covers = File(filesDir, "covers").listFiles()
+            val covers = File(filesDir, LiveFiles.COVERS).listFiles()
                 ?.filter { it.isFile }
                 .orEmpty()
-            val ownedRoot = File(filesDir, "owned_books")
+            val ownedRoot = File(filesDir, LiveFiles.OWNED_BOOKS)
             val ownedBooks = ownedRoot.walkTopDown().filter { it.isFile }.toList()
-            val settings = application.preferencesDataStoreFile(DATA_STORE_NAME)
+            val settings = application.preferencesDataStoreFile(LiveFiles.DATA_STORE)
 
             val manifest = BackupManifest(
                 format = BACKUP_FORMAT,

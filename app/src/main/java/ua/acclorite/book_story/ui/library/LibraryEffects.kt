@@ -18,6 +18,7 @@ import ua.acclorite.book_story.presentation.browse.BrowseScreen
 import ua.acclorite.book_story.presentation.history.HistoryScreen
 import ua.acclorite.book_story.presentation.library.LibraryEffect
 import ua.acclorite.book_story.presentation.reader.ReaderScreen
+import ua.acclorite.book_story.presentation.settings.BrowseSettingsScreen
 import ua.acclorite.book_story.presentation.settings.LibrarySettingsScreen
 import ua.acclorite.book_story.ui.common.helpers.showToast
 import ua.acclorite.book_story.ui.navigator.LocalNavigator
@@ -46,6 +47,10 @@ fun LibraryEffects(effects: SharedFlow<LibraryEffect>, focusRequester: FocusRequ
 
                 is LibraryEffect.OnNavigateToLibrarySettings -> {
                     navigator.push(LibrarySettingsScreen)
+                }
+
+                is LibraryEffect.OnNavigateToBrowseSettings -> {
+                    navigator.push(BrowseSettingsScreen)
                 }
 
                 is LibraryEffect.OnNavigateToBrowse -> {
