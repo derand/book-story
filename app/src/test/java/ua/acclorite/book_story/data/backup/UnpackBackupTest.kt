@@ -133,6 +133,19 @@ class UnpackBackupTest {
     }
 
     @Test
+    fun `an entry climbing back into the staging cannot replace the checked manifest`() {
+        val forged = manifest.copy(filesDir = "/elsewhere").toJson()
+        val input = backup(BackupEntries.OWNED_BOOKS + "../" + BackupEntries.MANIFEST to forged)
+        assertEquals(RestoreException.Reason.DAMAGED, refusal(input).reason)
+    }
+
+    @Test
+    fun `an entry naming a file a second way is refused`() {
+        val input = backup(BackupEntries.OWNED_BOOKS + "7//book.epub" to "another")
+        assertEquals(RestoreException.Reason.DAMAGED, refusal(input).reason)
+    }
+
+    @Test
     fun `a cover in a subdirectory is refused`() {
         val input = backup(BackupEntries.COVERS + "../databases/book_db" to "x")
         assertEquals(RestoreException.Reason.DAMAGED, refusal(input).reason)

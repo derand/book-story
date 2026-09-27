@@ -260,7 +260,18 @@ internal fun checkManifest(text: String, maxSchema: Int): BackupManifest {
     return manifest
 }
 
+/**
+ * Every part of the name is a plain name. Staying inside the staging is checked
+ * on the canonical path, but that is not enough: `owned_books/../manifest.json`
+ * stays inside and would overwrite the manifest already checked, under a name
+ * the duplicate check has not seen. An empty part (`a//b`) is refused for the
+ * same reason — it names the same file as `a/b`.
+ */
+private fun hasPlainParts(name: String): Boolean =
+    name.split('/').none { it.isEmpty() || it == "." || it == ".." }
+
 private fun isAllowedEntry(name: String): Boolean = when {
+    !hasPlainParts(name) -> false
     name == BackupEntries.MANIFEST -> true
     name == BackupEntries.DATABASE -> true
     name == BackupEntries.SETTINGS -> true
@@ -275,7 +286,7 @@ private fun isAllowedEntry(name: String): Boolean = when {
 
 private fun isAllowedDirectory(name: String): Boolean =
     name == BackupEntries.COVERS ||
-            name.startsWith(BackupEntries.OWNED_BOOKS) ||
+            (name.startsWith(BackupEntries.OWNED_BOOKS) && hasPlainParts(name.removeSuffix("/"))) ||
             name == BackupEntries.DATABASE.substringBeforeLast('/') + "/" ||
             name == BackupEntries.SETTINGS.substringBeforeLast('/') + "/"
 

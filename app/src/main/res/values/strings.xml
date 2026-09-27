@@ -201,10 +201,28 @@
     <string name="library_settings_desc">Categories, display, tabs</string>
     <string name="backup_settings">Backup</string>
     <string name="backup_settings_desc">Back up and restore the library</string>
+    <!-- The counts a backup reports, filled into the strings below. -->
+    <plurals name="backup_books_plural">
+        <item quantity="one">%d book</item>
+        <item quantity="other">%d books</item>
+    </plurals>
+    <plurals name="backup_sessions_plural">
+        <item quantity="one">%d reading session</item>
+        <item quantity="other">%d reading sessions</item>
+    </plurals>
+    <plurals name="backup_covers_plural">
+        <item quantity="one">%d cover</item>
+        <item quantity="other">%d covers</item>
+    </plurals>
+    <plurals name="backup_owned_books_plural">
+        <item quantity="one">%d book kept by the app</item>
+        <item quantity="other">%d books kept by the app</item>
+    </plurals>
     <string name="export_backup_option">Back up</string>
     <string name="export_backup_option_desc">Saves the library, reading statistics, settings and the books the app keeps copies of to one file</string>
     <string name="export_backup_in_progress">Backing up…</string>
-    <string name="export_backup_done">Saved: %1$d books, %2$d reading sessions, %3$s</string>
+    <!-- %1$s from backup_books_plural, %2$s from backup_sessions_plural, %3$s the file size. -->
+    <string name="export_backup_done">Saved: %1$s, %2$s, %3$s</string>
     <string name="export_backup_failed">Could not back up: %1$s</string>
     <string name="restore_backup_option">Restore</string>
     <string name="restore_backup_option_desc">Replaces the library, reading statistics and settings with the ones in a backup file</string>
@@ -214,14 +232,14 @@
     <string name="restore_backup_damaged">Not restored: the backup is damaged (%1$s)</string>
     <string name="restore_backup_failed">Not restored: %1$s</string>
     <string name="restore_backup_dialog">Restore this backup?</string>
-    <string name="restore_backup_dialog_desc">The backup becomes your library: the books, the reading statistics and the settings in it replace the current ones, which are lost unless you save them first. The app restarts to finish.\n\nIn the backup, made %1$s: %2$d books, %3$d reading sessions, %4$d covers, %5$d books kept by the app.</string>
+    <string name="restore_backup_dialog_desc">The backup becomes your library: the books, the reading statistics and the settings in it replace the current ones, which are lost unless you save them first. The app restarts to finish.\n\nIn the backup, made %1$s: %2$s, %3$s, %4$s, %5$s.</string>
     <string name="restore_backup_dialog_action">Restore</string>
     <string name="restore_backup_dialog_save_first">Save current first</string>
     <string name="restore_backup_dialog_saving">Saving the current library…</string>
-    <string name="restore_backup_dialog_saved">The current library is saved: %1$d books, %2$d reading sessions, %3$s.</string>
+    <string name="restore_backup_dialog_saved">The current library is saved: %1$s, %2$s, %3$s.</string>
     <string name="restore_backup_dialog_restarting">Restarting…</string>
     <string name="restore_done_dialog">Library restored</string>
-    <string name="restore_done_dialog_desc">The backup is now your library: %1$d books, %2$d reading sessions.</string>
+    <string name="restore_done_dialog_desc">The backup is now your library: %1$s, %2$s.</string>
     <!-- %1$s: the list of folders, one per line, each from restore_done_dialog_folder. -->
     <string name="restore_done_dialog_missing">Access to book folders does not carry over, so books from these folders will not open until you add the folders again in Settings → Browse. Add the same folders as before: a book on Google Drive is found only through the folder it was added from.\n\n%1$s</string>
     <!-- One missing folder: %1$s its name, %2$s the app holding it ("Drive"). -->

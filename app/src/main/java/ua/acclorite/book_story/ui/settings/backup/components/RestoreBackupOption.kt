@@ -19,6 +19,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -120,14 +121,15 @@ fun RestoreBackupOption() {
     val staged = state.value.stagedRestore ?: return
     val current = state.value
 
+    val counts = staged.counts
     val summary = stringResource(
         id = R.string.restore_backup_dialog_desc,
         DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT)
             .format(Date(staged.createdAt)),
-        staged.counts.books,
-        staged.counts.sessions,
-        staged.counts.covers,
-        staged.counts.ownedBooks
+        pluralStringResource(R.plurals.backup_books_plural, counts.books, counts.books),
+        pluralStringResource(R.plurals.backup_sessions_plural, counts.sessions, counts.sessions),
+        pluralStringResource(R.plurals.backup_covers_plural, counts.covers, counts.covers),
+        pluralStringResource(R.plurals.backup_owned_books_plural, counts.ownedBooks, counts.ownedBooks)
     )
     val saved = current.savedBeforeRestore
     val status = when {
@@ -138,12 +140,15 @@ fun RestoreBackupOption() {
             current.exportError
         )
 
-        saved != null -> stringResource(
-            id = R.string.restore_backup_dialog_saved,
-            saved.manifest.counts.books,
-            saved.manifest.counts.sessions,
-            Formatter.formatShortFileSize(context, saved.bytes)
-        )
+        saved != null -> {
+            val savedCounts = saved.manifest.counts
+            stringResource(
+                id = R.string.restore_backup_dialog_saved,
+                pluralStringResource(R.plurals.backup_books_plural, savedCounts.books, savedCounts.books),
+                pluralStringResource(R.plurals.backup_sessions_plural, savedCounts.sessions, savedCounts.sessions),
+                Formatter.formatShortFileSize(context, saved.bytes)
+            )
+        }
 
         else -> null
     }

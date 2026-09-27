@@ -12,6 +12,7 @@ import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.Restore
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import ua.acclorite.book_story.R
 import ua.acclorite.book_story.domain.use_case.backup.RestoreNotice
@@ -50,8 +51,8 @@ fun LibraryRestoreDialog(
 
     val summary = stringResource(
         id = R.string.restore_done_dialog_desc,
-        notice.books,
-        notice.sessions
+        pluralStringResource(R.plurals.backup_books_plural, notice.books, notice.books),
+        pluralStringResource(R.plurals.backup_sessions_plural, notice.sessions, notice.sessions)
     )
     if (notice.missingSources.isEmpty()) {
         Dialog(

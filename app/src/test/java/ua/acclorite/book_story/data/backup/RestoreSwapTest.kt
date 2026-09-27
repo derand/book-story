@@ -268,6 +268,37 @@ class RestoreSwapTest {
     }
 
     @Test
+    fun `a note that will not write does not crash the start and the staging still goes`() {
+        liveLibrary()
+        stage()
+        // A directory where the note is first written: every write of it fails,
+        // as it would on a full disk.
+        File(note.path + ".tmp").mkdirs()
+
+        swapPendingRestore(targets)
+
+        assertFalse(staging.exists())
+        assertFalse(marker.exists())
+        assertFalse(note.exists())
+    }
+
+    @Test
+    fun `a marker that cannot be read or written does not crash the start`() {
+        liveLibrary()
+        stage()
+        marker.delete()
+        // Present, so the restore is pending, but it neither reads nor writes.
+        marker.mkdirs()
+        File(marker, "child").writeText("keeps the directory from being deleted")
+
+        swapPendingRestore(targets)
+
+        assertFalse(staging.exists())
+        assertTrue(RestoreOutcome.fromJson(note.readText()).failed)
+        assertEquals("live settings", targets.dataStore.readText())
+    }
+
+    @Test
     fun `rebase leaves every path that does not start with the prefix alone`() {
         val database = File(temp.root, "rebase/book_db")
         val untouched = listOf(

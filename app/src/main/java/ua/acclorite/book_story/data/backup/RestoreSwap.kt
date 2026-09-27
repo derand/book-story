@@ -52,7 +52,8 @@ internal class RestoreTargets(
  * A swap that fails is tried again, [MAX_SWAP_ATTEMPTS] times in all, and then
  * given up: the staging goes, the app starts with whatever is in place, and
  * the Library says the restore failed. Crashing on every start instead would
- * leave no way into the app at all.
+ * leave no way into the app at all, so nothing in here throws — not even when
+ * the marker or the note cannot be written.
  */
 fun swapPendingRestore(context: Context) {
     swapPendingRestore(
@@ -65,6 +66,19 @@ fun swapPendingRestore(context: Context) {
 }
 
 internal fun swapPendingRestore(targets: RestoreTargets) {
+    try {
+        runSwap(targets)
+    } catch (e: Exception) {
+        // A step outside the attempts failed: the marker or the note would not
+        // write, most likely on a disk the swap's second copy filled. Thrown
+        // from here it would crash this start and, with the staging still
+        // holding the space, every start after it.
+        logE(TAG, "The restore could not finish: ${e.messageForLog()}")
+        abandon(targets)
+    }
+}
+
+private fun runSwap(targets: RestoreTargets) {
     val staging = File(targets.filesDir, RestoreFiles.STAGING_DIR)
     val marker = File(targets.filesDir, RestoreFiles.PENDING_MARKER)
     val manifestFile = File(staging, BackupEntries.MANIFEST)
@@ -221,11 +235,28 @@ private fun replaceTree(live: File, staged: File) {
  * no staging.
  */
 private fun finish(targets: RestoreTargets, staging: File, marker: File, outcome: RestoreOutcome) {
+    writeNote(targets, outcome)
+    staging.deleteRecursively()
+    marker.delete()
+}
+
+/**
+ * The way out when even giving up would not write: the staging goes first, to
+ * free the space, and then the note is tried once more. Nothing in here throws.
+ * A death before the note leaves a marker without staging, which the next
+ * start takes for a finished swap — the one case where the user is not told.
+ */
+private fun abandon(targets: RestoreTargets) {
+    File(targets.filesDir, RestoreFiles.STAGING_DIR).deleteRecursively()
+    runCatching {
+        writeNote(targets, RestoreOutcome(failed = true, books = 0, sessions = 0, sources = emptyList()))
+    }.onFailure { logE(TAG, "The note would not write either: ${it.messageForLog()}") }
+    File(targets.filesDir, RestoreFiles.PENDING_MARKER).delete()
+}
+
+private fun writeNote(targets: RestoreTargets, outcome: RestoreOutcome) {
     val note = File(targets.filesDir, RestoreFiles.DONE_NOTE)
     val partial = File(note.path + ".tmp")
     partial.writeText(outcome.toJson())
     partial.renameTo(note)
-
-    staging.deleteRecursively()
-    marker.delete()
 }

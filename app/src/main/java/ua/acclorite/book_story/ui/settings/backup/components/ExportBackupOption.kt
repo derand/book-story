@@ -19,6 +19,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -58,12 +59,15 @@ fun ExportBackupOption() {
                 current.exportError
             )
 
-            current.lastExport != null -> stringResource(
-                id = R.string.export_backup_done,
-                current.lastExport.manifest.counts.books,
-                current.lastExport.manifest.counts.sessions,
-                Formatter.formatShortFileSize(context, current.lastExport.bytes)
-            )
+            current.lastExport != null -> {
+                val counts = current.lastExport.manifest.counts
+                stringResource(
+                    id = R.string.export_backup_done,
+                    pluralStringResource(R.plurals.backup_books_plural, counts.books, counts.books),
+                    pluralStringResource(R.plurals.backup_sessions_plural, counts.sessions, counts.sessions),
+                    Formatter.formatShortFileSize(context, current.lastExport.bytes)
+                )
+            }
 
             else -> stringResource(id = R.string.export_backup_option_desc)
         }
