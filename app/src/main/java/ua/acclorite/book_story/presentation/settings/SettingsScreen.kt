@@ -44,6 +44,9 @@ object SettingsScreen : Screen, Parcelable {
             navigateToBrowseSettings = {
                 navigator.push(BrowseSettingsScreen)
             },
+            navigateToBackupSettings = {
+                navigator.push(BackupSettingsScreen)
+            },
             navigateToStart = {
                 // Kept in the back stack, and [showStartScreen] deliberately not
                 // raised: this is a guide the reader asked to see again, not an

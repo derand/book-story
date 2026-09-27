@@ -24,6 +24,13 @@ import ua.acclorite.book_story.data.local.dto.ReadingCoverageEntity
 import ua.acclorite.book_story.data.local.dto.ReadingSessionEntity
 import java.io.File
 
+/**
+ * The schema version this build writes and the newest one it can open. A
+ * restore compares a backup's against it: an older database is migrated by
+ * Room, a newer one would make the app fail on its first start.
+ */
+const val DATABASE_VERSION = 24
+
 @Database(
     entities = [
         BookEntity::class,
@@ -34,7 +41,7 @@ import java.io.File
         ReadBookEntity::class,
         ReadingCoverageEntity::class
     ],
-    version = 24,
+    version = DATABASE_VERSION,
     autoMigrations = [
         AutoMigration(1, 2),
         AutoMigration(2, 3),

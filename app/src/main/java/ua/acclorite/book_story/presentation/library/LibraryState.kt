@@ -7,6 +7,7 @@
 package ua.acclorite.book_story.presentation.library
 
 import androidx.compose.runtime.Immutable
+import ua.acclorite.book_story.domain.use_case.backup.RestoreNotice
 import ua.acclorite.book_story.core.BottomSheet
 import ua.acclorite.book_story.core.Dialog
 import ua.acclorite.book_story.presentation.library.model.SelectableBook
@@ -26,5 +27,8 @@ data class LibraryState(
     val hasFocused: Boolean = false,
 
     val dialog: Dialog? = null,
-    val bottomSheet: BottomSheet? = null
+    val bottomSheet: BottomSheet? = null,
+
+    /** Apart from [dialog]: it arrives on its own, whatever else is open. */
+    val restoreNotice: RestoreNotice? = null
 )

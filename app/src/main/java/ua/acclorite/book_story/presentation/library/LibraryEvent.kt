@@ -52,6 +52,10 @@ sealed class LibraryEvent {
 
     data object OnDismissDialog : LibraryEvent()
 
+    data object OnDismissRestoreNotice : LibraryEvent()
+
+    data object OnRestoreNoticeAddFolders : LibraryEvent()
+
     data object OnShowFilterBottomSheet : LibraryEvent()
 
     data object OnDismissBottomSheet : LibraryEvent()

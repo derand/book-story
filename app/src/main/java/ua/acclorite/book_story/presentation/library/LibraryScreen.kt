@@ -28,6 +28,7 @@ import ua.acclorite.book_story.presentation.settings.SettingsModel
 import ua.acclorite.book_story.ui.common.helpers.LocalSettings
 import ua.acclorite.book_story.ui.library.LibraryContent
 import ua.acclorite.book_story.ui.library.LibraryEffects
+import ua.acclorite.book_story.ui.library.LibraryRestoreDialog
 
 @Parcelize
 object LibraryScreen : Screen, Parcelable {
@@ -155,5 +156,13 @@ object LibraryScreen : Screen, Parcelable {
             navigateToBookInfo = screenModel::onEvent,
             navigateToLibrarySettings = screenModel::onEvent
         )
+
+        state.value.restoreNotice?.let { notice ->
+            LibraryRestoreDialog(
+                notice = notice,
+                dismiss = screenModel::onEvent,
+                addFolders = screenModel::onEvent
+            )
+        }
     }
 }

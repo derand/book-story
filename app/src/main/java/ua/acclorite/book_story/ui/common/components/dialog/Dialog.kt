@@ -61,6 +61,9 @@ fun Dialog(
     actionEnabled: Boolean?,
     onDismiss: () -> Unit,
     onAction: () -> Unit,
+    action: String? = null,
+    dismiss: String? = null,
+    showDismiss: Boolean = true,
     secondaryAction: String? = null,
     onSecondaryAction: (() -> Unit)? = null,
     withContent: Boolean,
@@ -178,21 +181,23 @@ fun Dialog(
                             horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.End),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            TextButton(
-                                onClick = {
-                                    if (disableOnClick) {
-                                        actionClicked = true
-                                    }
-                                    onDismiss()
-                                },
-                                enabled = !actionClicked
-                            ) {
-                                StyledText(
-                                    text = stringResource(id = R.string.cancel),
-                                    style = MaterialTheme.typography.labelLarge.copy(
-                                        color = MaterialTheme.colorScheme.primary
+                            if (showDismiss) {
+                                TextButton(
+                                    onClick = {
+                                        if (disableOnClick) {
+                                            actionClicked = true
+                                        }
+                                        onDismiss()
+                                    },
+                                    enabled = !actionClicked
+                                ) {
+                                    StyledText(
+                                        text = dismiss ?: stringResource(id = R.string.cancel),
+                                        style = MaterialTheme.typography.labelLarge.copy(
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
                                     )
-                                )
+                                }
                             }
 
                             TextButton(
@@ -205,7 +210,7 @@ fun Dialog(
                                 enabled = actionEnabled == true && !actionClicked
                             ) {
                                 StyledText(
-                                    text = stringResource(id = R.string.ok),
+                                    text = action ?: stringResource(id = R.string.ok),
                                     style = MaterialTheme.typography.labelLarge.copy(
                                         color = if (actionEnabled == true) MaterialTheme.colorScheme.primary
                                         else MaterialTheme.colorScheme.primary.copy(0.5f)
