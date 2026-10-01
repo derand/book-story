@@ -35,6 +35,11 @@ private const val ATTEMPTS = 3
  * copy was taken. A log that grew means the copy is thrown away and taken
  * again.
  *
+ * All of that holds only in WAL mode. With a rollback journal there is no log:
+ * a write goes straight into the file being copied, and the check above would
+ * pass on a torn copy. The app asks Room for WAL (`AppModule`), and a copy
+ * refuses to start in any other mode rather than trust a check that cannot see.
+ *
  * `VACUUM INTO` would give the same guarantee in one statement, but it needs
  * SQLite 3.27, which Android ships from API 30; `minSdk` is 26.
  */
@@ -49,9 +54,13 @@ class DatabaseSnapshot @Inject constructor(
 
     /**
      * Copies the database to [destination], replacing whatever is there, and
-     * returns it. Throws if no quiet moment came in [ATTEMPTS] tries.
+     * returns it. Throws if the database is not in WAL mode, or if no quiet
+     * moment came in [ATTEMPTS] tries.
      */
     fun copyTo(destination: File): File {
+        val mode = journalMode()
+        check(mode == "wal") { "The database is in $mode mode, not WAL; a copy could not be checked." }
+
         val source = file
         val wal = File(source.path + "-wal")
 
@@ -69,6 +78,14 @@ class DatabaseSnapshot @Inject constructor(
         destination.delete()
         throw IllegalStateException("The database kept changing while it was copied.")
     }
+
+    /** The journal mode SQLite is actually using, in lower case. */
+    private fun journalMode(): String =
+        database.openHelper.writableDatabase
+            .query("PRAGMA journal_mode").use { cursor ->
+                cursor.moveToFirst()
+                cursor.getString(0).lowercase()
+            }
 
     /** Folds the write-ahead log into the main file and empties it. */
     fun checkpoint() {
