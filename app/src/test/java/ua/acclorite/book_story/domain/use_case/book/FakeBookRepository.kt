@@ -29,6 +29,10 @@ class FakeBookRepository(
     var updated: Book? = null
         private set
 
+    /** Whether the last update stated the book's document identity. */
+    var updatedStatesIdentity: Boolean = false
+        private set
+
     var deleted: Book? = null
         private set
 
@@ -47,8 +51,9 @@ class FakeBookRepository(
 
     override suspend fun findPreviews(): Result<List<Book>> = Result.success(previews)
 
-    override suspend fun updateBook(book: Book): Result<Unit> {
+    override suspend fun updateBook(book: Book, statesIdentity: Boolean): Result<Unit> {
         updated = book
+        updatedStatesIdentity = statesIdentity
         return Result.success(Unit)
     }
 

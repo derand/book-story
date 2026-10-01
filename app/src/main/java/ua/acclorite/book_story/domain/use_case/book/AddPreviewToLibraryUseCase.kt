@@ -87,7 +87,7 @@ class AddPreviewToLibraryUseCase @Inject constructor(
             documentAuthority = reachable.documentAuthority,
             documentId = reachable.documentId
         )
-        bookRepository.updateBook(promoted).onFailure {
+        bookRepository.updateBook(promoted, statesIdentity = true).onFailure {
             logW(TAG, "Could not add [${book.id}]: ${it.messageForLog()}")
             return Result.Failed
         }

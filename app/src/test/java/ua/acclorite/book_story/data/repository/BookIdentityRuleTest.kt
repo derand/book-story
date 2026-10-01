@@ -15,10 +15,11 @@ import org.junit.Test
  * Which document identity a book keeps when its row is written.
  *
  * Every screen writes the whole row back from a copy it loaded earlier, and
- * those copies disagree about the identity, so the rule has to be about the
- * book rather than about who is talking. Both ways of getting it wrong are
- * silent: erase the identity and the book resolves the slow way forever, keep a
- * stale one and it opens a file the user has moved away from.
+ * those copies disagree about the identity, so only a caller that has just
+ * asked the provider may change it. Every way of getting it wrong is silent:
+ * erase the identity, or let an old copy overwrite a new one, and the book
+ * resolves the slow way forever; keep a stale one past a move and it opens a
+ * file the user has moved away from.
  */
 class BookIdentityRuleTest {
 
@@ -38,17 +39,46 @@ class BookIdentityRuleTest {
     }
 
     @Test
-    fun `a caller holding an identity states it`() {
+    fun `a caller that states an identity has it written`() {
+        // Adding a preview to the library, with the id of the file as the grant
+        // reaches it rather than as the handing-over app did.
         val result = identityToWrite(
             incoming = BookIdentity(path, drive, "acc=1;doc=NEW"),
-            stored = identified
+            stored = identified,
+            statesIdentity = true
         )
 
         assertEquals("acc=1;doc=NEW", result.documentId)
     }
 
+    @Test
+    fun `a caller that states no identity has it erased`() {
+        // A preview reached through a grant that answers with no document id:
+        // the one the preview arrived with belongs to another provider.
+        val result = identityToWrite(incoming = unidentified, stored = identified, statesIdentity = true)
+
+        assertNull(result.documentAuthority)
+        assertNull(result.documentId)
+    }
+
     /**
-     * The defect this fixes. Book info holds a copy loaded after the identity
+     * The defect this fixes. The reader's copy is loaded before the open that
+     * learns the identity and is written back right after it, so where the id
+     * had changed — another device, after a restore — the old one won, and
+     * every open looked it up in vain and then descended the path.
+     */
+    @Test
+    fun `a caller holding an old identity does not overwrite the stored one`() {
+        val result = identityToWrite(
+            incoming = BookIdentity(path, drive, "acc=2;doc=OLD"),
+            stored = identified
+        )
+
+        assertEquals("acc=1;doc=A", result.documentId)
+    }
+
+    /**
+     * An earlier defect. Book info holds a copy loaded after the identity
      * was written, so it carries one — and a rule about the caller kept it,
      * leaving the row with a new path and an id describing the old place. The
      * book went on opening the file it had always opened.
@@ -56,10 +86,13 @@ class BookIdentityRuleTest {
     @Test
     fun `a path that changed drops the identity, whatever the caller carries`() {
         val moved = identified.copy(filePath = "/storage/emulated/0/Download/solaris.fb2")
-        val result = identityToWrite(incoming = moved, stored = identified)
 
-        assertNull(result.documentAuthority)
-        assertNull(result.documentId)
+        listOf(false, true).forEach { states ->
+            val result = identityToWrite(incoming = moved, stored = identified, statesIdentity = states)
+
+            assertNull(result.documentAuthority)
+            assertNull(result.documentId)
+        }
     }
 
     @Test

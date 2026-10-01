@@ -589,9 +589,12 @@ class BookRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun updateBook(book: Book): Result<Unit> = runCatchingCancellable {
+    override suspend fun updateBook(
+        book: Book,
+        statesIdentity: Boolean
+    ): Result<Unit> = runCatchingCancellable {
         withContext(Dispatchers.IO) {
-            database.bookDao.updateBook(withStoredIdentity(book)).also {
+            database.bookDao.updateBook(withStoredIdentity(book, statesIdentity)).also {
                 if (it == 0) throw Exception("Could not update book in database.")
             }
         }
@@ -603,11 +606,11 @@ class BookRepositoryImpl @Inject constructor(
      *
      * Every screen updates a book by writing the whole row back from a [Book] it
      * loaded earlier, and those copies disagree about the identity: the reader's
-     * predates the open that learned it, the info screen's is current. The rule
-     * cannot be about which of them is talking, so [identityToWrite] states it
-     * about the book instead.
+     * predates the open that learned it, the info screen's is current. Neither
+     * is asking the provider, so neither changes it; only a caller that
+     * [statesIdentity] does. [identityToWrite] has the whole rule.
      */
-    private suspend fun withStoredIdentity(book: Book): BookEntity {
+    private suspend fun withStoredIdentity(book: Book, statesIdentity: Boolean): BookEntity {
         val entity = bookMapper.toBookEntity(book)
         val stored = database.bookDao.findBookById(book.id)
 
@@ -615,7 +618,8 @@ class BookRepositoryImpl @Inject constructor(
             incoming = BookIdentity(book.filePath, book.documentAuthority, book.documentId),
             stored = stored?.let {
                 BookIdentity(it.filePath, it.documentAuthority, it.documentId)
-            }
+            },
+            statesIdentity = statesIdentity
         )
 
         return entity.copy(
