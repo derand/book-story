@@ -65,6 +65,8 @@ class AddPreviewToLibraryUseCaseTest {
         assertTrue(result is AddPreviewToLibraryUseCase.Result.Added)
         assertEquals(true, repository.updated?.inLibrary)
         assertEquals(7, repository.updated?.id)
+        // The id is the one the grant just answered with, not the preview's.
+        assertTrue(repository.updatedStatesIdentity)
         // What was written comes back, so the reader can adopt it: it writes the
         // whole book row on every settled scroll, and a stale copy would undo
         // the promotion at the next one.

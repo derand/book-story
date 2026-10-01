@@ -105,8 +105,15 @@ interface BookRepository {
      */
     suspend fun findPreviews(): Result<List<Book>>
 
+    /**
+     * Writes the row back from [book]. Its document identity is written only
+     * when the caller [statesIdentity] — has just asked the provider about the
+     * file — or when the path changed, which drops it; otherwise the stored one
+     * stays, since a [Book] held by a screen may predate the open that learned it.
+     */
     suspend fun updateBook(
-        book: Book
+        book: Book,
+        statesIdentity: Boolean = false
     ): Result<Unit>
 
     suspend fun deleteBook(

@@ -23,22 +23,29 @@ internal data class BookIdentity(
  * - a path that changed describes somewhere else, so no identity of the old
  *   place survives it — this is what re-pointing a book by hand does, and what
  *   keeping a previewed book as a copy of its file does;
- * - a caller that carries an identity is stating one, and it is written;
- * - a caller that carries none is not saying the book has none. It is holding a
- *   copy loaded before the identity was learned, which is what the reader holds
- *   on the very open that learned it, so what is stored stays.
+ * - a caller that [statesIdentity] has just asked the provider, and what it
+ *   carries is written, an empty identity included;
+ * - any other caller is holding a copy of the row, loaded at some point before
+ *   this write, so what it carries is old news and what is stored stays.
  *
- * Only the first of those was wrong, and it was wrong in the direction where
- * nothing fails loudly: the path moved, the old id outlived it, and the book
- * went on opening the file it had always opened.
+ * The last two cannot be told apart from the book alone. The reader's copy is
+ * loaded before the open that learns the identity, and writes back on every
+ * save of the position: as long as an id it carried counted as stated, a stale
+ * one overwrote the one just learned, on every open. Nothing failed — the book
+ * was found again by its path, a listing per level — so only a changed id, as
+ * after a restore on another device, ever showed the cost.
  */
-internal fun identityToWrite(incoming: BookIdentity, stored: BookIdentity?): BookIdentity = when {
+internal fun identityToWrite(
+    incoming: BookIdentity,
+    stored: BookIdentity?,
+    statesIdentity: Boolean = false
+): BookIdentity = when {
     stored == null -> incoming
     stored.filePath != incoming.filePath -> incoming.copy(
         documentAuthority = null,
         documentId = null
     )
-    incoming.documentId != null -> incoming
+    statesIdentity -> incoming
     else -> incoming.copy(
         documentAuthority = stored.documentAuthority,
         documentId = stored.documentId
