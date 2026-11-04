@@ -17,14 +17,7 @@ object AboutData {
             drawable = R.drawable.github,
             imageVector = null,
             contentDescription = R.string.github_badge,
-            url = "https://www.github.com/Acclorite"
-        ),
-        Badge(
-            id = "reddit",
-            drawable = R.drawable.reddit,
-            imageVector = null,
-            contentDescription = R.string.reddit_badge,
-            url = "https://www.reddit.com/user/Acclorite/"
+            url = "https://github.com/derand"
         ),
         Badge(
             id = "tryzub",
@@ -32,20 +25,6 @@ object AboutData {
             imageVector = null,
             contentDescription = R.string.tryzub_badge,
             url = null
-        ),
-        Badge(
-            id = "gitlab",
-            drawable = R.drawable.gitlab,
-            imageVector = null,
-            contentDescription = R.string.gitlab_badge,
-            url = "https://www.gitlab.com/Acclorite"
-        ),
-        Badge(
-            id = "codeberg",
-            drawable = R.drawable.codeberg,
-            imageVector = null,
-            contentDescription = R.string.codeberg_badge,
-            url = "https://www.codeberg.org/Acclorite"
         )
     )
 }

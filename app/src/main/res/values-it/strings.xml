@@ -109,7 +109,6 @@
     <string name="delete_books">Eliminare libri?</string>
     <string name="copy">Copia</string>
     <string name="general_tab">Generale</string>
-    <string name="help_translate_option">Aiuta a tradurre</string>
     <string name="yellow_theme">Venere</string>
     <string name="theme_contrast_option">Contrasto tema</string>
     <string name="search_content_desc">Cerca</string>
@@ -306,7 +305,6 @@
     <string name="browse_scan_option_note">Queste cartelle vengono utilizzate per analizzare e recuperare i file in Sfoglia. La rimozione di una cartella qui non eliminerà i file o i libri effettivi dalla Libreria. Per revocare l\'accesso, fare clic sul pulsante corrispondente.</string>
     <string name="scan_browse_settings">Scansiona</string>
     <string name="set_up_scanning">Imposta la scansione</string>
-    <string name="support_development_option">Sostieni lo sviluppo</string>
     <string name="horizontal_gesture_alpha_anim_option">Visibilità animazione</string>
     <string name="error_no_file_manager_app">Nessuna app trovata per scegliere la cartella.</string>
     <string name="report">Rapporto</string>

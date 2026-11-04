@@ -132,25 +132,12 @@ fun AboutLayout(
 
         item {
             AboutItem(
-                title = stringResource(id = R.string.help_translate_option),
+                title = stringResource(id = R.string.support_original_author_option),
                 description = null
             ) {
                 navigateToBrowserPage(
                     AboutEvent.OnNavigateToBrowserPage(
-                        page = LinkData.TRANSLATION
-                    )
-                )
-            }
-        }
-
-        item {
-            AboutItem(
-                title = stringResource(id = R.string.support_development_option),
-                description = null
-            ) {
-                navigateToBrowserPage(
-                    AboutEvent.OnNavigateToBrowserPage(
-                        page = LinkData.SUPPORT
+                        page = LinkData.SUPPORT_ORIGINAL_AUTHOR
                     )
                 )
             }

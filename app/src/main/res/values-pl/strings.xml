@@ -162,7 +162,6 @@
     <string name="app_icon_content_desc">Ikona aplikacji</string>
     <string name="app_version_option">Wersja aplikacji</string>
     <string name="report_bug_option">Zgłoś błąd</string>
-    <string name="help_translate_option">Pomóż przetłumaczyć</string>
     <string name="credits_translation">Tłumaczenie</string>
     <string name="credits_ideas">Pomysły</string>
     <string name="start_language_preferences">Preferencje języka</string>

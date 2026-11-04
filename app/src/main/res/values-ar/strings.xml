@@ -139,7 +139,6 @@
     <string name="credits_ideas">أفكار</string>
     <string name="credits_fonts">الخطوط</string>
     <string name="credits_contribution">المساهمة</string>
-    <string name="help_translate_option">المساعدة بالترجمة</string>
     <string name="credits_translation">الترجمة</string>
     <string name="color_preset_query">إعداد مسبق %1$s</string>
     <string name="press_again_toast">الضغط مرة أخرى لإغلاق التطبيق</string>
@@ -310,7 +309,6 @@
     <string name="horizontal_gesture_alpha_anim_option">الرسوم المتحركة الرؤية</string>
     <string name="display_tab">عرض</string>
     <string name="horizontal_gesture_alpha_anim_option_desc">فعّل الرسوم المتحركة الرؤية عند استخدام إيماءة أفقية</string>
-    <string name="support_development_option">ادعم التطوير</string>
     <string name="horizontal_gesture_pull_anim_option">اسحب الرسوم المتحركة</string>
     <string name="horizontal_gesture_pull_anim_option_desc">فعّل سحب الرسوم المتحركة عند استخدام إيماءة أفقية</string>
     <string name="error_no_file_manager_app">لم يتم العثور على التطبيق لاختيار المجلد.</string>
