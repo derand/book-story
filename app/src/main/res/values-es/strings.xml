@@ -192,7 +192,6 @@
     <string name="alignment_justify">Justificar</string>
     <string name="alignment_center">Centrar</string>
     <string name="alignment_end">Fin</string>
-    <string name="help_translate_option">Ayuda a traducir</string>
     <string name="credits_fonts">Fuentes</string>
     <string name="credits_translation">Traducción</string>
     <string name="credits_contribution">Contribución</string>
@@ -328,7 +327,6 @@
     <string name="font_thickness_light">Fino</string>
     <string name="font_thickness_normal">Normal</string>
     <string name="font_thickness_medium">Medio</string>
-    <string name="support_development_option">Apoyar el desarrollo</string>
     <string name="start_scan_preferences">Preferencias de escaneo</string>
     <string name="crash_description">Por favor, reporta este mensaje de error de la manera más conveniente para ti.</string>
     <string name="pin_content_desc">Fijar</string>

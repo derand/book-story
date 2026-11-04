@@ -156,7 +156,6 @@
     <string name="continue_reading_content_desc">Continuar a ler</string>
     <string name="go_back_content_desc">Voltar</string>
     <string name="start_language_preferences">Prefêrencias linguísticas</string>
-    <string name="help_translate_option">Ajude a traduzir</string>
     <string name="start_done">Está tudo pronto!</string>
     <string name="cover_image_content_desc">Imagem da capa</string>
     <string name="open_reader_settings_content_desc">Configurações do leitor</string>
@@ -314,7 +313,6 @@
     <string name="crash_title">Ops! O aplicativo parou de funcionar.</string>
     <string name="display_tab">Exibição</string>
     <string name="display_settings">Exibição</string>
-    <string name="support_development_option">Apoiar o desenvolvimento</string>
     <string name="crash_description">Por favor, reporte essa mensagem de erro da forma que lhe for mais conveniente.</string>
     <string name="horizontal_gesture_pull_anim_option_desc">Habilitar animação de puxar ao usar gesto horizontal</string>
     <string name="remove_category">Remover categoria?</string>

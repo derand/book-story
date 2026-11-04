@@ -214,7 +214,6 @@
     <string name="unknown">不明</string>
     <string name="author_changed">著者が正常に変更されました.</string>
     <string name="report_bug_option">バグを報告</string>
-    <string name="support_development_option">開発を手伝う</string>
     <string name="slava_ukraini">ウクライナに栄光あれ!</string>
     <string name="credits_translation">翻訳</string>
     <string name="credits_contribution">貢献</string>
@@ -240,7 +239,6 @@
     <string name="app_version_option">バージョン</string>
     <string name="licenses_option">オープンソースライセンス</string>
     <string name="credits_option">クレジット</string>
-    <string name="help_translate_option">翻訳を手伝う</string>
     <string name="credits_updates">アップデートの管理</string>
     <string name="credits_fonts">フォント</string>
     <string name="display_tab">表示</string>

@@ -303,7 +303,6 @@
     <string name="report_bug_option">Hata bildir</string>
     <string name="licenses_option">Açık kaynak lisansları</string>
     <string name="credits_option">Katkıda bulunanlar</string>
-    <string name="help_translate_option">Çeviriye yardım et</string>
     <string name="contributors_option">Katkıda bulunanlar</string>
     <string name="slava_ukraini">Yaşasın Ukrayna!</string>
     <!-- Credits -->
@@ -383,7 +382,6 @@
     <string name="display_settings">Görüntüle</string>
     <string name="horizontal_gesture_alpha_anim_option">Görünürlük animasyonu</string>
     <string name="horizontal_gesture_alpha_anim_option_desc">Yatay hareket kullanılırken görünürlük animasyonunu etkinleştir</string>
-    <string name="support_development_option">Geliştirmeyi destekle</string>
     <string name="crash_title">Hata! Uygulama kapandı.</string>
     <string name="crash_description">Lütfen bu hata mesajını size en kolay gelen yöntemle raporlayın.</string>
     <string name="display_tab">Görüntüle</string>

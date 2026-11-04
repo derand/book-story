@@ -196,7 +196,6 @@
     <string name="double_press_exit_option_desc">Drücken Sie zweimal die Zurück-Taste, um die App zu beenden</string>
     <string name="double_press_exit_option">Zum Beenden zweimal Zurück drücken</string>
     <string name="lavender_theme">Eris</string>
-    <string name="help_translate_option">Übersetzen helfen</string>
     <string name="credits_fonts">Schriftarten</string>
     <string name="credits_translation">Übersetzung</string>
     <string name="credits_ideas">Ideen</string>
@@ -314,7 +313,6 @@
     <string name="display_tab">Anzeige</string>
     <string name="display_settings">Anzeie</string>
     <string name="browse_scan_option_note">Diese Ordner werden zum Scannen und Abrufen von Dateien in der Suchfunktion verwendet. Wenn du einen Ordner entfernst werden die eigentlichen Dateien oder Bücher nicht aus der Bibliothek gelöscht. Um den Zugriff zu widerrufen, klicke auf die entsprechende Schaltfläche.</string>
-    <string name="support_development_option">Development unterstützen</string>
     <string name="horizontal_gesture_pull_anim_option_desc">Zieh-Animation bei Verwendung der horizontalen Geste aktivieren</string>
     <string name="horizontal_gesture_alpha_anim_option">Sichtbarkeitsanimation</string>
     <string name="remove_category">Kategorie entfernen?</string>

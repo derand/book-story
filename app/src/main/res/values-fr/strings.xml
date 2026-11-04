@@ -124,7 +124,6 @@
     <string name="report_bug_option">Signaler un bug</string>
     <string name="licenses_option">Licences Open source</string>
     <string name="credits_option">Crédits</string>
-    <string name="help_translate_option">Aidez à traduire</string>
     <string name="slava_ukraini">Gloire à l\'Ukraine !</string>
     <string name="credits_icon">Icônes</string>
     <string name="credits_updates">Gestion de nouvelles mises à jour</string>
@@ -270,7 +269,6 @@
     <string name="chapter_title_alignment_option">Alignement du titre du chapitre</string>
     <string name="highlighted_reading_option_desc">Surligne le début de chaque mot</string>
     <string name="highlighted_reading_thickness_option">Épaisseur du surlignage</string>
-    <string name="support_development_option">Supporter le développement</string>
     <string name="file_details">Détails du fichier</string>
     <string name="screen_brightness_option">Luminosité</string>
     <string name="horizontal_gesture_option">Geste horizontal</string>

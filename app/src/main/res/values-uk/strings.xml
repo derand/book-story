@@ -392,8 +392,7 @@
     <string name="report_bug_option">Повідомити про помилку</string>
     <string name="licenses_option">Ліцензії з відкритим кодом</string>
     <string name="credits_option">Заслуги</string>
-    <string name="help_translate_option">Допомогти перекласти</string>
-    <string name="support_development_option">Підтримати розробку</string>
+    <string name="support_original_author_option">Підтримати автора оригіналу</string>
     <string name="contributors_option">Контриб\'ютори</string>
     <string name="slava_ukraini">Слава Україні!</string>
     <!-- Badges -->

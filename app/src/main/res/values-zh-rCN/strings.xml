@@ -184,7 +184,6 @@
     <string name="slava_ukraini">荣耀属于乌克兰！</string>
     <string name="file_last_opened">上次打开</string>
     <string name="unknown">未知</string>
-    <string name="help_translate_option">帮助翻译</string>
     <string name="credits_translation">翻译</string>
     <string name="file_size">大小</string>
     <string name="licenses_option">开源许可证</string>
@@ -309,7 +308,6 @@
     <string name="horizontal_gesture_alpha_anim_option_desc">使用水平手势时启用视觉动画</string>
     <string name="horizontal_gesture_pull_anim_option">拉动动画</string>
     <string name="horizontal_gesture_pull_anim_option_desc">使用水平手势时启用拉动动画</string>
-    <string name="support_development_option">支持开发</string>
     <string name="add_folder">添加文件夹</string>
     <string name="set_up_scanning">设置扫描</string>
     <string name="crash_title">哎呀！应用崩了。</string>
