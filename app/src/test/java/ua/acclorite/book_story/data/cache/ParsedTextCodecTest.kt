@@ -202,14 +202,15 @@ class ParsedTextCodecTest {
     @Test
     fun theWireFormatIsFrozen() {
         val expected = (
-            "000000030000000a006cca978a00004000800000000000000100016300000001" +
+            "000000040000000b006cca978a00004000800000000000000100016300000001" +
                 "0100000001730000000000000000010000000001700000000000000000010100" +
                 "0000017400000000000000000102000000016500000000000000000103000000" +
-                "0161000000000000000004020000000100000000017600000000000000000301" +
-                "0000000100000002000000013100000000000000000000000132000000000000" +
-                "00000000000400010203050001690005692e706e670000000300000002010000" +
-                "0000016b00000000000000000500016a00056a2e706e67000000010000000100" +
-                "0000000100016e000000046e6f74650000000000000000"
+                "0161000000000000000004020000000100000000017600000000000000000600" +
+                "0000020000000163000000000000000000000000000000000000000003010000" +
+                "0001000000020000000131000000000000000000000001320000000000000000" +
+                "0000000400010203050001690005692e706e6700000003000000020100000000" +
+                "016b00000000000000000500016a00056a2e706e670000000100000001000000" +
+                "000100016e000000046e6f74650000000000000000"
             )
 
         val actual = ParsedTextCodec.encodeToBytes(wireFixture())
@@ -285,6 +286,7 @@ class ParsedTextCodecTest {
             ReaderText.Text(AnnotatedString("a"), ReaderTextRole.TextAuthor),
             ReaderText.Separator,
             ReaderText.Poem(lines = listOf(ReaderText.Text(AnnotatedString("v")))),
+            ReaderText.Preformatted(lines = listOf(AnnotatedString("c"), AnnotatedString(""))),
             ReaderText.Table(
                 rows = listOf(listOf(AnnotatedString("1"), AnnotatedString("2"))),
                 hasHeader = true,
@@ -345,6 +347,10 @@ class ParsedTextCodecTest {
             }
 
             is ReaderText.Text -> assertTextEquals(msg, expected, actual as ReaderText.Text)
+
+            is ReaderText.Preformatted -> assertEquals(
+                msg, expected.lines, (actual as ReaderText.Preformatted).lines
+            )
 
             is ReaderText.Poem -> {
                 actual as ReaderText.Poem

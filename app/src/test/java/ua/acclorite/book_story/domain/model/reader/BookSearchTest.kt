@@ -128,6 +128,17 @@ class BookSearchTest {
     }
 
     @Test
+    fun `a line of a preformatted block is numbered by its place in the block`() = runBlocking {
+        val block = ReaderText.Preformatted(
+            lines = listOf(AnnotatedString("lamp"), AnnotatedString(""), AnnotatedString("a lamp"))
+        )
+
+        val matches = listOf(block).findSearchMatches("lamp")
+
+        assertEquals(listOf(0, 2), matches.map { it.part })
+    }
+
+    @Test
     fun `an image caption is searched`() = runBlocking {
         val image = ReaderText.Image(
             image = ReaderImage(

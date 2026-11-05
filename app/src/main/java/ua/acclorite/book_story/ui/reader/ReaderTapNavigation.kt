@@ -396,5 +396,6 @@ private fun LazyListState.entryHitAt(
 private fun ReaderText.translatableText(): String? = when (this) {
     is ReaderText.Text -> line.text
     is ReaderText.Poem -> lines.joinToString("\n") { it.line.text }
+    is ReaderText.Preformatted -> lines.joinToString("\n") { it.text }
     else -> null
 }?.takeIf { it.isNotBlank() }

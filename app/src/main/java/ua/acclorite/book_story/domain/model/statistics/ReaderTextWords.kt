@@ -19,6 +19,7 @@ fun ReaderText.wordCount(): Int = when (this) {
     is ReaderText.Text -> line.text.countWords()
     is ReaderText.Chapter -> title.countWords()
     is ReaderText.Poem -> lines.sumOf { it.line.text.countWords() }
+    is ReaderText.Preformatted -> lines.sumOf { it.text.countWords() }
     is ReaderText.Table -> rows.sumOf { row -> row.sumOf { cell -> cell.text.countWords() } }
     is ReaderText.Image -> caption?.line?.text?.countWords() ?: 0
     ReaderText.Separator -> 0

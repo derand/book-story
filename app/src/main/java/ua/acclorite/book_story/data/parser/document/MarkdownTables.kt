@@ -14,18 +14,29 @@ import ua.acclorite.book_story.domain.model.reader.TableAlignment
 private val TABLE_DELIMITER_REGEX =
     Regex("""^\s*\|?\s*:?-{1,}:?\s*(\|\s*:?-{1,}:?\s*)*\|?\s*$""")
 
-/** A line of markdown text, or a pipe table that several lines made up. */
+/** How a fenced code block opens: up to three spaces, then the fence and its info string. */
+private val FENCE_OPENING_REGEX = Regex("""^( {0,3})(`{3,}(?=[^`]*$)|~{3,}).*$""")
+
+/** The spaces in a tab stop of a code block. */
+private const val CODE_TAB = "    "
+
+/** A line of markdown text, or a block that several lines made up. */
 sealed interface MarkdownLine {
     data class Text(val line: String) : MarkdownLine
+
+    /** The verbatim lines of a fenced code block, fences excluded. */
+    data class Code(val lines: List<String>) : MarkdownLine
     data class Table(val table: ReaderText.Table) : MarkdownLine
 }
 
 /**
- * Finds GFM pipe tables in the line stream (a header row, a delimiter row
- * of dashes, then body rows) and returns each as one parsed table; every other
- * line is passed through as it is. Cell text is parsed with [markdownParser].
+ * Finds the blocks that span lines in the line stream and returns each as one:
+ * a fenced code block, which runs to the end of the file when nothing closes it,
+ * and a GFM pipe table (a header row, a delimiter row of dashes, then body rows),
+ * whose cell text is parsed with [markdownParser]. Every other line is passed
+ * through as it is. Fences go first: a `|` inside a code block is not a table.
  */
-fun splitMarkdownTables(
+fun splitMarkdownBlocks(
     lines: List<String>,
     markdownParser: MarkdownParser
 ): List<MarkdownLine> {
@@ -34,6 +45,20 @@ fun splitMarkdownTables(
     while (i < lines.size) {
         val header = lines[i]
         val delimiter = lines.getOrNull(i + 1)
+
+        val opening = FENCE_OPENING_REGEX.matchEntire(header)
+        if (opening != null) {
+            val (indent, fence) = opening.destructured
+            val code = mutableListOf<String>()
+            var j = i + 1
+            while (j < lines.size && !lines[j].closesFence(fence)) {
+                code.add(lines[j].codeLine(indent.length))
+                j++
+            }
+            result.add(MarkdownLine.Code(code))
+            i = j + 1
+            continue
+        }
 
         if (
             header.contains('|') &&
@@ -65,6 +90,19 @@ fun splitMarkdownTables(
     }
     return result
 }
+
+private fun String.closesFence(fence: String): Boolean {
+    val run = trimEnd().trimStart(' ')
+    return length - trimStart(' ').length <= 3 &&
+            run.length >= fence.length &&
+            run.all { it == fence[0] }
+}
+
+/** A line of a code block: the fence's own indentation is not part of the code. */
+private fun String.codeLine(indent: Int): String =
+    drop(takeWhile { it == ' ' }.length.coerceAtMost(indent))
+        .replace("\t", CODE_TAB)
+        .trimEnd()
 
 /**
  * Reads the alignment out of one cell of a markdown delimiter row: a colon

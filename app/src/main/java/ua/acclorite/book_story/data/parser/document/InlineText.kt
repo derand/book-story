@@ -32,6 +32,10 @@ internal enum class Spacing {
     Preformatted
 }
 
+/** These lines of a preformatted block, without the blank ones around them. */
+internal fun List<AnnotatedString>.withoutBlankEdges(): List<AnnotatedString> =
+    dropWhile { it.text.isBlank() }.dropLastWhile { it.text.isBlank() }
+
 /**
  * The text of one line under construction, with the styles and links that
  * cover parts of it — what an [AnnotatedString.Builder] would be, if a run

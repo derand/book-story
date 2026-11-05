@@ -82,6 +82,16 @@ sealed class ReaderText {
     ) : ReaderText()
 
     /**
+     * Text whose line breaks and spacing mean something, such as a code block:
+     * a Markdown fence or an HTML `<pre>`. The parsers only say that it is one;
+     * how it looks is up to the renderer. A blank line in [lines] is kept.
+     */
+    @Immutable
+    data class Preformatted(
+        val lines: List<AnnotatedString>
+    ) : ReaderText()
+
+    /**
      * A table: [rows] of cells, each cell an [AnnotatedString]. The first row
      * is a header when [hasHeader] is set.
      *

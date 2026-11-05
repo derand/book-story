@@ -82,6 +82,100 @@ class MarkdownTextParserTest {
         assertTrue("no styling switched on", line.spanStyles.isEmpty())
     }
 
+    @Test
+    fun aFenceIsOneBlockWithItsSpacingAndMarkupKept() {
+        val text = parse(
+            """
+            Title
+            Before.
+            ```
+                   Price    24h
+            BTC   80.49k  *+3.8%*
+
+            # not a heading
+            | a | b |
+            | - | - |
+            ```
+            After.
+            """.trimIndent()
+        )
+
+        assertEquals(
+            listOf(
+                "       Price    24h",
+                "BTC   80.49k  *+3.8%*",
+                "",
+                "# not a heading",
+                "| a | b |",
+                "| - | - |"
+            ),
+            text.filterIsInstance<ReaderText.Preformatted>().single().lines.map { it.text }
+        )
+        assertEquals(
+            listOf("Before.", "After."),
+            text.filterIsInstance<ReaderText.Text>().map { it.line.text }
+        )
+        assertTrue("a | in code is no table", text.none { it is ReaderText.Table })
+    }
+
+    @Test
+    fun aFenceClosesOnlyOnItsOwnKindAndLength() {
+        val text = parse("Title\n~~~~ kotlin\n```\n~~~\n~~~~~   \nAfter.")
+
+        assertEquals(
+            listOf("```", "~~~"),
+            text.filterIsInstance<ReaderText.Preformatted>().single().lines.map { it.text }
+        )
+        assertEquals("After.", text.filterIsInstance<ReaderText.Text>().single().line.text)
+    }
+
+    @Test
+    fun anUnclosedFenceRunsToTheEndOfTheFile() {
+        val text = parse("Title\n```\none\ntwo")
+
+        assertEquals(
+            listOf("one", "two"),
+            text.filterIsInstance<ReaderText.Preformatted>().single().lines.map { it.text }
+        )
+    }
+
+    @Test
+    fun theFenceIndentationAndTabsAreNormalised() {
+        val text = parse("Title\n  ```\n    a\n b\n\tc\n  ```")
+
+        assertEquals(
+            listOf("  a", "b", "    c"),
+            text.filterIsInstance<ReaderText.Preformatted>().single().lines.map { it.text }
+        )
+    }
+
+    @Test
+    fun inlineCodeOnOneLineIsNotAFence() {
+        val text = parse("Title\n```inline``` code")
+
+        assertTrue(text.none { it is ReaderText.Preformatted })
+        assertEquals("inline code", text.filterIsInstance<ReaderText.Text>().single().line.text)
+    }
+
+    @Test
+    fun aFileThatOpensWithCodeStillHasAChapter() {
+        val text = parse("```\nTitle\ncode\n```")
+
+        assertEquals("Title", text.filterIsInstance<ReaderText.Chapter>().single().title)
+        assertEquals(
+            listOf("code"),
+            text.filterIsInstance<ReaderText.Preformatted>().single().lines.map { it.text }
+        )
+    }
+
+    @Test
+    fun anEmptyFenceLeavesNothing() {
+        val text = parse("Title\n```\n\n```\nAfter.")
+
+        assertEquals(2, text.size)
+        assertTrue(text.none { it is ReaderText.Preformatted })
+    }
+
     private fun parse(content: String): List<ReaderText> = runBlocking {
         val file = temp.newFile("book.md").apply { writeText(content) }
         parser.parse(CachedFileCompat.fromFile(RuntimeEnvironment.getApplication(), file)).text

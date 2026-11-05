@@ -11,7 +11,6 @@ import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLinkStyles
 import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
@@ -26,6 +25,7 @@ import org.commonmark.node.StrongEmphasis
 import org.commonmark.node.Text
 import org.commonmark.parser.Parser
 import ua.acclorite.book_story.core.helpers.rethrowIfCancellation
+import ua.acclorite.book_story.core.ui.MonospaceFontFamily
 import javax.inject.Inject
 import ua.acclorite.book_story.core.log.logE
 import ua.acclorite.book_story.core.log.messageForLog
@@ -73,7 +73,7 @@ class MarkdownParser @Inject constructor(
             }
 
             is Code -> {
-                withStyle(SpanStyle(fontFamily = FontFamily.Monospace)) {
+                withStyle(SpanStyle(fontFamily = MonospaceFontFamily)) {
                     append(node.literal)
                 }
             }

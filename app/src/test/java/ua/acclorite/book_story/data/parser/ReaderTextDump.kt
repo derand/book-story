@@ -10,11 +10,11 @@ package ua.acclorite.book_story.data.parser
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.BaselineShift
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.isSpecified
+import ua.acclorite.book_story.core.ui.MonospaceFontFamily
 import ua.acclorite.book_story.domain.model.reader.ReaderText
 import ua.acclorite.book_story.domain.model.reader.ReaderTextRole
 
@@ -49,6 +49,11 @@ private fun StringBuilder.appendEntry(entry: ReaderText, indent: String) {
         is ReaderText.Poem -> {
             append("Poem\n")
             entry.lines.forEach { line -> appendEntry(line, "$indent  ") }
+        }
+
+        is ReaderText.Preformatted -> {
+            append("Preformatted\n")
+            entry.lines.forEach { line -> append(indent).append("  ").append(line.dump()).append('\n') }
         }
 
         is ReaderText.Table -> {
@@ -137,7 +142,7 @@ private fun SpanStyle.labels(): List<String> = buildList {
     }
     // Sub/superscript always come with their smaller size; say so only otherwise
     if (fontSize.isSpecified && baselineShift == null) add("size=$fontSize")
-    if (fontFamily == FontFamily.Monospace) add("mono")
+    if (fontFamily == MonospaceFontFamily) add("mono")
     if (isEmpty()) add("style")
 }
 
