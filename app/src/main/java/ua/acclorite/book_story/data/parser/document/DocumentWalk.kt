@@ -11,7 +11,6 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLinkStyles
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.BaselineShift
@@ -25,6 +24,7 @@ import org.jsoup.nodes.Element
 import org.jsoup.nodes.Node
 import org.jsoup.nodes.TextNode
 import ua.acclorite.book_story.core.helpers.containsVisibleText
+import ua.acclorite.book_story.core.ui.MonospaceFontFamily
 import ua.acclorite.book_story.domain.model.reader.ANCHOR_LINK_TAG_PREFIX
 import ua.acclorite.book_story.domain.model.reader.NOTE_LINK_TAG_PREFIX
 import ua.acclorite.book_story.domain.model.reader.ReaderImage
@@ -38,7 +38,7 @@ private val ITALIC = SpanStyle(fontStyle = FontStyle.Italic)
 private val STRIKETHROUGH = SpanStyle(textDecoration = TextDecoration.LineThrough)
 private val SUBSCRIPT = SpanStyle(baselineShift = BaselineShift.Subscript, fontSize = 0.75.em)
 private val SUPERSCRIPT = SpanStyle(baselineShift = BaselineShift.Superscript, fontSize = 0.75.em)
-private val MONOSPACE = SpanStyle(fontFamily = FontFamily.Monospace)
+private val MONOSPACE = SpanStyle(fontFamily = MonospaceFontFamily)
 
 private val URL_LINK_STYLES = TextLinkStyles(SpanStyle(textDecoration = TextDecoration.Underline))
 private val NOTE_LINK_STYLES = TextLinkStyles(SUPERSCRIPT)
@@ -373,6 +373,9 @@ internal class DocumentWalk(
     private val roles = ArrayList<ReaderTextRole>()
     private val frames = ArrayList<Frame>()
     private var preDepth = 0
+
+    /** The lines of the <pre> being read, emitted as one block when it ends. */
+    private val preformatted = ArrayList<AnnotatedString>()
     private var chapterAdded = false
 
     /** Non-null inside a <poem>: its lines are collected here. */
@@ -426,7 +429,7 @@ internal class DocumentWalk(
             }
 
             "hr" -> {
-                flush()
+                endBlock()
                 entries.add(Entry.Ready(ReaderText.Separator))
                 frames.add(Frame(name))
                 return true
@@ -439,19 +442,19 @@ internal class DocumentWalk(
             }
 
             "empty-line" -> {
-                flush()
+                endBlock()
                 add(ReaderText.Text(AnnotatedString(BLANK_LINE)))
                 return false
             }
 
             "table" -> {
-                flush()
+                endBlock()
                 element.readTable()?.let { table -> entries.add(Entry.Ready(table)) }
                 return false
             }
 
             "title" -> {
-                flush()
+                endBlock()
                 enterTitle(element)
                 return false
             }
@@ -521,7 +524,7 @@ internal class DocumentWalk(
         if (frame.role) roles.removeAt(roles.lastIndex)
 
         when (frame.name) {
-            "pre" -> preDepth--
+            "pre" -> if (--preDepth == 0) endPreformatted()
 
             // A blank line between stanzas, but not after the last one
             "stanza" -> if (element.nextElementSibling()?.normalName() == "stanza") {
@@ -571,7 +574,7 @@ internal class DocumentWalk(
     private fun emitImage(element: Element, withCaption: Boolean) {
         val decoding = image(element) ?: return
         // An image inside a paragraph splits it: text before, image, text after
-        flush()
+        endBlock()
 
         val caption = if (withCaption) {
             element.attr("alt").trim().takeIf { alt -> alt.containsVisibleText() }
@@ -595,16 +598,39 @@ internal class DocumentWalk(
             return
         }
 
-        // <pre>: one entry per line, the indentation kept
+        // <pre>: its lines are kept with their indentation, the blank ones too
         val block = line.take(Spacing.Preformatted)
         var start = 0
         while (start <= block.length) {
             val end = block.text.indexOf('\n', start).let { if (it < 0) block.length else it }
             var trimmedEnd = end
             while (trimmedEnd > start && block[trimmedEnd - 1].isWhitespace()) trimmedEnd--
-            emit(block.subSequence(start, trimmedEnd), role)
+            val text = block.subSequence(start, trimmedEnd)
+            if (poem != null) emit(text, role) else preformatted.add(text)
             start = end + 1
         }
+    }
+
+    /** [flush], for something that goes after the text so far, even inside a <pre>. */
+    private fun endBlock() {
+        flush()
+        endPreformatted()
+    }
+
+    private fun endPreformatted() {
+        var lines = preformatted.withoutBlankEdges()
+        preformatted.clear()
+        if (lines.isEmpty()) return
+
+        // As with any other text: the first line of a document can name its chapter
+        val first = lines.first().text
+        if (includeChapter && !chapterAdded && !first.matches(SEPARATOR_TEXT_REGEX)) {
+            entries.add(0, Entry.Ready(ReaderText.Chapter(title = first.trim())))
+            chapterAdded = true
+            lines = lines.drop(1).withoutBlankEdges()
+        }
+
+        if (lines.isNotEmpty()) entries.add(Entry.Ready(ReaderText.Preformatted(lines)))
     }
 
     private fun emit(text: AnnotatedString, role: ReaderTextRole) {

@@ -143,6 +143,21 @@ fun LazyItemScope.ReaderLayoutText(
             )
         }
 
+        is ReaderText.Preformatted -> {
+            ReaderLayoutTextPreformatted(
+                searchMatches = searchMatches,
+                currentSearchMatch = currentSearchMatch,
+                preformatted = entry,
+                fontColor = fontColor,
+                lineHeight = lineHeight,
+                fontThickness = fontThickness,
+                fontStyle = fontStyle,
+                fontSize = fontSize,
+                sidePadding = sidePadding,
+                openNote = openNote
+            )
+        }
+
         is ReaderText.Text -> {
             ReaderLayoutTextParagraph(
                 searchMatches = searchMatches,

@@ -20,7 +20,8 @@ import ua.acclorite.book_story.core.log.messageForLog
 import ua.acclorite.book_story.data.model.file.CachedFile
 import ua.acclorite.book_story.data.parser.document.MarkdownLine
 import ua.acclorite.book_story.data.parser.document.MarkdownParser
-import ua.acclorite.book_story.data.parser.document.splitMarkdownTables
+import ua.acclorite.book_story.data.parser.document.splitMarkdownBlocks
+import ua.acclorite.book_story.data.parser.document.withoutBlankEdges
 import ua.acclorite.book_story.domain.model.reader.ParsedText
 import ua.acclorite.book_story.domain.model.reader.ReaderText
 import javax.inject.Inject
@@ -43,7 +44,8 @@ private const val YIELD_INTERVAL = 64
  * commonmark over every line; once it walks the DOM instead, markdown needs a
  * path that actually reads markdown. The rules are the ones that path applied:
  * the first visible line names the chapter, pipe tables become tables, a line
- * of separator characters stays as literal text.
+ * of separator characters stays as literal text. A fenced code block stays one
+ * block, because a line-by-line reading cannot see it.
  */
 class MarkdownTextParser @Inject constructor(
     private val markdownParser: MarkdownParser
@@ -63,13 +65,28 @@ class MarkdownTextParser @Inject constructor(
             val readerText = mutableListOf<ReaderText>()
             var chapterAdded = false
 
-            splitMarkdownTables(lines, markdownParser).forEachIndexed { index, markdownLine ->
+            splitMarkdownBlocks(lines, markdownParser).forEachIndexed { index, markdownLine ->
                 coroutineContext.ensureActive()
                 if (index % YIELD_INTERVAL == 0) yield()
 
                 val line = when (markdownLine) {
                     is MarkdownLine.Table -> {
                         readerText.add(markdownLine.table)
+                        return@forEachIndexed
+                    }
+
+                    is MarkdownLine.Code -> {
+                        var code = markdownLine.lines.map { AnnotatedString(it) }
+                            .withoutBlankEdges()
+
+                        // A file needs a chapter, even if it opens with code
+                        if (!chapterAdded && code.isNotEmpty()) {
+                            readerText.add(0, ReaderText.Chapter(title = code.first().text.trim()))
+                            chapterAdded = true
+                            code = code.drop(1).withoutBlankEdges()
+                        }
+
+                        if (code.isNotEmpty()) readerText.add(ReaderText.Preformatted(code))
                         return@forEachIndexed
                     }
 

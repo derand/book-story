@@ -6,16 +6,14 @@
 
 package ua.acclorite.book_story.ui.reader.data
 
-import androidx.annotation.FontRes
-import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
-import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.font.FontWeight
 import kotlinx.collections.immutable.persistentListOf
 import ua.acclorite.book_story.R
 import ua.acclorite.book_story.core.ui.UIText
+import ua.acclorite.book_story.core.ui.provideVariableFontFamily
 import ua.acclorite.book_story.ui.reader.model.FontWithName
 
 object ReaderData {
@@ -154,46 +152,5 @@ object ReaderData {
                 Font(R.font.open_dyslexic_bold, weight = FontWeight.Bold)
             )
         )
-    )
-}
-
-@OptIn(ExperimentalTextApi::class)
-private fun provideVariableFontFamily(
-    @FontRes normalResId: Int,
-    @FontRes italicResId: Int
-): FontFamily {
-    fun provideVariableFont(weight: FontWeight): Array<Font> {
-        return arrayOf(
-            Font(
-                resId = normalResId,
-                weight = weight,
-                style = FontStyle.Normal,
-                variationSettings = FontVariation.Settings(
-                    weight = weight,
-                    style = FontStyle.Normal
-                )
-            ),
-            Font(
-                resId = italicResId,
-                weight = weight,
-                style = FontStyle.Italic,
-                variationSettings = FontVariation.Settings(
-                    weight = weight,
-                    style = FontStyle.Italic
-                )
-            )
-        )
-    }
-
-    return FontFamily(
-        *provideVariableFont(weight = FontWeight.W100),
-        *provideVariableFont(weight = FontWeight.W200),
-        *provideVariableFont(weight = FontWeight.W300),
-        *provideVariableFont(weight = FontWeight.W400),
-        *provideVariableFont(weight = FontWeight.W500),
-        *provideVariableFont(weight = FontWeight.W600),
-        *provideVariableFont(weight = FontWeight.W700),
-        *provideVariableFont(weight = FontWeight.W800),
-        *provideVariableFont(weight = FontWeight.W900)
     )
 }

@@ -17,7 +17,7 @@ import org.robolectric.RobolectricTestRunner
 import ua.acclorite.book_story.data.parser.document.DocumentParser
 import ua.acclorite.book_story.data.parser.document.MarkdownLine
 import ua.acclorite.book_story.data.parser.document.MarkdownParser
-import ua.acclorite.book_story.data.parser.document.splitMarkdownTables
+import ua.acclorite.book_story.data.parser.document.splitMarkdownBlocks
 import ua.acclorite.book_story.domain.model.reader.ReaderText
 import ua.acclorite.book_story.domain.model.reader.TableAlignment
 
@@ -191,7 +191,7 @@ class TableAlignmentParsingTest {
      * an FB2/HTML/EPUB paragraph — there, text is text (#29).
      */
     private fun markdownTable(vararg lines: String): ReaderText.Table =
-        splitMarkdownTables(lines.toList(), markdownParser)
+        splitMarkdownBlocks(lines.toList(), markdownParser)
             .filterIsInstance<MarkdownLine.Table>()
             .single()
             .table

@@ -89,6 +89,10 @@ suspend fun List<ReaderText>.findSearchMatches(
                 found.collect(line.line, needle, index, part)
             }
 
+            is ReaderText.Preformatted -> entry.lines.forEachIndexed { part, line ->
+                found.collect(line, needle, index, part)
+            }
+
             is ReaderText.Table -> entry.forEachCell { part, cell ->
                 found.collect(cell, needle, index, part)
             }
@@ -184,6 +188,10 @@ private fun MutableList<SearchMatch>.collectNoteAnchors(
         is ReaderText.Chapter -> entry.styledTitle?.let { anchors(it, 0) }
         is ReaderText.Poem -> entry.lines.forEachIndexed { part, line ->
             anchors(line.line, part)
+        }
+
+        is ReaderText.Preformatted -> entry.lines.forEachIndexed { part, line ->
+            anchors(line, part)
         }
 
         is ReaderText.Image -> entry.caption?.let { anchors(it.line, 0) }

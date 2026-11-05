@@ -12,13 +12,13 @@ import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLinkStyles
 import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.BaselineShift
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.em
+import ua.acclorite.book_story.core.ui.MonospaceFontFamily
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.DataInput
@@ -43,7 +43,7 @@ object AnnotatedStringCodec {
 
     private const val BOLD = 1 shl 0        // FontWeight.Medium
     private const val ITALIC = 1 shl 1      // FontStyle.Italic
-    private const val MONOSPACE = 1 shl 2   // FontFamily.Monospace
+    private const val MONOSPACE = 1 shl 2   // MonospaceFontFamily
     private const val UNDERLINE = 1 shl 3   // TextDecoration.Underline
     private const val LINE_THROUGH = 1 shl 4 // TextDecoration.LineThrough
     private const val SUBSCRIPT = 1 shl 5   // BaselineShift.Subscript
@@ -146,7 +146,7 @@ object AnnotatedStringCodec {
         var mask = 0
         if (fontWeight == FontWeight.Medium) mask = mask or BOLD
         if (fontStyle == FontStyle.Italic) mask = mask or ITALIC
-        if (fontFamily == FontFamily.Monospace) mask = mask or MONOSPACE
+        if (fontFamily == MonospaceFontFamily) mask = mask or MONOSPACE
         textDecoration?.let { decoration ->
             if (decoration.contains(TextDecoration.Underline)) mask = mask or UNDERLINE
             if (decoration.contains(TextDecoration.LineThrough)) mask = mask or LINE_THROUGH
@@ -165,7 +165,7 @@ object AnnotatedStringCodec {
         return SpanStyle(
             fontWeight = if (this and BOLD != 0) FontWeight.Medium else null,
             fontStyle = if (this and ITALIC != 0) FontStyle.Italic else null,
-            fontFamily = if (this and MONOSPACE != 0) FontFamily.Monospace else null,
+            fontFamily = if (this and MONOSPACE != 0) MonospaceFontFamily else null,
             textDecoration = when (decorations.size) {
                 0 -> null
                 1 -> decorations[0]

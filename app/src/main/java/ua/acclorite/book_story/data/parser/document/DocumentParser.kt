@@ -158,6 +158,7 @@ class DocumentParser @Inject constructor() {
             when (val text = (entry as? DocumentWalk.Entry.Ready)?.text) {
                 is ReaderText.Text -> listOf(text)
                 is ReaderText.Poem -> text.lines
+                is ReaderText.Preformatted -> text.lines.map { line -> ReaderText.Text(line) }
                 else -> emptyList()
             }
         }.filter { paragraph -> paragraph.line.text.containsVisibleText() }

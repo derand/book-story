@@ -291,6 +291,7 @@ class ParseCache @Inject constructor(application: Application) {
         // 9: .md is read as markdown, not as HTML (text in <…> is kept).
         // 10: EPUB/FB2/HTML built by a DOM walk (block tags end a line, no
         //     markdown over the book's text, styles nest).
-        const val VERSION = 10
+        // 11: Markdown fences and <pre> are one preformatted block (format 4).
+        const val VERSION = 11
     }
 }

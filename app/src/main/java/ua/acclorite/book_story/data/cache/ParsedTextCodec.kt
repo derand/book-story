@@ -36,7 +36,8 @@ import java.util.UUID
 object ParsedTextCodec {
 
     // 3: tables carry per-column alignment.
-    const val VERSION = 3
+    // 4: preformatted blocks.
+    const val VERSION = 4
 
     private const val TYPE_CHAPTER = 0
     private const val TYPE_TEXT = 1
@@ -44,6 +45,7 @@ object ParsedTextCodec {
     private const val TYPE_TABLE = 3
     private const val TYPE_SEPARATOR = 4
     private const val TYPE_IMAGE = 5
+    private const val TYPE_PREFORMATTED = 6
 
     // Roles and alignments go on the wire as these codes, NOT as `ordinal`:
     // the enums live in the domain layer, which has no reason to know that
@@ -124,6 +126,12 @@ object ParsedTextCodec {
                 element.lines.forEach { line -> encodeText(line, out) }
             }
 
+            is ReaderText.Preformatted -> {
+                out.writeByte(TYPE_PREFORMATTED)
+                out.writeInt(element.lines.size)
+                element.lines.forEach { line -> AnnotatedStringCodec.encode(line, out) }
+            }
+
             is ReaderText.Table -> {
                 out.writeByte(TYPE_TABLE)
                 out.writeBoolean(element.hasHeader)
@@ -176,6 +184,13 @@ object ParsedTextCodec {
                 val lines = ArrayList<ReaderText.Text>(count)
                 repeat(count) { lines.add(decodeText(input)) }
                 ReaderText.Poem(lines)
+            }
+
+            TYPE_PREFORMATTED -> {
+                val count = input.readInt()
+                val lines = ArrayList<AnnotatedString>(count)
+                repeat(count) { lines.add(AnnotatedStringCodec.decode(input)) }
+                ReaderText.Preformatted(lines)
             }
 
             TYPE_TABLE -> {

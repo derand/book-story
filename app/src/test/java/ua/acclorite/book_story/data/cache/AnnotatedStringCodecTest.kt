@@ -12,7 +12,6 @@ import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLinkStyles
 import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.BaselineShift
@@ -20,6 +19,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withLink
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.em
+import ua.acclorite.book_story.core.ui.MonospaceFontFamily
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -72,7 +72,7 @@ class AnnotatedStringCodecTest {
     @Test
     fun monospace() = roundTrip(
         buildAnnotatedString {
-            withStyle(SpanStyle(fontFamily = FontFamily.Monospace)) { append("code()") }
+            withStyle(SpanStyle(fontFamily = MonospaceFontFamily)) { append("code()") }
         }
     )
 
@@ -177,7 +177,7 @@ class AnnotatedStringCodecTest {
             append("intro ")
             withStyle(SpanStyle(fontWeight = FontWeight.Medium)) { append("bold ") }
             withStyle(SpanStyle(fontStyle = FontStyle.Italic)) { append("italic ") }
-            withStyle(SpanStyle(fontFamily = FontFamily.Monospace)) { append("mono ") }
+            withStyle(SpanStyle(fontFamily = MonospaceFontFamily)) { append("mono ") }
             withStyle(SpanStyle(textDecoration = TextDecoration.LineThrough)) { append("struck ") }
             append("water H")
             withStyle(SpanStyle(baselineShift = BaselineShift.Subscript, fontSize = 0.75.em)) {

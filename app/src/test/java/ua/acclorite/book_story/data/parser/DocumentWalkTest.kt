@@ -76,10 +76,32 @@ class DocumentWalkTest {
     }
 
     @Test
-    fun preKeepsItsLinesAndIndentation() {
+    fun preIsOneBlockWithItsLinesAndIndentation() {
         assertEquals(
-            listOf("fun main() {", "    println()", "}"),
-            html("<pre>fun main() {\n    println()\n}</pre>").lines()
+            listOf("    println()", "", "}"),
+            html("<pre>    println()\n\n}</pre>")
+                .filterIsInstance<ReaderText.Preformatted>().single().lines.map { it.text }
+        )
+    }
+
+    @Test
+    fun theFirstLineOfAPreCanNameTheChapter() {
+        val text = html("<pre>Title\ncode</pre>", title = false)
+
+        assertEquals("Title", text.filterIsInstance<ReaderText.Chapter>().single().title)
+        assertEquals(
+            listOf("code"),
+            text.filterIsInstance<ReaderText.Preformatted>().single().lines.map { it.text }
+        )
+    }
+
+    @Test
+    fun anElementInsideAPreKeepsItsPlaceInTheText() {
+        val text = html("<pre>one<hr>two</pre>")
+
+        assertEquals(
+            listOf("Preformatted", "Separator", "Preformatted"),
+            text.filterNot { it is ReaderText.Chapter }.map { it::class.simpleName }
         )
     }
 
