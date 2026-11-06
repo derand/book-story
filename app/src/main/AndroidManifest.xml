@@ -99,7 +99,11 @@
                 For content:// the path is the provider's document id and almost
                 never ends in the file's extension, so a pathPattern would match
                 nothing; only the MIME type is usable. The types listed are the
-                ones the seven supported extensions actually arrive as.
+                ones the supported extensions actually arrive as.
+
+                PDF is deliberately absent from both filters: the app can read
+                one added from inside it, but does not offer itself as a PDF
+                viewer. See issue #125.
 
                 application/octet-stream is deliberately absent. Several file
                 managers send it for FB2, which has no registered MIME type, but
@@ -117,9 +121,9 @@
                 <category android:name="android.intent.category.BROWSABLE" />
 
                 <data android:scheme="content" />
+                <data android:scheme="file" />
 
                 <data android:mimeType="application/epub+zip" />
-                <data android:mimeType="application/pdf" />
                 <data android:mimeType="application/x-fictionbook+xml" />
                 <data android:mimeType="application/xml" />
                 <data android:mimeType="text/xml" />
@@ -130,12 +134,18 @@
 
             <!--
                 For file:// the path really is the file's path, so the extension
-                can be matched. Android's matcher has no case folding and its
+                can be matched, which is what catches an FB2 arriving with no
+                usable MIME type. Android's matcher has no case folding and its
                 ".*" does not cross a literal dot, hence a lower-case and an
                 upper-case pattern for every extension, plus a doubled variant
-                for names that contain a dot of their own. Mixed case (".Fb2")
-                is not covered and would need a pattern each; content:// does
-                not go through here at all.
+                for a path with one dot of its own. A path with more dots, or
+                mixed case (".Fb2"), is not covered here; a file:// with a
+                listed MIME type still gets in through the filter above.
+                content:// does not go through here at all.
+
+                The host is what makes the patterns work: a filter without one
+                never looks at the path, and would take every file:// of any
+                type, zip and apk included.
             -->
             <intent-filter tools:ignore="AppLinkUrlError">
                 <action android:name="android.intent.action.VIEW" />
@@ -143,14 +153,12 @@
                 <category android:name="android.intent.category.BROWSABLE" />
 
                 <data android:scheme="file" />
+                <data android:host="*" />
                 <data android:mimeType="*/*" />
 
                 <data android:pathPattern=".*\\.epub" />
                 <data android:pathPattern=".*\\..*\\.epub" />
                 <data android:pathPattern=".*\\.EPUB" />
-                <data android:pathPattern=".*\\.pdf" />
-                <data android:pathPattern=".*\\..*\\.pdf" />
-                <data android:pathPattern=".*\\.PDF" />
                 <data android:pathPattern=".*\\.fb2" />
                 <data android:pathPattern=".*\\..*\\.fb2" />
                 <data android:pathPattern=".*\\.FB2" />
