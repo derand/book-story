@@ -26,9 +26,23 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.drop
 import ua.acclorite.book_story.R
+
+/**
+ * The field's own value as it changes, minus the value it was opened with.
+ *
+ * `snapshotFlow` emits the current value first; that one is not an edit, so
+ * it is dropped by position. Comparing with the initial query instead would
+ * also swallow an edit that returns to it — erasing a search typed into an
+ * empty field left the list filtered.
+ */
+@OptIn(FlowPreview::class)
+internal fun Flow<String>.queryEdits(debounceMillis: Long = 50): Flow<String> =
+    drop(1).debounce(debounceMillis)
 
 /**
  * Search Text Field.
@@ -63,8 +77,7 @@ fun SearchTextField(
     LaunchedEffect(query) {
         snapshotFlow {
             query.value
-        }.debounce(50).collectLatest {
-            if (it == initialQuery) return@collectLatest
+        }.queryEdits().collectLatest {
             onQueryChange(it)
         }
     }
