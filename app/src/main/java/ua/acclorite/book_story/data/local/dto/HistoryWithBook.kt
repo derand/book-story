@@ -11,9 +11,15 @@ import androidx.room.Relation
 
 data class HistoryWithBook(
     @Embedded val history: HistoryEntity,
+    /**
+     * Null for an orphan: nothing ties `bookId` to a row, so a history entry can
+     * outlive its book (a database from an older build, a delete that stopped
+     * halfway before deletes were one transaction). Non-null, Room would throw
+     * for the whole list over one such row.
+     */
     @Relation(
         parentColumn = "bookId",
         entityColumn = "id"
     )
-    val book: BookEntity
+    val book: BookEntity?
 )

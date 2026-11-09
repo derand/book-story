@@ -6,6 +6,7 @@
 
 package ua.acclorite.book_story.domain.repository
 
+import android.net.Uri
 import ua.acclorite.book_story.core.CoverImage
 import ua.acclorite.book_story.domain.model.file.File
 import ua.acclorite.book_story.domain.model.library.Book
@@ -116,9 +117,21 @@ interface BookRepository {
         statesIdentity: Boolean = false
     ): Result<Unit>
 
-    suspend fun deleteBook(
-        book: Book
-    ): Result<Unit>
+    /**
+     * Deletes the book's row and everything in the database that hangs on it,
+     * in one transaction: its history and reading coverage go, its reading
+     * sessions and its finished-book record stay in the lifetime figures,
+     * unlinked from it. Either all of it happens or none of it does.
+     *
+     * Files are left alone, because a file cannot be put back if the
+     * transaction then fails: the caller deletes them once this has succeeded.
+     * Hence the result, the cover the deleted row named, read inside the
+     * transaction rather than taken from a [Book] a screen may have loaded
+     * before the cover was changed.
+     */
+    suspend fun deleteBookRecords(
+        bookId: Int
+    ): Result<Uri?>
 
     suspend fun getDefaultCover(
         book: Book

@@ -16,14 +16,9 @@ interface StatisticsRepository {
 
     suspend fun addSession(session: ReadingSession): Result<Unit>
 
-    /** See [ua.acclorite.book_story.data.local.room.StatisticsDao.anonymiseBookSessions]. */
-    suspend fun anonymiseBookSessions(bookId: Int): Result<Unit>
-
     suspend fun getCoverage(bookId: Int): Result<ReadingCoverage?>
 
     suspend fun saveCoverage(coverage: ReadingCoverage): Result<Unit>
-
-    suspend fun deleteCoverage(bookId: Int): Result<Unit>
 
     suspend fun getReadBook(bookId: Int): Result<ReadBook?>
 
@@ -45,9 +40,6 @@ interface StatisticsRepository {
         author: String,
         finished: Boolean
     ): Result<Unit>
-
-    /** See [ua.acclorite.book_story.data.local.room.StatisticsDao.unlinkReadBook]. */
-    suspend fun unlinkReadBook(bookId: Int): Result<Unit>
 
     /**
      * Median words per minute across sessions — of one book when [bookId] is

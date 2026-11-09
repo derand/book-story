@@ -48,13 +48,6 @@ class StatisticsRepositoryImpl @Inject constructor(
             }
         }
 
-    override suspend fun anonymiseBookSessions(bookId: Int): Result<Unit> =
-        runCatchingCancellable {
-            withContext(Dispatchers.IO) {
-                database.statisticsDao.anonymiseBookSessions(bookId = bookId)
-            }
-        }
-
     override suspend fun getCoverage(bookId: Int): Result<ReadingCoverage?> =
         runCatchingCancellable {
             withContext(Dispatchers.IO) {
@@ -91,13 +84,6 @@ class StatisticsRepositoryImpl @Inject constructor(
         runCatchingCancellable {
             withContext(Dispatchers.IO) {
                 database.statisticsDao.deleteAllStatistics()
-            }
-        }
-
-    override suspend fun deleteCoverage(bookId: Int): Result<Unit> =
-        runCatchingCancellable {
-            withContext(Dispatchers.IO) {
-                database.statisticsDao.deleteCoverage(bookId = bookId)
             }
         }
 
@@ -220,13 +206,6 @@ class StatisticsRepositoryImpl @Inject constructor(
                     booksRead = database.statisticsDao.countBooksRead(),
                     daysRead = days.size
                 )
-            }
-        }
-
-    override suspend fun unlinkReadBook(bookId: Int): Result<Unit> =
-        runCatchingCancellable {
-            withContext(Dispatchers.IO) {
-                database.statisticsDao.unlinkReadBook(bookId = bookId)
             }
         }
 }

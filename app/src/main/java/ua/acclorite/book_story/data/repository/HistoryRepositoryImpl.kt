@@ -24,10 +24,8 @@ class HistoryRepositoryImpl @Inject constructor(
 
     override suspend fun getHistoryForBook(bookId: Int): Result<History> = runCatchingCancellable {
         withContext(Dispatchers.IO) {
-            database.historyDao.getHistoryForBook(bookId).let {
-                if (it == null) throw NoSuchElementException("Could not get history from [$bookId].")
-                else historyMapper.toHistory(it)
-            }
+            database.historyDao.getHistoryForBook(bookId)?.let { historyMapper.toHistory(it) }
+                ?: throw NoSuchElementException("Could not get history from [$bookId].")
         }
     }
 
@@ -39,7 +37,7 @@ class HistoryRepositoryImpl @Inject constructor(
 
     override suspend fun getHistory(): Result<List<History>> = runCatchingCancellable {
         withContext(Dispatchers.IO) {
-            database.historyDao.getHistoryWithBook().map { historyMapper.toHistory(it) }
+            database.historyDao.getHistoryWithBook().mapNotNull { historyMapper.toHistory(it) }
         }
     }
 
@@ -47,14 +45,6 @@ class HistoryRepositoryImpl @Inject constructor(
         withContext(Dispatchers.IO) {
             database.historyDao.deleteWholeHistory().also {
                 if (it == 0) throw Exception("Could not delete whole history in database.")
-            }
-        }
-    }
-
-    override suspend fun deleteHistoryForBook(bookId: Int): Result<Unit> = runCatchingCancellable {
-        withContext(Dispatchers.IO) {
-            database.historyDao.deleteHistoryForBook(bookId = bookId).also {
-                if (it == 0) throw Exception("Could not delete history for book [$bookId] in database.")
             }
         }
     }

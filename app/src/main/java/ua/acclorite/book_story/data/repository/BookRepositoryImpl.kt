@@ -6,6 +6,9 @@
 
 package ua.acclorite.book_story.data.repository
 
+import android.net.Uri
+import androidx.core.net.toUri
+import androidx.room.withTransaction
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.job
 import kotlinx.coroutines.withContext
@@ -628,10 +631,22 @@ class BookRepositoryImpl @Inject constructor(
         )
     }
 
-    override suspend fun deleteBook(book: Book): Result<Unit> = runCatchingCancellable {
+    override suspend fun deleteBookRecords(bookId: Int): Result<Uri?> = runCatchingCancellable {
         withContext(Dispatchers.IO) {
-            database.bookDao.deleteBook(bookMapper.toBookEntity(book)).also {
-                if (it == 0) throw Exception("Could not delete book in database.")
+            database.withTransaction {
+                val row = database.bookDao.findBookById(bookId)
+                    ?: throw NoSuchElementException("No book [$bookId] to delete.")
+
+                database.historyDao.deleteHistoryForBook(bookId = bookId)
+                database.statisticsDao.anonymiseBookSessions(bookId = bookId)
+                database.statisticsDao.deleteCoverage(bookId = bookId)
+                database.statisticsDao.unlinkReadBook(bookId = bookId)
+
+                if (database.bookDao.deleteBook(row) == 0) {
+                    throw Exception("Could not delete book [$bookId] in database.")
+                }
+
+                row.image?.toUri()
             }
         }
     }
