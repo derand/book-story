@@ -423,6 +423,7 @@ data class ReaderScreen(val bookId: Int) : Screen, Parcelable {
 
         ReaderEffects(
             effects = screenModel.effects,
+            screen = this,
             book = state.value.book,
             fullscreen = settings.fullscreen.value,
             grantFolder = screenModel::onEvent

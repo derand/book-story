@@ -70,6 +70,7 @@ data class BookInfoScreen(val bookId: Int) : Screen, Parcelable {
 
         BookInfoEffects(
             effects = screenModel.effects,
+            screen = this,
             book = state.value.book
         )
 

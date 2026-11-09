@@ -41,7 +41,7 @@ data object StatisticsScreen : Screen, Parcelable {
 
         StatisticsContent(
             statistics = statistics,
-            navigateBack = { navigator.pop() }
+            navigateBack = { navigator.pop(from = StatisticsScreen) }
         )
     }
 }

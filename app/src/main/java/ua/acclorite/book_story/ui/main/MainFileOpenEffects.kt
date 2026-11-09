@@ -52,13 +52,14 @@ fun MainFileOpenEffects(mainModel: MainModel) {
         mainModel.fileOpen.collect { state ->
             when (state) {
                 is MainModel.FileOpen.Open -> {
-                    if (navigator.lastItem.value is ReaderScreen) {
+                    val openReader = navigator.items.value.lastOrNull()
+                    if (openReader is ReaderScreen) {
                         // Leave the open book the way closing it does: OnLeave
                         // is what saves the position, ends the reading session
                         // and throws away a preview the user did not keep.
                         // Popping the screen instead would lose all three.
                         readerModel.onEvent(
-                            ReaderEvent.OnLeave(navigate = { navigator.pop() })
+                            ReaderEvent.OnLeave(navigate = { navigator.pop(from = openReader) })
                         )
 
                         // And only open the next book once that one is actually

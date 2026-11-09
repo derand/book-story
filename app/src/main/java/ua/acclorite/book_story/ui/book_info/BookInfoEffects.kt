@@ -18,10 +18,15 @@ import ua.acclorite.book_story.presentation.history.HistoryScreen
 import ua.acclorite.book_story.presentation.reader.ReaderScreen
 import ua.acclorite.book_story.presentation.settings.LibrarySettingsScreen
 import ua.acclorite.book_story.ui.common.helpers.showToast
+import ua.acclorite.book_story.presentation.navigator.Screen
 import ua.acclorite.book_story.ui.navigator.LocalNavigator
 
 @Composable
-fun BookInfoEffects(effects: SharedFlow<BookInfoEffect>, book: Book) {
+fun BookInfoEffects(
+    effects: SharedFlow<BookInfoEffect>,
+    screen: Screen,
+    book: Book
+) {
     val navigator = LocalNavigator.current
     val context = LocalContext.current
 
@@ -89,7 +94,7 @@ fun BookInfoEffects(effects: SharedFlow<BookInfoEffect>, book: Book) {
                 }
 
                 is BookInfoEffect.OnNavigateBack -> {
-                    navigator.pop()
+                    navigator.pop(from = screen)
                 }
 
                 is BookInfoEffect.OnNavigateToLibrarySettings -> {
