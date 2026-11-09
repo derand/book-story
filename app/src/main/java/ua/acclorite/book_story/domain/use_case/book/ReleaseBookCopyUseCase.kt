@@ -7,6 +7,8 @@
 
 package ua.acclorite.book_story.domain.use_case.book
 
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
 import ua.acclorite.book_story.core.log.logI
 import ua.acclorite.book_story.core.log.logW
 import ua.acclorite.book_story.core.log.messageForLog
@@ -33,23 +35,25 @@ class ReleaseBookCopyUseCase @Inject constructor(
     private val bookRepository: BookRepository
 ) {
 
-    suspend operator fun invoke(book: Book): Book? {
+    /**
+     * Not cancellable: it is started from Book info, which the user can leave
+     * while it runs, and a row pointed back but cut short before the copy goes
+     * leaves the copy behind for the life of the install.
+     */
+    suspend operator fun invoke(book: Book): Book? = withContext(NonCancellable) {
         val current = bookRepository.getBook(book.id).getOrElse {
             logW(TAG, "Could not read [${book.id}] back: ${it.messageForLog()}")
-            return null
+            return@withContext null
         }
 
         if (!current.isOwnCopy) {
             logI(TAG, "[${current.id}] is not a copy.")
-            return current
+            return@withContext current
         }
 
-        // The row is pointed back at the original first, and only then is the
-        // copy deleted: a row updated over a deleted file is a book that cannot
-        // be opened, while a copy outliving a failed update is a few megabytes.
-        val path = bookRepository.releaseBookFile(current).getOrElse {
+        val path = bookRepository.resolveBookOrigin(current).getOrElse {
             logW(TAG, "Could not release [${current.id}]: ${it.messageForLog()}")
-            return null
+            return@withContext null
         }
 
         val released = current.copy(
@@ -61,12 +65,19 @@ class ReleaseBookCopyUseCase @Inject constructor(
             originPath = null
         )
 
+        // The row is pointed back at the original first, and only then is the
+        // copy deleted: a row left naming a deleted file is a book that cannot
+        // be opened, while a copy outliving a failed update is a few megabytes.
         bookRepository.updateBook(released).onFailure {
             logW(TAG, "Could not point [${current.id}] back: ${it.messageForLog()}")
-            return null
+            return@withContext null
+        }
+
+        bookRepository.releaseBookFile(current).onFailure {
+            logW(TAG, "Could not delete the copy of [${current.id}]: ${it.messageForLog()}")
         }
 
         logI(TAG, "[${current.id}] is read where it lives again.")
-        return released
+        released
     }
 }

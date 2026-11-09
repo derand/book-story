@@ -12,10 +12,14 @@ import ua.acclorite.book_story.core.log.logI
 import ua.acclorite.book_story.core.log.messageForLog
 import ua.acclorite.book_story.data.model.file.CachedFile
 import java.io.File
+import java.io.InputStream
 import javax.inject.Inject
 import javax.inject.Singleton
 
 private const val TAG = "OwnedBookFiles"
+
+/** What a copy is called while it is still being written. */
+private const val PART_SUFFIX = ".part"
 
 /**
  * The directory books the app owns live in, one directory per book.
@@ -62,14 +66,34 @@ class OwnedBookFiles @Inject constructor(
 
     /**
      * Copies [source] in and returns the file, or null if it could not be read.
-     * A book already stored under [bookId] is replaced.
+     * A book already stored under [bookId] keeps its copy until the new one is
+     * whole; see the other overload.
      */
-    fun store(source: CachedFile, bookId: Int): File? {
+    fun store(source: CachedFile, bookId: Int): File? =
+        store(bookId, source.name, source.lastModified, source::openInputStream)
+
+    /**
+     * Copies what [open] reads in as the file called [name] and returns it, or
+     * null if it could not be stored.
+     *
+     * The bytes go to a temporary file beside the copy they replace, and are
+     * renamed over it only once they are all there. A source that fails halfway
+     * — a cloud provider dropping the connection, a revoked grant, a full disk —
+     * leaves the book the copy it had. For a book kept because its provider
+     * exposes no location, that copy is the only one.
+     *
+     * A copy stored earlier under another name is left in place: the book's
+     * row still names it. [keepOnly] drops it once the row names the new one.
+     */
+    internal fun store(
+        bookId: Int,
+        name: String,
+        lastModified: Long,
+        open: () -> InputStream?
+    ): File? {
         val directory = File(root, bookId.toString())
 
-        // Before anything is deleted: a name that cannot be stored must not
-        // cost the book the copy it already has.
-        val destination = storedFileIn(directory, source.name)
+        val destination = storedFileIn(directory, name)
         if (destination == null) {
             // The name itself stays out of the log: it is a book's file name,
             // and it came from outside.
@@ -77,30 +101,51 @@ class OwnedBookFiles @Inject constructor(
             return null
         }
 
-        directory.deleteRecursively()
-        if (!directory.mkdirs()) {
+        if (!directory.isDirectory && !directory.mkdirs()) {
             logI(TAG, "Could not make a directory for [$bookId].")
             return null
         }
 
-        try {
-            source.openInputStream()?.use { input ->
-                destination.outputStream().buffered().use(input::copyTo)
-            } ?: throw IllegalStateException("Could not open ${source.name}.")
+        val part = try {
+            File.createTempFile("incoming", PART_SUFFIX, directory)
         } catch (e: Exception) {
-            logI(TAG, "Could not store [$bookId]: ${e.messageForLog()}")
-            directory.deleteRecursively()
+            logI(TAG, "Could not start a copy for [$bookId]: ${e.messageForLog()}")
             return null
         }
 
-        // The parse cache is keyed on path, size and modification time. Two of
-        // the three already match — a copy is byte for byte — so carrying the
-        // third across lets the entry the preview just wrote be moved to the
-        // copy instead of the book being parsed a second time.
-        destination.setLastModified(source.lastModified)
+        try {
+            open()?.use { input ->
+                part.outputStream().buffered().use(input::copyTo)
+            } ?: throw IllegalStateException("Could not open $name.")
+
+            // The parse cache is keyed on path, size and modification time. Two
+            // of the three already match — a copy is byte for byte — so carrying
+            // the third across lets the entry the preview just wrote be moved to
+            // the copy instead of the book being parsed a second time.
+            part.setLastModified(lastModified)
+
+            // Over a copy of the same name, in one step.
+            if (!part.renameTo(destination)) {
+                throw IllegalStateException("Could not move the copy into place.")
+            }
+        } catch (e: Exception) {
+            logI(TAG, "Could not store [$bookId]: ${e.messageForLog()}")
+            part.delete()
+            return null
+        }
 
         logI(TAG, "Stored ${destination.length()} bytes for [$bookId].")
         return destination
+    }
+
+    /**
+     * Drops everything stored for [bookId] except [path]: a copy the book's row
+     * no longer names, or what an interrupted [store] left behind.
+     */
+    fun keepOnly(bookId: Int, path: String) {
+        File(root, bookId.toString()).listFiles()
+            ?.filter { it.absolutePath != path }
+            ?.forEach { it.deleteRecursively() }
     }
 
     /** Drops the book's file, if it has one. */

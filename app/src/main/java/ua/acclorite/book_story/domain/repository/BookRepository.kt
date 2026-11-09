@@ -64,15 +64,28 @@ interface BookRepository {
     suspend fun deleteBookFile(bookId: Int): Result<Unit>
 
     /**
-     * Gives up the app's copy of [book] and hands back the path of the original
-     * it was made from, which has to be reachable for this to be possible at
-     * all.
+     * Drops every file stored for [bookId] except [path], once the book's row
+     * names [path]: the copy it replaced, or what an interrupted store left.
      */
-    suspend fun releaseBookFile(book: Book): Result<String>
+    suspend fun keepOnlyBookFile(bookId: Int, path: String): Result<Unit>
 
     /**
-     * Copies [book] from its origin again, replacing the copy the app holds,
-     * and hands back the path of the new one.
+     * The path of the original the copy of [book] was made from, if that
+     * original can be read — which it has to be before the copy can be given
+     * up. Nothing is changed.
+     */
+    suspend fun resolveBookOrigin(book: Book): Result<String>
+
+    /**
+     * Gives up the app's copy of [book], once its row points back at the
+     * original [resolveBookOrigin] answered with.
+     */
+    suspend fun releaseBookFile(book: Book): Result<Unit>
+
+    /**
+     * Copies [book] from its origin again and hands back the path of the new
+     * copy. The copy it replaces stays until the new one is whole, and a copy
+     * under another name stays until [keepOnlyBookFile].
      */
     suspend fun refreshBookFile(book: Book): Result<String>
 

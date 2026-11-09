@@ -6,6 +6,8 @@
 
 package ua.acclorite.book_story.domain.use_case.book
 
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -113,6 +115,59 @@ class BookCopyUseCasesTest {
 
         assertNull(ReleaseBookCopyUseCase(repository)(copiedBook))
         assertNull(repository.updated)
+        assertNull(repository.releasedFor)
+    }
+
+    @Test
+    fun `releasing points the row back before the copy goes`() = runBlocking {
+        val repository = FakeBookRepository(books = listOf(copiedBook))
+        repository.releasedPath = "/storage/a-book.fb2"
+
+        ReleaseBookCopyUseCase(repository)(copiedBook)
+
+        assertEquals(listOf("resolve", "update", "release"), repository.copyCalls)
+    }
+
+    @Test
+    fun `a copy whose row could not be pointed back is kept`() = runBlocking {
+        val repository = FakeBookRepository(books = listOf(copiedBook))
+        repository.releasedPath = "/storage/a-book.fb2"
+        repository.updateResult = Result.failure(IllegalStateException("No."))
+
+        assertNull(ReleaseBookCopyUseCase(repository)(copiedBook))
+        assertNull(repository.releasedFor)
+    }
+
+    @Test
+    fun `a stored copy whose row could not be written is dropped`() = runBlocking {
+        val repository = FakeBookRepository(books = listOf(cloudBook), storedPath = "/copy/a-book.fb2")
+        repository.updateResult = Result.failure(IllegalStateException("No."))
+
+        assertNull(StoreBookCopyUseCase(repository)(cloudBook))
+        assertEquals(listOf("store", "update", "delete"), repository.copyCalls)
+    }
+
+    @Test
+    fun `leaving the screen mid-store still points the row at the copy`() = runBlocking {
+        val repository = FakeBookRepository(books = listOf(cloudBook), storedPath = "/copy/a-book.fb2")
+        val started = CompletableDeferred<Unit>()
+        val gate = CompletableDeferred<Unit>()
+        repository.onStore = {
+            started.complete(Unit)
+            gate.await()
+        }
+
+        val job = launch { StoreBookCopyUseCase(repository)(cloudBook) }
+        started.await()
+        job.cancel()
+        gate.complete(Unit)
+        job.join()
+
+        assertEquals("/copy/a-book.fb2", repository.updated?.filePath)
+        assertEquals(
+            listOf("store", "update", "keepOnly /copy/a-book.fb2"),
+            repository.copyCalls
+        )
     }
 
     @Test
@@ -136,6 +191,33 @@ class BookCopyUseCasesTest {
 
         assertNull(RefreshBookCopyUseCase(repository)(copiedBook))
         assertNull(repository.updated)
+        assertEquals(listOf("refresh"), repository.copyCalls)
+    }
+
+    @Test
+    fun `the old copy goes only once the row names the new one`() = runBlocking {
+        val repository = FakeBookRepository(books = listOf(copiedBook))
+        repository.refreshedPath = "/data/user/0/app/files/owned_books/7/a-book.epub"
+
+        RefreshBookCopyUseCase(repository)(copiedBook)
+
+        assertEquals(
+            listOf("refresh", "update", "keepOnly /data/user/0/app/files/owned_books/7/a-book.epub"),
+            repository.copyCalls
+        )
+    }
+
+    @Test
+    fun `a refresh whose row could not be written keeps the copy the row names`() = runBlocking {
+        val repository = FakeBookRepository(books = listOf(copiedBook))
+        repository.refreshedPath = "/data/user/0/app/files/owned_books/7/a-book.epub"
+        repository.updateResult = Result.failure(IllegalStateException("No."))
+
+        assertNull(RefreshBookCopyUseCase(repository)(copiedBook))
+        assertEquals(
+            listOf("refresh", "update", "keepOnly ${copiedBook.filePath}"),
+            repository.copyCalls
+        )
     }
 
     @Test

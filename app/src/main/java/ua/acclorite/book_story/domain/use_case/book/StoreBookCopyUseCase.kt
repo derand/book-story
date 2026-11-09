@@ -7,6 +7,8 @@
 
 package ua.acclorite.book_story.domain.use_case.book
 
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
 import ua.acclorite.book_story.core.log.logI
 import ua.acclorite.book_story.core.log.logW
 import ua.acclorite.book_story.core.log.messageForLog
@@ -37,24 +39,29 @@ class StoreBookCopyUseCase @Inject constructor(
     private val bookRepository: BookRepository
 ) {
 
-    suspend operator fun invoke(book: Book): Book? {
+    /**
+     * Not cancellable: it is started from Book info, which the user can leave
+     * while it runs, and a copy stored but cut short before the row names it is a
+     * whole book's size nobody can reach.
+     */
+    suspend operator fun invoke(book: Book): Book? = withContext(NonCancellable) {
         // The row is re-read rather than trusted: what a caller holds was true
         // when it was handed over, and this writes the *whole* row back. A book
         // that was just inserted has already gained a cover the caller's copy
         // does not know about, and writing that copy back would erase it.
         val current = bookRepository.getBook(book.id).getOrElse {
             logW(TAG, "Could not read [${book.id}] back: ${it.messageForLog()}")
-            return null
+            return@withContext null
         }
 
         if (current.isOwnCopy) {
             logI(TAG, "[${current.id}] is already a copy.")
-            return current
+            return@withContext current
         }
 
         val path = bookRepository.storeBookFile(current).getOrElse {
             logW(TAG, "Could not store [${current.id}]: ${it.messageForLog()}")
-            return null
+            return@withContext null
         }
 
         val stored = current.copy(
@@ -71,10 +78,13 @@ class StoreBookCopyUseCase @Inject constructor(
             // The row still names the original, so the copy is unreachable and
             // would be a leak of the whole book's size.
             bookRepository.deleteBookFile(current.id)
-            return null
+            return@withContext null
         }
 
+        // Whatever an interrupted store left beside it.
+        bookRepository.keepOnlyBookFile(current.id, path)
+
         logI(TAG, "[${current.id}] is now read from the app's own copy.")
-        return stored
+        stored
     }
 }

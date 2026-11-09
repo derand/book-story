@@ -30,6 +30,18 @@ class FakeBookRepository(
     var updated: Book? = null
         private set
 
+    /** What updating a book answers. */
+    var updateResult: Result<Unit> = Result.success(Unit)
+
+    /**
+     * The calls the copy use cases make, in order: `store`, `refresh`,
+     * `resolve`, `update`, `release`, `delete` and `keepOnly <path>`.
+     */
+    val copyCalls = mutableListOf<String>()
+
+    /** Runs inside `storeBookFile`, before it answers. */
+    var onStore: suspend () -> Unit = {}
+
     /** Whether the last update stated the book's document identity. */
     var updatedStatesIdentity: Boolean = false
         private set
@@ -54,7 +66,7 @@ class FakeBookRepository(
     var releasedFor: Book? = null
         private set
 
-    /** Set to make releasing succeed with this path; null makes it fail. */
+    /** Set to make resolving the original succeed with this path; null makes it fail. */
     var releasedPath: String? = null
 
     override suspend fun getLibraryBooks(): Result<List<Book>> = Result.success(books)
@@ -62,9 +74,11 @@ class FakeBookRepository(
     override suspend fun findPreviews(): Result<List<Book>> = Result.success(previews)
 
     override suspend fun updateBook(book: Book, statesIdentity: Boolean): Result<Unit> {
+        copyCalls += "update"
+        if (updateResult.isFailure) return updateResult
         updated = book
         updatedStatesIdentity = statesIdentity
-        return Result.success(Unit)
+        return updateResult
     }
 
     override suspend fun deleteBookRecords(bookId: Int): Result<Uri?> {
@@ -80,12 +94,20 @@ class FakeBookRepository(
 
     override suspend fun storeBookFile(book: Book): Result<String> {
         storedFor = book
+        copyCalls += "store"
+        onStore()
         return storedPath?.let { Result.success(it) }
             ?: Result.failure(IllegalStateException("Could not store it."))
     }
 
     override suspend fun deleteBookFile(bookId: Int): Result<Unit> {
         deleteCalls += "file $bookId"
+        copyCalls += "delete"
+        return Result.success(Unit)
+    }
+
+    override suspend fun keepOnlyBookFile(bookId: Int, path: String): Result<Unit> {
+        copyCalls += "keepOnly $path"
         return Result.success(Unit)
     }
 
@@ -98,14 +120,21 @@ class FakeBookRepository(
 
     override suspend fun refreshBookFile(book: Book): Result<String> {
         refreshedFor = book
+        copyCalls += "refresh"
         return refreshedPath?.let { Result.success(it) }
             ?: Result.failure(IllegalStateException("Could not refresh it."))
     }
 
-    override suspend fun releaseBookFile(book: Book): Result<String> {
-        releasedFor = book
+    override suspend fun resolveBookOrigin(book: Book): Result<String> {
+        copyCalls += "resolve"
         return releasedPath?.let { Result.success(it) }
-            ?: Result.failure(IllegalStateException("Could not release it."))
+            ?: Result.failure(IllegalStateException("Could not reach the original."))
+    }
+
+    override suspend fun releaseBookFile(book: Book): Result<Unit> {
+        releasedFor = book
+        copyCalls += "release"
+        return Result.success(Unit)
     }
 
     private fun unused(name: String): Nothing =
