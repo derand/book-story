@@ -35,9 +35,6 @@ class DiscardPreviewsUseCase @Inject constructor(
 
         logI(TAG, "Discarding preview [${book.id}].")
         deleteBookUseCase(book)
-        bookRepository.dropBookImages(book.id).onFailure {
-            logW(TAG, "Could not drop images of [${book.id}]: ${it.messageForLog()}")
-        }
     }
 
     /** Discards every preview there is. By design there never should be one. */

@@ -21,10 +21,6 @@ interface HistoryRepository {
 
     suspend fun deleteWholeHistory(): Result<Unit>
 
-    suspend fun deleteHistoryForBook(
-        bookId: Int
-    ): Result<Unit>
-
     suspend fun deleteHistory(
         history: History
     ): Result<Unit>

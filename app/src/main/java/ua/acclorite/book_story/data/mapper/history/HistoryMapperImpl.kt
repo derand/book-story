@@ -23,10 +23,11 @@ class HistoryMapperImpl @Inject constructor(
         )
     }
 
-    override suspend fun toHistory(historyWithBook: HistoryWithBook): History {
+    override suspend fun toHistory(historyWithBook: HistoryWithBook): History? {
+        val book = historyWithBook.book ?: return null
         return History(
             id = historyWithBook.history.id,
-            book = bookMapper.toBook(historyWithBook.book),
+            book = bookMapper.toBook(book),
             time = historyWithBook.history.time
         )
     }

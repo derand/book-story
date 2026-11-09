@@ -7,6 +7,7 @@
 
 package ua.acclorite.book_story.domain.use_case.book
 
+import android.net.Uri
 import ua.acclorite.book_story.core.CoverImage
 import ua.acclorite.book_story.domain.model.file.File
 import ua.acclorite.book_story.domain.model.library.Book
@@ -33,8 +34,17 @@ class FakeBookRepository(
     var updatedStatesIdentity: Boolean = false
         private set
 
-    var deleted: Book? = null
-        private set
+    /**
+     * The delete calls, in the order they were made: `records`, `file` and
+     * `images`, each with the book id. Order is the point of a delete.
+     */
+    val deleteCalls = mutableListOf<String>()
+
+    /** What deleting a book's records answers: the cover its row named. */
+    var deleteRecordsResult: Result<Uri?> = Result.success(null)
+
+    /** Runs inside `deleteBookRecords`, before it answers. */
+    var onDeleteRecords: suspend () -> Unit = {}
 
     /** The book whose file was copied into the app's own storage, if any. */
     var storedFor: Book? = null
@@ -57,12 +67,16 @@ class FakeBookRepository(
         return Result.success(Unit)
     }
 
-    override suspend fun deleteBook(book: Book): Result<Unit> {
-        deleted = book
-        return Result.success(Unit)
+    override suspend fun deleteBookRecords(bookId: Int): Result<Uri?> {
+        onDeleteRecords()
+        deleteCalls += "records $bookId"
+        return deleteRecordsResult
     }
 
-    override suspend fun dropBookImages(bookId: Int): Result<Unit> = Result.success(Unit)
+    override suspend fun dropBookImages(bookId: Int): Result<Unit> {
+        deleteCalls += "images $bookId"
+        return Result.success(Unit)
+    }
 
     override suspend fun storeBookFile(book: Book): Result<String> {
         storedFor = book
@@ -70,7 +84,10 @@ class FakeBookRepository(
             ?: Result.failure(IllegalStateException("Could not store it."))
     }
 
-    override suspend fun deleteBookFile(bookId: Int): Result<Unit> = Result.success(Unit)
+    override suspend fun deleteBookFile(bookId: Int): Result<Unit> {
+        deleteCalls += "file $bookId"
+        return Result.success(Unit)
+    }
 
     /** Set to make refreshing succeed with this path; null makes it fail. */
     var refreshedPath: String? = null

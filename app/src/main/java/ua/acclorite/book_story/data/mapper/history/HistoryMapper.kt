@@ -12,5 +12,6 @@ import ua.acclorite.book_story.domain.model.history.History
 
 interface HistoryMapper {
     suspend fun toHistoryEntity(history: History): HistoryEntity
-    suspend fun toHistory(historyWithBook: HistoryWithBook): History
+    /** Null for an entry whose book is gone; see [HistoryWithBook.book]. */
+    suspend fun toHistory(historyWithBook: HistoryWithBook): History?
 }
