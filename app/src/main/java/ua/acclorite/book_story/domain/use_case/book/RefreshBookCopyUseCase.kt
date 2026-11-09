@@ -7,6 +7,8 @@
 
 package ua.acclorite.book_story.domain.use_case.book
 
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
 import ua.acclorite.book_story.core.log.logI
 import ua.acclorite.book_story.core.log.logW
 import ua.acclorite.book_story.core.log.messageForLog
@@ -35,29 +37,41 @@ class RefreshBookCopyUseCase @Inject constructor(
     private val bookRepository: BookRepository
 ) {
 
-    suspend operator fun invoke(book: Book): Book? {
+    /**
+     * Not cancellable: it is started from Book info, which the user can leave
+     * while it runs, and a new copy under a new name, cut short before the row
+     * names it, is a leak.
+     */
+    suspend operator fun invoke(book: Book): Book? = withContext(NonCancellable) {
         val current = bookRepository.getBook(book.id).getOrElse {
             logW(TAG, "Could not read [${book.id}] back: ${it.messageForLog()}")
-            return null
+            return@withContext null
         }
 
         if (!current.isOwnCopy || current.originPath == null) {
             logI(TAG, "[${current.id}] has nothing to refresh from.")
-            return null
+            return@withContext null
         }
 
         val path = bookRepository.refreshBookFile(current).getOrElse {
             logW(TAG, "Could not refresh [${current.id}]: ${it.messageForLog()}")
-            return null
+            return@withContext null
         }
 
         val refreshed = current.copy(filePath = path)
         bookRepository.updateBook(refreshed).onFailure {
             logW(TAG, "Could not point [${current.id}] at the new copy: ${it.messageForLog()}")
-            return null
+            // The row still names the copy it had, which is still there: a
+            // copy of the same name was replaced in place, one under another
+            // name was left alone. Only the new one has nothing pointing at it.
+            bookRepository.keepOnlyBookFile(current.id, current.filePath)
+            return@withContext null
         }
 
+        // The old copy, now that nothing names it.
+        bookRepository.keepOnlyBookFile(current.id, path)
+
         logI(TAG, "[${current.id}] was taken from its source again.")
-        return refreshed
+        refreshed
     }
 }
