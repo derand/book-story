@@ -157,10 +157,10 @@ fun ReaderEffects(
                 }
 
                 is ReaderEffect.OnNavigateToBookInfo -> {
-                    if (effect.changePath) BookInfoScreen.changePathChannel.trySend(true)
                     navigator.push(
                         BookInfoScreen(
-                            bookId = book.id
+                            bookId = book.id,
+                            changePath = effect.changePath
                         ),
                         popping = true,
                         saveInBackStack = false

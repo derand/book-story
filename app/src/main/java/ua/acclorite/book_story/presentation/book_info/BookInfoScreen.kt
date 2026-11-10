@@ -13,12 +13,14 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.getOrElse
 import kotlinx.parcelize.Parcelize
 import ua.acclorite.book_story.presentation.navigator.Screen
 import ua.acclorite.book_story.presentation.settings.SettingsModel
@@ -26,7 +28,11 @@ import ua.acclorite.book_story.ui.book_info.BookInfoContent
 import ua.acclorite.book_story.ui.book_info.BookInfoEffects
 
 @Parcelize
-data class BookInfoScreen(val bookId: Int) : Screen, Parcelable {
+data class BookInfoScreen(
+    val bookId: Int,
+    /** Open the path dialog on arrival: the reader could not find the book's file. */
+    val changePath: Boolean = false
+) : Screen, Parcelable {
 
     companion object {
         const val DELETE_DIALOG = "delete_dialog"
@@ -38,8 +44,6 @@ data class BookInfoScreen(val bookId: Int) : Screen, Parcelable {
 
         const val CHANGE_COVER_BOTTOM_SHEET = "change_cover_bottom_sheet"
         const val DETAILS_BOTTOM_SHEET = "details_bottom_sheet"
-
-        val changePathChannel: Channel<Boolean> = Channel(Channel.CONFLATED)
     }
 
     @Composable
@@ -55,11 +59,15 @@ data class BookInfoScreen(val bookId: Int) : Screen, Parcelable {
             settingsState.value.categories.filterNot { it.id == -1 }
         }
 
+        // Asked for once. The screen keeps this across a return from a screen
+        // pushed over it (Move → "Edit"), when init runs again.
+        var pathDialogAsked by rememberSaveable { mutableStateOf(false) }
         LaunchedEffect(Unit) {
             screenModel.init(
                 bookId = bookId,
-                changePath = changePathChannel.tryReceive().getOrElse { false }
+                changePath = changePath && !pathDialogAsked
             )
+            pathDialogAsked = true
         }
 
         DisposableEffect(Unit) {
