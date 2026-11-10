@@ -22,6 +22,7 @@ import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.dp
@@ -44,6 +45,10 @@ fun NavigatorTabs(
         windowClass.widthSizeClass != WindowWidthSizeClass.Compact
     }
     val layoutDirection = LocalLayoutDirection.current
+    // Each tab keeps its own saved state across a switch to another tab; all
+    // three together are one screen to the navigator, which keeps them while
+    // something is pushed over them.
+    val tabState = rememberSaveableStateHolder()
     val showNavigatorBottomSheet = navigatorBottomSheetChannel
         .receiveAsFlow()
         .collectAsStateWithLifecycle(false)
@@ -79,8 +84,10 @@ fun NavigatorTabs(
                 AnimatedContent(
                     targetState = currentTab,
                     transitionSpec = transitionSpec,
-                    content = {
-                        content(it)
+                    content = { tab ->
+                        tabState.SaveableStateProvider(tab) {
+                            content(tab)
+                        }
                     }
                 )
             }

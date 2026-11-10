@@ -14,7 +14,6 @@ import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.focus.FocusRequester
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -38,28 +37,13 @@ object HistoryScreen : Screen, Parcelable {
     @IgnoredOnParcel
     val insertHistoryChannel: Channel<Int> = Channel(Channel.CONFLATED)
 
-    @IgnoredOnParcel
-    private var initialIndex = 0
-
-    @IgnoredOnParcel
-    private var initialOffset = 0
-
     @Composable
     override fun Content() {
         val screenModel = hiltViewModel<HistoryModel>()
 
         val state = screenModel.state.collectAsStateWithLifecycle()
 
-        val listState = rememberLazyListState(
-            initialFirstVisibleItemIndex = initialIndex,
-            initialFirstVisibleItemScrollOffset = initialOffset
-        )
-        DisposableEffect(Unit) {
-            onDispose {
-                initialIndex = listState.firstVisibleItemIndex
-                initialOffset = listState.firstVisibleItemScrollOffset
-            }
-        }
+        val listState = rememberLazyListState()
 
         val snackbarState = remember { SnackbarHostState() }
         val focusRequester = remember { FocusRequester() }
