@@ -12,18 +12,14 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.focus.FocusRequester
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.parcelize.IgnoredOnParcel
 import kotlinx.parcelize.Parcelize
-import ua.acclorite.book_story.presentation.browse.model.BrowseLayout
 import ua.acclorite.book_story.presentation.navigator.Screen
 import ua.acclorite.book_story.ui.browse.BrowseContent
 import ua.acclorite.book_story.ui.browse.BrowseEffects
@@ -41,21 +37,6 @@ object BrowseScreen : Screen, Parcelable {
     @IgnoredOnParcel
     val refreshListChannel: Channel<Unit> = Channel(Channel.CONFLATED)
 
-    @IgnoredOnParcel
-    val resetScrollPositionCompositionChannel: Channel<Unit> = Channel(Channel.CONFLATED)
-
-    @IgnoredOnParcel
-    private var initialListIndex = 0
-
-    @IgnoredOnParcel
-    private var initialListOffset = 0
-
-    @IgnoredOnParcel
-    private var initialGridIndex = 0
-
-    @IgnoredOnParcel
-    private var initialGridOffset = 0
-
     @OptIn(ExperimentalMaterialApi::class)
     @Composable
     override fun Content() {
@@ -64,8 +45,8 @@ object BrowseScreen : Screen, Parcelable {
 
         val state = screenModel.state.collectAsStateWithLifecycle()
 
-        val listState = rememberLazyListState(initialListIndex, initialListOffset)
-        val gridState = rememberLazyGridState(initialGridIndex, initialGridOffset)
+        val listState = rememberLazyListState()
+        val gridState = rememberLazyGridState()
 
         val focusRequester = remember { FocusRequester() }
         val refreshState = rememberPullRefreshState(
@@ -91,36 +72,6 @@ object BrowseScreen : Screen, Parcelable {
                     hideSearch = false
                 )
             )
-        }
-
-        LaunchedEffect(Unit) {
-            resetScrollPositionCompositionChannel.receiveAsFlow().collectLatest {
-                initialListIndex = 0
-                initialListOffset = 0
-                initialGridIndex = 0
-                initialGridOffset = 0
-            }
-        }
-
-        DisposableEffect(Unit) {
-            onDispose {
-                initialListIndex = 0
-                initialListOffset = 0
-                initialGridIndex = 0
-                initialGridOffset = 0
-
-                when (settings.browseLayout.lastValue) {
-                    BrowseLayout.LIST -> {
-                        initialListIndex = listState.firstVisibleItemIndex
-                        initialListOffset = listState.firstVisibleItemScrollOffset
-                    }
-
-                    BrowseLayout.GRID -> {
-                        initialGridIndex = gridState.firstVisibleItemIndex
-                        initialGridOffset = gridState.firstVisibleItemScrollOffset
-                    }
-                }
-            }
         }
 
         BrowseEffects(

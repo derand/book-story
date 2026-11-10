@@ -16,6 +16,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dagger.hilt.android.lifecycle.withCreationCallback
@@ -62,6 +65,23 @@ fun Navigator(
     val lastEvent = navigator.lastEvent.collectAsStateWithLifecycle(
         context = Dispatchers.Main.immediate
     )
+    val stack = navigator.items.collectAsStateWithLifecycle(
+        context = Dispatchers.Main.immediate
+    )
+
+    // What a screen keeps in `rememberSaveable` — its scroll, its pager page —
+    // outlives the screen leaving composition while it is still in the stack, so
+    // Back finds it where it was. A screen leaving the stack takes its state
+    // with it: the next visit is a new one, and a reader or book info opened
+    // once does not hold its state for the rest of the activity.
+    val saveableState = rememberSaveableStateHolder()
+    val keysInStack = remember { mutableSetOf<Any>() }
+    LaunchedEffect(stack.value) {
+        val keys = stack.value.mapTo(mutableSetOf()) { it.stateKey(contentKey) }
+        keysInStack.filterNot { it in keys }.forEach(saveableState::removeState)
+        keysInStack.retainAll(keys)
+        keysInStack.addAll(keys)
+    }
 
     CompositionLocalProvider(LocalNavigator provides navigator) {
         AnimatedContent(
@@ -73,7 +93,11 @@ fun Navigator(
                 transitionSpec(this, lastEvent.value)
             },
             contentKey = contentKey,
-            content = { content(it) }
+            content = { screen ->
+                saveableState.SaveableStateProvider(screen.stateKey(contentKey)) {
+                    content(screen)
+                }
+            }
         )
 
         overlay()
@@ -83,3 +107,6 @@ fun Navigator(
         navigator.pop()
     }
 }
+
+/** Screens sharing a [contentKey] share one saved state, as they share one slot. */
+private fun Screen.stateKey(contentKey: (Screen) -> Any?): Any = contentKey(this) ?: this

@@ -11,7 +11,6 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.remember
@@ -47,9 +46,6 @@ object LibraryScreen : Screen, Parcelable {
 
     @IgnoredOnParcel
     val scrollToPageCompositionChannel: Channel<Int> = Channel(Channel.CONFLATED)
-
-    @IgnoredOnParcel
-    private var initialPage = 0
 
     @OptIn(ExperimentalMaterialApi::class)
     @Composable
@@ -88,12 +84,9 @@ object LibraryScreen : Screen, Parcelable {
             }
         )
 
-        val pagerState = rememberPagerState(
-            initialPage = initialPage
-        ) {
+        val pagerState = rememberPagerState {
             settingsState.value.categories.count().minus(if (!showDefaultCategory.value) 1 else 0)
         }
-        DisposableEffect(Unit) { onDispose { initialPage = pagerState.currentPage } }
 
         LaunchedEffect(Unit) {
             scrollToPageCompositionChannel.receiveAsFlow().collectLatest {

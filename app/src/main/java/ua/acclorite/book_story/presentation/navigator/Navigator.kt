@@ -24,12 +24,14 @@ class Navigator @AssistedInject constructor(
     @Assisted private val initialScreen: Screen
 ) : ViewModel() {
 
-    val items = savedStateHandle.getStateFlow("items", mutableListOf(initialScreen))
-    private fun StateFlow<MutableList<Screen>>.removeLast() {
+    val items: StateFlow<List<Screen>> =
+        savedStateHandle.getStateFlow("items", arrayListOf(initialScreen))
+
+    private fun StateFlow<List<Screen>>.removeLast() {
         savedStateHandle["items"] = value.dropLast(1)
     }
 
-    private fun StateFlow<MutableList<Screen>>.add(item: Screen) {
+    private fun StateFlow<List<Screen>>.add(item: Screen) {
         savedStateHandle["items"] = value + item
     }
 
@@ -63,8 +65,9 @@ class Navigator @AssistedInject constructor(
         // Read from [items] rather than [lastItem]: the latter is a `map` on a
         // `stateIn`, so it lags a frame behind. A pop followed by a push in the
         // same frame — which is how one book replaces another — saw the screen
-        // that had just been popped, and refused to push anything at all.
-        if (items.value.lastOrNull()?.let { it::class == targetScreen::class } == true) return
+        // that had just been popped, and refused to push anything at all. The
+        // same goes for the check below, after a screen was dropped here.
+        if (items.value.lastOrNull().isSameKindAs(targetScreen)) return
         if (!saveInBackStack) items.removeLast()
 
         changeStackEvent(
@@ -72,11 +75,22 @@ class Navigator @AssistedInject constructor(
             else StackEvent.DEFAULT
         )
 
-        if (lastItem.value::class == targetScreen::class) items.removeLast()
+        // Never two screens of a kind on top of each other: a screen replacing
+        // itself (book info → reader → book info) replaces the one underneath.
+        if (items.value.lastOrNull().isSameKindAs(targetScreen)) items.removeLast()
         items.add(targetScreen)
     }
 
-    fun pop(popping: Boolean = true) {
+    /**
+     * Drops the top screen, unless it is the only one.
+     *
+     * [from] is the screen asking. Give it whenever the pop can arrive late — from
+     * an effect, a callback, a second tap — so that a screen already gone cannot
+     * pop the one that is now on top in its place. Without it, the pop is
+     * unconditional.
+     */
+    fun pop(from: Screen? = null, popping: Boolean = true) {
+        if (from != null && items.value.lastOrNull() != from) return
         if (items.value.count() > 1) {
             changeStackEvent(
                 if (popping) StackEvent.POP
@@ -85,6 +99,9 @@ class Navigator @AssistedInject constructor(
             items.removeLast()
         }
     }
+
+    private fun Screen?.isSameKindAs(other: Screen): Boolean =
+        this != null && this::class == other::class
 
     @AssistedFactory
     interface Factory {

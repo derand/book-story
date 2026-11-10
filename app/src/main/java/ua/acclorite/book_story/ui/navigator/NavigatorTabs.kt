@@ -21,12 +21,16 @@ import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSiz
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import kotlinx.coroutines.flow.receiveAsFlow
 import ua.acclorite.book_story.presentation.navigator.Screen
 import ua.acclorite.book_story.ui.common.helpers.LocalActivity
 
@@ -44,45 +48,55 @@ fun NavigatorTabs(
         windowClass.widthSizeClass != WindowWidthSizeClass.Compact
     }
     val layoutDirection = LocalLayoutDirection.current
-    val showNavigatorBottomSheet = navigatorBottomSheetChannel
-        .receiveAsFlow()
-        .collectAsStateWithLifecycle(false)
+    // Each tab keeps its own saved state across a switch to another tab; all
+    // three together are one screen to the navigator, which keeps them while
+    // something is pushed over them.
+    val tabState = rememberSaveableStateHolder()
+    var showNavigatorBottomSheet by rememberSaveable { mutableStateOf(false) }
 
-    if (showNavigatorBottomSheet.value) {
-        NavigatorBottomSheet()
+    // One instance: the local is static, so a new lambda would recompose
+    // every tab under it.
+    val openNavigatorSheet: () -> Unit = remember { { showNavigatorBottomSheet = true } }
+
+    if (showNavigatorBottomSheet) {
+        NavigatorBottomSheet(dismiss = { showNavigatorBottomSheet = false })
     }
 
-    Scaffold(
-        modifier = Modifier.fillMaxSize(),
-        bottomBar = {
-            if (!tabletUI) navigationBar()
-        },
-        containerColor = MaterialTheme.colorScheme.surface
-    ) { paddingValues ->
-        Row(
-            modifier = Modifier
-                .fillMaxSize()
-        ) {
-            if (tabletUI) navigationRail()
-
-            Box(
+    CompositionLocalProvider(LocalOpenNavigatorSheet provides openNavigatorSheet) {
+        Scaffold(
+            modifier = Modifier.fillMaxSize(),
+            bottomBar = {
+                if (!tabletUI) navigationBar()
+            },
+            containerColor = MaterialTheme.colorScheme.surface
+        ) { paddingValues ->
+            Row(
                 modifier = Modifier
-                    .weight(1f)
                     .fillMaxSize()
-                    .padding(
-                        end = paddingValues.calculateEndPadding(layoutDirection),
-                        bottom = paddingValues.calculateBottomPadding(),
-                        start = if (!tabletUI) paddingValues.calculateStartPadding(layoutDirection)
-                        else 0.dp
-                    )
             ) {
-                AnimatedContent(
-                    targetState = currentTab,
-                    transitionSpec = transitionSpec,
-                    content = {
-                        content(it)
-                    }
-                )
+                if (tabletUI) navigationRail()
+
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxSize()
+                        .padding(
+                            end = paddingValues.calculateEndPadding(layoutDirection),
+                            bottom = paddingValues.calculateBottomPadding(),
+                            start = if (!tabletUI) paddingValues.calculateStartPadding(layoutDirection)
+                            else 0.dp
+                        )
+                ) {
+                    AnimatedContent(
+                        targetState = currentTab,
+                        transitionSpec = transitionSpec,
+                        content = { tab ->
+                            tabState.SaveableStateProvider(tab) {
+                                content(tab)
+                            }
+                        }
+                    )
+                }
             }
         }
     }

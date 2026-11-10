@@ -27,6 +27,7 @@ import ua.acclorite.book_story.ui.common.helpers.LocalActivity
 import ua.acclorite.book_story.ui.common.helpers.launchActivity
 import ua.acclorite.book_story.ui.common.helpers.setBrightness
 import ua.acclorite.book_story.ui.common.helpers.showToast
+import ua.acclorite.book_story.presentation.navigator.Screen
 import ua.acclorite.book_story.ui.navigator.LocalNavigator
 
 private const val EXTERNAL_STORAGE_AUTHORITY = "com.android.externalstorage.documents"
@@ -35,6 +36,7 @@ private const val PRIMARY_STORAGE = "/storage/emulated/0"
 @Composable
 fun ReaderEffects(
     effects: SharedFlow<ReaderEffect>,
+    screen: Screen,
     book: Book,
     fullscreen: Boolean,
     grantFolder: (ReaderEvent.OnGrantFolder) -> Unit
@@ -151,14 +153,14 @@ fun ReaderEffects(
                 }
 
                 is ReaderEffect.OnNavigateBack -> {
-                    navigator.pop()
+                    navigator.pop(from = screen)
                 }
 
                 is ReaderEffect.OnNavigateToBookInfo -> {
-                    if (effect.changePath) BookInfoScreen.changePathChannel.trySend(true)
                     navigator.push(
                         BookInfoScreen(
-                            bookId = book.id
+                            bookId = book.id,
+                            changePath = effect.changePath
                         ),
                         popping = true,
                         saveInBackStack = false

@@ -17,22 +17,19 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.channels.Channel
 import ua.acclorite.book_story.R
 import ua.acclorite.book_story.presentation.about.AboutScreen
 import ua.acclorite.book_story.presentation.settings.SettingsScreen
 import ua.acclorite.book_story.ui.common.components.modal_bottom_sheet.ModalBottomSheet
 import ua.acclorite.book_story.ui.common.model.Position
 
-val navigatorBottomSheetChannel = Channel<Boolean>(Channel.CONFLATED)
-
 @Composable
-fun NavigatorBottomSheet() {
+fun NavigatorBottomSheet(dismiss: () -> Unit) {
     val navigator = LocalNavigator.current
 
     ModalBottomSheet(
         modifier = Modifier.fillMaxWidth(),
-        onDismissRequest = { navigatorBottomSheetChannel.trySend(false) },
+        onDismissRequest = dismiss,
         sheetGesturesEnabled = true
     ) {
         LazyColumn(
@@ -49,7 +46,7 @@ fun NavigatorBottomSheet() {
                     position = Position.SOLO
                 ) {
                     navigator.push(AboutScreen)
-                    navigatorBottomSheetChannel.trySend(false)
+                    dismiss()
                 }
             }
 
@@ -61,7 +58,7 @@ fun NavigatorBottomSheet() {
                     position = Position.SOLO
                 ) {
                     navigator.push(SettingsScreen)
-                    navigatorBottomSheetChannel.trySend(false)
+                    dismiss()
                 }
             }
         }

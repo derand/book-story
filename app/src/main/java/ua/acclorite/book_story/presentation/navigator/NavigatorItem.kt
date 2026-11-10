@@ -9,9 +9,7 @@ package ua.acclorite.book_story.presentation.navigator
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.runtime.Immutable
-import kotlinx.serialization.Serializable
 
-@Serializable
 @Immutable
 data class NavigatorItem(
     val screen: Screen,
