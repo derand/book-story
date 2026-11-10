@@ -29,6 +29,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -43,7 +44,6 @@ import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.DialogWindowProvider
 import ua.acclorite.book_story.R
 import ua.acclorite.book_story.ui.common.components.common.LazyColumnWithScrollbar
@@ -58,7 +58,7 @@ fun Dialog(
     title: String,
     description: String?,
     disableOnClick: Boolean = true,
-    actionEnabled: Boolean?,
+    actionEnabled: Boolean = true,
     onDismiss: () -> Unit,
     onAction: () -> Unit,
     action: String? = null,
@@ -69,6 +69,9 @@ fun Dialog(
     withContent: Boolean,
     items: (LazyListScope.() -> Unit) = {}
 ) {
+    // Guards the action (and the secondary action) against a double tap. It
+    // never touches the way out: Cancel, Back and an outside tap always reach
+    // `onDismiss`, so a dialog whose action did not close it can still be closed.
     var actionClicked by remember { mutableStateOf(false) }
 
     val imeInsets = WindowInsets.ime.asPaddingValues().let {
@@ -93,13 +96,12 @@ fun Dialog(
                 MaterialTheme.shapes.extraLarge
             )
             .padding(top = 24.dp, bottom = 12.dp),
-        onDismissRequest = { onDismiss() },
-        properties = DialogProperties(
-            dismissOnBackPress = !actionClicked,
-            dismissOnClickOutside = !actionClicked
-        )
+        onDismissRequest = { onDismiss() }
     ) {
-        (LocalView.current.parent as DialogWindowProvider).window.setDimAmount(0.5f)
+        val dialogWindow = (LocalView.current.parent as DialogWindowProvider).window
+        SideEffect {
+            dialogWindow.setDimAmount(0.5f)
+        }
         Column {
             if (icon != null) {
                 Icon(
@@ -183,13 +185,7 @@ fun Dialog(
                         ) {
                             if (showDismiss) {
                                 TextButton(
-                                    onClick = {
-                                        if (disableOnClick) {
-                                            actionClicked = true
-                                        }
-                                        onDismiss()
-                                    },
-                                    enabled = !actionClicked
+                                    onClick = { onDismiss() }
                                 ) {
                                     StyledText(
                                         text = dismiss ?: stringResource(id = R.string.cancel),
@@ -207,12 +203,12 @@ fun Dialog(
                                     }
                                     onAction()
                                 },
-                                enabled = actionEnabled == true && !actionClicked
+                                enabled = actionEnabled && !actionClicked
                             ) {
                                 StyledText(
                                     text = action ?: stringResource(id = R.string.ok),
                                     style = MaterialTheme.typography.labelLarge.copy(
-                                        color = if (actionEnabled == true) MaterialTheme.colorScheme.primary
+                                        color = if (actionEnabled) MaterialTheme.colorScheme.primary
                                         else MaterialTheme.colorScheme.primary.copy(0.5f)
                                     )
                                 )

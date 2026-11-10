@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.History
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -133,9 +132,7 @@ private fun RevertibleSlider(
             icon = Icons.Default.History,
             contentDescription = R.string.revert_content_desc,
             disableOnClick = false,
-            enabled = initialValue != value.first,
-            color = if (initialValue == value.first) MaterialTheme.colorScheme.onSurfaceVariant
-            else MaterialTheme.colorScheme.onSurface
+            enabled = initialValue != value.first
         ) {
             onValueChange(initialValue)
         }
