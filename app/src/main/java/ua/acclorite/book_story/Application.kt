@@ -35,10 +35,12 @@ class Application : Application() {
         // Reader image files and book copies of runs that never got to clean up
         // after themselves — being killed, or swiped away from the recents list, is
         // an ordinary way to leave a book, so app start is the only reliable place
-        // for this.
+        // for this. The copies are moved aside here, before any activity can make
+        // a new one, and only deleted in the background.
+        CachedFile.retireCopies(this)
         CoroutineScope(Dispatchers.IO).launch {
+            CachedFile.deleteRetiredCopies(this@Application)
             readerImageFiles.sweep()
-            CachedFile.clearCopies(this@Application)
         }
     }
 }

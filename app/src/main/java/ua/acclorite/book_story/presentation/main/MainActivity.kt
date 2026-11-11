@@ -249,8 +249,11 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         // Only the copies made to hand books to parsers that need a real path, not
         // the whole cache: the parse cache and the reader's image files live there
-        // too, and they are meant to survive a book being closed.
-        CachedFile.clearCopies(this)
+        // too, and they are meant to survive a book being closed. And only when
+        // the app is really being left: a recreation (a system font size change,
+        // a keyboard plugged in) also ends here, while a book is open or opening
+        // and still reading its copy.
+        if (isFinishing && !isChangingConfigurations) CachedFile.clearCopies(this)
         super.onDestroy()
     }
 }
