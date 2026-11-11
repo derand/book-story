@@ -15,6 +15,8 @@ import androidx.datastore.preferences.core.doublePreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -25,7 +27,9 @@ import kotlinx.coroutines.launch
 import ua.acclorite.book_story.core.data.CoreData
 import ua.acclorite.book_story.core.language.Language
 import ua.acclorite.book_story.core.language.LanguageUtils
+import ua.acclorite.book_story.core.log.logE
 import ua.acclorite.book_story.core.log.logI
+import ua.acclorite.book_story.core.log.messageForLog
 import ua.acclorite.book_story.data.local.data_store.DataStore
 import ua.acclorite.book_story.data.settings.model.Setting
 import ua.acclorite.book_story.presentation.browse.model.BrowseLayout
@@ -60,7 +64,17 @@ private const val TAG = "SettingsManager"
 class SettingsManager @Inject constructor(
     private val dataStore: DataStore
 ) {
-    private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    // A failed read or write is logged, not thrown: thrown from here it would
+    // crash the app, and a stored value that fails would fail on every start.
+    private val scope = CoroutineScope(
+        Dispatchers.IO + SupervisorJob() + CoroutineExceptionHandler { _, e ->
+            logE(TAG, "Settings: ${e.messageForLog()}")
+        }
+    )
+
+    // One thread runs the writes in the order they were asked for, so the last
+    // step of a slider drag is the one stored, not whichever write lands last.
+    private val writes = Dispatchers.IO.limitedParallelism(1)
 
     private val settingsCount = AtomicInteger(0)
     private val initializedSettingsCount = AtomicInteger(0)
@@ -459,17 +473,30 @@ class SettingsManager @Inject constructor(
             key = key,
             default = default,
             setSetting = {
-                scope.launch {
+                scope.launch(writes) {
                     logI(TAG, "Updating setting: [${key.name}].")
                     dataStore.putData(key, it)
                 }
             },
             serialize = serialize,
-            deserialize = deserialize
+            deserialize = deserialize,
+            onUnreadable = { stored, e ->
+                logE(TAG, "Unreadable setting [${key.name}] = [$stored], " +
+                        "default used: ${e.messageForLog()}")
+            }
         ).also { setting ->
             scope.launch {
-                setting.init(dataStore.getNullableData<P>(key))
-                logI(TAG, "Successfully initialized setting: [${key.name}].")
+                try {
+                    setting.init(dataStore.getNullableData<P>(key))
+                    logI(TAG, "Successfully initialized setting: [${key.name}].")
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    // The default is shown and nothing is written: a read that
+                    // failed once must not cost the stored value.
+                    logE(TAG, "Could not read setting [${key.name}], " +
+                            "default used: ${e.messageForLog()}")
+                }
                 initializeSetting()
             }
         }
