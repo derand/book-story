@@ -117,7 +117,27 @@ class CachedFile(
             null
         }
     }
-    val rawFile: File? by lazy { storeInCache() }
+    private val rawFileCopy = lazy { storeInCache() }
+
+    /**
+     * The book as a real file, for parsers that need a path. Behind a provider
+     * this is a copy of the whole book, made on first read and kept until
+     * [releaseRawFile].
+     */
+    val rawFile: File? by rawFileCopy
+
+    /**
+     * Deletes the copy [rawFile] made, if it made one. For whoever is done with
+     * this file: nothing else deletes a copy before the app is left. Makes no
+     * copy, and never touches a file the app owns. A [rawFile] read afterwards
+     * returns the deleted path, which the parsers treat as unreadable.
+     */
+    fun releaseRawFile() {
+        if (localFile != null || !rawFileCopy.isInitialized()) return
+        rawFileCopy.value
+            ?.takeIf { it.parentFile?.name == COPIES_DIR_NAME }
+            ?.delete()
+    }
 
     val name: String get() = builder?.name ?: queryParams.name
     val size: Long get() = builder?.size ?: queryParams.size ?: 0
@@ -395,14 +415,42 @@ class CachedFile(
         private fun copiesDir(context: Context): File =
             File(context.cacheDir, COPIES_DIR_NAME)
 
+        /** What [retireCopies] renames [COPIES_DIR_NAME] to, plus a unique suffix. */
+        private const val RETIRED_COPIES_PREFIX = "$COPIES_DIR_NAME.old-"
+
         /**
-         * Drops every copy [rawFile] has made. Safe to call at app start — a copy
-         * only lives as long as the [CachedFile] that made it, and nothing has made
-         * one yet — which is where the copies of a killed run get collected, since
-         * nothing runs on the way out of one.
+         * Drops every copy [rawFile] has made — the ones still not released,
+         * such as the last book opened. For the way out of the app, when nothing
+         * is reading a copy any more.
          */
         fun clearCopies(context: Context) {
             copiesDir(context).deleteRecursively()
+        }
+
+        /**
+         * Moves the copies of earlier runs out of the way, for [deleteRetiredCopies]
+         * to delete later. A single rename, cheap enough for the main thread: call
+         * it at app start, before anything can make a copy, and a copy made after
+         * it lands in a fresh directory that the deletion never touches.
+         *
+         * Deleting in place instead raced the first open of a cold start ("Open
+         * with", or a back stack restored into the reader): the deletion ran in the
+         * background and could take the copy that open had just made.
+         */
+        fun retireCopies(context: Context) {
+            val dir = copiesDir(context)
+            if (!dir.exists()) return
+            val retired = File(context.cacheDir, RETIRED_COPIES_PREFIX + System.nanoTime())
+            // Left in place when the rename fails: the next start tries again, and
+            // deleting it here would bring the race back.
+            if (!dir.renameTo(retired)) logE(TAG, "Could not retire the old book copies.")
+        }
+
+        /** Deletes what [retireCopies] moved aside. Slow; off the main thread. */
+        fun deleteRetiredCopies(context: Context) {
+            context.cacheDir
+                .listFiles { file -> file.name.startsWith(RETIRED_COPIES_PREFIX) }
+                ?.forEach { it.deleteRecursively() }
         }
     }
 }
