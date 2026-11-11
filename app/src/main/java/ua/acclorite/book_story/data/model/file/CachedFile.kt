@@ -117,7 +117,27 @@ class CachedFile(
             null
         }
     }
-    val rawFile: File? by lazy { storeInCache() }
+    private val rawFileCopy = lazy { storeInCache() }
+
+    /**
+     * The book as a real file, for parsers that need a path. Behind a provider
+     * this is a copy of the whole book, made on first read and kept until
+     * [releaseRawFile].
+     */
+    val rawFile: File? by rawFileCopy
+
+    /**
+     * Deletes the copy [rawFile] made, if it made one. For whoever is done with
+     * this file: nothing else deletes a copy before the app is left. Makes no
+     * copy, and never touches a file the app owns. A [rawFile] read afterwards
+     * returns the deleted path, which the parsers treat as unreadable.
+     */
+    fun releaseRawFile() {
+        if (localFile != null || !rawFileCopy.isInitialized()) return
+        rawFileCopy.value
+            ?.takeIf { it.parentFile?.name == COPIES_DIR_NAME }
+            ?.delete()
+    }
 
     val name: String get() = builder?.name ?: queryParams.name
     val size: Long get() = builder?.size ?: queryParams.size ?: 0
@@ -399,8 +419,9 @@ class CachedFile(
         private const val RETIRED_COPIES_PREFIX = "$COPIES_DIR_NAME.old-"
 
         /**
-         * Drops every copy [rawFile] has made. For the way out of the app, when
-         * nothing is reading a copy any more.
+         * Drops every copy [rawFile] has made — the ones still not released,
+         * such as the last book opened. For the way out of the app, when nothing
+         * is reading a copy any more.
          */
         fun clearCopies(context: Context) {
             copiesDir(context).deleteRecursively()

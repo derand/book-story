@@ -8,8 +8,10 @@
 package ua.acclorite.book_story.data.model.file
 
 import android.content.Context
+import android.net.Uri
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -19,8 +21,10 @@ import org.robolectric.RuntimeEnvironment
 import java.io.File
 
 /**
- * The start-up cleanup of book copies must not take a copy made after it began:
- * a cold-start "Open with" copies its book while the cleanup is still running.
+ * The lifetime of the book copies [CachedFile.rawFile] makes. The start-up
+ * cleanup must not take a copy made after it began (a cold-start "Open with"
+ * copies its book while the cleanup is still running), and a released copy must
+ * be gone without touching anything that is not a copy.
  */
 @RunWith(RobolectricTestRunner::class)
 class CachedFileCopiesTest {
@@ -73,5 +77,52 @@ class CachedFileCopiesTest {
         CachedFile.deleteRetiredCopies(context)
 
         assertEquals(0, context.cacheDir.list()!!.size)
+    }
+
+    /** A file behind a URI, as a provider's book is: [CachedFile.rawFile] copies it. */
+    private fun providerFile(): CachedFile {
+        val source = File(context.filesDir, "book.epub").apply { writeText("book") }
+        return CachedFile(
+            context,
+            Uri.fromFile(source),
+            CachedFileBuilder(
+                name = source.name,
+                path = source.path,
+                size = source.length(),
+                lastModified = source.lastModified(),
+                isDirectory = false
+            )
+        )
+    }
+
+    @Test
+    fun `a released copy is deleted`() {
+        val file = providerFile()
+        val copy = file.rawFile
+
+        assertNotNull(copy)
+        assertEquals(File(copies, copy!!.name), copy)
+        file.releaseRawFile()
+
+        assertFalse(copy.exists())
+        assertTrue(File(context.filesDir, "book.epub").exists())
+    }
+
+    @Test
+    fun `releasing a file never read makes no copy`() {
+        providerFile().releaseRawFile()
+
+        assertFalse(copies.exists())
+    }
+
+    @Test
+    fun `releasing a file the app owns leaves it alone`() {
+        val owned = File(context.filesDir, "owned.epub").apply { writeText("book") }
+        val file = CachedFileCompat.fromFile(context, owned)
+
+        assertEquals(owned, file.rawFile)
+        file.releaseRawFile()
+
+        assertTrue(owned.exists())
     }
 }

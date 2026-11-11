@@ -90,10 +90,16 @@ class FileSystemRepositoryImpl @Inject constructor(
             withContext(Dispatchers.IO) {
                 val cachedFile = fileMapper.toCachedFile(file)
 
-                val book = fileParser.parse(
-                    cachedFile = cachedFile
-                ) ?: throw Exception("Could not parse ${file.name}.")
-                val coverImage = coverParser.parse(cachedFile = cachedFile)
+                // Parsed once and dropped: a folder import would otherwise keep
+                // a copy of every EPUB in it until the app is left.
+                val (book, coverImage) = try {
+                    val book = fileParser.parse(
+                        cachedFile = cachedFile
+                    ) ?: throw Exception("Could not parse ${file.name}.")
+                    book to coverParser.parse(cachedFile = cachedFile)
+                } finally {
+                    cachedFile.releaseRawFile()
+                }
 
                 // Stamped here rather than in each of the five parsers: what
                 // identifies a book is a property of where it came from, and a

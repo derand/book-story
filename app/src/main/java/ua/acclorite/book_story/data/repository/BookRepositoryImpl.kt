@@ -78,6 +78,9 @@ class BookRepositoryImpl @Inject constructor(
      * the image pass that follows the open that wrote it, so it cannot serve a
      * stale grant or a path the user has since edited — the next open overwrites
      * it, and every other caller still asks [FileProvider].
+     *
+     * It also owns the book copy: the entry it replaces gives its copy up (see
+     * [rememberOpenedFile]), and the last one goes when the app is left.
      */
     @Volatile
     private var lastOpenedFile: OpenedBookFile? = null
@@ -143,7 +146,7 @@ class BookRepositoryImpl @Inject constructor(
                     // a ContentResolver query per directory — hence timed on its own.
                     timed("  open: find file") {
                         fileOf(book)
-                    }.also { lastOpenedFile = OpenedBookFile(bookId, it) }
+                    }.also { rememberOpenedFile(bookId, it) }
                         .let { book to it }
                 }
                 .mapCatchingCancellable { (book, cachedFile) ->
@@ -398,7 +401,18 @@ class BookRepositoryImpl @Inject constructor(
         }
         return getBook(bookId).mapCatchingCancellable {
             timed("  images: find file") { fileOf(it) }
-        }
+        }.onSuccess { rememberOpenedFile(bookId, it) }
+    }
+
+    /**
+     * Makes [file] the [lastOpenedFile], and releases the copy of the one it
+     * replaces: that copy was kept only for its own image pass, so a session
+     * holds one book copy at a time rather than one per open.
+     */
+    private fun rememberOpenedFile(bookId: Int, file: CachedFile) {
+        val previous = lastOpenedFile
+        lastOpenedFile = OpenedBookFile(bookId, file)
+        if (previous != null && previous.file !== file) previous.file.releaseRawFile()
     }
 
     override suspend fun keepOnlyBookImages(bookId: Int): Result<Unit> = runCatchingCancellable {
@@ -674,7 +688,14 @@ class BookRepositoryImpl @Inject constructor(
 
     override suspend fun getDefaultCover(book: Book): Result<CoverImage?> = runCatchingCancellable {
         return withContext(Dispatchers.IO) {
-            runCatchingCancellable { coverParser.parse(fileOf(book)) }
+            runCatchingCancellable {
+                val file = fileOf(book)
+                try {
+                    coverParser.parse(file)
+                } finally {
+                    file.releaseRawFile()
+                }
+            }
         }
     }
 }
