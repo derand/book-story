@@ -11,7 +11,7 @@ import android.content.Context
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.preferencesDataStore
-import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 
 private val Context.dataStore by preferencesDataStore("data_store")
@@ -19,12 +19,10 @@ private val Context.dataStore by preferencesDataStore("data_store")
 class DataStoreImpl @Inject constructor(context: Application) : DataStore {
     private val dataStore = context.dataStore
 
+    // Null only for a value never stored; a failed read throws, so that the
+    // caller does not take it for "never set".
     override suspend fun <T> getNullableData(key: Preferences.Key<T>): T? {
-        return try {
-            dataStore.data.firstOrNull()?.get(key)
-        } catch (_: Exception) {
-            null
-        }
+        return dataStore.data.first()[key]
     }
 
     override suspend fun <T> putData(key: Preferences.Key<T>, value: T) {

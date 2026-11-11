@@ -22,7 +22,6 @@ import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -50,12 +49,8 @@ fun SliderWithTitle(
     onValueChange: (Int) -> Unit
 ) {
     val interactionSource = remember { MutableInteractionSource() }
-    val placeholder = remember(showPlaceholder, value, valuePlaceholder, format) {
-        derivedStateOf {
-            if (!showPlaceholder) "${format(value.first)}${value.second}"
-            else valuePlaceholder
-        }
-    }
+    val placeholder = if (!showPlaceholder) "${format(value.first)}${value.second}"
+    else valuePlaceholder
 
     Row(
         modifier
@@ -67,7 +62,7 @@ fun SliderWithTitle(
             SettingsSubcategoryTitle(title = title, padding = 0.dp)
             Spacer(modifier = Modifier.height(4.dp))
             StyledText(
-                text = placeholder.value,
+                text = placeholder,
                 style = MaterialTheme.typography.bodyMedium.copy(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -78,7 +73,9 @@ fun SliderWithTitle(
             valueRange = fromValue.toFloat()..toValue.toFloat(),
             value = value.first.toFloat(),
             onValueChange = {
-                onValueChange(it.roundToInt())
+                // A drag reports every frame; most of them land on the same step.
+                val step = it.roundToInt()
+                if (step != value.first) onValueChange(step)
             },
             interactionSource = interactionSource,
             thumb = {
@@ -88,7 +85,7 @@ fun SliderWithTitle(
                             modifier = Modifier.clip(CircleShape)
                         ) {
                             StyledText(
-                                text = placeholder.value,
+                                text = placeholder,
                                 modifier = Modifier.padding(
                                     vertical = 6.dp,
                                     horizontal = 4.dp
@@ -129,12 +126,8 @@ fun SliderWithTitle(
     onValueChange: (Float) -> Unit
 ) {
     val interactionSource = remember { MutableInteractionSource() }
-    val placeholder = remember(showPlaceholder, value, toValue, valuePlaceholder) {
-        derivedStateOf {
-            if (!showPlaceholder) "${(value.first * toValue).roundToInt()}${value.second}"
-            else valuePlaceholder
-        }
-    }
+    val placeholder = if (!showPlaceholder) "${(value.first * toValue).roundToInt()}${value.second}"
+    else valuePlaceholder
 
     Row(
         modifier
@@ -146,7 +139,7 @@ fun SliderWithTitle(
             SettingsSubcategoryTitle(title = title, padding = 0.dp)
             Spacer(modifier = Modifier.height(4.dp))
             StyledText(
-                text = placeholder.value,
+                text = placeholder,
                 style = MaterialTheme.typography.bodyMedium.copy(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -167,7 +160,7 @@ fun SliderWithTitle(
                             modifier = Modifier.clip(CircleShape)
                         ) {
                             StyledText(
-                                text = placeholder.value,
+                                text = placeholder,
                                 modifier = Modifier.padding(
                                     vertical = 6.dp,
                                     horizontal = 4.dp
