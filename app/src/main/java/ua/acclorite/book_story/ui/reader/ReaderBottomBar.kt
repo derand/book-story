@@ -62,7 +62,7 @@ fun ReaderBottomBar(
     bottomBarPadding: Dp,
     restoreCheckpoint: (ReaderEvent.OnRestoreCheckpoint) -> Unit,
     scroll: (ReaderEvent.OnScroll) -> Unit,
-    changeProgress: (ReaderEvent.OnChangeProgress) -> Unit
+    dragProgress: (ReaderEvent.OnDragProgress) -> Unit
 ) {
     val currentIndex by remember {
         derivedStateOf {
@@ -143,7 +143,7 @@ fun ReaderBottomBar(
                         lockMenu = lockMenu,
                         listState = listState,
                         scroll = scroll,
-                        changeProgress = changeProgress
+                        dragProgress = dragProgress
                     )
                 },
                 indicator = {
@@ -241,7 +241,7 @@ private fun ReaderBottomBarSlider(
     lockMenu: Boolean,
     listState: LazyListState,
     scroll: (ReaderEvent.OnScroll) -> Unit,
-    changeProgress: (ReaderEvent.OnChangeProgress) -> Unit
+    dragProgress: (ReaderEvent.OnDragProgress) -> Unit
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isDragging = interactionSource.collectIsDraggedAsState()
@@ -257,13 +257,7 @@ private fun ReaderBottomBarSlider(
         onValueChange = {
             if (listState.layoutInfo.totalItemsCount > 0) {
                 scroll(ReaderEvent.OnScroll(it))
-                changeProgress(
-                    ReaderEvent.OnChangeProgress(
-                        progress = it,
-                        firstVisibleItemIndex = listState.firstVisibleItemIndex,
-                        firstVisibleItemOffset = 0
-                    )
-                )
+                dragProgress(ReaderEvent.OnDragProgress(it))
             }
         },
         interactionSource = interactionSource,

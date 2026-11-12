@@ -33,7 +33,6 @@ import kotlinx.coroutines.withContext
 import ua.acclorite.book_story.domain.model.library.Book
 import androidx.core.net.toUri
 import ua.acclorite.book_story.R
-import ua.acclorite.book_story.core.helpers.coerceAndPreventNaN
 import ua.acclorite.book_story.core.log.BookOpenTrace
 import ua.acclorite.book_story.core.log.timed
 import ua.acclorite.book_story.core.ui.UIText
@@ -65,6 +64,7 @@ import ua.acclorite.book_story.presentation.history.HistoryScreen
 import ua.acclorite.book_story.presentation.library.LibraryScreen
 import ua.acclorite.book_story.presentation.reader.model.Checkpoint
 import ua.acclorite.book_story.presentation.reader.model.ReaderSearch
+import ua.acclorite.book_story.presentation.reader.model.readingProgress
 import ua.acclorite.book_story.presentation.reader.model.stepTarget
 import javax.inject.Inject
 import kotlin.coroutines.coroutineContext
@@ -280,10 +280,11 @@ class ReaderModel @Inject constructor(
                             loadCoverage(strippedText)
                         }
 
-                        updateBookUseCase(_state.value.book)
-
-                        LibraryScreen.refreshListChannel.trySend(0)
-                        HistoryScreen.refreshListChannel.trySend(0)
+                        // No row write here: nothing about the row changed (the
+                        // `lastOpened` above is not a column), and writing back
+                        // the copy read before the parse could only undo
+                        // something written meanwhile. The lists are refreshed
+                        // by the history insert that came with the open.
 
                         onEvent(ReaderEvent.OnRestoreScroll)
                     }
@@ -370,22 +371,15 @@ class ReaderModel @Inject constructor(
                     }
                 }
 
-                is ReaderEvent.OnChangeProgress -> {
-                    withContext(Dispatchers.Default) {
-                        _state.update {
-                            it.copy(
-                                book = it.book.copy(
-                                    progress = event.progress,
-                                    scrollIndex = event.firstVisibleItemIndex,
-                                    scrollOffset = event.firstVisibleItemOffset
-                                )
-                            )
-                        }
-
-                        updateBookUseCase(_state.value.book)
-
-                        LibraryScreen.refreshListChannel.trySend(300)
-                        HistoryScreen.refreshListChannel.trySend(300)
+                is ReaderEvent.OnDragProgress -> {
+                    // Shown only. The list moves to it in [OnScroll], and the
+                    // row is written once it settles there ([updateProgress]),
+                    // with the position that is actually on screen: writing the
+                    // dragged value now would pair it with the old position,
+                    // and a book left before the list moved reopened there with
+                    // its progress jumping back.
+                    _state.update {
+                        it.copy(book = it.book.copy(progress = event.progress))
                     }
                 }
 
@@ -415,14 +409,10 @@ class ReaderModel @Inject constructor(
                             scrollOffset = 0
                         )
 
+                        // The new position is saved by [updateProgress] once the
+                        // list lands: measured here, before the next layout, the
+                        // progress would describe the screen being left.
                         onEvent(ReaderEvent.OnUpdateChapter(chapterIndex))
-                        onEvent(
-                            ReaderEvent.OnChangeProgress(
-                                progress = calculateProgress(chapterIndex),
-                                firstVisibleItemIndex = chapterIndex,
-                                firstVisibleItemOffset = 0
-                            )
-                        )
                     }
                 }
 
@@ -461,14 +451,9 @@ class ReaderModel @Inject constructor(
                             scrollOffset = event.checkpoint.offset
                         )
 
+                        // Saved by [updateProgress] once the list lands, as for
+                        // a chapter.
                         onEvent(ReaderEvent.OnUpdateChapter(event.checkpoint.index))
-                        onEvent(
-                            ReaderEvent.OnChangeProgress(
-                                progress = calculateProgress(event.checkpoint.index),
-                                firstVisibleItemIndex = event.checkpoint.index,
-                                firstVisibleItemOffset = event.checkpoint.offset,
-                            )
-                        )
                     }
                 }
 
@@ -572,8 +557,9 @@ class ReaderModel @Inject constructor(
                             // out from under the bar that was used to find it.
                             scrollOffset = searchLandingOffset()
                         )
-                        // No [OnChangeProgress] on purpose: searching must not
-                        // move the position the book is reopened at.
+                        // The landing is saved like any settled position
+                        // ([updateProgress]); [OnSearchReturn] brings the reader
+                        // back to where the search started.
                         onEvent(ReaderEvent.OnUpdateChapter(match.itemIndex))
                     }
                 }
@@ -1289,14 +1275,13 @@ class ReaderModel @Inject constructor(
             _state.value.errorMessage != null
         ) return _state.value.book.progress
 
-        if ((firstVisibleItemIndex ?: _state.value.listState.firstVisibleItemIndex) == 0) return 0f
-
-        val lastVisibleItemIndex = _state.value.listState.layoutInfo.visibleItemsInfo.last().index
-        if (lastVisibleItemIndex >= _state.value.text.lastIndex) return 1f
-
-        return (firstVisibleItemIndex ?: _state.value.listState.firstVisibleItemIndex)
-            .div(_state.value.text.lastIndex.toFloat())
-            .coerceAndPreventNaN()
+        return readingProgress(
+            firstVisibleIndex = firstVisibleItemIndex
+                ?: _state.value.listState.firstVisibleItemIndex,
+            lastVisibleIndex = _state.value.listState.layoutInfo.visibleItemsInfo
+                .lastOrNull()?.index,
+            lastIndex = _state.value.text.lastIndex
+        )
     }
 
     private suspend inline fun <T> MutableStateFlow<T>.update(function: (T) -> T) {

@@ -122,7 +122,7 @@ fun ReaderScaffold(
     leave: (ReaderEvent.OnLeave) -> Unit,
     restoreCheckpoint: (ReaderEvent.OnRestoreCheckpoint) -> Unit,
     scroll: (ReaderEvent.OnScroll) -> Unit,
-    changeProgress: (ReaderEvent.OnChangeProgress) -> Unit,
+    dragProgress: (ReaderEvent.OnDragProgress) -> Unit,
     openShareApp: (ReaderEvent.OnOpenShareApp) -> Unit,
     openWebBrowser: (ReaderEvent.OnOpenWebBrowser) -> Unit,
     openTranslator: (ReaderEvent.OnOpenTranslator) -> Unit,
@@ -203,7 +203,7 @@ fun ReaderScaffold(
                         bottomBarPadding = bottomBarPadding,
                         restoreCheckpoint = restoreCheckpoint,
                         scroll = scroll,
-                        changeProgress = changeProgress
+                        dragProgress = dragProgress
                     )
                 }
 

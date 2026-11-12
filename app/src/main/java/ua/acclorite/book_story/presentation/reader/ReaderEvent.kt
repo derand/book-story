@@ -30,10 +30,8 @@ sealed class ReaderEvent {
         val saveCheckpoint: Boolean
     ) : ReaderEvent()
 
-    data class OnChangeProgress(
-        val progress: Float,
-        val firstVisibleItemIndex: Int,
-        val firstVisibleItemOffset: Int
+    data class OnDragProgress(
+        val progress: Float
     ) : ReaderEvent()
 
     data class OnUpdateChapter(

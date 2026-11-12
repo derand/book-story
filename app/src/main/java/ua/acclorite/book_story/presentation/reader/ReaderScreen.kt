@@ -503,7 +503,7 @@ data class ReaderScreen(val bookId: Int) : Screen, Parcelable {
                 leave = screenModel::onEvent,
                 restoreCheckpoint = screenModel::onEvent,
                 scroll = screenModel::onEvent,
-                changeProgress = screenModel::onEvent,
+                dragProgress = screenModel::onEvent,
                 menuVisibility = screenModel::onEvent,
                 openShareApp = screenModel::onEvent,
                 openWebBrowser = screenModel::onEvent,
