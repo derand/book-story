@@ -519,6 +519,7 @@ data class ReaderScreen(val bookId: Int) : Screen, Parcelable {
                 searchQueryChange = screenModel::onEvent,
                 searchStep = screenModel::onEvent,
                 searchReturn = screenModel::onEvent,
+                addingToLibrary = state.value.addingToLibrary || state.value.lockMenu,
                 addToLibrary = screenModel::onEvent,
                 dismissDrawer = screenModel::onEvent,
                 navigateBack = screenModel::onEvent,

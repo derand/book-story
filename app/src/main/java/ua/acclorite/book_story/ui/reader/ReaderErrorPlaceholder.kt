@@ -50,8 +50,16 @@ fun ReaderErrorPlaceholder(
                     TopAppBarData(
                         contentID = 0,
                         contentNavigationIcon = {
+                            // Through the leave, like system Back: a preview that
+                            // failed to open is discarded on the way out.
                             NavigatorBackIconButton {
-                                navigateBack(ReaderEvent.OnNavigateBack)
+                                leave(
+                                    ReaderEvent.OnLeave(
+                                        navigate = {
+                                            navigateBack(ReaderEvent.OnNavigateBack)
+                                        }
+                                    )
+                                )
                             }
                         },
                         contentTitle = {},

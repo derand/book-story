@@ -14,8 +14,6 @@ sealed class ReaderEffect {
         val show: Boolean?
     ) : ReaderEffect()
 
-    data object OnResetBrightness : ReaderEffect()
-
     data class OnOpenTranslator(
         val textToTranslate: String,
         val translateWholeParagraph: Boolean

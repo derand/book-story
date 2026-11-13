@@ -7,6 +7,8 @@
 
 package ua.acclorite.book_story.domain.use_case.book
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import ua.acclorite.book_story.core.log.logI
 import ua.acclorite.book_story.core.log.logW
 import ua.acclorite.book_story.core.log.messageForLog
@@ -49,7 +51,19 @@ class AddPreviewToLibraryUseCase @Inject constructor(
         data object Failed : Result
     }
 
-    suspend operator fun invoke(book: Book): Result {
+    suspend operator fun invoke(preview: Book): Result {
+        // The row, not the caller's copy: a second Keep arrives with the same
+        // stale preview, and storing its file again would delete the copy the
+        // first one already pointed the row at.
+        val book = bookRepository.getBook(preview.id).getOrElse {
+            logW(TAG, "Could not read [${preview.id}]: ${it.messageForLog()}")
+            return Result.Failed
+        }
+        if (book.inLibrary) {
+            logI(TAG, "[${book.id}] is already in the library.")
+            return Result.Added(book)
+        }
+
         // No location to remember, so there is no folder to ask for and nothing
         // to find the book by later: the Downloads provider builds its document
         // ids out of MediaStore row numbers, and downloading a book is the
@@ -66,7 +80,12 @@ class AddPreviewToLibraryUseCase @Inject constructor(
         // Asked without the preview's own URI, which would answer yes and mean
         // nothing — that URI is good only while the task that received it lives,
         // and this is the decision to keep the book past it.
-        val reachable = fileProvider.getFileFromBook(book.copy(previewUri = null)).getOrNull()
+        //
+        // Off the main thread: it walks the grants one provider query per level,
+        // and against a cloud provider each of those is a network round trip.
+        val reachable = withContext(Dispatchers.IO) {
+            fileProvider.getFileFromBook(book.copy(previewUri = null)).getOrNull()
+        }
         if (reachable == null) {
             val folder = book.filePath.substringBeforeLast('/', missingDelimiterValue = "")
             logI(TAG, "[${book.id}] is not reachable yet; asking for the folder above it.")

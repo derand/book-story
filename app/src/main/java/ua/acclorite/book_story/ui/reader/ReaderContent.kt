@@ -128,6 +128,7 @@ fun ReaderContent(
     searchQueryChange: (ReaderEvent.OnSearchQueryChange) -> Unit,
     searchStep: (ReaderEvent.OnSearchStep) -> Unit,
     searchReturn: (ReaderEvent.OnSearchReturn) -> Unit,
+    addingToLibrary: Boolean,
     addToLibrary: (ReaderEvent.OnAddToLibrary) -> Unit,
     dismissDrawer: (ReaderEvent.OnDismissDrawer) -> Unit,
     navigateToBookInfo: (ReaderEvent.OnNavigateToBookInfo) -> Unit,
@@ -232,6 +233,7 @@ fun ReaderContent(
             searchQueryChange = searchQueryChange,
             searchStep = searchStep,
             searchReturn = searchReturn,
+            addingToLibrary = addingToLibrary,
             addToLibrary = addToLibrary,
             navigateBack = navigateBack,
             navigateToBookInfo = navigateToBookInfo
