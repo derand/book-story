@@ -18,28 +18,30 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import ua.acclorite.book_story.core.helpers.launchWhileSubscribed
 import ua.acclorite.book_story.domain.model.history.History
 import ua.acclorite.book_story.domain.use_case.book.GetBookUseCase
 import ua.acclorite.book_story.domain.use_case.history.AddHistoryUseCase
 import ua.acclorite.book_story.domain.use_case.history.DeleteHistoryUseCase
 import ua.acclorite.book_story.domain.use_case.history.DeleteWholeHistoryUseCase
-import ua.acclorite.book_story.domain.use_case.history.GetHistoryUseCase
-import ua.acclorite.book_story.domain.use_case.statistics.GetLibraryStatisticsUseCase
-import ua.acclorite.book_story.presentation.library.LibraryScreen
+import ua.acclorite.book_story.domain.use_case.history.ObserveHistoryUseCase
+import ua.acclorite.book_story.domain.use_case.statistics.ObserveLibraryStatisticsUseCase
 import java.util.Date
 import javax.inject.Inject
 import kotlin.coroutines.coroutineContext
 
 @HiltViewModel
 class HistoryModel @Inject constructor(
-    private val getHistoryUseCase: GetHistoryUseCase,
+    private val observeHistoryUseCase: ObserveHistoryUseCase,
     private val addHistoryUseCase: AddHistoryUseCase,
-    private val getLibraryStatisticsUseCase: GetLibraryStatisticsUseCase,
+    private val observeLibraryStatisticsUseCase: ObserveLibraryStatisticsUseCase,
     private val deleteHistoryUseCase: DeleteHistoryUseCase,
     private val deleteWholeHistoryUseCase: DeleteWholeHistoryUseCase,
     private val getBookUseCase: GetBookUseCase
@@ -53,27 +55,36 @@ class HistoryModel @Inject constructor(
     private val _effects = MutableSharedFlow<HistoryEffect>()
     val effects = _effects.asSharedFlow()
 
+    /** What the list is narrowed to: the query once typing pauses, while search is shown. */
+    private val searchFilter = MutableStateFlow("")
+
+    /** Bumped by pull-to-refresh, which reads the list again from scratch. */
+    private val reload = MutableStateFlow(0)
+
     init {
-        onEvent(
-            HistoryEvent.OnRefreshList(
-                loading = true,
-                hideSearch = true
-            )
-        )
-
-        /* Observe channel - - - - - - - - - - - */
-        viewModelScope.launch {
-            HistoryScreen.refreshListChannel.receiveAsFlow().collectLatest { delay ->
-                delay(delay)
-
-                onEvent(
-                    HistoryEvent.OnRefreshList(
-                        loading = false,
-                        hideSearch = false
-                    )
-                )
+        // The list and the statistics card follow the database, so nothing has
+        // to say "refresh" after a write; but only while the screen shows them:
+        // this model lives as long as the activity, and the reader writes on
+        // every settled scroll.
+        viewModelScope.launchWhileSubscribed(_state) {
+            reload.collectLatest {
+                combine(
+                    observeHistoryUseCase(searchFilter),
+                    observeLibraryStatisticsUseCase()
+                ) { history, statistics -> history to statistics }
+                    .flowOn(Dispatchers.Default)
+                    .collect { (history, statistics) ->
+                        _state.update {
+                            it.copy(
+                                history = history,
+                                statistics = statistics,
+                                isLoading = false
+                            )
+                        }
+                    }
             }
         }
+
         viewModelScope.launch {
             HistoryScreen.insertHistoryChannel.receiveAsFlow().collectLatest { bookId ->
                 getBookUseCase(bookId)?.let { book ->
@@ -85,19 +96,8 @@ class HistoryModel @Inject constructor(
                         )
                     )
                 }
-
-                delay(500)
-
-                onEvent(
-                    HistoryEvent.OnRefreshList(
-                        loading = false,
-                        hideSearch = false
-                    )
-                )
-                LibraryScreen.refreshListChannel.trySend(0)
             }
         }
-        /* - - - - - - - - - - - - - - - - - - - */
     }
 
     private var refreshJob: Job? = null
@@ -108,7 +108,7 @@ class HistoryModel @Inject constructor(
             when (event) {
                 is HistoryEvent.OnRefreshList -> {
                     refreshJob?.cancel()
-                    refreshJob = viewModelScope.launch(Dispatchers.Default) {
+                    refreshJob = viewModelScope.launch {
                         _state.update {
                             it.copy(
                                 isRefreshing = true,
@@ -116,23 +116,8 @@ class HistoryModel @Inject constructor(
                                 showSearch = if (event.hideSearch) false else it.showSearch
                             )
                         }
-
-                        ensureActive()
-                        val history = getHistoryUseCase(
-                            if (_state.value.showSearch) _state.value.searchQuery
-                            else ""
-                        )
-                        // Alongside the list, because the same refresh follows
-                        // every session: leaving the reader is exactly when
-                        // these figures have changed.
-                        val statistics = getLibraryStatisticsUseCase()
-                        _state.update {
-                            it.copy(
-                                history = history,
-                                statistics = statistics,
-                                isLoading = false
-                            )
-                        }
+                        if (event.hideSearch) searchFilter.value = ""
+                        reload.value++
 
                         delay(500) // Delay for UI smoothness
                         _state.update {
@@ -144,14 +129,7 @@ class HistoryModel @Inject constructor(
                 }
 
                 is HistoryEvent.OnSearchVisibility -> {
-                    if (!event.show) {
-                        onEvent(
-                            HistoryEvent.OnRefreshList(
-                                loading = false,
-                                hideSearch = true
-                            )
-                        )
-                    }
+                    if (!event.show) searchFilter.value = ""
 
                     _state.update {
                         it.copy(
@@ -188,26 +166,13 @@ class HistoryModel @Inject constructor(
                 }
 
                 is HistoryEvent.OnSearch -> {
-                    onEvent(
-                        HistoryEvent.OnRefreshList(
-                            loading = false,
-                            hideSearch = false
-                        )
-                    )
+                    searchFilter.value =
+                        if (_state.value.showSearch) _state.value.searchQuery else ""
                 }
 
                 is HistoryEvent.OnDeleteHistoryEntry -> {
                     withContext(Dispatchers.Default) {
                         deleteHistoryUseCase(event.history)
-
-                        onEvent(
-                            HistoryEvent.OnRefreshList(
-                                loading = false,
-                                hideSearch = false
-                            )
-                        )
-                        LibraryScreen.refreshListChannel.trySend(0)
-
                         _effects.emit(HistoryEffect.OnShowSnackbar(event.history))
                     }
                 }
@@ -215,14 +180,6 @@ class HistoryModel @Inject constructor(
                 is HistoryEvent.OnRestoreHistoryEntry -> {
                     withContext(Dispatchers.Default) {
                         addHistoryUseCase(event.history)
-
-                        onEvent(
-                            HistoryEvent.OnRefreshList(
-                                loading = false,
-                                hideSearch = false
-                            )
-                        )
-                        LibraryScreen.refreshListChannel.trySend(0)
                     }
                 }
 
@@ -236,22 +193,18 @@ class HistoryModel @Inject constructor(
 
                 is HistoryEvent.OnActionDeleteWholeHistoryDialog -> {
                     withContext(Dispatchers.Default) {
+                        // No loading state: an empty history deletes no rows,
+                        // and with no change the list would never come back
+                        // to clear it.
                         _state.update {
                             it.copy(
                                 dialog = null,
-                                isLoading = true
+                                showSearch = false
                             )
                         }
+                        searchFilter.value = ""
 
                         deleteWholeHistoryUseCase()
-
-                        onEvent(
-                            HistoryEvent.OnRefreshList(
-                                loading = true,
-                                hideSearch = true
-                            )
-                        )
-                        LibraryScreen.refreshListChannel.trySend(0)
 
                         _effects.emit(HistoryEffect.OnWholeHistoryDeleted)
                     }

@@ -7,6 +7,7 @@
 
 package ua.acclorite.book_story.domain.repository
 
+import kotlinx.coroutines.flow.Flow
 import ua.acclorite.book_story.domain.model.statistics.LibraryStatistics
 import ua.acclorite.book_story.domain.model.statistics.ReadBook
 import ua.acclorite.book_story.domain.model.statistics.ReadingCoverage
@@ -52,6 +53,9 @@ interface StatisticsRepository {
 
     /** Reading across the whole library, deleted books included. */
     suspend fun getLibraryStatistics(): Result<LibraryStatistics>
+
+    /** [getLibraryStatistics] now and again after each change to the reading records. */
+    fun observeLibraryStatistics(): Flow<Result<LibraryStatistics>>
 
     /** See [ua.acclorite.book_story.data.local.room.StatisticsDao.deleteAllStatistics]. */
     suspend fun deleteAllStatistics(): Result<Unit>

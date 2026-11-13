@@ -407,7 +407,6 @@ class BrowseModel @Inject constructor(
                                         dialog = null
                                     )
                                 }
-                                LibraryScreen.refreshListChannel.trySend(0)
                                 LibraryScreen.scrollToPageCompositionChannel.trySend(0)
                                 onEvent(
                                     BrowseEvent.OnRefreshList(

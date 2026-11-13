@@ -8,6 +8,8 @@
 package ua.acclorite.book_story.domain.use_case.book
 
 import android.net.Uri
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 import ua.acclorite.book_story.core.CoverImage
 import ua.acclorite.book_story.domain.model.file.File
 import ua.acclorite.book_story.domain.model.library.Book
@@ -65,7 +67,7 @@ class FakeBookRepository(
     /** Set to make resolving the original succeed with this path; null makes it fail. */
     var releasedPath: String? = null
 
-    override suspend fun getLibraryBooks(): Result<List<Book>> = Result.success(books)
+    override fun observeLibraryBooks(): Flow<List<Book>> = flowOf(books)
 
     override suspend fun findPreviews(): Result<List<Book>> = Result.success(previews)
 

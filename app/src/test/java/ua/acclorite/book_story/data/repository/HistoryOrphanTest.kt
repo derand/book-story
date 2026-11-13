@@ -7,6 +7,7 @@
 package ua.acclorite.book_story.data.repository
 
 import androidx.room.Room
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -57,7 +58,7 @@ class HistoryOrphanTest {
         database.historyDao.insertHistory(HistoryEntity(bookId = bookId, time = 1))
         database.historyDao.insertHistory(HistoryEntity(bookId = bookId + 100, time = 2))
 
-        val history = repository.getHistory().getOrThrow()
+        val history = repository.observeHistory().first()
 
         assertEquals(listOf(bookId), history.map { it.book.id })
     }

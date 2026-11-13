@@ -8,6 +8,8 @@
 package ua.acclorite.book_story.data.repository
 
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import ua.acclorite.book_story.core.helpers.runCatchingCancellable
 import ua.acclorite.book_story.data.local.dto.ReadingCoverageEntity
@@ -174,6 +176,12 @@ class StatisticsRepositoryImpl @Inject constructor(
                 database.statisticsDao.countActiveDays(bookId)
             }
         }
+
+    // The two tables getLibraryStatistics reads.
+    override fun observeLibraryStatistics(): Flow<Result<LibraryStatistics>> =
+        database.invalidationTracker
+            .createFlow("ReadingSessionEntity", "ReadBookEntity")
+            .map { getLibraryStatistics() }
 
     override suspend fun getLibraryStatistics(): Result<LibraryStatistics> =
         runCatchingCancellable {
