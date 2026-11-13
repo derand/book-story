@@ -24,7 +24,7 @@ import ua.acclorite.book_story.core.log.timed
 import ua.acclorite.book_story.data.cache.ImageMemoryBudget
 import ua.acclorite.book_story.data.cache.ParseCache
 import ua.acclorite.book_story.data.cache.ReaderImageFiles
-import ua.acclorite.book_story.data.local.dto.BookEntity
+import ua.acclorite.book_story.data.converter.CategoryConverter
 import ua.acclorite.book_story.data.local.room.BookDatabase
 import ua.acclorite.book_story.data.model.file.CachedFile
 import ua.acclorite.book_story.data.settings.SettingsManager
@@ -109,14 +109,11 @@ class BookRepositoryImpl @Inject constructor(
             (book.documentId != documentId || book.documentAuthority != file.documentAuthority)
         ) {
             runCatchingCancellable {
-                database.bookDao.findBookById(book.id)?.let { entity ->
-                    database.bookDao.updateBook(
-                        entity.copy(
-                            documentAuthority = file.documentAuthority,
-                            documentId = documentId
-                        )
-                    )
-                }
+                database.bookDao.updateIdentity(
+                    id = book.id,
+                    documentAuthority = file.documentAuthority,
+                    documentId = documentId
+                )
             }.onFailure { logE(TAG, "Could not remember the identity: ${it.messageForLog()}") }
         }
 
@@ -627,43 +624,62 @@ class BookRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun updateBook(
-        book: Book,
-        statesIdentity: Boolean
-    ): Result<Unit> = runCatchingCancellable {
-        withContext(Dispatchers.IO) {
-            database.bookDao.updateBook(withStoredIdentity(book, statesIdentity)).also {
-                if (it == 0) throw Exception("Could not update book in database.")
-            }
-        }
+    override suspend fun updatePosition(
+        bookId: Int,
+        scrollIndex: Int,
+        scrollOffset: Int,
+        progress: Float
+    ): Result<Unit> = updateRow(bookId) {
+        database.bookDao.updatePosition(bookId, scrollIndex, scrollOffset, progress)
     }
 
-    /**
-     * The row to write, with the document identity that belongs to it rather
-     * than the one the caller happens to be holding.
-     *
-     * Every screen updates a book by writing the whole row back from a [Book] it
-     * loaded earlier, and those copies disagree about the identity: the reader's
-     * predates the open that learned it, the info screen's is current. Neither
-     * is asking the provider, so neither changes it; only a caller that
-     * [statesIdentity] does. [identityToWrite] has the whole rule.
-     */
-    private suspend fun withStoredIdentity(book: Book, statesIdentity: Boolean): BookEntity {
-        val entity = bookMapper.toBookEntity(book)
-        val stored = database.bookDao.findBookById(book.id)
+    override suspend fun updateTitle(bookId: Int, title: String): Result<Unit> =
+        updateRow(bookId) { database.bookDao.updateTitle(bookId, title) }
 
-        val identity = identityToWrite(
-            incoming = BookIdentity(book.filePath, book.documentAuthority, book.documentId),
-            stored = stored?.let {
-                BookIdentity(it.filePath, it.documentAuthority, it.documentId)
-            },
-            statesIdentity = statesIdentity
-        )
+    override suspend fun updateAuthor(bookId: Int, author: String): Result<Unit> =
+        updateRow(bookId) { database.bookDao.updateAuthor(bookId, author) }
 
-        return entity.copy(
-            documentAuthority = identity.documentAuthority,
-            documentId = identity.documentId
+    override suspend fun updateDescription(bookId: Int, description: String?): Result<Unit> =
+        updateRow(bookId) { database.bookDao.updateDescription(bookId, description) }
+
+    override suspend fun updateCoverImage(bookId: Int, coverImage: Uri?): Result<Unit> =
+        updateRow(bookId) { database.bookDao.updateImage(bookId, coverImage?.toString()) }
+
+    override suspend fun updateCategories(
+        bookIds: List<Int>,
+        categories: List<Int>
+    ): Result<Unit> = updateRow(bookIds.joinToString()) {
+        database.bookDao.updateCategories(
+            ids = bookIds,
+            categories = CategoryConverter().fromCategoryList(categories)
         )
+    }
+
+    override suspend fun updateFilePath(bookId: Int, filePath: String): Result<Unit> =
+        updateRow(bookId) { database.bookDao.updateFilePath(bookId, filePath) }
+
+    override suspend fun updateLocation(book: Book): Result<Unit> = updateRow(book.id) {
+        database.bookDao.updateLocation(
+            id = book.id,
+            filePath = book.filePath,
+            inLibrary = book.inLibrary,
+            previewUri = book.previewUri,
+            documentAuthority = book.documentAuthority,
+            documentId = book.documentId,
+            originAuthority = book.originAuthority,
+            originDocumentId = book.originDocumentId,
+            originPath = book.originPath
+        )
+    }
+
+    /** Runs one narrow update; no row changed means there was no such book. */
+    private suspend fun updateRow(
+        bookIds: Any,
+        update: suspend () -> Int
+    ): Result<Unit> = runCatchingCancellable {
+        withContext(Dispatchers.IO) {
+            if (update() == 0) throw NoSuchElementException("No book [$bookIds] to update.")
+        }
     }
 
     override suspend fun deleteBookRecords(bookId: Int): Result<Uri?> = runCatchingCancellable {

@@ -201,6 +201,10 @@ class BookInfoModel @Inject constructor(
 
                 is BookInfoEvent.OnActionTitleDialog -> {
                     withContext(Dispatchers.Default) {
+                        if (!updateBookUseCase.title(_state.value.book.id, event.title)) {
+                            _effects.emit(BookInfoEffect.OnErrorUpdate)
+                            return@withContext
+                        }
                         _state.update {
                             it.copy(
                                 book = it.book.copy(
@@ -208,7 +212,6 @@ class BookInfoModel @Inject constructor(
                                 )
                             )
                         }
-                        updateBookUseCase(_state.value.book)
 
                         LibraryScreen.refreshListChannel.trySend(0)
                         HistoryScreen.refreshListChannel.trySend(0)
@@ -227,6 +230,13 @@ class BookInfoModel @Inject constructor(
 
                 is BookInfoEvent.OnActionAuthorDialog -> {
                     withContext(Dispatchers.Default) {
+                        // Stored the way the row has it: "unknown author" is no
+                        // author at all.
+                        val author = event.author.getAsString() ?: ""
+                        if (!updateBookUseCase.author(_state.value.book.id, author)) {
+                            _effects.emit(BookInfoEffect.OnErrorUpdate)
+                            return@withContext
+                        }
                         _state.update {
                             it.copy(
                                 book = it.book.copy(
@@ -234,7 +244,6 @@ class BookInfoModel @Inject constructor(
                                 )
                             )
                         }
-                        updateBookUseCase(_state.value.book)
 
                         LibraryScreen.refreshListChannel.trySend(0)
                         HistoryScreen.refreshListChannel.trySend(0)
@@ -253,6 +262,11 @@ class BookInfoModel @Inject constructor(
 
                 is BookInfoEvent.OnActionDescriptionDialog -> {
                     withContext(Dispatchers.Default) {
+                        val description = event.description
+                        if (!updateBookUseCase.description(_state.value.book.id, description)) {
+                            _effects.emit(BookInfoEffect.OnErrorUpdate)
+                            return@withContext
+                        }
                         _state.update {
                             it.copy(
                                 book = it.book.copy(
@@ -260,7 +274,6 @@ class BookInfoModel @Inject constructor(
                                 )
                             )
                         }
-                        updateBookUseCase(_state.value.book)
 
                         LibraryScreen.refreshListChannel.trySend(0)
                         HistoryScreen.refreshListChannel.trySend(0)
@@ -279,15 +292,24 @@ class BookInfoModel @Inject constructor(
 
                 is BookInfoEvent.OnActionPathDialog -> {
                     withContext(Dispatchers.Default) {
+                        if (!updateBookUseCase.filePath(_state.value.book.id, event.path)) {
+                            _effects.emit(BookInfoEffect.OnErrorUpdate)
+                            return@withContext
+                        }
                         _state.update {
+                            // As the row now has it: a path that changed took
+                            // the old place's identity with it.
+                            val moved = it.book.filePath != event.path
                             it.copy(
                                 book = it.book.copy(
-                                    filePath = event.path
+                                    filePath = event.path,
+                                    documentAuthority = it.book.documentAuthority
+                                        .takeUnless { moved },
+                                    documentId = it.book.documentId.takeUnless { moved }
                                 ),
                                 loadingFile = true
                             )
                         }
-                        updateBookUseCase(_state.value.book)
 
                         LibraryScreen.refreshListChannel.trySend(0)
                         HistoryScreen.refreshListChannel.trySend(0)
@@ -406,16 +428,23 @@ class BookInfoModel @Inject constructor(
 
                 is BookInfoEvent.OnActionMoveDialog -> {
                     withContext(Dispatchers.Default) {
+                        val categories = event.selectedCategories.map { it.id }
+                        val moved = updateBookUseCase.categories(
+                            listOf(_state.value.book.id),
+                            categories
+                        )
                         _state.update {
                             it.copy(
-                                book = it.book.copy(
-                                    categories = event.selectedCategories.map { it.id }
-                                ),
+                                book = if (moved) it.book.copy(categories = categories)
+                                else it.book,
                                 dialog = null,
                                 bottomSheet = null
                             )
                         }
-                        updateBookUseCase(_state.value.book)
+                        if (!moved) {
+                            _effects.emit(BookInfoEffect.OnErrorUpdate)
+                            return@withContext
+                        }
 
                         LibraryScreen.refreshListChannel.trySend(0)
                         HistoryScreen.refreshListChannel.trySend(0)

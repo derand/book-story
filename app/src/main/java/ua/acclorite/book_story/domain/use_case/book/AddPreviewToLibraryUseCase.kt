@@ -87,7 +87,7 @@ class AddPreviewToLibraryUseCase @Inject constructor(
             documentAuthority = reachable.documentAuthority,
             documentId = reachable.documentId
         )
-        bookRepository.updateBook(promoted, statesIdentity = true).onFailure {
+        bookRepository.updateLocation(promoted).onFailure {
             logW(TAG, "Could not add [${book.id}]: ${it.messageForLog()}")
             return Result.Failed
         }
@@ -127,7 +127,7 @@ class AddPreviewToLibraryUseCase @Inject constructor(
             originDocumentId = book.documentId,
             originPath = book.filePath
         )
-        bookRepository.updateBook(promoted).onFailure {
+        bookRepository.updateLocation(promoted).onFailure {
             logW(TAG, "Could not add [${book.id}]: ${it.messageForLog()}")
             bookRepository.deleteBookFile(book.id)
             return Result.Failed

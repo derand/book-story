@@ -68,7 +68,7 @@ class ReleaseBookCopyUseCase @Inject constructor(
         // The row is pointed back at the original first, and only then is the
         // copy deleted: a row left naming a deleted file is a book that cannot
         // be opened, while a copy outliving a failed update is a few megabytes.
-        bookRepository.updateBook(released).onFailure {
+        bookRepository.updateLocation(released).onFailure {
             logW(TAG, "Could not point [${current.id}] back: ${it.messageForLog()}")
             return@withContext null
         }

@@ -59,7 +59,7 @@ class RefreshBookCopyUseCase @Inject constructor(
         }
 
         val refreshed = current.copy(filePath = path)
-        bookRepository.updateBook(refreshed).onFailure {
+        bookRepository.updateLocation(refreshed).onFailure {
             logW(TAG, "Could not point [${current.id}] at the new copy: ${it.messageForLog()}")
             // The row still names the copy it had, which is still there: a
             // copy of the same name was replaced in place, one under another

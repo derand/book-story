@@ -43,7 +43,7 @@ class ResetCoverImageUseCase @Inject constructor(
 
             book.copy(coverImage = newCoverImage.toUri())
         }.mapCatchingCancellable { newBook ->
-            bookRepository.updateBook(newBook).getOrThrow()
+            bookRepository.updateCoverImage(newBook.id, newBook.coverImage).getOrThrow()
         }.fold(
             onSuccess = {
                 logI(TAG, "Successfully reset cover image of [$bookId].")
