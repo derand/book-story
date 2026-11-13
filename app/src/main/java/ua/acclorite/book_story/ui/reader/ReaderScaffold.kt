@@ -134,6 +134,7 @@ fun ReaderScaffold(
     searchQueryChange: (ReaderEvent.OnSearchQueryChange) -> Unit,
     searchStep: (ReaderEvent.OnSearchStep) -> Unit,
     searchReturn: (ReaderEvent.OnSearchReturn) -> Unit,
+    addingToLibrary: Boolean,
     addToLibrary: (ReaderEvent.OnAddToLibrary) -> Unit,
     navigateToBookInfo: (ReaderEvent.OnNavigateToBookInfo) -> Unit,
     navigateBack: (ReaderEvent.OnNavigateBack) -> Unit
@@ -209,6 +210,7 @@ fun ReaderScaffold(
 
                 if (!book.inLibrary && !coveredByBottomSheet) {
                     ReaderPreviewBar(
+                        addingToLibrary = addingToLibrary,
                         addToLibrary = addToLibrary,
                         onHeightChanged = { previewBarHeight = it }
                     )

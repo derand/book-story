@@ -29,12 +29,18 @@ class DiscardPreviewsUseCase @Inject constructor(
     private val deleteBookUseCase: DeleteBookUseCase
 ) {
 
-    /** Discards [book] if, and only if, it is still a preview. */
+    /**
+     * Discards [book] if, and only if, it is still a preview.
+     *
+     * Decided on the row, not on [book]: the caller's copy may predate a Keep
+     * that has already promoted the row, and deleting on its word would throw
+     * away the book the user just chose to keep.
+     */
     suspend fun discard(book: Book) {
-        if (book.inLibrary) return
+        val current = bookRepository.getBook(book.id).getOrElse { return }
+        if (current.inLibrary) return
 
-        logI(TAG, "Discarding preview [${book.id}].")
-        deleteBookUseCase(book)
+        delete(current)
     }
 
     /** Discards every preview there is. By design there never should be one. */
@@ -46,6 +52,11 @@ class DiscardPreviewsUseCase @Inject constructor(
 
         if (previews.isEmpty()) return
         logI(TAG, "Sweeping ${previews.size} preview(s) left by a killed process.")
-        previews.forEach { discard(it) }
+        previews.forEach { delete(it) }
+    }
+
+    private suspend fun delete(preview: Book) {
+        logI(TAG, "Discarding preview [${preview.id}].")
+        deleteBookUseCase(preview)
     }
 }

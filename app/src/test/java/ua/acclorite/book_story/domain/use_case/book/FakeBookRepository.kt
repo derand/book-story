@@ -136,8 +136,9 @@ class FakeBookRepository(
     private fun unused(name: String): Nothing =
         throw UnsupportedOperationException("$name is not part of this fake.")
 
+    /** The row as last written, if [updateLocation] wrote one, else as given. */
     override suspend fun getBook(bookId: Int): Result<Book> =
-        (books + previews).firstOrNull { it.id == bookId }
+        (listOfNotNull(updated) + books + previews).firstOrNull { it.id == bookId }
             ?.let { Result.success(it) }
             ?: Result.failure(NoSuchElementException("No book [$bookId]."))
 

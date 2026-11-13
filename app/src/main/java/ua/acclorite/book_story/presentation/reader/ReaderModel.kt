@@ -16,6 +16,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -26,6 +27,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -150,6 +152,9 @@ class ReaderModel @Inject constructor(
     private var coverageItemCount = 0
     private var coverageBookWords = 0
     private var coverageJob: Job? = null
+
+    /** The Keep in progress, for [ReaderEvent.OnLeave] to wait for. */
+    private var keepJob: Job? = null
 
     /**
      * Words before each item, built by the pass that counts the book. It is
@@ -583,11 +588,21 @@ class ReaderModel @Inject constructor(
                 }
 
                 is ReaderEvent.OnLeave -> {
+                    // Once only. The reader stays on screen until the leave
+                    // navigates, and a second Back in that time would run it all
+                    // again and pop whatever is below the reader as well.
+                    if (_state.value.lockMenu) return@launch
                     _state.update {
                         it.copy(
                             lockMenu = true
                         )
                     }
+
+                    // A Keep still copying decides what leaving means: the book
+                    // is either kept by the time it ends, and must not be
+                    // discarded, or it is not, and must be. Waited for before
+                    // the session ends, because a Keep that succeeds starts one.
+                    keepJob?.join()
 
                     // Before the position-saving block below, which is guarded
                     // by conditions of its own and must not decide whether a
@@ -626,22 +641,18 @@ class ReaderModel @Inject constructor(
                     // held anything to begin with.
                     discardPreviewsUseCase.discard(_state.value.book)
 
-                    _effects.emit(
-                        ReaderEffect.OnSystemBarsVisibility(
-                            show = true
-                        )
-                    )
-                    _effects.emit(ReaderEffect.OnResetBrightness)
+                    // System bars and brightness are restored by the screen's
+                    // own onDispose, which every way out of the reader passes.
                     event.navigate()
                 }
 
                 is ReaderEvent.OnAddToLibrary -> {
-                    addToLibrary()
+                    keep()
                 }
 
                 is ReaderEvent.OnGrantFolder -> {
                     grantPersistableUriPermissionUseCase(event.uri)
-                    addToLibrary()
+                    keep()
                 }
 
                 is ReaderEvent.OnOpenTranslator -> {
@@ -810,6 +821,23 @@ class ReaderModel @Inject constructor(
      */
     fun onLeaveForeground() {
         viewModelScope.launch { endSession() }
+    }
+
+    /**
+     * Runs [addToLibrary] once at a time, and not at all once the reader is
+     * being left. The copy can take seconds: a second Keep in that time would
+     * copy the file again, and a Back would discard the book being kept.
+     */
+    private suspend fun keep() {
+        if (_state.value.addingToLibrary || _state.value.lockMenu) return
+        _state.update { it.copy(addingToLibrary = true) }
+        keepJob = currentCoroutineContext().job
+        try {
+            addToLibrary()
+        } finally {
+            keepJob = null
+            _state.update { it.copy(addingToLibrary = false) }
+        }
     }
 
     /**

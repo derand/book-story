@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -41,6 +42,7 @@ import ua.acclorite.book_story.ui.theme.readerBarsColor
  */
 @Composable
 fun ReaderPreviewBar(
+    addingToLibrary: Boolean,
     addToLibrary: (ReaderEvent.OnAddToLibrary) -> Unit,
     onHeightChanged: (Dp) -> Unit
 ) {
@@ -68,11 +70,16 @@ fun ReaderPreviewBar(
             maxLines = 1
         )
 
-        Button(onClick = { addToLibrary(ReaderEvent.OnAddToLibrary) }) {
+        Button(
+            onClick = { addToLibrary(ReaderEvent.OnAddToLibrary) },
+            enabled = !addingToLibrary
+        ) {
             StyledText(
                 text = stringResource(id = R.string.add_to_library_content_desc),
                 style = LocalTextStyle.current.copy(
-                    color = MaterialTheme.colorScheme.onPrimary
+                    // The button's own content colour, which dims while a Keep
+                    // is copying; onPrimary would look tappable throughout.
+                    color = LocalContentColor.current
                 ),
                 maxLines = 1
             )

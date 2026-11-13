@@ -13,6 +13,8 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.core.net.toUri
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -25,7 +27,6 @@ import ua.acclorite.book_story.presentation.reader.ReaderEffect
 import ua.acclorite.book_story.presentation.reader.ReaderEvent
 import ua.acclorite.book_story.ui.common.helpers.LocalActivity
 import ua.acclorite.book_story.ui.common.helpers.launchActivity
-import ua.acclorite.book_story.ui.common.helpers.setBrightness
 import ua.acclorite.book_story.ui.common.helpers.showToast
 import ua.acclorite.book_story.presentation.navigator.Screen
 import ua.acclorite.book_story.ui.navigator.LocalNavigator
@@ -51,7 +52,13 @@ fun ReaderEffects(
         grantFolder(ReaderEvent.OnGrantFolder(uri = uri.toString()))
     }
 
-    LaunchedEffect(effects, book, fullscreen) {
+    // Keyed on the flow alone. The book is replaced on every settled scroll and
+    // by Keep, and a collector restarted for it leaves a gap in which an effect
+    // is dropped — a leave's navigation among them, which strands the reader.
+    val currentBook by rememberUpdatedState(book)
+    val currentFullscreen by rememberUpdatedState(fullscreen)
+
+    LaunchedEffect(effects) {
         effects.collect { effect ->
             when (effect) {
                 is ReaderEffect.OnSystemBarsVisibility -> {
@@ -61,13 +68,9 @@ fun ReaderEffects(
                     ).apply {
                         systemBarsBehavior = WindowInsetsControllerCompat
                             .BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-                        if (effect.show ?: !fullscreen) show(WindowInsetsCompat.Type.systemBars())
+                        if (effect.show ?: !currentFullscreen) show(WindowInsetsCompat.Type.systemBars())
                         else hide(WindowInsetsCompat.Type.systemBars())
                     }
-                }
-
-                is ReaderEffect.OnResetBrightness -> {
-                    activity.setBrightness(brightness = null)
                 }
 
                 is ReaderEffect.OnOpenTranslator -> {
@@ -159,7 +162,7 @@ fun ReaderEffects(
                 is ReaderEffect.OnNavigateToBookInfo -> {
                     navigator.push(
                         BookInfoScreen(
-                            bookId = book.id,
+                            bookId = currentBook.id,
                             changePath = effect.changePath
                         ),
                         popping = true,

@@ -47,6 +47,8 @@ data class ReaderState(
     val showMenu: Boolean = false,
     val checkpoints: List<Checkpoint> = emptyList(),
     val lockMenu: Boolean = false,
+    /** A Keep is copying the previewed book; Keep is not offered again meanwhile. */
+    val addingToLibrary: Boolean = false,
 
     val bottomSheet: BottomSheet? = null,
     val drawer: Drawer? = null

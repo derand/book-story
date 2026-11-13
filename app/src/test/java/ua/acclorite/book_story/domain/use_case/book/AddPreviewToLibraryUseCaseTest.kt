@@ -57,7 +57,7 @@ class AddPreviewToLibraryUseCaseTest {
 
     @Test
     fun `a reachable book is added`() = runBlocking {
-        val repository = FakeBookRepository()
+        val repository = FakeBookRepository(previews = listOf(preview))
         val useCase = AddPreviewToLibraryUseCase(repository, FakeFileProvider(reachable = true))
 
         val result = useCase(preview)
@@ -73,7 +73,7 @@ class AddPreviewToLibraryUseCaseTest {
 
     @Test
     fun `an unreachable book asks for its folder and is not added`() = runBlocking {
-        val repository = FakeBookRepository()
+        val repository = FakeBookRepository(previews = listOf(preview))
         val useCase = AddPreviewToLibraryUseCase(repository, FakeFileProvider(reachable = false))
 
         val result = useCase(preview)
@@ -88,7 +88,10 @@ class AddPreviewToLibraryUseCaseTest {
 
     @Test
     fun `a book with no path is kept by keeping its file`() = runBlocking {
-        val repository = FakeBookRepository(storedPath = "/data/books/7/Solaris.fb2")
+        val repository = FakeBookRepository(
+            previews = listOf(preview.copy(filePath = "")),
+            storedPath = "/data/books/7/Solaris.fb2"
+        )
         val useCase = AddPreviewToLibraryUseCase(repository, FakeFileProvider(reachable = true))
 
         val result = useCase(preview.copy(filePath = ""))
@@ -105,7 +108,7 @@ class AddPreviewToLibraryUseCaseTest {
 
     @Test
     fun `a book whose file cannot be stored is not added`() = runBlocking {
-        val repository = FakeBookRepository(storedPath = null)
+        val repository = FakeBookRepository(previews = listOf(preview.copy(filePath = "")), storedPath = null)
         val useCase = AddPreviewToLibraryUseCase(repository, FakeFileProvider(reachable = true))
 
         val result = useCase(preview.copy(filePath = ""))
@@ -116,14 +119,47 @@ class AddPreviewToLibraryUseCaseTest {
 
     @Test
     fun `a file at the storage root still names a folder`() = runBlocking {
-        val repository = FakeBookRepository()
+        val repository = FakeBookRepository(previews = listOf(preview.copy(filePath = "/Solaris.fb2")))
         val useCase = AddPreviewToLibraryUseCase(repository, FakeFileProvider(reachable = false))
 
-        val result = useCase(preview.copy(filePath = "/Solaris.fb2"))
+        val result = useCase(preview)
 
         assertTrue(result is AddPreviewToLibraryUseCase.Result.NeedsGrant)
         // No folder above it that can be named, so the picker opens wherever it
         // likes rather than being sent to "".
         assertNull((result as AddPreviewToLibraryUseCase.Result.NeedsGrant).folder)
+    }
+
+    @Test
+    fun `a second Keep with the same stale preview does not copy the file again`() = runBlocking {
+        val stale = preview.copy(filePath = "")
+        val repository = FakeBookRepository(
+            previews = listOf(stale),
+            storedPath = "/data/books/7/Solaris.fb2"
+        )
+        val useCase = AddPreviewToLibraryUseCase(repository, FakeFileProvider(reachable = true))
+
+        useCase(stale)
+        val second = useCase(stale)
+
+        // Storing again would replace the copy the row already points at, and a
+        // failure halfway would leave the kept book with no file at all.
+        assertEquals(listOf("store", "update"), repository.copyCalls)
+        assertTrue(second is AddPreviewToLibraryUseCase.Result.Added)
+        assertEquals(
+            "/data/books/7/Solaris.fb2",
+            (second as AddPreviewToLibraryUseCase.Result.Added).book.filePath
+        )
+    }
+
+    @Test
+    fun `a preview that is gone is not added`() = runBlocking {
+        val repository = FakeBookRepository(storedPath = "/data/books/7/Solaris.fb2")
+        val useCase = AddPreviewToLibraryUseCase(repository, FakeFileProvider(reachable = true))
+
+        val result = useCase(preview.copy(filePath = ""))
+
+        assertEquals(AddPreviewToLibraryUseCase.Result.Failed, result)
+        assertTrue(repository.copyCalls.isEmpty())
     }
 }
