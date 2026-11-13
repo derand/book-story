@@ -73,7 +73,7 @@ class StoreBookCopyUseCase @Inject constructor(
             originPath = current.filePath
         )
 
-        bookRepository.updateBook(stored).onFailure {
+        bookRepository.updateLocation(stored).onFailure {
             logW(TAG, "Could not point [${current.id}] at its copy: ${it.messageForLog()}")
             // The row still names the original, so the copy is unreachable and
             // would be a leak of the whole book's size.

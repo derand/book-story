@@ -30,6 +30,9 @@ sealed class BookInfoEffect {
 
     data object OnBookMoved : BookInfoEffect()
 
+    /** An edit of the book's details, path or categories was not written. */
+    data object OnErrorUpdate : BookInfoEffect()
+
     /** The copy could not be made, or could not be given up. */
     data object OnErrorLocalCopy : BookInfoEffect()
 

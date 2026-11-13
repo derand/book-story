@@ -231,23 +231,19 @@ class LibraryModel @Inject constructor(
 
                 is LibraryEvent.OnActionMoveDialog -> {
                     withContext(Dispatchers.Default) {
-                        _state.value.books.forEach { book ->
-                            if (!book.selected) return@forEach
-                            updateBookUseCase(
-                                book.data.copy(
-                                    categories = event.selectedCategories.map { it.id }
-                                )
-                            )
-                        }
+                        val categories = event.selectedCategories.map { it.id }
+                        val moved = updateBookUseCase.categories(
+                            bookIds = _state.value.books.filter { it.selected }.map { it.data.id },
+                            categories = categories
+                        )
 
                         _state.update {
                             it.copy(
                                 books = it.books.map { book ->
                                     if (!book.selected) return@map book
                                     book.copy(
-                                        data = book.data.copy(
-                                            categories = event.selectedCategories.map { it.id }
-                                        ),
+                                        data = if (moved) book.data.copy(categories = categories)
+                                        else book.data,
                                         selected = false
                                     )
                                 },
@@ -256,6 +252,10 @@ class LibraryModel @Inject constructor(
                             )
                         }
 
+                        if (!moved) {
+                            _effects.emit(LibraryEffect.OnErrorMoveBooks)
+                            return@withContext
+                        }
                         HistoryScreen.refreshListChannel.trySend(0)
                         _effects.emit(LibraryEffect.OnBooksMoved)
                     }

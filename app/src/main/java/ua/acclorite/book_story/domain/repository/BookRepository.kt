@@ -119,16 +119,40 @@ interface BookRepository {
      */
     suspend fun findPreviews(): Result<List<Book>>
 
-    /**
-     * Writes the row back from [book]. Its document identity is written only
-     * when the caller [statesIdentity] — has just asked the provider about the
-     * file — or when the path changed, which drops it; otherwise the stored one
-     * stays, since a [Book] held by a screen may predate the open that learned it.
+    /*
+     * Updates write only what they are about. There is no "write the book
+     * back": a [Book] held by a screen is a copy from whenever it was loaded,
+     * and writing it whole reverted everything changed since. Each fails when
+     * there is no such book.
      */
-    suspend fun updateBook(
-        book: Book,
-        statesIdentity: Boolean = false
+
+    suspend fun updatePosition(
+        bookId: Int,
+        scrollIndex: Int,
+        scrollOffset: Int,
+        progress: Float
     ): Result<Unit>
+
+    suspend fun updateTitle(bookId: Int, title: String): Result<Unit>
+
+    suspend fun updateAuthor(bookId: Int, author: String): Result<Unit>
+
+    suspend fun updateDescription(bookId: Int, description: String?): Result<Unit>
+
+    suspend fun updateCoverImage(bookId: Int, coverImage: Uri?): Result<Unit>
+
+    /** Fails only when none of [bookIds] is left. */
+    suspend fun updateCategories(bookIds: List<Int>, categories: List<Int>): Result<Unit>
+
+    /** A path set by hand; a changed path drops the identity of the old place. */
+    suspend fun updateFilePath(bookId: Int, filePath: String): Result<Unit>
+
+    /**
+     * Writes where [book] is read from — its path, whether it is in the
+     * library, its preview URI, its document identity and its origin — as
+     * [book] has them, and nothing else about it.
+     */
+    suspend fun updateLocation(book: Book): Result<Unit>
 
     /**
      * Deletes the book's row and everything in the database that hangs on it,

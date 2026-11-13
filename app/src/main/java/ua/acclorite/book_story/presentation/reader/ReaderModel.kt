@@ -610,7 +610,11 @@ class ReaderModel @Inject constructor(
                             )
                         }
 
-                        updateBookUseCase(_state.value.book)
+                        _state.value.book.let { book ->
+                            updateBookUseCase.position(
+                                book.id, book.scrollIndex, book.scrollOffset, book.progress
+                            )
+                        }
 
                         LibraryScreen.refreshListChannel.trySend(0)
                         HistoryScreen.refreshListChannel.trySend(0)
@@ -824,10 +828,9 @@ class ReaderModel @Inject constructor(
         when (val result = addPreviewToLibraryUseCase(book)) {
             is AddPreviewToLibraryUseCase.Result.Added -> {
                 // Everything the promotion changed, and nothing else: progress
-                // may have moved while the copy was being made, and [updateProgress]
-                // writes this row whole on every settled scroll — a stale path or
-                // preview URI here would be written straight back over the row
-                // that was just promoted, leaving the book unopenable.
+                // may have moved while the copy was being made. Nothing here
+                // writes the row back whole any more, but the reader opens its
+                // file from this copy, so it has to name where the book now is.
                 _state.update {
                     it.copy(
                         book = it.book.copy(
@@ -1213,7 +1216,7 @@ class ReaderModel @Inject constructor(
                 )
             }
 
-            updateBookUseCase(_state.value.book)
+            updateBookUseCase.position(_state.value.book.id, index, offset, progress)
 
             LibraryScreen.refreshListChannel.trySend(0)
             HistoryScreen.refreshListChannel.trySend(0)

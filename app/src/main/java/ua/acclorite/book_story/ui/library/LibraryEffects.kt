@@ -40,6 +40,11 @@ fun LibraryEffects(effects: SharedFlow<LibraryEffect>, focusRequester: FocusRequ
                         .showToast(context = context)
                 }
 
+                is LibraryEffect.OnErrorMoveBooks -> {
+                    context.getString(R.string.error_something_went_wrong)
+                        .showToast(context = context)
+                }
+
                 is LibraryEffect.OnBooksDeleted -> {
                     context.getString(R.string.books_deleted)
                         .showToast(context = context)

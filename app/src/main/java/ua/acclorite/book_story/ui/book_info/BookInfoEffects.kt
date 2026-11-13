@@ -43,6 +43,11 @@ fun BookInfoEffects(
                         .showToast(context = context)
                 }
 
+                is BookInfoEffect.OnErrorUpdate -> {
+                    context.getString(R.string.error_something_went_wrong)
+                        .showToast(context = context)
+                }
+
                 is BookInfoEffect.OnErrorLocalCopy -> {
                     context.getString(R.string.error_local_copy)
                         .showToast(context = context)

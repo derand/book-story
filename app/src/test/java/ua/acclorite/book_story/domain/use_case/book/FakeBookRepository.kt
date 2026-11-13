@@ -42,10 +42,6 @@ class FakeBookRepository(
     /** Runs inside `storeBookFile`, before it answers. */
     var onStore: suspend () -> Unit = {}
 
-    /** Whether the last update stated the book's document identity. */
-    var updatedStatesIdentity: Boolean = false
-        private set
-
     /**
      * The delete calls, in the order they were made: `records`, `file` and
      * `images`, each with the book id. Order is the point of a delete.
@@ -73,11 +69,11 @@ class FakeBookRepository(
 
     override suspend fun findPreviews(): Result<List<Book>> = Result.success(previews)
 
-    override suspend fun updateBook(book: Book, statesIdentity: Boolean): Result<Unit> {
+    /** Records the book whose location was written, as `updated`. */
+    override suspend fun updateLocation(book: Book): Result<Unit> {
         copyCalls += "update"
         if (updateResult.isFailure) return updateResult
         updated = book
-        updatedStatesIdentity = statesIdentity
         return updateResult
     }
 
@@ -170,4 +166,31 @@ class FakeBookRepository(
 
     override suspend fun getDefaultCover(book: Book): Result<CoverImage?> =
         unused("getDefaultCover")
+
+    override suspend fun updatePosition(
+        bookId: Int,
+        scrollIndex: Int,
+        scrollOffset: Int,
+        progress: Float
+    ): Result<Unit> = unused("updatePosition")
+
+    override suspend fun updateTitle(bookId: Int, title: String): Result<Unit> =
+        unused("updateTitle")
+
+    override suspend fun updateAuthor(bookId: Int, author: String): Result<Unit> =
+        unused("updateAuthor")
+
+    override suspend fun updateDescription(bookId: Int, description: String?): Result<Unit> =
+        unused("updateDescription")
+
+    override suspend fun updateCoverImage(bookId: Int, coverImage: Uri?): Result<Unit> =
+        unused("updateCoverImage")
+
+    override suspend fun updateCategories(
+        bookIds: List<Int>,
+        categories: List<Int>
+    ): Result<Unit> = unused("updateCategories")
+
+    override suspend fun updateFilePath(bookId: Int, filePath: String): Result<Unit> =
+        unused("updateFilePath")
 }
