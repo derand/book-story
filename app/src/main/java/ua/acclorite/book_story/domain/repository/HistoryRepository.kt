@@ -6,6 +6,7 @@
 
 package ua.acclorite.book_story.domain.repository
 
+import kotlinx.coroutines.flow.Flow
 import ua.acclorite.book_story.domain.model.history.History
 
 interface HistoryRepository {
@@ -17,7 +18,8 @@ interface HistoryRepository {
         history: History
     ): Result<Unit>
 
-    suspend fun getHistory(): Result<List<History>>
+    /** Every entry, again after each change. A failed read ends the flow with the error. */
+    fun observeHistory(): Flow<List<History>>
 
     suspend fun deleteWholeHistory(): Result<Unit>
 

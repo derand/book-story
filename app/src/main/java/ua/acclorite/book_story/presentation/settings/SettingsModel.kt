@@ -40,7 +40,6 @@ import ua.acclorite.book_story.domain.use_case.permission.GrantPersistableUriPer
 import ua.acclorite.book_story.domain.use_case.permission.ReleasePersistableUriPermissionUseCase
 import ua.acclorite.book_story.domain.use_case.settings.UpdateLanguageUseCase
 import ua.acclorite.book_story.domain.use_case.statistics.DeleteStatisticsUseCase
-import ua.acclorite.book_story.presentation.history.HistoryScreen
 import javax.inject.Inject
 import kotlin.coroutines.coroutineContext
 import kotlin.random.Random
@@ -535,10 +534,6 @@ class SettingsModel @Inject constructor(
 
                 is SettingsEvent.OnDeleteStatistics -> {
                     deleteStatisticsUseCase()
-
-                    // The History card reads its figures once and would go on
-                    // showing the ones just erased.
-                    HistoryScreen.refreshListChannel.trySend(0)
                 }
             }
         }

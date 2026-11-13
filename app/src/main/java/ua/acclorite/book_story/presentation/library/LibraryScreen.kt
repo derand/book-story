@@ -42,9 +42,6 @@ object LibraryScreen : Screen, Parcelable {
     const val FILTER_BOTTOM_SHEET = "filter_bottom_sheet"
 
     @IgnoredOnParcel
-    val refreshListChannel: Channel<Long> = Channel(Channel.CONFLATED)
-
-    @IgnoredOnParcel
     val scrollToPageCompositionChannel: Channel<Int> = Channel(Channel.CONFLATED)
 
     @OptIn(ExperimentalMaterialApi::class)

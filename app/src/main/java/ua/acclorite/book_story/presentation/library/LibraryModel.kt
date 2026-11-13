@@ -18,18 +18,19 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import ua.acclorite.book_story.core.helpers.launchWhileSubscribed
 import ua.acclorite.book_story.domain.use_case.backup.DismissRestoreNoticeUseCase
 import ua.acclorite.book_story.domain.use_case.backup.GetRestoreNoticeUseCase
 import ua.acclorite.book_story.domain.use_case.book.DeleteBookUseCase
-import ua.acclorite.book_story.domain.use_case.book.SearchBooksUseCase
+import ua.acclorite.book_story.domain.model.library.Book
+import ua.acclorite.book_story.domain.use_case.book.ObserveLibraryBooksUseCase
 import ua.acclorite.book_story.domain.use_case.book.UpdateBookUseCase
 import ua.acclorite.book_story.presentation.browse.BrowseScreen
-import ua.acclorite.book_story.presentation.history.HistoryScreen
 import ua.acclorite.book_story.presentation.library.model.SelectableBook
 import javax.inject.Inject
 import kotlin.coroutines.coroutineContext
@@ -37,7 +38,7 @@ import kotlin.coroutines.coroutineContext
 @HiltViewModel
 class LibraryModel @Inject constructor(
     private val updateBookUseCase: UpdateBookUseCase,
-    private val searchBooksUseCase: SearchBooksUseCase,
+    private val observeLibraryBooksUseCase: ObserveLibraryBooksUseCase,
     private val deleteBookUseCase: DeleteBookUseCase,
     private val getRestoreNoticeUseCase: GetRestoreNoticeUseCase,
     private val dismissRestoreNoticeUseCase: DismissRestoreNoticeUseCase
@@ -51,13 +52,23 @@ class LibraryModel @Inject constructor(
     private val _effects = MutableSharedFlow<LibraryEffect>()
     val effects = _effects.asSharedFlow()
 
+    /** What the list is narrowed to: the query once typing pauses, while search is shown. */
+    private val searchFilter = MutableStateFlow("")
+
+    /** Bumped by pull-to-refresh, which reads the list again from scratch. */
+    private val reload = MutableStateFlow(0)
+
     init {
-        onEvent(
-            LibraryEvent.OnRefreshList(
-                loading = true,
-                hideSearch = true
-            )
-        )
+        // The list follows the database, so nothing has to say "refresh" after
+        // a write; but only while the screen shows it: this model lives as long
+        // as the activity, and the reader writes on every settled scroll.
+        viewModelScope.launchWhileSubscribed(_state) {
+            reload.collectLatest {
+                observeLibraryBooksUseCase(searchFilter)
+                    .flowOn(Dispatchers.Default)
+                    .collect { books -> showBooks(books) }
+            }
+        }
 
         // The first start after a restore says what happened: a restart that
         // explains nothing looks like a crash.
@@ -65,20 +76,21 @@ class LibraryModel @Inject constructor(
             val notice = getRestoreNoticeUseCase() ?: return@launch
             _state.update { it.copy(restoreNotice = notice) }
         }
+    }
 
-        /* Observe channel - - - - - - - - - - - */
-        viewModelScope.launch {
-            LibraryScreen.refreshListChannel.receiveAsFlow().collectLatest {
-                delay(it)
-                onEvent(
-                    LibraryEvent.OnRefreshList(
-                        loading = false,
-                        hideSearch = false
-                    )
-                )
-            }
+    /** A fresh read replaces the list; the books that were selected stay selected. */
+    private suspend fun showBooks(books: List<Book>) {
+        _state.update { state ->
+            val selected = state.books.filter { it.selected }.mapTo(HashSet()) { it.data.id }
+            val list = books.map { book -> SelectableBook(book, book.id in selected) }
+            val selectedCount = list.count { it.selected }
+            state.copy(
+                books = list,
+                selectedItemsCount = selectedCount,
+                hasSelectedItems = selectedCount > 0,
+                isLoading = false
+            )
         }
-        /* - - - - - - - - - - - - - - - - - - - */
     }
 
     private var refreshJob: Job? = null
@@ -89,7 +101,7 @@ class LibraryModel @Inject constructor(
             when (event) {
                 is LibraryEvent.OnRefreshList -> {
                     refreshJob?.cancel()
-                    refreshJob = viewModelScope.launch(Dispatchers.Default) {
+                    refreshJob = viewModelScope.launch {
                         _state.update {
                             it.copy(
                                 isRefreshing = true,
@@ -97,19 +109,8 @@ class LibraryModel @Inject constructor(
                                 showSearch = if (event.hideSearch) false else it.showSearch
                             )
                         }
-
-                        ensureActive()
-                        val books = searchBooksUseCase(
-                            if (_state.value.showSearch) _state.value.searchQuery
-                            else ""
-                        ).map { book -> SelectableBook(book, false) }
-                        _state.update {
-                            it.copy(
-                                books = books,
-                                hasSelectedItems = false,
-                                isLoading = false
-                            )
-                        }
+                        if (event.hideSearch) searchFilter.value = ""
+                        reload.value++
 
                         delay(500) // Delay for UI smoothness
                         _state.update {
@@ -121,14 +122,7 @@ class LibraryModel @Inject constructor(
                 }
 
                 is LibraryEvent.OnSearchVisibility -> {
-                    if (!event.show) {
-                        onEvent(
-                            LibraryEvent.OnRefreshList(
-                                loading = false,
-                                hideSearch = true
-                            )
-                        )
-                    }
+                    if (!event.show) searchFilter.value = ""
 
                     _state.update {
                         it.copy(
@@ -153,12 +147,8 @@ class LibraryModel @Inject constructor(
                 }
 
                 is LibraryEvent.OnSearch -> {
-                    onEvent(
-                        LibraryEvent.OnRefreshList(
-                            loading = false,
-                            hideSearch = false
-                        )
-                    )
+                    searchFilter.value =
+                        if (_state.value.showSearch) _state.value.searchQuery else ""
                 }
 
                 is LibraryEvent.OnRequestFocus -> {
@@ -256,7 +246,6 @@ class LibraryModel @Inject constructor(
                             _effects.emit(LibraryEffect.OnErrorMoveBooks)
                             return@withContext
                         }
-                        HistoryScreen.refreshListChannel.trySend(0)
                         _effects.emit(LibraryEffect.OnBooksMoved)
                     }
                 }
@@ -284,7 +273,6 @@ class LibraryModel @Inject constructor(
                             )
                         }
 
-                        HistoryScreen.refreshListChannel.trySend(0)
                         BrowseScreen.refreshListChannel.trySend(Unit)
                         _effects.emit(LibraryEffect.OnBooksDeleted)
                     }

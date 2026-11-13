@@ -10,6 +10,8 @@ import android.net.Uri
 import androidx.core.net.toUri
 import androidx.room.withTransaction
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.job
 import kotlinx.coroutines.withContext
 import ua.acclorite.book_story.core.CoverImage
@@ -120,11 +122,10 @@ class BookRepositoryImpl @Inject constructor(
         return file
     }
 
-    override suspend fun getLibraryBooks(): Result<List<Book>> = runCatchingCancellable {
-        withContext(Dispatchers.IO) {
-            database.bookDao.getLibraryBooks().map { bookMapper.toBook(it) }
+    override fun observeLibraryBooks(): Flow<List<Book>> =
+        database.bookDao.observeLibraryBooks().map { rows ->
+            rows.map { row -> bookMapper.toBook(row.book).copy(lastOpened = row.lastOpened) }
         }
-    }
 
     override suspend fun getBook(bookId: Int): Result<Book> = runCatchingCancellable {
         withContext(Dispatchers.IO) {

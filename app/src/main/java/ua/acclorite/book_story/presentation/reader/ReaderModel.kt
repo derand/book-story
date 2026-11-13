@@ -62,8 +62,6 @@ import ua.acclorite.book_story.domain.use_case.statistics.GetBookCoverageUseCase
 import ua.acclorite.book_story.domain.use_case.statistics.RecordReadingSessionUseCase
 import ua.acclorite.book_story.domain.use_case.statistics.SaveBookCoverageUseCase
 import ua.acclorite.book_story.domain.use_case.statistics.UpdateReadBookUseCase
-import ua.acclorite.book_story.presentation.history.HistoryScreen
-import ua.acclorite.book_story.presentation.library.LibraryScreen
 import ua.acclorite.book_story.presentation.reader.model.Checkpoint
 import ua.acclorite.book_story.presentation.reader.model.ReaderSearch
 import ua.acclorite.book_story.presentation.reader.model.readingProgress
@@ -630,9 +628,6 @@ class ReaderModel @Inject constructor(
                                 book.id, book.scrollIndex, book.scrollOffset, book.progress
                             )
                         }
-
-                        LibraryScreen.refreshListChannel.trySend(0)
-                        HistoryScreen.refreshListChannel.trySend(0)
                     }
 
                     // Leaving a book that was only being previewed is the user
@@ -874,8 +869,6 @@ class ReaderModel @Inject constructor(
                     loadCoverage(_state.value.text)
                 }
 
-                LibraryScreen.refreshListChannel.trySend(0)
-                HistoryScreen.refreshListChannel.trySend(0)
                 _effects.emit(ReaderEffect.OnAddedToLibrary)
             }
 
@@ -1245,9 +1238,6 @@ class ReaderModel @Inject constructor(
             }
 
             updateBookUseCase.position(_state.value.book.id, index, offset, progress)
-
-            LibraryScreen.refreshListChannel.trySend(0)
-            HistoryScreen.refreshListChannel.trySend(0)
         }
     }
 

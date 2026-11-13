@@ -32,9 +32,6 @@ object HistoryScreen : Screen, Parcelable {
     const val DELETE_WHOLE_HISTORY_DIALOG = "delete_whole_history_dialog"
 
     @IgnoredOnParcel
-    val refreshListChannel: Channel<Long> = Channel(Channel.CONFLATED)
-
-    @IgnoredOnParcel
     val insertHistoryChannel: Channel<Int> = Channel(Channel.CONFLATED)
 
     @Composable

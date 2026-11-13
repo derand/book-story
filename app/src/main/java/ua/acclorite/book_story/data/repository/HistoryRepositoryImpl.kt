@@ -7,6 +7,8 @@
 package ua.acclorite.book_story.data.repository
 
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import ua.acclorite.book_story.core.helpers.runCatchingCancellable
 import ua.acclorite.book_story.data.local.room.BookDatabase
@@ -35,11 +37,10 @@ class HistoryRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun getHistory(): Result<List<History>> = runCatchingCancellable {
-        withContext(Dispatchers.IO) {
-            database.historyDao.getHistoryWithBook().mapNotNull { historyMapper.toHistory(it) }
+    override fun observeHistory(): Flow<List<History>> =
+        database.historyDao.observeHistoryWithBook().map { rows ->
+            rows.mapNotNull { historyMapper.toHistory(it) }
         }
-    }
 
     override suspend fun deleteWholeHistory(): Result<Unit> = runCatchingCancellable {
         withContext(Dispatchers.IO) {

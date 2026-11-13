@@ -11,7 +11,9 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import kotlinx.coroutines.flow.Flow
 import ua.acclorite.book_story.data.local.dto.BookEntity
+import ua.acclorite.book_story.data.local.dto.LibraryBookRow
 
 @Dao
 interface BookDao {
@@ -32,6 +34,18 @@ interface BookDao {
      */
     @Query("SELECT * FROM bookentity WHERE inLibrary = 1")
     suspend fun getLibraryBooks(): List<BookEntity>
+
+    /**
+     * The library list as it changes: the same rows as [getLibraryBooks], with
+     * when each was last opened. Room re-runs it after any write to either
+     * table, so the list needs no refresh calls.
+     */
+    @Query(
+        "SELECT bookentity.*, (SELECT MAX(time) FROM historyentity " +
+                "WHERE historyentity.bookId = bookentity.id) AS lastOpened " +
+                "FROM bookentity WHERE inLibrary = 1"
+    )
+    fun observeLibraryBooks(): Flow<List<LibraryBookRow>>
 
     /**
      * Deliberately **not** filtered by [BookEntity.inLibrary]: this is how the

@@ -33,8 +33,6 @@ import ua.acclorite.book_story.domain.use_case.book.UpdateCoverImageUseCase
 import ua.acclorite.book_story.domain.use_case.statistics.GetBookStatisticsUseCase
 import ua.acclorite.book_story.domain.use_case.statistics.SetBookFinishedUseCase
 import ua.acclorite.book_story.presentation.browse.BrowseScreen
-import ua.acclorite.book_story.presentation.history.HistoryScreen
-import ua.acclorite.book_story.presentation.library.LibraryScreen
 import javax.inject.Inject
 import kotlin.coroutines.coroutineContext
 
@@ -99,9 +97,6 @@ class BookInfoModel @Inject constructor(
                             )
                         }
 
-                        LibraryScreen.refreshListChannel.trySend(0)
-                        HistoryScreen.refreshListChannel.trySend(0)
-
                         _effects.emit(BookInfoEffect.OnChangedCover)
                     }
                 }
@@ -128,9 +123,6 @@ class BookInfoModel @Inject constructor(
                             )
                         }
 
-                        LibraryScreen.refreshListChannel.trySend(0)
-                        HistoryScreen.refreshListChannel.trySend(0)
-
                         _effects.emit(BookInfoEffect.OnResetCover)
                     }
                 }
@@ -147,9 +139,6 @@ class BookInfoModel @Inject constructor(
                                 canResetCover = canResetCoverImageUseCase(it.book.id)
                             )
                         }
-
-                        LibraryScreen.refreshListChannel.trySend(0)
-                        HistoryScreen.refreshListChannel.trySend(0)
 
                         _effects.emit(BookInfoEffect.OnDeletedCover)
                     }
@@ -213,9 +202,6 @@ class BookInfoModel @Inject constructor(
                             )
                         }
 
-                        LibraryScreen.refreshListChannel.trySend(0)
-                        HistoryScreen.refreshListChannel.trySend(0)
-
                         _effects.emit(BookInfoEffect.OnTitleChanged)
                     }
                 }
@@ -245,9 +231,6 @@ class BookInfoModel @Inject constructor(
                             )
                         }
 
-                        LibraryScreen.refreshListChannel.trySend(0)
-                        HistoryScreen.refreshListChannel.trySend(0)
-
                         _effects.emit(BookInfoEffect.OnAuthorChanged)
                     }
                 }
@@ -274,9 +257,6 @@ class BookInfoModel @Inject constructor(
                                 )
                             )
                         }
-
-                        LibraryScreen.refreshListChannel.trySend(0)
-                        HistoryScreen.refreshListChannel.trySend(0)
 
                         _effects.emit(BookInfoEffect.OnDescriptionChanged)
                     }
@@ -311,9 +291,6 @@ class BookInfoModel @Inject constructor(
                             )
                         }
 
-                        LibraryScreen.refreshListChannel.trySend(0)
-                        HistoryScreen.refreshListChannel.trySend(0)
-
                         _effects.emit(BookInfoEffect.OnPathChanged)
 
                         val file = getFileFromBookUseCase(_state.value.book.id)
@@ -344,8 +321,6 @@ class BookInfoModel @Inject constructor(
                         }
                         deleteBookUseCase(_state.value.book)
 
-                        LibraryScreen.refreshListChannel.trySend(0)
-                        HistoryScreen.refreshListChannel.trySend(0)
                         BrowseScreen.refreshListChannel.trySend(Unit)
 
                         _effects.emit(BookInfoEffect.OnBookDeleted)
@@ -372,7 +347,6 @@ class BookInfoModel @Inject constructor(
                                     loadingFile = true
                                 )
                             }
-                            LibraryScreen.refreshListChannel.trySend(0)
 
                             // The book reads from somewhere else now, so what the
                             // details say about its file is about the wrong one.
@@ -445,9 +419,6 @@ class BookInfoModel @Inject constructor(
                             _effects.emit(BookInfoEffect.OnErrorUpdate)
                             return@withContext
                         }
-
-                        LibraryScreen.refreshListChannel.trySend(0)
-                        HistoryScreen.refreshListChannel.trySend(0)
 
                         _effects.emit(BookInfoEffect.OnBookMoved)
                     }

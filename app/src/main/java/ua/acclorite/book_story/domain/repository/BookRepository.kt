@@ -7,6 +7,7 @@
 package ua.acclorite.book_story.domain.repository
 
 import android.net.Uri
+import kotlinx.coroutines.flow.Flow
 import ua.acclorite.book_story.core.CoverImage
 import ua.acclorite.book_story.domain.model.file.File
 import ua.acclorite.book_story.domain.model.library.Book
@@ -14,8 +15,12 @@ import ua.acclorite.book_story.domain.model.reader.BookImage
 import ua.acclorite.book_story.domain.model.reader.ParsedText
 
 interface BookRepository {
-    /** Every book in the library; previews are not books yet and are left out. */
-    suspend fun getLibraryBooks(): Result<List<Book>>
+    /**
+     * Every book in the library, with when it was last opened, again after each
+     * change; previews are not books yet and are left out. A failed read ends
+     * the flow with the error.
+     */
+    fun observeLibraryBooks(): Flow<List<Book>>
 
     suspend fun getBook(
         bookId: Int
