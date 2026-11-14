@@ -30,6 +30,25 @@ fun List<ColorPreset>.activeColorPreset(selected: ColorPreset, isDark: Boolean):
     return firstOrNull { it.type == wanted } ?: selected
 }
 
+/**
+ * Where a fast switch from [selected] lands, or null when there is nowhere to go.
+ *
+ * Both built-ins mean "follow the theme" (see [activeColorPreset]), so they are
+ * one step: the first built-in in list order stands for both and the other is
+ * skipped — otherwise every other swipe would change nothing on screen.
+ */
+fun List<ColorPreset>.nextColorPreset(selected: ColorPreset, previous: Boolean): ColorPreset? {
+    val auto = firstOrNull { it.isBuiltIn }
+    val steps = filter { !it.isBuiltIn || it.id == auto?.id }
+    if (steps.size < 2) return null
+
+    val current = if (selected.isBuiltIn) auto else selected
+    val index = steps.indexOfFirst { it.id == current?.id }
+    if (index == -1) return null
+
+    return steps[(index + if (previous) -1 else 1).mod(steps.size)]
+}
+
 @Immutable
 data class ColorPreset(
     val id: Int,

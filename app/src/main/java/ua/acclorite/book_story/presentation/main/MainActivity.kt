@@ -96,11 +96,12 @@ class MainActivity : AppCompatActivity() {
             val historyModel = hiltViewModel<HistoryModel>()
             val browseModel = hiltViewModel<BrowseModel>()
 
-            SettingsEffects(
-                effects = settingsModel.effects
-            )
-
             ProvideSettings(settings) {
+                SettingsEffects(
+                    effects = settingsModel.effects,
+                    state = settingsModel.state
+                )
+
                 val tabs = persistentListOf(
                     NavigatorItem(
                         screen = LibraryScreen,

@@ -22,6 +22,7 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import ua.acclorite.book_story.domain.model.reader.ColorPreset
 import ua.acclorite.book_story.domain.model.reader.ColorPresetType
+import ua.acclorite.book_story.domain.model.reader.nextColorPreset
 import ua.acclorite.book_story.domain.use_case.file_system.GetBookSourcesUseCase
 import ua.acclorite.book_story.domain.use_case.category.AddCategoryUseCase
 import ua.acclorite.book_story.domain.use_case.category.DeleteCategoryUseCase
@@ -238,26 +239,10 @@ class SettingsModel @Inject constructor(
                     withContext(Dispatchers.IO) {
                         colorPresetJob?.join()
                         colorPresetJob = viewModelScope.launch(Dispatchers.Default) {
-                            val colorPresets = _state.value.colorPresets
-                            if (colorPresets.size == 1) return@launch
-
-                            val selectedPreset = _state.value.selectedColorPreset
-                            val selectedPresetIndex = colorPresets.indexOf(selectedPreset)
-                            if (selectedPresetIndex == -1) return@launch
-
-                            val newColorPresetIndex = if (event.previous) {
-                                when (selectedPresetIndex) {
-                                    0 -> colorPresets.lastIndex
-                                    else -> selectedPresetIndex - 1
-                                }
-                            } else {
-                                when (selectedPresetIndex) {
-                                    colorPresets.lastIndex -> 0
-                                    else -> selectedPresetIndex + 1
-                                }
-                            }
-                            val newColorPreset = colorPresets.getOrNull(newColorPresetIndex)
-                                ?: return@launch
+                            val newColorPreset = _state.value.colorPresets.nextColorPreset(
+                                selected = _state.value.selectedColorPreset,
+                                previous = event.previous
+                            ) ?: return@launch
 
                             ensureActive()
 
