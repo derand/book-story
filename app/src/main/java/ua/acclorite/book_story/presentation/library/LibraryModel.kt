@@ -66,7 +66,12 @@ class LibraryModel @Inject constructor(
             reload.collectLatest {
                 observeLibraryBooksUseCase(searchFilter)
                     .flowOn(Dispatchers.Default)
-                    .collect { books -> showBooks(books) }
+                    .collect { result ->
+                        result.fold(
+                            onSuccess = { books -> showBooks(books) },
+                            onFailure = { showLoadFailed() }
+                        )
+                    }
             }
         }
 
@@ -85,10 +90,24 @@ class LibraryModel @Inject constructor(
             val list = books.matching.map { book -> SelectableBook(book, book.id in selected) }
             val selectedCount = list.count { it.selected }
             state.copy(
+                loadFailed = false,
                 library = books.all,
                 books = list,
                 selectedItemsCount = selectedCount,
                 hasSelectedItems = selectedCount > 0,
+                isLoading = false
+            )
+        }
+    }
+
+    private suspend fun showLoadFailed() {
+        _state.update {
+            it.copy(
+                library = emptyList(),
+                books = emptyList(),
+                selectedItemsCount = 0,
+                hasSelectedItems = false,
+                loadFailed = true,
                 isLoading = false
             )
         }

@@ -37,6 +37,8 @@ fun HistoryScaffold(
     isLoading: Boolean,
     isRefreshing: Boolean,
     historyIsEmpty: Boolean,
+    loadFailed: Boolean,
+    refreshList: (HistoryEvent.OnRefreshList) -> Unit,
     focusRequester: FocusRequester,
     searchQuery: String,
     searchVisibility: (HistoryEvent.OnSearchVisibility) -> Unit,
@@ -94,7 +96,9 @@ fun HistoryScaffold(
             HistoryEmptyPlaceholder(
                 isLoading = isLoading,
                 isRefreshing = isRefreshing,
-                isHistoryEmpty = historyIsEmpty
+                isHistoryEmpty = historyIsEmpty,
+                loadFailed = loadFailed,
+                refreshList = refreshList
             )
 
             HistoryRefreshIndicator(

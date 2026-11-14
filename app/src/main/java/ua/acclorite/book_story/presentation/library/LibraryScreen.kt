@@ -122,6 +122,7 @@ object LibraryScreen : Screen, Parcelable {
             pagerState = pagerState,
             isLoading = state.value.isLoading,
             isRefreshing = state.value.isRefreshing,
+            loadFailed = state.value.loadFailed,
             doublePressExit = settings.doublePressExit.value,
             layout = settings.libraryLayout.value,
             gridSize = settings.libraryGridSize.value,
@@ -152,6 +153,7 @@ object LibraryScreen : Screen, Parcelable {
             dismissBottomSheet = screenModel::onEvent,
             dismissDialog = screenModel::onEvent,
             navigateToBrowse = screenModel::onEvent,
+            refreshList = screenModel::onEvent,
             navigateToReader = screenModel::onEvent,
             navigateToBookInfo = screenModel::onEvent,
             navigateToLibrarySettings = screenModel::onEvent

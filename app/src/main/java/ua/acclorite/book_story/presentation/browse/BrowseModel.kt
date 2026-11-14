@@ -103,10 +103,11 @@ class BrowseModel @Inject constructor(
                         }
 
                         ensureActive()
-                        val selectableFiles = getFilesUseCase(
+                        val result = getFilesUseCase(
                             if (_state.value.showSearch) _state.value.searchQuery
                             else ""
-                        ).map { file ->
+                        )
+                        val selectableFiles = result.getOrDefault(emptyList()).map { file ->
                             SelectableFile(
                                 name = file.name,
                                 uri = file.uri.toUri(),
@@ -125,13 +126,15 @@ class BrowseModel @Inject constructor(
                         // refresh is every keystroke of the search, against a
                         // provider that answers over a network.
                         val sources = when {
-                            selectableFiles.isEmpty() -> getBookSourcesUseCase()
+                            result.isSuccess && selectableFiles.isEmpty() ->
+                                getBookSourcesUseCase()
                             else -> null
                         }
 
                         _state.update {
                             it.copy(
                                 files = selectableFiles,
+                                loadFailed = result.isFailure,
                                 sourcesGranted = sources?.size ?: it.sourcesGranted,
                                 sourcesAvailable = sources?.count { source ->
                                     source.isAvailable

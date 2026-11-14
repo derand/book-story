@@ -40,6 +40,7 @@ fun LibraryContent(
     pagerState: PagerState,
     isLoading: Boolean,
     isRefreshing: Boolean,
+    loadFailed: Boolean,
     doublePressExit: Boolean,
     categories: List<Category>,
     pages: List<LibraryPage>,
@@ -70,6 +71,7 @@ fun LibraryContent(
     showFilterBottomSheet: (LibraryEvent.OnShowFilterBottomSheet) -> Unit,
     dismissBottomSheet: (LibraryEvent.OnDismissBottomSheet) -> Unit,
     navigateToBrowse: (LibraryEvent.OnNavigateToBrowse) -> Unit,
+    refreshList: (LibraryEvent.OnRefreshList) -> Unit,
     navigateToBookInfo: (LibraryEvent.OnNavigateToBookInfo) -> Unit,
     navigateToReader: (LibraryEvent.OnNavigateToReader) -> Unit,
     navigateToLibrarySettings: (LibraryEvent.OnNavigateToLibrarySettings) -> Unit
@@ -113,6 +115,7 @@ fun LibraryContent(
         pagerState = pagerState,
         isLoading = isLoading,
         isRefreshing = isRefreshing,
+        loadFailed = loadFailed,
         layout = layout,
         gridSize = gridSize,
         autoGridSize = autoGridSize,
@@ -129,6 +132,7 @@ fun LibraryContent(
         showFilterBottomSheet = showFilterBottomSheet,
         refreshState = refreshState,
         navigateToBrowse = navigateToBrowse,
+        refreshList = refreshList,
         navigateToBookInfo = navigateToBookInfo,
         navigateToReader = navigateToReader
     )

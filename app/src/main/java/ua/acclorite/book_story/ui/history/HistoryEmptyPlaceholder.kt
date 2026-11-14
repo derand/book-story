@@ -16,14 +16,18 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import ua.acclorite.book_story.R
 import ua.acclorite.book_story.ui.common.components.common.AnimatedVisibility
+import ua.acclorite.book_story.presentation.history.HistoryEvent
 import ua.acclorite.book_story.ui.common.components.placeholder.EmptyPlaceholder
+import ua.acclorite.book_story.ui.common.components.placeholder.ErrorPlaceholder
 import ua.acclorite.book_story.ui.theme.Transitions
 
 @Composable
 fun BoxScope.HistoryEmptyPlaceholder(
     isLoading: Boolean,
     isRefreshing: Boolean,
-    isHistoryEmpty: Boolean
+    isHistoryEmpty: Boolean,
+    loadFailed: Boolean,
+    refreshList: (HistoryEvent.OnRefreshList) -> Unit
 ) {
     AnimatedVisibility(
         visible = !isLoading
@@ -33,6 +37,18 @@ fun BoxScope.HistoryEmptyPlaceholder(
         enter = Transitions.DefaultTransitionIn,
         exit = fadeOut(tween(0))
     ) {
+        if (loadFailed) {
+            ErrorPlaceholder(
+                modifier = Modifier.align(Alignment.Center),
+                errorMessage = stringResource(id = R.string.error_history_unreadable),
+                icon = painterResource(id = R.drawable.error),
+                actionTitle = stringResource(id = R.string.try_again)
+            ) {
+                refreshList(HistoryEvent.OnRefreshList(loading = true, hideSearch = false))
+            }
+            return@AnimatedVisibility
+        }
+
         EmptyPlaceholder(
             modifier = Modifier.align(Alignment.Center),
             message = stringResource(id = R.string.history_empty),

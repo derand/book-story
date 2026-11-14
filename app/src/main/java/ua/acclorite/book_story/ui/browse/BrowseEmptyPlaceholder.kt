@@ -17,6 +17,7 @@ import ua.acclorite.book_story.R
 import ua.acclorite.book_story.presentation.browse.BrowseEvent
 import ua.acclorite.book_story.ui.common.components.common.AnimatedVisibility
 import ua.acclorite.book_story.ui.common.components.placeholder.EmptyPlaceholder
+import ua.acclorite.book_story.ui.common.components.placeholder.ErrorPlaceholder
 import ua.acclorite.book_story.ui.theme.Transitions
 
 @Composable
@@ -27,6 +28,8 @@ fun BoxScope.BrowseEmptyPlaceholder(
     dialogHidden: Boolean,
     isLoading: Boolean,
     isRefreshing: Boolean,
+    loadFailed: Boolean,
+    refreshList: (BrowseEvent.OnRefreshList) -> Unit,
     navigateToBrowseSettings: (BrowseEvent.OnNavigateToBrowseSettings) -> Unit
 ) {
     AnimatedVisibility(
@@ -38,6 +41,17 @@ fun BoxScope.BrowseEmptyPlaceholder(
         enter = Transitions.DefaultTransitionIn,
         exit = Transitions.NoExitAnimation
     ) {
+        if (loadFailed) {
+            ErrorPlaceholder(
+                errorMessage = stringResource(id = R.string.error_files_unreadable),
+                icon = painterResource(id = R.drawable.error),
+                actionTitle = stringResource(id = R.string.try_again)
+            ) {
+                refreshList(BrowseEvent.OnRefreshList(loading = true, hideSearch = false))
+            }
+            return@AnimatedVisibility
+        }
+
         EmptyPlaceholder(
             message = stringResource(
                 id = browseEmptyMessage(sourcesGranted, sourcesAvailable)

@@ -22,6 +22,8 @@ data class LibraryState(
 
     val isLoading: Boolean = true,
     val isRefreshing: Boolean = false,
+    /** The last read failed: the empty list is not an empty one. */
+    val loadFailed: Boolean = false,
 
     val selectedItemsCount: Int = 0,
     val hasSelectedItems: Boolean = false,

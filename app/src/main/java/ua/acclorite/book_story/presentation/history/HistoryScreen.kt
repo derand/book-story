@@ -75,6 +75,8 @@ object HistoryScreen : Screen, Parcelable {
             isLoading = state.value.isLoading,
             isRefreshing = state.value.isRefreshing,
             historyIsEmpty = state.value.history.isEmpty(),
+            loadFailed = state.value.loadFailed,
+            refreshList = screenModel::onEvent,
             focusRequester = focusRequester,
             searchQuery = state.value.searchQuery,
             searchVisibility = screenModel::onEvent,

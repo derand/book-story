@@ -40,6 +40,7 @@ fun LibraryScaffold(
     pagerState: PagerState,
     isLoading: Boolean,
     isRefreshing: Boolean,
+    loadFailed: Boolean,
     refreshState: PullRefreshState,
     layout: LibraryLayout,
     gridSize: Int,
@@ -56,6 +57,7 @@ fun LibraryScaffold(
     showDeleteDialog: (LibraryEvent.OnShowDeleteDialog) -> Unit,
     showFilterBottomSheet: (LibraryEvent.OnShowFilterBottomSheet) -> Unit,
     navigateToBrowse: (LibraryEvent.OnNavigateToBrowse) -> Unit,
+    refreshList: (LibraryEvent.OnRefreshList) -> Unit,
     navigateToBookInfo: (LibraryEvent.OnNavigateToBookInfo) -> Unit,
     navigateToReader: (LibraryEvent.OnNavigateToReader) -> Unit,
 ) {
@@ -107,8 +109,10 @@ fun LibraryScaffold(
                 showProgress = showProgress,
                 isLoading = isLoading,
                 isRefreshing = isRefreshing,
+                loadFailed = loadFailed,
                 selectBook = selectBook,
                 navigateToBrowse = navigateToBrowse,
+                refreshList = refreshList,
                 navigateToReader = navigateToReader,
                 navigateToBookInfo = navigateToBookInfo
             )

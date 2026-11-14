@@ -76,7 +76,8 @@ class HistoryModel @Inject constructor(
                     .collect { (history, statistics) ->
                         _state.update {
                             it.copy(
-                                history = history,
+                                history = history.getOrDefault(emptyList()),
+                                loadFailed = history.isFailure,
                                 statistics = statistics,
                                 isLoading = false
                             )

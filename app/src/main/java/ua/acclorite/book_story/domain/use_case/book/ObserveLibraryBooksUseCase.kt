@@ -34,18 +34,18 @@ class ObserveLibraryBooksUseCase @Inject constructor(
     /**
      * The library and its books matching [query] (blank: every book), again
      * after each change to the books, their history or the query. A failed
-     * read leaves an empty library.
+     * read is the last value, a failure: nothing follows until the next call.
      */
-    operator fun invoke(query: Flow<String>): Flow<LibraryBooks> =
+    operator fun invoke(query: Flow<String>): Flow<Result<LibraryBooks>> =
         combine(
             bookRepository.observeLibraryBooks(),
             query.map { bookSearchTokens(it) }
         ) { allBooks, tokens ->
             val matching = allBooks.filter { book -> book.matchesSearch(tokens) }
             logI(TAG, "Found [${matching.size}] of [${allBooks.size}] books.")
-            LibraryBooks(all = allBooks, matching = matching)
+            Result.success(LibraryBooks(all = allBooks, matching = matching))
         }.catch {
             logE(TAG, "Could not read the library: ${it.messageForLog()}")
-            emit(LibraryBooks(all = emptyList(), matching = emptyList()))
+            emit(Result.failure(it))
         }
 }

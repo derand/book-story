@@ -44,6 +44,8 @@ fun BrowseScaffold(
     isLoading: Boolean,
     dialogHidden: Boolean,
     filesEmpty: Boolean,
+    loadFailed: Boolean,
+    refreshList: (BrowseEvent.OnRefreshList) -> Unit,
     sourcesGranted: Int,
     sourcesAvailable: Int,
     showSearch: Boolean,
@@ -146,6 +148,8 @@ fun BrowseScaffold(
                 dialogHidden = dialogHidden,
                 isLoading = isLoading,
                 isRefreshing = isRefreshing,
+                loadFailed = loadFailed,
+                refreshList = refreshList,
                 navigateToBrowseSettings = navigateToBrowseSettings
             )
 

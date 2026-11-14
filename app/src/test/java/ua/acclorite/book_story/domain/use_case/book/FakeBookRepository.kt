@@ -26,7 +26,9 @@ import ua.acclorite.book_story.domain.repository.BookRepository
 class FakeBookRepository(
     private val books: List<Book> = emptyList(),
     private val previews: List<Book> = emptyList(),
-    private val storedPath: String? = null
+    private val storedPath: String? = null,
+    /** What observing the library gives; [books], once, unless set. */
+    private val library: Flow<List<Book>> = flowOf(books)
 ) : BookRepository {
 
     var updated: Book? = null
@@ -67,7 +69,7 @@ class FakeBookRepository(
     /** Set to make resolving the original succeed with this path; null makes it fail. */
     var releasedPath: String? = null
 
-    override fun observeLibraryBooks(): Flow<List<Book>> = flowOf(books)
+    override fun observeLibraryBooks(): Flow<List<Book>> = library
 
     override suspend fun findPreviews(): Result<List<Book>> = Result.success(previews)
 

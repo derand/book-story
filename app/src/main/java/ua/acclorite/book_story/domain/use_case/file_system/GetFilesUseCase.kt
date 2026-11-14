@@ -25,7 +25,8 @@ class GetFilesUseCase @Inject constructor(
     private val settings: SettingsManager
 ) {
 
-    suspend operator fun invoke(query: String = ""): List<File> {
+    /** The files Browse offers, or a failure: never an empty list in its place. */
+    suspend operator fun invoke(query: String = ""): Result<List<File>> {
         logI(TAG, "Searching for files with a ${query.length}-char query.")
 
         fun List<File>.filterFiles(): List<File> {
@@ -64,15 +65,10 @@ class GetFilesUseCase @Inject constructor(
                 .getOrThrow()
                 .filterFiles()
                 .sortFiles()
-        }.fold(
-            onSuccess = {
-                logI(TAG, "Successfully found [${it.size}] files.")
-                it
-            },
-            onFailure = {
-                logE(TAG, "Could not find files with error: ${it.messageForLog()}")
-                emptyList()
-            }
-        )
+        }.onSuccess {
+            logI(TAG, "Successfully found [${it.size}] files.")
+        }.onFailure {
+            logE(TAG, "Could not find files with error: ${it.messageForLog()}")
+        }
     }
 }

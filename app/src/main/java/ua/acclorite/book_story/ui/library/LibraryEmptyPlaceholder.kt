@@ -18,6 +18,7 @@ import androidx.compose.ui.res.stringResource
 import ua.acclorite.book_story.R
 import ua.acclorite.book_story.presentation.library.LibraryEvent
 import ua.acclorite.book_story.ui.common.components.placeholder.EmptyPlaceholder
+import ua.acclorite.book_story.ui.common.components.placeholder.ErrorPlaceholder
 import ua.acclorite.book_story.ui.theme.Transitions
 
 @Composable
@@ -25,6 +26,8 @@ fun BoxScope.LibraryEmptyPlaceholder(
     isLoading: Boolean,
     isRefreshing: Boolean,
     isBooksEmpty: Boolean,
+    loadFailed: Boolean,
+    refreshList: (LibraryEvent.OnRefreshList) -> Unit,
     navigateToBrowse: (LibraryEvent.OnNavigateToBrowse) -> Unit
 ) {
     AnimatedVisibility(
@@ -35,6 +38,18 @@ fun BoxScope.LibraryEmptyPlaceholder(
         enter = Transitions.DefaultTransitionIn,
         exit = fadeOut(tween(0))
     ) {
+        if (loadFailed) {
+            ErrorPlaceholder(
+                errorMessage = stringResource(id = R.string.error_library_unreadable),
+                icon = painterResource(id = R.drawable.error),
+                modifier = Modifier.align(Alignment.Center),
+                actionTitle = stringResource(id = R.string.try_again)
+            ) {
+                refreshList(LibraryEvent.OnRefreshList(loading = true, hideSearch = false))
+            }
+            return@AnimatedVisibility
+        }
+
         EmptyPlaceholder(
             message = stringResource(id = R.string.library_empty),
             icon = painterResource(id = R.drawable.empty_library),

@@ -32,8 +32,10 @@ fun LibraryPager(
     showProgress: Boolean,
     isLoading: Boolean,
     isRefreshing: Boolean,
+    loadFailed: Boolean,
     selectBook: (LibraryEvent.OnSelectBook) -> Unit,
     navigateToBrowse: (LibraryEvent.OnNavigateToBrowse) -> Unit,
+    refreshList: (LibraryEvent.OnRefreshList) -> Unit,
     navigateToBookInfo: (LibraryEvent.OnNavigateToBookInfo) -> Unit,
     navigateToReader: (LibraryEvent.OnNavigateToReader) -> Unit,
 ) {
@@ -85,6 +87,8 @@ fun LibraryPager(
                 isLoading = isLoading,
                 isRefreshing = isRefreshing,
                 isBooksEmpty = books.isEmpty(),
+                loadFailed = loadFailed,
+                refreshList = refreshList,
                 navigateToBrowse = navigateToBrowse
             )
         }
