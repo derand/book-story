@@ -16,8 +16,7 @@ import ua.acclorite.book_story.ui.common.components.dialog.Dialog
 
 @Composable
 fun HistoryDeleteWholeHistoryDialog(
-    actionDeleteWholeHistoryDialog: (HistoryEvent.OnActionDeleteWholeHistoryDialog) -> Unit,
-    dismissDialog: (HistoryEvent.OnDismissDialog) -> Unit
+    onEvent: (HistoryEvent) -> Unit
 ) {
     Dialog(
         title = stringResource(id = R.string.delete_history),
@@ -25,10 +24,10 @@ fun HistoryDeleteWholeHistoryDialog(
         description = stringResource(id = R.string.delete_history_description),
         actionEnabled = true,
         onDismiss = {
-            dismissDialog(HistoryEvent.OnDismissDialog)
+            onEvent(HistoryEvent.OnDismissDialog)
         },
         onAction = {
-            actionDeleteWholeHistoryDialog(HistoryEvent.OnActionDeleteWholeHistoryDialog)
+            onEvent(HistoryEvent.OnActionDeleteWholeHistoryDialog)
         },
         withContent = false
     )

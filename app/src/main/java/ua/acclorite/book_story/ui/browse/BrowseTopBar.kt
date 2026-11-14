@@ -25,8 +25,8 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.res.stringResource
 import ua.acclorite.book_story.R
 import ua.acclorite.book_story.presentation.browse.BrowseEvent
+import ua.acclorite.book_story.presentation.browse.BrowseState
 import ua.acclorite.book_story.presentation.browse.model.BrowseLayout
-import ua.acclorite.book_story.presentation.browse.model.SelectableFile
 import ua.acclorite.book_story.ui.common.components.common.IconButton
 import ua.acclorite.book_story.ui.common.components.common.SearchTextField
 import ua.acclorite.book_story.ui.common.components.common.StyledText
@@ -37,24 +37,13 @@ import ua.acclorite.book_story.ui.navigator.NavigatorIconButton
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BrowseTopBar(
-    files: List<SelectableFile>,
+    state: BrowseState,
     layout: BrowseLayout,
     includedFilterItems: List<String>,
     canScrollBackList: Boolean,
     canScrollBackGrid: Boolean,
-    hasSelectedItems: Boolean,
-    selectedItemsCount: Int,
-    showSearch: Boolean,
-    searchQuery: String,
     focusRequester: FocusRequester,
-    searchVisibility: (BrowseEvent.OnSearchVisibility) -> Unit,
-    searchQueryChange: (BrowseEvent.OnSearchQueryChange) -> Unit,
-    search: (BrowseEvent.OnSearch) -> Unit,
-    requestFocus: (BrowseEvent.OnRequestFocus) -> Unit,
-    clearSelectedFiles: (BrowseEvent.OnClearSelectedFiles) -> Unit,
-    selectFiles: (BrowseEvent.OnSelectFiles) -> Unit,
-    showFilterBottomSheet: (BrowseEvent.OnShowFilterBottomSheet) -> Unit,
-    showAddDialog: (BrowseEvent.OnShowAddDialog) -> Unit
+    onEvent: (BrowseEvent) -> Unit
 ) {
     val isScrolled = when (layout) {
         BrowseLayout.GRID -> canScrollBackGrid
@@ -69,11 +58,11 @@ fun BrowseTopBar(
 
     TopAppBar(
         scrollBehavior = null,
-        isTopBarScrolled = isScrolled || hasSelectedItems,
+        isTopBarScrolled = isScrolled || state.hasSelectedItems,
 
         shownTopBar = when {
-            hasSelectedItems -> 2
-            showSearch -> 1
+            state.hasSelectedItems -> 2
+            state.showSearch -> 1
             else -> 0
         },
         topBars = listOf(
@@ -92,7 +81,7 @@ fun BrowseTopBar(
                         contentDescription = R.string.search_content_desc,
                         disableOnClick = true
                     ) {
-                        searchVisibility(BrowseEvent.OnSearchVisibility(true))
+                        onEvent(BrowseEvent.OnSearchVisibility(true))
                     }
                     IconButton(
                         icon = Icons.Default.FilterList,
@@ -100,7 +89,7 @@ fun BrowseTopBar(
                         disableOnClick = false,
                         color = animatedFilterIconColor.value
                     ) {
-                        showFilterBottomSheet(BrowseEvent.OnShowFilterBottomSheet)
+                        onEvent(BrowseEvent.OnShowFilterBottomSheet)
                     }
                     NavigatorIconButton()
                 }
@@ -114,7 +103,7 @@ fun BrowseTopBar(
                         contentDescription = R.string.exit_search_content_desc,
                         disableOnClick = true
                     ) {
-                        searchVisibility(BrowseEvent.OnSearchVisibility(false))
+                        onEvent(BrowseEvent.OnSearchVisibility(false))
                     }
                 },
                 contentTitle = {
@@ -122,14 +111,14 @@ fun BrowseTopBar(
                         modifier = Modifier
                             .focusRequester(focusRequester)
                             .onGloballyPositioned {
-                                requestFocus(BrowseEvent.OnRequestFocus)
+                                onEvent(BrowseEvent.OnRequestFocus)
                             },
-                        initialQuery = searchQuery,
+                        initialQuery = state.searchQuery,
                         onQueryChange = {
-                            searchQueryChange(BrowseEvent.OnSearchQueryChange(it))
+                            onEvent(BrowseEvent.OnSearchQueryChange(it))
                         },
                         onSearch = {
-                            search(BrowseEvent.OnSearch)
+                            onEvent(BrowseEvent.OnSearch)
                         }
                     )
                 },
@@ -146,14 +135,14 @@ fun BrowseTopBar(
                         contentDescription = R.string.clear_selected_items_content_desc,
                         disableOnClick = true
                     ) {
-                        clearSelectedFiles(BrowseEvent.OnClearSelectedFiles)
+                        onEvent(BrowseEvent.OnClearSelectedFiles)
                     }
                 },
                 contentTitle = {
                     StyledText(
                         text = stringResource(
                             id = R.string.selected_items_count_query,
-                            selectedItemsCount.coerceAtLeast(1)
+                            state.selectedItemsCount.coerceAtLeast(1)
                         ),
                         maxLines = 1
                     )
@@ -164,9 +153,9 @@ fun BrowseTopBar(
                         contentDescription = R.string.select_all_files_content_desc,
                         disableOnClick = false,
                     ) {
-                        selectFiles(
+                        onEvent(
                             BrowseEvent.OnSelectFiles(
-                                files = files
+                                files = state.files
                             )
                         )
                     }
@@ -175,7 +164,7 @@ fun BrowseTopBar(
                         contentDescription = R.string.add_files_content_desc,
                         disableOnClick = false
                     ) {
-                        showAddDialog(BrowseEvent.OnShowAddDialog)
+                        onEvent(BrowseEvent.OnShowAddDialog)
                     }
                 }
             )

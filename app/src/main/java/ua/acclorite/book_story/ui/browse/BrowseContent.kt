@@ -12,24 +12,15 @@ import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.pullrefresh.PullRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.focus.FocusRequester
-import ua.acclorite.book_story.core.BottomSheet
-import ua.acclorite.book_story.core.Dialog
-import ua.acclorite.book_story.presentation.browse.model.AddingBooks
 import ua.acclorite.book_story.presentation.browse.BrowseEvent
+import ua.acclorite.book_story.presentation.browse.BrowseState
 import ua.acclorite.book_story.presentation.browse.model.BrowseLayout
-import ua.acclorite.book_story.presentation.browse.model.SelectableFile
-import ua.acclorite.book_story.presentation.browse.model.SelectableNullableBook
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun BrowseContent(
-    files: List<SelectableFile>,
-    selectedBooksAddDialog: List<SelectableNullableBook>,
+    state: BrowseState,
     refreshState: PullRefreshState,
-    loadingAddDialog: Boolean,
-    addingBooks: AddingBooks?,
-    dialog: Dialog?,
-    bottomSheet: BottomSheet?,
     listState: LazyListState,
     gridState: LazyGridState,
     layout: BrowseLayout,
@@ -39,54 +30,24 @@ fun BrowseContent(
     pinnedPaths: List<String>,
     canScrollBackList: Boolean,
     canScrollBackGrid: Boolean,
-    hasSelectedItems: Boolean,
-    selectedItemsCount: Int,
-    isRefreshing: Boolean,
-    isLoading: Boolean,
-    dialogHidden: Boolean,
-    filesEmpty: Boolean,
-    loadFailed: Boolean,
-    refreshList: (BrowseEvent.OnRefreshList) -> Unit,
-    sourcesGranted: Int,
-    sourcesAvailable: Int,
-    showSearch: Boolean,
-    searchQuery: String,
     focusRequester: FocusRequester,
-    searchVisibility: (BrowseEvent.OnSearchVisibility) -> Unit,
-    searchQueryChange: (BrowseEvent.OnSearchQueryChange) -> Unit,
-    search: (BrowseEvent.OnSearch) -> Unit,
-    requestFocus: (BrowseEvent.OnRequestFocus) -> Unit,
-    clearSelectedFiles: (BrowseEvent.OnClearSelectedFiles) -> Unit,
-    selectFiles: (BrowseEvent.OnSelectFiles) -> Unit,
-    dismissBottomSheet: (BrowseEvent.OnDismissBottomSheet) -> Unit,
-    showFilterBottomSheet: (BrowseEvent.OnShowFilterBottomSheet) -> Unit,
-    showAddDialog: (BrowseEvent.OnShowAddDialog) -> Unit,
-    dismissAddDialog: (BrowseEvent.OnDismissAddDialog) -> Unit,
-    actionAddDialog: (BrowseEvent.OnActionAddDialog) -> Unit,
-    cancelAddingBooks: (BrowseEvent.OnCancelAddingBooks) -> Unit,
-    selectAddDialog: (BrowseEvent.OnSelectAddDialog) -> Unit,
-    updatePinnedPaths: (BrowseEvent.OnUpdatePinnedPaths) -> Unit,
-    navigateToLibrary: (BrowseEvent.OnNavigateToLibrary) -> Unit,
-    navigateToBrowseSettings: (BrowseEvent.OnNavigateToBrowseSettings) -> Unit
+    onEvent: (BrowseEvent) -> Unit
 ) {
     BrowseDialog(
-        dialog = dialog,
-        loadingAddDialog = loadingAddDialog,
-        addingBooks = addingBooks,
-        actionAddDialog = actionAddDialog,
-        cancelAddingBooks = cancelAddingBooks,
-        dismissAddDialog = dismissAddDialog,
-        selectedBooksAddDialog = selectedBooksAddDialog,
-        selectAddDialog = selectAddDialog
+        dialog = state.dialog,
+        loadingAddDialog = state.loadingAddDialog,
+        addingBooks = state.addingBooks,
+        onEvent = onEvent,
+        selectedBooksAddDialog = state.selectedBooksAddDialog,
     )
 
     BrowseBottomSheet(
-        bottomSheet = bottomSheet,
-        dismissBottomSheet = dismissBottomSheet
+        bottomSheet = state.bottomSheet,
+        onEvent = onEvent
     )
 
     BrowseScaffold(
-        files = files,
+        state = state,
         refreshState = refreshState,
         listState = listState,
         gridState = gridState,
@@ -97,36 +58,13 @@ fun BrowseContent(
         pinnedPaths = pinnedPaths,
         canScrollBackList = canScrollBackList,
         canScrollBackGrid = canScrollBackGrid,
-        hasSelectedItems = hasSelectedItems,
-        selectedItemsCount = selectedItemsCount,
-        isRefreshing = isRefreshing,
-        dialogHidden = dialogHidden,
-        showSearch = showSearch,
-        searchQuery = searchQuery,
         focusRequester = focusRequester,
-        searchVisibility = searchVisibility,
-        searchQueryChange = searchQueryChange,
-        search = search,
-        requestFocus = requestFocus,
-        clearSelectedFiles = clearSelectedFiles,
-        selectFiles = selectFiles,
-        isLoading = isLoading,
-        filesEmpty = filesEmpty,
-        loadFailed = loadFailed,
-        refreshList = refreshList,
-        sourcesGranted = sourcesGranted,
-        sourcesAvailable = sourcesAvailable,
-        showFilterBottomSheet = showFilterBottomSheet,
-        showAddDialog = showAddDialog,
-        updatePinnedPaths = updatePinnedPaths,
-        navigateToBrowseSettings = navigateToBrowseSettings
+        onEvent = onEvent
     )
 
     BrowseBackHandler(
-        hasSelectedItems = hasSelectedItems,
-        showSearch = showSearch,
-        searchVisibility = searchVisibility,
-        clearSelectedFiles = clearSelectedFiles,
-        navigateToLibrary = navigateToLibrary
+        hasSelectedItems = state.hasSelectedItems,
+        showSearch = state.showSearch,
+        onEvent = onEvent
     )
 }

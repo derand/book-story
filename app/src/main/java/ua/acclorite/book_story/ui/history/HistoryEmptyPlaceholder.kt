@@ -27,7 +27,7 @@ fun BoxScope.HistoryEmptyPlaceholder(
     isRefreshing: Boolean,
     isHistoryEmpty: Boolean,
     loadFailed: Boolean,
-    refreshList: (HistoryEvent.OnRefreshList) -> Unit
+    onEvent: (HistoryEvent) -> Unit
 ) {
     AnimatedVisibility(
         visible = !isLoading
@@ -44,7 +44,7 @@ fun BoxScope.HistoryEmptyPlaceholder(
                 icon = painterResource(id = R.drawable.error),
                 actionTitle = stringResource(id = R.string.try_again)
             ) {
-                refreshList(HistoryEvent.OnRefreshList(loading = true, hideSearch = false))
+                onEvent(HistoryEvent.OnRefreshList(loading = true, hideSearch = false))
             }
             return@AnimatedVisibility
         }

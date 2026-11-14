@@ -20,14 +20,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import ua.acclorite.book_story.presentation.browse.BrowseEvent
+import ua.acclorite.book_story.presentation.browse.BrowseState
 import ua.acclorite.book_story.presentation.browse.model.BrowseLayout
-import ua.acclorite.book_story.presentation.browse.model.SelectableFile
 import ua.acclorite.book_story.ui.theme.DefaultTransition
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun BrowseScaffold(
-    files: List<SelectableFile>,
+    state: BrowseState,
     refreshState: PullRefreshState,
     listState: LazyListState,
     gridState: LazyGridState,
@@ -38,29 +38,8 @@ fun BrowseScaffold(
     pinnedPaths: List<String>,
     canScrollBackList: Boolean,
     canScrollBackGrid: Boolean,
-    hasSelectedItems: Boolean,
-    selectedItemsCount: Int,
-    isRefreshing: Boolean,
-    isLoading: Boolean,
-    dialogHidden: Boolean,
-    filesEmpty: Boolean,
-    loadFailed: Boolean,
-    refreshList: (BrowseEvent.OnRefreshList) -> Unit,
-    sourcesGranted: Int,
-    sourcesAvailable: Int,
-    showSearch: Boolean,
-    searchQuery: String,
     focusRequester: FocusRequester,
-    searchVisibility: (BrowseEvent.OnSearchVisibility) -> Unit,
-    searchQueryChange: (BrowseEvent.OnSearchQueryChange) -> Unit,
-    search: (BrowseEvent.OnSearch) -> Unit,
-    requestFocus: (BrowseEvent.OnRequestFocus) -> Unit,
-    clearSelectedFiles: (BrowseEvent.OnClearSelectedFiles) -> Unit,
-    selectFiles: (BrowseEvent.OnSelectFiles) -> Unit,
-    showFilterBottomSheet: (BrowseEvent.OnShowFilterBottomSheet) -> Unit,
-    showAddDialog: (BrowseEvent.OnShowAddDialog) -> Unit,
-    updatePinnedPaths: (BrowseEvent.OnUpdatePinnedPaths) -> Unit,
-    navigateToBrowseSettings: (BrowseEvent.OnNavigateToBrowseSettings) -> Unit
+    onEvent: (BrowseEvent) -> Unit
 ) {
     Scaffold(
         modifier = Modifier
@@ -69,24 +48,13 @@ fun BrowseScaffold(
         containerColor = MaterialTheme.colorScheme.surface,
         topBar = {
             BrowseTopBar(
-                files = files,
+                state = state,
                 layout = layout,
                 includedFilterItems = includedFilterItems,
                 canScrollBackList = canScrollBackList,
                 canScrollBackGrid = canScrollBackGrid,
-                hasSelectedItems = hasSelectedItems,
-                selectedItemsCount = selectedItemsCount,
-                showSearch = showSearch,
-                searchQuery = searchQuery,
                 focusRequester = focusRequester,
-                searchVisibility = searchVisibility,
-                searchQueryChange = searchQueryChange,
-                search = search,
-                requestFocus = requestFocus,
-                clearSelectedFiles = clearSelectedFiles,
-                selectFiles = selectFiles,
-                showFilterBottomSheet = showFilterBottomSheet,
-                showAddDialog = showAddDialog
+                onEvent = onEvent
             )
         }
     ) { padding ->
@@ -95,9 +63,9 @@ fun BrowseScaffold(
                 .fillMaxSize()
                 .padding(top = padding.calculateTopPadding())
         ) {
-            DefaultTransition(visible = !isLoading) {
+            DefaultTransition(visible = !state.isLoading) {
                 BrowseLayout(
-                    files = files,
+                    files = state.files,
                     pinnedPaths = pinnedPaths,
                     layout = layout,
                     gridSize = gridSize,
@@ -109,7 +77,7 @@ fun BrowseScaffold(
                             header = header,
                             pinned = pinned,
                             pin = {
-                                updatePinnedPaths(
+                                onEvent(
                                     BrowseEvent.OnUpdatePinnedPaths(
                                         path = header
                                     )
@@ -121,16 +89,16 @@ fun BrowseScaffold(
                         BrowseItem(
                             file = file,
                             layout = layout,
-                            hasSelectedItems = hasSelectedItems,
+                            hasSelectedItems = state.hasSelectedItems,
                             onLongClick = {
-                                selectFiles(
+                                onEvent(
                                     BrowseEvent.OnSelectFiles(
                                         files = groupFiles
                                     )
                                 )
                             },
                             onClick = {
-                                selectFiles(
+                                onEvent(
                                     BrowseEvent.OnSelectFiles(
                                         files = listOf(file)
                                     )
@@ -142,19 +110,18 @@ fun BrowseScaffold(
             }
 
             BrowseEmptyPlaceholder(
-                filesEmpty = filesEmpty,
-                sourcesGranted = sourcesGranted,
-                sourcesAvailable = sourcesAvailable,
-                dialogHidden = dialogHidden,
-                isLoading = isLoading,
-                isRefreshing = isRefreshing,
-                loadFailed = loadFailed,
-                refreshList = refreshList,
-                navigateToBrowseSettings = navigateToBrowseSettings
+                filesEmpty = state.files.isEmpty(),
+                sourcesGranted = state.sourcesGranted,
+                sourcesAvailable = state.sourcesAvailable,
+                dialogHidden = state.dialog == null,
+                isLoading = state.isLoading,
+                isRefreshing = state.isRefreshing,
+                loadFailed = state.loadFailed,
+                onEvent = onEvent
             )
 
             BrowseRefreshIndicator(
-                isRefreshing = isRefreshing,
+                isRefreshing = state.isRefreshing,
                 refreshState = refreshState
             )
         }

@@ -19,10 +19,7 @@ fun BrowseDialog(
     loadingAddDialog: Boolean,
     addingBooks: AddingBooks?,
     selectedBooksAddDialog: List<SelectableNullableBook>,
-    dismissAddDialog: (BrowseEvent.OnDismissAddDialog) -> Unit,
-    actionAddDialog: (BrowseEvent.OnActionAddDialog) -> Unit,
-    cancelAddingBooks: (BrowseEvent.OnCancelAddingBooks) -> Unit,
-    selectAddDialog: (BrowseEvent.OnSelectAddDialog) -> Unit
+    onEvent: (BrowseEvent) -> Unit
 ) {
     when (dialog) {
         BrowseScreen.ADD_DIALOG -> {
@@ -30,10 +27,7 @@ fun BrowseDialog(
                 loadingAddDialog = loadingAddDialog,
                 addingBooks = addingBooks,
                 selectedBooksAddDialog = selectedBooksAddDialog,
-                dismissAddDialog = dismissAddDialog,
-                actionAddDialog = actionAddDialog,
-                cancelAddingBooks = cancelAddingBooks,
-                selectAddDialog = selectAddDialog
+                onEvent = onEvent
             )
         }
     }

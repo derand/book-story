@@ -19,37 +19,20 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
-import ua.acclorite.book_story.domain.model.statistics.LibraryStatistics
 import ua.acclorite.book_story.presentation.history.HistoryEvent
-import ua.acclorite.book_story.presentation.history.model.GroupedHistory
+import ua.acclorite.book_story.presentation.history.HistoryState
 import ua.acclorite.book_story.ui.common.components.common.Snackbar
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun HistoryScaffold(
+    state: HistoryState,
     refreshState: PullRefreshState,
-    statistics: LibraryStatistics?,
     snackbarState: SnackbarHostState,
-    history: List<GroupedHistory>,
     listState: LazyListState,
     canScrollBackward: Boolean,
-    showSearch: Boolean,
-    isLoading: Boolean,
-    isRefreshing: Boolean,
-    historyIsEmpty: Boolean,
-    loadFailed: Boolean,
-    refreshList: (HistoryEvent.OnRefreshList) -> Unit,
     focusRequester: FocusRequester,
-    searchQuery: String,
-    searchVisibility: (HistoryEvent.OnSearchVisibility) -> Unit,
-    requestFocus: (HistoryEvent.OnRequestFocus) -> Unit,
-    searchQueryChange: (HistoryEvent.OnSearchQueryChange) -> Unit,
-    deleteHistoryEntry: (HistoryEvent.OnDeleteHistoryEntry) -> Unit,
-    showDeleteWholeHistoryDialog: (HistoryEvent.OnShowDeleteWholeHistoryDialog) -> Unit,
-    search: (HistoryEvent.OnSearch) -> Unit,
-    navigateToBookInfo: (HistoryEvent.OnNavigateToBookInfo) -> Unit,
-    navigateToReader: (HistoryEvent.OnNavigateToReader) -> Unit,
-    navigateToStatistics: (HistoryEvent.OnNavigateToStatistics) -> Unit
+    onEvent: (HistoryEvent) -> Unit
 ) {
     Scaffold(
         Modifier
@@ -59,17 +42,9 @@ fun HistoryScaffold(
         topBar = {
             HistoryTopBar(
                 canScrollBackward = canScrollBackward,
-                showSearch = showSearch,
-                isLoading = isLoading,
-                isRefreshing = isRefreshing,
-                historyIsNotEmpty = !historyIsEmpty,
+                state = state,
                 focusRequester = focusRequester,
-                searchQuery = searchQuery,
-                searchVisibility = searchVisibility,
-                requestFocus = requestFocus,
-                searchQueryChange = searchQueryChange,
-                showDeleteWholeHistoryDialog = showDeleteWholeHistoryDialog,
-                search = search
+                onEvent = onEvent
             )
         },
         bottomBar = {
@@ -82,27 +57,24 @@ fun HistoryScaffold(
                 .padding(top = paddingValues.calculateTopPadding())
         ) {
             HistoryLayout(
-                statistics = statistics,
-                navigateToStatistics = navigateToStatistics,
+                statistics = state.statistics,
+                onEvent = onEvent,
                 listState = listState,
-                history = history,
-                isLoading = isLoading,
-                isRefreshing = isRefreshing,
-                deleteHistoryEntry = deleteHistoryEntry,
-                navigateToBookInfo = navigateToBookInfo,
-                navigateToReader = navigateToReader
+                history = state.history,
+                isLoading = state.isLoading,
+                isRefreshing = state.isRefreshing,
             )
 
             HistoryEmptyPlaceholder(
-                isLoading = isLoading,
-                isRefreshing = isRefreshing,
-                isHistoryEmpty = historyIsEmpty,
-                loadFailed = loadFailed,
-                refreshList = refreshList
+                isLoading = state.isLoading,
+                isRefreshing = state.isRefreshing,
+                isHistoryEmpty = state.history.isEmpty(),
+                loadFailed = state.loadFailed,
+                onEvent = onEvent
             )
 
             HistoryRefreshIndicator(
-                isRefreshing = isRefreshing,
+                isRefreshing = state.isRefreshing,
                 refreshState = refreshState
             )
         }

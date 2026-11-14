@@ -60,37 +60,17 @@ object HistoryScreen : Screen, Parcelable {
             effects = screenModel.effects,
             focusRequester = focusRequester,
             snackbarState = snackbarState,
-            restoreHistoryEntry = screenModel::onEvent
+            onEvent = screenModel::onEvent
         )
 
         HistoryContent(
             refreshState = refreshState,
             snackbarState = snackbarState,
             listState = listState,
-            history = state.value.history,
-            statistics = state.value.statistics,
-            dialog = state.value.dialog,
+            state = state.value,
             canScrollBackward = listState.canScrollBackward,
-            showSearch = state.value.showSearch,
-            isLoading = state.value.isLoading,
-            isRefreshing = state.value.isRefreshing,
-            historyIsEmpty = state.value.history.isEmpty(),
-            loadFailed = state.value.loadFailed,
-            refreshList = screenModel::onEvent,
+            onEvent = screenModel::onEvent,
             focusRequester = focusRequester,
-            searchQuery = state.value.searchQuery,
-            searchVisibility = screenModel::onEvent,
-            requestFocus = screenModel::onEvent,
-            searchQueryChange = screenModel::onEvent,
-            search = screenModel::onEvent,
-            deleteHistoryEntry = screenModel::onEvent,
-            showDeleteWholeHistoryDialog = screenModel::onEvent,
-            actionDeleteWholeHistoryDialog = screenModel::onEvent,
-            dismissDialog = screenModel::onEvent,
-            navigateToLibrary = screenModel::onEvent,
-            navigateToBookInfo = screenModel::onEvent,
-            navigateToReader = screenModel::onEvent,
-            navigateToStatistics = screenModel::onEvent
         )
     }
 }

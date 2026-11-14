@@ -27,8 +27,7 @@ fun BoxScope.LibraryEmptyPlaceholder(
     isRefreshing: Boolean,
     isBooksEmpty: Boolean,
     loadFailed: Boolean,
-    refreshList: (LibraryEvent.OnRefreshList) -> Unit,
-    navigateToBrowse: (LibraryEvent.OnNavigateToBrowse) -> Unit
+    onEvent: (LibraryEvent) -> Unit
 ) {
     AnimatedVisibility(
         visible = !isLoading
@@ -45,7 +44,7 @@ fun BoxScope.LibraryEmptyPlaceholder(
                 modifier = Modifier.align(Alignment.Center),
                 actionTitle = stringResource(id = R.string.try_again)
             ) {
-                refreshList(LibraryEvent.OnRefreshList(loading = true, hideSearch = false))
+                onEvent(LibraryEvent.OnRefreshList(loading = true, hideSearch = false))
             }
             return@AnimatedVisibility
         }
@@ -56,7 +55,7 @@ fun BoxScope.LibraryEmptyPlaceholder(
             modifier = Modifier.align(Alignment.Center),
             actionTitle = stringResource(id = R.string.add_book)
         ) {
-            navigateToBrowse(LibraryEvent.OnNavigateToBrowse)
+            onEvent(LibraryEvent.OnNavigateToBrowse)
         }
     }
 }

@@ -12,77 +12,37 @@ import androidx.compose.material.pullrefresh.PullRefreshState
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.focus.FocusRequester
-import ua.acclorite.book_story.core.Dialog
-import ua.acclorite.book_story.domain.model.statistics.LibraryStatistics
 import ua.acclorite.book_story.presentation.history.HistoryEvent
-import ua.acclorite.book_story.presentation.history.model.GroupedHistory
+import ua.acclorite.book_story.presentation.history.HistoryState
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun HistoryContent(
-    statistics: LibraryStatistics?,
+    state: HistoryState,
     refreshState: PullRefreshState,
     snackbarState: SnackbarHostState,
-    history: List<GroupedHistory>,
-    dialog: Dialog?,
     listState: LazyListState,
     canScrollBackward: Boolean,
-    showSearch: Boolean,
-    isLoading: Boolean,
-    isRefreshing: Boolean,
-    historyIsEmpty: Boolean,
-    loadFailed: Boolean,
-    refreshList: (HistoryEvent.OnRefreshList) -> Unit,
     focusRequester: FocusRequester,
-    searchQuery: String,
-    searchVisibility: (HistoryEvent.OnSearchVisibility) -> Unit,
-    requestFocus: (HistoryEvent.OnRequestFocus) -> Unit,
-    searchQueryChange: (HistoryEvent.OnSearchQueryChange) -> Unit,
-    search: (HistoryEvent.OnSearch) -> Unit,
-    deleteHistoryEntry: (HistoryEvent.OnDeleteHistoryEntry) -> Unit,
-    showDeleteWholeHistoryDialog: (HistoryEvent.OnShowDeleteWholeHistoryDialog) -> Unit,
-    actionDeleteWholeHistoryDialog: (HistoryEvent.OnActionDeleteWholeHistoryDialog) -> Unit,
-    dismissDialog: (HistoryEvent.OnDismissDialog) -> Unit,
-    navigateToLibrary: (HistoryEvent.OnNavigateToLibrary) -> Unit,
-    navigateToBookInfo: (HistoryEvent.OnNavigateToBookInfo) -> Unit,
-    navigateToReader: (HistoryEvent.OnNavigateToReader) -> Unit,
-    navigateToStatistics: (HistoryEvent.OnNavigateToStatistics) -> Unit
+    onEvent: (HistoryEvent) -> Unit
 ) {
     HistoryDialog(
-        dialog = dialog,
-        actionDeleteWholeHistoryDialog = actionDeleteWholeHistoryDialog,
-        dismissDialog = dismissDialog
+        dialog = state.dialog,
+        onEvent = onEvent
     )
 
     HistoryScaffold(
         refreshState = refreshState,
         snackbarState = snackbarState,
-        history = history,
+        state = state,
         listState = listState,
         canScrollBackward = canScrollBackward,
-        showSearch = showSearch,
-        isLoading = isLoading,
-        isRefreshing = isRefreshing,
-        historyIsEmpty = historyIsEmpty,
-        loadFailed = loadFailed,
-        refreshList = refreshList,
+        onEvent = onEvent,
         focusRequester = focusRequester,
-        searchQuery = searchQuery,
-        searchVisibility = searchVisibility,
-        requestFocus = requestFocus,
-        searchQueryChange = searchQueryChange,
-        search = search,
-        deleteHistoryEntry = deleteHistoryEntry,
-        showDeleteWholeHistoryDialog = showDeleteWholeHistoryDialog,
-        navigateToBookInfo = navigateToBookInfo,
-        navigateToReader = navigateToReader,
-        statistics = statistics,
-        navigateToStatistics = navigateToStatistics
     )
 
     HistoryBackHandler(
-        showSearch = showSearch,
-        searchVisibility = searchVisibility,
-        navigateToLibrary = navigateToLibrary
+        showSearch = state.showSearch,
+        onEvent = onEvent
     )
 }

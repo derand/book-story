@@ -107,22 +107,14 @@ object LibraryScreen : Screen, Parcelable {
         )
 
         LibraryContent(
-            books = state.value.books,
-            selectedItemsCount = state.value.selectedItemsCount,
-            hasSelectedItems = state.value.hasSelectedItems,
+            state = state.value,
             titlePosition = settings.libraryTitlePosition.value,
             readButton = settings.libraryShowReadButton.value,
             showProgress = settings.libraryShowProgress.value,
             showCategoryTabs = settings.libraryShowCategoryTabs.value,
             showBookCount = settings.libraryShowBookCount.value,
-            showSearch = state.value.showSearch,
-            searchQuery = state.value.searchQuery,
-            bookCount = state.value.books.count(),
             focusRequester = focusRequester,
             pagerState = pagerState,
-            isLoading = state.value.isLoading,
-            isRefreshing = state.value.isRefreshing,
-            loadFailed = state.value.loadFailed,
             doublePressExit = settings.doublePressExit.value,
             layout = settings.libraryLayout.value,
             gridSize = settings.libraryGridSize.value,
@@ -133,37 +125,16 @@ object LibraryScreen : Screen, Parcelable {
             sortOrderDescending = settings.librarySortOrderDescending.value,
             perCategorySort = settings.libraryPerCategorySort.value,
             refreshState = refreshState,
-            dialog = state.value.dialog,
-            bottomSheet = state.value.bottomSheet,
             updateCategory = settingsModel::onEvent,
             changeSortOrder = { settings.librarySortOrder.update(it) },
             changeSortOrderDescending = { settings.librarySortOrderDescending.update(it) },
-            selectBook = screenModel::onEvent,
-            searchVisibility = screenModel::onEvent,
-            requestFocus = screenModel::onEvent,
-            searchQueryChange = screenModel::onEvent,
-            search = screenModel::onEvent,
-            selectBooks = screenModel::onEvent,
-            clearSelectedBooks = screenModel::onEvent,
-            showMoveDialog = screenModel::onEvent,
-            actionMoveDialog = screenModel::onEvent,
-            actionDeleteDialog = screenModel::onEvent,
-            showDeleteDialog = screenModel::onEvent,
-            showFilterBottomSheet = screenModel::onEvent,
-            dismissBottomSheet = screenModel::onEvent,
-            dismissDialog = screenModel::onEvent,
-            navigateToBrowse = screenModel::onEvent,
-            refreshList = screenModel::onEvent,
-            navigateToReader = screenModel::onEvent,
-            navigateToBookInfo = screenModel::onEvent,
-            navigateToLibrarySettings = screenModel::onEvent
+            onEvent = screenModel::onEvent
         )
 
         state.value.restoreNotice?.let { notice ->
             LibraryRestoreDialog(
                 notice = notice,
-                dismiss = screenModel::onEvent,
-                addFolders = screenModel::onEvent
+                onEvent = screenModel::onEvent
             )
         }
     }

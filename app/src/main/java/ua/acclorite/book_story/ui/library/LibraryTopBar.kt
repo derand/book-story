@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ua.acclorite.book_story.R
 import ua.acclorite.book_story.presentation.library.LibraryEvent
+import ua.acclorite.book_story.presentation.library.LibraryState
 import ua.acclorite.book_story.presentation.library.model.LibraryPage
 import ua.acclorite.book_story.presentation.library.model.pageAt
 import ua.acclorite.book_story.ui.common.components.common.AnimatedVisibility
@@ -53,43 +54,29 @@ import ua.acclorite.book_story.ui.navigator.NavigatorIconButton
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LibraryTopBar(
-    selectedItemsCount: Int,
-    hasSelectedItems: Boolean,
+    state: LibraryState,
     showBookCount: Boolean,
     showCategoryTabs: Boolean,
-    showSearch: Boolean,
-    searchQuery: String,
-    bookCount: Int,
     focusRequester: FocusRequester,
     pagerState: PagerState,
-    isLoading: Boolean,
-    isRefreshing: Boolean,
     pages: List<LibraryPage>,
-    searchVisibility: (LibraryEvent.OnSearchVisibility) -> Unit,
-    requestFocus: (LibraryEvent.OnRequestFocus) -> Unit,
-    searchQueryChange: (LibraryEvent.OnSearchQueryChange) -> Unit,
-    search: (LibraryEvent.OnSearch) -> Unit,
-    selectBooks: (LibraryEvent.OnSelectBooks) -> Unit,
-    clearSelectedBooks: (LibraryEvent.OnClearSelectedBooks) -> Unit,
-    showMoveDialog: (LibraryEvent.OnShowMoveDialog) -> Unit,
-    showDeleteDialog: (LibraryEvent.OnShowDeleteDialog) -> Unit,
-    showFilterBottomSheet: (LibraryEvent.OnShowFilterBottomSheet) -> Unit
+    onEvent: (LibraryEvent) -> Unit
 ) {
     val currentPage = pages.pageAt(pagerState.currentPage)
 
     val animatedItemCountBackgroundColor = animateColorAsState(
-        if (hasSelectedItems) MaterialTheme.colorScheme.surfaceContainerHighest
+        if (state.hasSelectedItems) MaterialTheme.colorScheme.surfaceContainerHighest
         else MaterialTheme.colorScheme.surfaceContainer,
         animationSpec = spring(stiffness = Spring.StiffnessMediumLow)
     )
 
     TopAppBar(
         scrollBehavior = null,
-        isTopBarScrolled = hasSelectedItems,
+        isTopBarScrolled = state.hasSelectedItems,
 
         shownTopBar = when {
-            hasSelectedItems -> 2
-            showSearch -> 1
+            state.hasSelectedItems -> 2
+            state.showSearch -> 1
             else -> 0
         },
         topBars = listOf(
@@ -106,7 +93,7 @@ fun LibraryTopBar(
                         if (showBookCount) {
                             Spacer(modifier = Modifier.width(6.dp))
                             StyledText(
-                                text = if (showCategoryTabs) bookCount.toString()
+                                text = if (showCategoryTabs) state.books.size.toString()
                                 else currentPage.books.size.toString(),
                                 modifier = Modifier
                                     .background(
@@ -128,14 +115,14 @@ fun LibraryTopBar(
                         contentDescription = R.string.search_content_desc,
                         disableOnClick = true,
                     ) {
-                        searchVisibility(LibraryEvent.OnSearchVisibility(true))
+                        onEvent(LibraryEvent.OnSearchVisibility(true))
                     }
                     IconButton(
                         icon = Icons.Default.FilterList,
                         contentDescription = R.string.filter_content_desc,
                         disableOnClick = false,
                     ) {
-                        showFilterBottomSheet(LibraryEvent.OnShowFilterBottomSheet)
+                        onEvent(LibraryEvent.OnShowFilterBottomSheet)
                     }
                     NavigatorIconButton()
                 }
@@ -149,7 +136,7 @@ fun LibraryTopBar(
                         contentDescription = R.string.exit_search_content_desc,
                         disableOnClick = true
                     ) {
-                        searchVisibility(LibraryEvent.OnSearchVisibility(false))
+                        onEvent(LibraryEvent.OnSearchVisibility(false))
                     }
                 },
                 contentTitle = {
@@ -157,14 +144,14 @@ fun LibraryTopBar(
                         modifier = Modifier
                             .focusRequester(focusRequester)
                             .onGloballyPositioned {
-                                requestFocus(LibraryEvent.OnRequestFocus)
+                                onEvent(LibraryEvent.OnRequestFocus)
                             },
-                        initialQuery = searchQuery,
+                        initialQuery = state.searchQuery,
                         onQueryChange = {
-                            searchQueryChange(LibraryEvent.OnSearchQueryChange(it))
+                            onEvent(LibraryEvent.OnSearchQueryChange(it))
                         },
                         onSearch = {
-                            search(LibraryEvent.OnSearch)
+                            onEvent(LibraryEvent.OnSearch)
                         }
                     )
                 },
@@ -181,14 +168,14 @@ fun LibraryTopBar(
                         contentDescription = R.string.clear_selected_items_content_desc,
                         disableOnClick = true
                     ) {
-                        clearSelectedBooks(LibraryEvent.OnClearSelectedBooks)
+                        onEvent(LibraryEvent.OnClearSelectedBooks)
                     }
                 },
                 contentTitle = {
                     StyledText(
                         text = stringResource(
                             id = R.string.selected_items_count_query,
-                            selectedItemsCount.coerceAtLeast(1)
+                            state.selectedItemsCount.coerceAtLeast(1)
                         ),
                         maxLines = 1
                     )
@@ -199,7 +186,7 @@ fun LibraryTopBar(
                         contentDescription = R.string.select_all_books_content_desc,
                         disableOnClick = false,
                     ) {
-                        selectBooks(
+                        onEvent(
                             LibraryEvent.OnSelectBooks(
                                 books = currentPage.books
                             )
@@ -208,25 +195,27 @@ fun LibraryTopBar(
                     IconButton(
                         icon = Icons.Outlined.MoveUp,
                         contentDescription = R.string.move_books_content_desc,
-                        enabled = !isLoading && !isRefreshing,
+                        enabled = !state.isLoading && !state.isRefreshing,
                         disableOnClick = false,
                     ) {
-                        showMoveDialog(LibraryEvent.OnShowMoveDialog)
+                        onEvent(LibraryEvent.OnShowMoveDialog)
                     }
                     IconButton(
                         icon = Icons.Outlined.Delete,
                         contentDescription = R.string.delete_books_content_desc,
-                        enabled = !isLoading && !isRefreshing,
+                        enabled = !state.isLoading && !state.isRefreshing,
                         disableOnClick = false
                     ) {
-                        showDeleteDialog(LibraryEvent.OnShowDeleteDialog)
+                        onEvent(LibraryEvent.OnShowDeleteDialog)
                     }
                 }
             ),
         ),
         customContent = {
             AnimatedVisibility(
-                visible = showCategoryTabs,
+                // Pages counted from a library that could not be read would
+                // all say 0; the error below is the whole story.
+                visible = showCategoryTabs && !state.loadFailed,
                 enter = expandVertically(),
                 exit = shrinkVertically()
             ) {

@@ -29,9 +29,7 @@ import ua.acclorite.book_story.ui.common.components.dialog.Dialog
 fun LibraryMoveDialog(
     books: List<SelectableBook>,
     categories: List<Category>,
-    actionMoveDialog: (LibraryEvent.OnActionMoveDialog) -> Unit,
-    dismissDialog: (LibraryEvent.OnDismissDialog) -> Unit,
-    navigateToLibrarySettings: (LibraryEvent.OnNavigateToLibrarySettings) -> Unit
+    onEvent: (LibraryEvent) -> Unit
 ) {
     val choices = categories.filterNot { it.id == DEFAULT_CATEGORY_ID }
     // Ticked to begin with: the categories every selected book is in already.
@@ -49,10 +47,10 @@ fun LibraryMoveDialog(
         description = null,
         actionEnabled = true,
         onDismiss = {
-            dismissDialog(LibraryEvent.OnDismissDialog)
+            onEvent(LibraryEvent.OnDismissDialog)
         },
         onAction = {
-            actionMoveDialog(
+            onEvent(
                 LibraryEvent.OnActionMoveDialog(
                     selectedCategories = selectedCategories
                 )
@@ -60,8 +58,8 @@ fun LibraryMoveDialog(
         },
         secondaryAction = stringResource(id = R.string.edit),
         onSecondaryAction = {
-            navigateToLibrarySettings(LibraryEvent.OnNavigateToLibrarySettings)
-            dismissDialog(LibraryEvent.OnDismissDialog)
+            onEvent(LibraryEvent.OnNavigateToLibrarySettings)
+            onEvent(LibraryEvent.OnDismissDialog)
         },
         withContent = true,
         items = {

@@ -26,7 +26,7 @@ fun LibraryBottomSheet(
     changeSortOrder: (LibrarySortOrder) -> Unit,
     changeSortOrderDescending: (Boolean) -> Unit,
     updateCategory: (SettingsEvent.OnUpdateCategory) -> Unit,
-    dismissBottomSheet: (LibraryEvent.OnDismissBottomSheet) -> Unit
+    onEvent: (LibraryEvent) -> Unit
 ) {
     when (bottomSheet) {
         LibraryScreen.FILTER_BOTTOM_SHEET -> {
@@ -39,7 +39,7 @@ fun LibraryBottomSheet(
                 changeSortOrder = changeSortOrder,
                 changeSortOrderDescending = changeSortOrderDescending,
                 updateCategory = updateCategory,
-                dismissBottomSheet = dismissBottomSheet
+                onEvent = onEvent
             )
         }
     }

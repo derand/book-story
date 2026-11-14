@@ -19,6 +19,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.res.stringResource
 import ua.acclorite.book_story.R
 import ua.acclorite.book_story.presentation.history.HistoryEvent
+import ua.acclorite.book_story.presentation.history.HistoryState
 import ua.acclorite.book_story.ui.common.components.common.IconButton
 import ua.acclorite.book_story.ui.common.components.common.SearchTextField
 import ua.acclorite.book_story.ui.common.components.common.StyledText
@@ -30,25 +31,17 @@ import ua.acclorite.book_story.ui.navigator.NavigatorIconButton
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HistoryTopBar(
+    state: HistoryState,
     canScrollBackward: Boolean,
-    showSearch: Boolean,
-    isLoading: Boolean,
-    isRefreshing: Boolean,
-    historyIsNotEmpty: Boolean,
     focusRequester: FocusRequester,
-    searchQuery: String,
-    searchVisibility: (HistoryEvent.OnSearchVisibility) -> Unit,
-    requestFocus: (HistoryEvent.OnRequestFocus) -> Unit,
-    searchQueryChange: (HistoryEvent.OnSearchQueryChange) -> Unit,
-    showDeleteWholeHistoryDialog: (HistoryEvent.OnShowDeleteWholeHistoryDialog) -> Unit,
-    search: (HistoryEvent.OnSearch) -> Unit,
+    onEvent: (HistoryEvent) -> Unit
 ) {
     TopAppBar(
         scrollBehavior = null,
         isTopBarScrolled = canScrollBackward,
 
         shownTopBar = when {
-            showSearch -> 1
+            state.showSearch -> 1
             else -> 0
         },
         topBars = listOf(
@@ -64,17 +57,17 @@ fun HistoryTopBar(
                         contentDescription = R.string.search_content_desc,
                         disableOnClick = true,
                     ) {
-                        searchVisibility(HistoryEvent.OnSearchVisibility(true))
+                        onEvent(HistoryEvent.OnSearchVisibility(true))
                     }
                     IconButton(
                         icon = Icons.Outlined.DeleteSweep,
                         contentDescription = R.string.delete_whole_history_content_desc,
                         disableOnClick = false,
-                        enabled = !isLoading
-                                && !isRefreshing
-                                && historyIsNotEmpty
+                        enabled = !state.isLoading
+                                && !state.isRefreshing
+                                && state.history.isNotEmpty()
                     ) {
-                        showDeleteWholeHistoryDialog(
+                        onEvent(
                             HistoryEvent.OnShowDeleteWholeHistoryDialog
                         )
                     }
@@ -90,7 +83,7 @@ fun HistoryTopBar(
                         contentDescription = R.string.exit_search_content_desc,
                         disableOnClick = true
                     ) {
-                        searchVisibility(HistoryEvent.OnSearchVisibility(false))
+                        onEvent(HistoryEvent.OnSearchVisibility(false))
                     }
                 },
                 contentTitle = {
@@ -98,14 +91,14 @@ fun HistoryTopBar(
                         modifier = Modifier
                             .focusRequester(focusRequester)
                             .onGloballyPositioned {
-                                requestFocus(HistoryEvent.OnRequestFocus)
+                                onEvent(HistoryEvent.OnRequestFocus)
                             },
-                        initialQuery = searchQuery,
+                        initialQuery = state.searchQuery,
                         onQueryChange = {
-                            searchQueryChange(HistoryEvent.OnSearchQueryChange(it))
+                            onEvent(HistoryEvent.OnSearchQueryChange(it))
                         },
                         onSearch = {
-                            search(HistoryEvent.OnSearch)
+                            onEvent(HistoryEvent.OnSearch)
                         }
                     )
                 },

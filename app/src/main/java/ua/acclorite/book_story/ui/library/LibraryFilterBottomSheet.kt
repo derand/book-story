@@ -43,7 +43,7 @@ fun LibraryFilterBottomSheet(
     changeSortOrder: (LibrarySortOrder) -> Unit,
     changeSortOrderDescending: (Boolean) -> Unit,
     updateCategory: (SettingsEvent.OnUpdateCategory) -> Unit,
-    dismissBottomSheet: (LibraryEvent.OnDismissBottomSheet) -> Unit
+    onEvent: (LibraryEvent) -> Unit
 ) {
     val currentCategory = pages.pageAt(categoriesPagerState.currentPage).category
 
@@ -58,7 +58,7 @@ fun LibraryFilterBottomSheet(
             .fillMaxHeight(0.5f),
         dragHandle = {},
         onDismissRequest = {
-            dismissBottomSheet(LibraryEvent.OnDismissBottomSheet)
+            onEvent(LibraryEvent.OnDismissBottomSheet)
         },
         sheetGesturesEnabled = false
     ) {

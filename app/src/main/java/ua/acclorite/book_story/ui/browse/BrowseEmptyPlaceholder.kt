@@ -29,8 +29,7 @@ fun BoxScope.BrowseEmptyPlaceholder(
     isLoading: Boolean,
     isRefreshing: Boolean,
     loadFailed: Boolean,
-    refreshList: (BrowseEvent.OnRefreshList) -> Unit,
-    navigateToBrowseSettings: (BrowseEvent.OnNavigateToBrowseSettings) -> Unit
+    onEvent: (BrowseEvent) -> Unit
 ) {
     AnimatedVisibility(
         visible = !isLoading
@@ -47,7 +46,7 @@ fun BoxScope.BrowseEmptyPlaceholder(
                 icon = painterResource(id = R.drawable.error),
                 actionTitle = stringResource(id = R.string.try_again)
             ) {
-                refreshList(BrowseEvent.OnRefreshList(loading = true, hideSearch = false))
+                onEvent(BrowseEvent.OnRefreshList(loading = true, hideSearch = false))
             }
             return@AnimatedVisibility
         }
@@ -59,7 +58,7 @@ fun BoxScope.BrowseEmptyPlaceholder(
             icon = painterResource(id = R.drawable.empty_browse),
             actionTitle = stringResource(id = R.string.set_up_scanning),
             action = {
-                navigateToBrowseSettings(BrowseEvent.OnNavigateToBrowseSettings)
+                onEvent(BrowseEvent.OnNavigateToBrowseSettings)
             }
         )
     }

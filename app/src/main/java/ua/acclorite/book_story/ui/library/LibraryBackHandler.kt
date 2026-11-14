@@ -9,10 +9,10 @@ package ua.acclorite.book_story.ui.library
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -27,8 +27,7 @@ fun LibraryBackHandler(
     showSearch: Boolean,
     pagerState: PagerState,
     doublePressExit: Boolean,
-    clearSelectedBooks: (LibraryEvent.OnClearSelectedBooks) -> Unit,
-    searchVisibility: (LibraryEvent.OnSearchVisibility) -> Unit
+    onEvent: (LibraryEvent) -> Unit
 ) {
     val activity = LocalActivity.current
     val scope = rememberCoroutineScope()
@@ -38,12 +37,12 @@ fun LibraryBackHandler(
 
     BackHandler {
         if (hasSelectedItems) {
-            clearSelectedBooks(LibraryEvent.OnClearSelectedBooks)
+            onEvent(LibraryEvent.OnClearSelectedBooks)
             return@BackHandler
         }
 
         if (showSearch) {
-            searchVisibility(LibraryEvent.OnSearchVisibility(false))
+            onEvent(LibraryEvent.OnSearchVisibility(false))
             return@BackHandler
         }
 

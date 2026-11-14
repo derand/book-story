@@ -13,6 +13,7 @@ import androidx.compose.foundation.pager.PagerState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import ua.acclorite.book_story.presentation.library.LibraryEvent
+import ua.acclorite.book_story.presentation.library.LibraryState
 import ua.acclorite.book_story.presentation.library.model.LibraryLayout
 import ua.acclorite.book_story.presentation.library.model.LibraryPage
 import ua.acclorite.book_story.presentation.library.model.LibraryTitlePosition
@@ -21,29 +22,22 @@ import ua.acclorite.book_story.ui.theme.DefaultTransition
 
 @Composable
 fun LibraryPager(
+    state: LibraryState,
     pages: List<LibraryPage>,
     pagerState: PagerState,
     layout: LibraryLayout,
     gridSize: Int,
     autoGridSize: Boolean,
-    hasSelectedItems: Boolean,
     titlePosition: LibraryTitlePosition,
     readButton: Boolean,
     showProgress: Boolean,
-    isLoading: Boolean,
-    isRefreshing: Boolean,
-    loadFailed: Boolean,
-    selectBook: (LibraryEvent.OnSelectBook) -> Unit,
-    navigateToBrowse: (LibraryEvent.OnNavigateToBrowse) -> Unit,
-    refreshList: (LibraryEvent.OnRefreshList) -> Unit,
-    navigateToBookInfo: (LibraryEvent.OnNavigateToBookInfo) -> Unit,
-    navigateToReader: (LibraryEvent.OnNavigateToReader) -> Unit,
+    onEvent: (LibraryEvent) -> Unit
 ) {
     HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { index ->
         val books = pages.pageAt(index).books
 
         Box(modifier = Modifier.fillMaxSize()) {
-            DefaultTransition(visible = !isLoading) {
+            DefaultTransition(visible = !state.isLoading) {
                 LibraryLayout(
                     books = books,
                     gridSize = gridSize,
@@ -53,12 +47,12 @@ fun LibraryPager(
                     LibraryItem(
                         book = book,
                         layout = layout,
-                        hasSelectedItems = hasSelectedItems,
+                        hasSelectedItems = state.hasSelectedItems,
                         titlePosition = titlePosition,
                         readButton = readButton,
                         showProgress = showProgress,
                         selectBook = { select ->
-                            selectBook(
+                            onEvent(
                                 LibraryEvent.OnSelectBook(
                                     id = book.data.id,
                                     select = select
@@ -66,14 +60,14 @@ fun LibraryPager(
                             )
                         },
                         navigateToBookInfo = {
-                            navigateToBookInfo(
+                            onEvent(
                                 LibraryEvent.OnNavigateToBookInfo(
                                     book.data.id
                                 )
                             )
                         },
                         navigateToReader = {
-                            navigateToReader(
+                            onEvent(
                                 LibraryEvent.OnNavigateToReader(
                                     book.data.id
                                 )
@@ -84,12 +78,11 @@ fun LibraryPager(
             }
 
             LibraryEmptyPlaceholder(
-                isLoading = isLoading,
-                isRefreshing = isRefreshing,
+                isLoading = state.isLoading,
+                isRefreshing = state.isRefreshing,
                 isBooksEmpty = books.isEmpty(),
-                loadFailed = loadFailed,
-                refreshList = refreshList,
-                navigateToBrowse = navigateToBrowse
+                loadFailed = state.loadFailed,
+                onEvent = onEvent
             )
         }
     }

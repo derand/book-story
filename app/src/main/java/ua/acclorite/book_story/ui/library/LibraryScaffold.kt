@@ -19,6 +19,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import ua.acclorite.book_story.presentation.library.LibraryEvent
+import ua.acclorite.book_story.presentation.library.LibraryState
 import ua.acclorite.book_story.presentation.library.model.LibraryLayout
 import ua.acclorite.book_story.presentation.library.model.LibraryPage
 import ua.acclorite.book_story.presentation.library.model.LibraryTitlePosition
@@ -26,40 +27,20 @@ import ua.acclorite.book_story.presentation.library.model.LibraryTitlePosition
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun LibraryScaffold(
-    selectedItemsCount: Int,
-    hasSelectedItems: Boolean,
+    state: LibraryState,
     titlePosition: LibraryTitlePosition,
     readButton: Boolean,
     showProgress: Boolean,
     showCategoryTabs: Boolean,
     showBookCount: Boolean,
-    showSearch: Boolean,
-    searchQuery: String,
-    bookCount: Int,
     focusRequester: FocusRequester,
     pagerState: PagerState,
-    isLoading: Boolean,
-    isRefreshing: Boolean,
-    loadFailed: Boolean,
     refreshState: PullRefreshState,
     layout: LibraryLayout,
     gridSize: Int,
     autoGridSize: Boolean,
     pages: List<LibraryPage>,
-    searchVisibility: (LibraryEvent.OnSearchVisibility) -> Unit,
-    selectBook: (LibraryEvent.OnSelectBook) -> Unit,
-    requestFocus: (LibraryEvent.OnRequestFocus) -> Unit,
-    searchQueryChange: (LibraryEvent.OnSearchQueryChange) -> Unit,
-    search: (LibraryEvent.OnSearch) -> Unit,
-    selectBooks: (LibraryEvent.OnSelectBooks) -> Unit,
-    clearSelectedBooks: (LibraryEvent.OnClearSelectedBooks) -> Unit,
-    showMoveDialog: (LibraryEvent.OnShowMoveDialog) -> Unit,
-    showDeleteDialog: (LibraryEvent.OnShowDeleteDialog) -> Unit,
-    showFilterBottomSheet: (LibraryEvent.OnShowFilterBottomSheet) -> Unit,
-    navigateToBrowse: (LibraryEvent.OnNavigateToBrowse) -> Unit,
-    refreshList: (LibraryEvent.OnRefreshList) -> Unit,
-    navigateToBookInfo: (LibraryEvent.OnNavigateToBookInfo) -> Unit,
-    navigateToReader: (LibraryEvent.OnNavigateToReader) -> Unit,
+    onEvent: (LibraryEvent) -> Unit
 ) {
     Scaffold(
         Modifier
@@ -68,27 +49,13 @@ fun LibraryScaffold(
         containerColor = MaterialTheme.colorScheme.surface,
         topBar = {
             LibraryTopBar(
-                selectedItemsCount = selectedItemsCount,
-                hasSelectedItems = hasSelectedItems,
+                state = state,
                 showBookCount = showBookCount,
                 showCategoryTabs = showCategoryTabs,
-                showSearch = showSearch,
-                searchQuery = searchQuery,
-                bookCount = bookCount,
                 focusRequester = focusRequester,
                 pagerState = pagerState,
-                isLoading = isLoading,
-                isRefreshing = isRefreshing,
                 pages = pages,
-                searchVisibility = searchVisibility,
-                requestFocus = requestFocus,
-                searchQueryChange = searchQueryChange,
-                search = search,
-                selectBooks = selectBooks,
-                clearSelectedBooks = clearSelectedBooks,
-                showMoveDialog = showMoveDialog,
-                showDeleteDialog = showDeleteDialog,
-                showFilterBottomSheet = showFilterBottomSheet
+                onEvent = onEvent
             )
         }
     ) { paddingValues ->
@@ -103,22 +70,15 @@ fun LibraryScaffold(
                 layout = layout,
                 gridSize = gridSize,
                 autoGridSize = autoGridSize,
-                hasSelectedItems = hasSelectedItems,
+                state = state,
                 titlePosition = titlePosition,
                 readButton = readButton,
                 showProgress = showProgress,
-                isLoading = isLoading,
-                isRefreshing = isRefreshing,
-                loadFailed = loadFailed,
-                selectBook = selectBook,
-                navigateToBrowse = navigateToBrowse,
-                refreshList = refreshList,
-                navigateToReader = navigateToReader,
-                navigateToBookInfo = navigateToBookInfo
+                onEvent = onEvent
             )
 
             LibraryRefreshIndicator(
-                isRefreshing = isRefreshing,
+                isRefreshing = state.isRefreshing,
                 refreshState = refreshState
             )
         }

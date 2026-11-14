@@ -19,27 +19,21 @@ fun LibraryDialog(
     books: List<SelectableBook>,
     categories: List<Category>,
     selectedItemsCount: Int,
-    actionMoveDialog: (LibraryEvent.OnActionMoveDialog) -> Unit,
-    actionDeleteDialog: (LibraryEvent.OnActionDeleteDialog) -> Unit,
-    dismissDialog: (LibraryEvent.OnDismissDialog) -> Unit,
-    navigateToLibrarySettings: (LibraryEvent.OnNavigateToLibrarySettings) -> Unit
+    onEvent: (LibraryEvent) -> Unit
 ) {
     when (dialog) {
         LibraryScreen.MOVE_DIALOG -> {
             LibraryMoveDialog(
                 books = books,
                 categories = categories,
-                actionMoveDialog = actionMoveDialog,
-                dismissDialog = dismissDialog,
-                navigateToLibrarySettings = navigateToLibrarySettings
+                onEvent = onEvent
             )
         }
 
         LibraryScreen.DELETE_DIALOG -> {
             LibraryDeleteDialog(
                 selectedItemsCount = selectedItemsCount,
-                actionDeleteDialog = actionDeleteDialog,
-                dismissDialog = dismissDialog
+                onEvent = onEvent
             )
         }
     }
