@@ -18,8 +18,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -58,13 +56,9 @@ fun BrowseTopBar(
     showFilterBottomSheet: (BrowseEvent.OnShowFilterBottomSheet) -> Unit,
     showAddDialog: (BrowseEvent.OnShowAddDialog) -> Unit
 ) {
-    val isScrolled = remember(layout, canScrollBackList, canScrollBackGrid) {
-        derivedStateOf {
-            when (layout) {
-                BrowseLayout.GRID -> canScrollBackGrid
-                BrowseLayout.LIST -> canScrollBackList
-            }
-        }
+    val isScrolled = when (layout) {
+        BrowseLayout.GRID -> canScrollBackGrid
+        BrowseLayout.LIST -> canScrollBackList
     }
 
     val animatedFilterIconColor = animateColorAsState(
@@ -75,7 +69,7 @@ fun BrowseTopBar(
 
     TopAppBar(
         scrollBehavior = null,
-        isTopBarScrolled = isScrolled.value || hasSelectedItems,
+        isTopBarScrolled = isScrolled || hasSelectedItems,
 
         shownTopBar = when {
             hasSelectedItems -> 2

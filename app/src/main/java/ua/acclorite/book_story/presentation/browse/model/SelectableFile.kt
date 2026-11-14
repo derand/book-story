@@ -6,16 +6,15 @@
 
 package ua.acclorite.book_story.presentation.browse.model
 
-import android.net.Uri
 import androidx.compose.runtime.Immutable
 
 @Immutable
+/** A file Browse lists: only files, never a folder. */
 data class SelectableFile(
     val name: String,
-    val uri: Uri,
+    val uri: String,
     val path: String,
     val size: Long,
     val lastModified: Long,
-    val isDirectory: Boolean,
     val selected: Boolean
 )

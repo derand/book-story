@@ -6,7 +6,6 @@
 
 package ua.acclorite.book_story.presentation.browse
 
-import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -110,11 +109,10 @@ class BrowseModel @Inject constructor(
                         val selectableFiles = result.getOrDefault(emptyList()).map { file ->
                             SelectableFile(
                                 name = file.name,
-                                uri = file.uri.toUri(),
+                                uri = file.uri,
                                 path = file.path,
                                 size = file.size,
                                 lastModified = file.lastModified,
-                                isDirectory = file.isDirectory,
                                 selected = false
                             )
                         }
@@ -123,8 +121,8 @@ class BrowseModel @Inject constructor(
                         // only thing the counts decide: which of the two empty
                         // states this is. Asked unconditionally they would cost a
                         // round trip per granted tree on every refresh — and a
-                        // refresh is every keystroke of the search, against a
-                        // provider that answers over a network.
+                        // refresh follows every pause in typing a search, against
+                        // a provider that answers over a network.
                         val sources = when {
                             result.isSuccess && selectableFiles.isEmpty() ->
                                 getBookSourcesUseCase()
@@ -283,11 +281,11 @@ class BrowseModel @Inject constructor(
                             val nullableBook = getBookFromFileUseCase(
                                 File(
                                     name = file.name,
-                                    uri = file.uri.toString(),
+                                    uri = file.uri,
                                     path = file.path,
                                     size = file.size,
                                     lastModified = file.lastModified,
-                                    isDirectory = file.isDirectory
+                                    isDirectory = false
                                 )
                             ).let {
                                 if (it != null) {
@@ -448,14 +446,6 @@ class BrowseModel @Inject constructor(
                                 selectedBooksAddDialog = editedList
                             )
                         }
-                    }
-                }
-
-                is BrowseEvent.OnDismissDialog -> {
-                    _state.update {
-                        it.copy(
-                            dialog = null
-                        )
                     }
                 }
 
