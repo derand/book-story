@@ -14,21 +14,19 @@ import ua.acclorite.book_story.presentation.browse.BrowseEvent
 fun BrowseBackHandler(
     hasSelectedItems: Boolean,
     showSearch: Boolean,
-    searchVisibility: (BrowseEvent.OnSearchVisibility) -> Unit,
-    clearSelectedFiles: (BrowseEvent.OnClearSelectedFiles) -> Unit,
-    navigateToLibrary: (BrowseEvent.OnNavigateToLibrary) -> Unit
+    onEvent: (BrowseEvent) -> Unit
 ) {
     BackHandler {
         if (hasSelectedItems) {
-            clearSelectedFiles(BrowseEvent.OnClearSelectedFiles)
+            onEvent(BrowseEvent.OnClearSelectedFiles)
             return@BackHandler
         }
 
         if (showSearch) {
-            searchVisibility(BrowseEvent.OnSearchVisibility(false))
+            onEvent(BrowseEvent.OnSearchVisibility(false))
             return@BackHandler
         }
 
-        navigateToLibrary(BrowseEvent.OnNavigateToLibrary)
+        onEvent(BrowseEvent.OnNavigateToLibrary)
     }
 }

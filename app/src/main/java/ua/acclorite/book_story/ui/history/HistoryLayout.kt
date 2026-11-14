@@ -31,10 +31,7 @@ fun HistoryLayout(
     statistics: LibraryStatistics?,
     isLoading: Boolean,
     isRefreshing: Boolean,
-    deleteHistoryEntry: (HistoryEvent.OnDeleteHistoryEntry) -> Unit,
-    navigateToBookInfo: (HistoryEvent.OnNavigateToBookInfo) -> Unit,
-    navigateToReader: (HistoryEvent.OnNavigateToReader) -> Unit,
-    navigateToStatistics: (HistoryEvent.OnNavigateToStatistics) -> Unit,
+    onEvent: (HistoryEvent) -> Unit
 ) {
     DefaultTransition(visible = !isLoading) {
         LazyColumnWithScrollbar(
@@ -51,7 +48,7 @@ fun HistoryLayout(
                     HistoryStatisticsCard(
                         statistics = statistics,
                         onClick = {
-                            navigateToStatistics(HistoryEvent.OnNavigateToStatistics)
+                            onEvent(HistoryEvent.OnNavigateToStatistics)
                         }
                     )
                     Spacer(modifier = Modifier.height(12.dp))
@@ -85,21 +82,21 @@ fun HistoryLayout(
                         historyEntry = historyEntry,
                         isRefreshing = isRefreshing,
                         onBodyClick = {
-                            navigateToBookInfo(
+                            onEvent(
                                 HistoryEvent.OnNavigateToBookInfo(
                                     historyEntry.book.id
                                 )
                             )
                         },
                         onTitleClick = {
-                            navigateToReader(
+                            onEvent(
                                 HistoryEvent.OnNavigateToReader(
                                     historyEntry.book.id
                                 )
                             )
                         },
                         onDeleteClick = {
-                            deleteHistoryEntry(
+                            onEvent(
                                 HistoryEvent.OnDeleteHistoryEntry(
                                     history = historyEntry
                                 )

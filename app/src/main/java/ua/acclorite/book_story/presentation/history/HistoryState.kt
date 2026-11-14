@@ -20,6 +20,8 @@ data class HistoryState(
 
     val isRefreshing: Boolean = false,
     val isLoading: Boolean = true,
+    /** The last read failed: the empty list is not an empty one. */
+    val loadFailed: Boolean = false,
 
     val showSearch: Boolean = false,
     val searchQuery: String = "",

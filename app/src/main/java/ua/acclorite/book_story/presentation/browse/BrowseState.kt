@@ -18,6 +18,8 @@ data class BrowseState(
     val files: List<SelectableFile> = emptyList(),
 
     val isLoading: Boolean = true,
+    /** The last listing failed: the empty list is not an empty one. */
+    val loadFailed: Boolean = false,
 
     /**
      * Whether the user has granted any folder at all, and whether any of them

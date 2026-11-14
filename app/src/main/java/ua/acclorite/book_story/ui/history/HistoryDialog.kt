@@ -14,14 +14,12 @@ import ua.acclorite.book_story.presentation.history.HistoryScreen
 @Composable
 fun HistoryDialog(
     dialog: Dialog?,
-    actionDeleteWholeHistoryDialog: (HistoryEvent.OnActionDeleteWholeHistoryDialog) -> Unit,
-    dismissDialog: (HistoryEvent.OnDismissDialog) -> Unit
+    onEvent: (HistoryEvent) -> Unit
 ) {
     when (dialog) {
         HistoryScreen.DELETE_WHOLE_HISTORY_DIALOG -> {
             HistoryDeleteWholeHistoryDialog(
-                actionDeleteWholeHistoryDialog = actionDeleteWholeHistoryDialog,
-                dismissDialog = dismissDialog
+                onEvent = onEvent
             )
         }
     }

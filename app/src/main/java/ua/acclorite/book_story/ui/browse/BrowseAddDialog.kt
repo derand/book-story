@@ -42,10 +42,7 @@ fun BrowseAddDialog(
     loadingAddDialog: Boolean,
     addingBooks: AddingBooks?,
     selectedBooksAddDialog: List<SelectableNullableBook>,
-    dismissAddDialog: (BrowseEvent.OnDismissAddDialog) -> Unit,
-    actionAddDialog: (BrowseEvent.OnActionAddDialog) -> Unit,
-    cancelAddingBooks: (BrowseEvent.OnCancelAddingBooks) -> Unit,
-    selectAddDialog: (BrowseEvent.OnSelectAddDialog) -> Unit
+    onEvent: (BrowseEvent) -> Unit
 ) {
     val context = LocalContext.current
     val settings = LocalSettings.current
@@ -72,11 +69,11 @@ fun BrowseAddDialog(
         // the moment OK is pressed.
         disableOnClick = addingBooks == null,
         onDismiss = {
-            if (addingBooks != null) cancelAddingBooks(BrowseEvent.OnCancelAddingBooks)
-            else dismissAddDialog(BrowseEvent.OnDismissAddDialog)
+            if (addingBooks != null) onEvent(BrowseEvent.OnCancelAddingBooks)
+            else onEvent(BrowseEvent.OnDismissAddDialog)
         },
         onAction = {
-            actionAddDialog(BrowseEvent.OnActionAddDialog)
+            onEvent(BrowseEvent.OnActionAddDialog)
         },
         withContent = true,
         items = {
@@ -161,7 +158,7 @@ fun BrowseAddDialog(
                     ) {
                         when (book.data) {
                             is NullableBook.NotNull -> {
-                                selectAddDialog(
+                                onEvent(
                                     BrowseEvent.OnSelectAddDialog(
                                         book = book
                                     )

@@ -10,64 +10,48 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material.pullrefresh.PullRefreshState
-import androidx.compose.material.pullrefresh.pullRefresh
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.pulltorefresh.PullToRefreshState
+import androidx.compose.material3.pulltorefresh.pullToRefresh
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
-import ua.acclorite.book_story.domain.model.statistics.LibraryStatistics
 import ua.acclorite.book_story.presentation.history.HistoryEvent
-import ua.acclorite.book_story.presentation.history.model.GroupedHistory
+import ua.acclorite.book_story.presentation.history.HistoryState
+import ua.acclorite.book_story.ui.common.components.common.ListRefreshIndicator
 import ua.acclorite.book_story.ui.common.components.common.Snackbar
 
-@OptIn(ExperimentalMaterialApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HistoryScaffold(
-    refreshState: PullRefreshState,
-    statistics: LibraryStatistics?,
+    state: HistoryState,
+    refreshState: PullToRefreshState,
     snackbarState: SnackbarHostState,
-    history: List<GroupedHistory>,
     listState: LazyListState,
     canScrollBackward: Boolean,
-    showSearch: Boolean,
-    isLoading: Boolean,
-    isRefreshing: Boolean,
-    historyIsEmpty: Boolean,
     focusRequester: FocusRequester,
-    searchQuery: String,
-    searchVisibility: (HistoryEvent.OnSearchVisibility) -> Unit,
-    requestFocus: (HistoryEvent.OnRequestFocus) -> Unit,
-    searchQueryChange: (HistoryEvent.OnSearchQueryChange) -> Unit,
-    deleteHistoryEntry: (HistoryEvent.OnDeleteHistoryEntry) -> Unit,
-    showDeleteWholeHistoryDialog: (HistoryEvent.OnShowDeleteWholeHistoryDialog) -> Unit,
-    search: (HistoryEvent.OnSearch) -> Unit,
-    navigateToBookInfo: (HistoryEvent.OnNavigateToBookInfo) -> Unit,
-    navigateToReader: (HistoryEvent.OnNavigateToReader) -> Unit,
-    navigateToStatistics: (HistoryEvent.OnNavigateToStatistics) -> Unit
+    onEvent: (HistoryEvent) -> Unit
 ) {
     Scaffold(
         Modifier
             .fillMaxSize()
-            .pullRefresh(refreshState),
+            .pullToRefresh(
+                isRefreshing = state.isRefreshing,
+                state = refreshState,
+                onRefresh = {
+                    onEvent(HistoryEvent.OnRefreshList(loading = false, hideSearch = true))
+                }
+            ),
         containerColor = MaterialTheme.colorScheme.surface,
         topBar = {
             HistoryTopBar(
                 canScrollBackward = canScrollBackward,
-                showSearch = showSearch,
-                isLoading = isLoading,
-                isRefreshing = isRefreshing,
-                historyIsNotEmpty = !historyIsEmpty,
+                state = state,
                 focusRequester = focusRequester,
-                searchQuery = searchQuery,
-                searchVisibility = searchVisibility,
-                requestFocus = requestFocus,
-                searchQueryChange = searchQueryChange,
-                showDeleteWholeHistoryDialog = showDeleteWholeHistoryDialog,
-                search = search
+                onEvent = onEvent
             )
         },
         bottomBar = {
@@ -80,27 +64,23 @@ fun HistoryScaffold(
                 .padding(top = paddingValues.calculateTopPadding())
         ) {
             HistoryLayout(
-                statistics = statistics,
-                navigateToStatistics = navigateToStatistics,
+                statistics = state.statistics,
+                onEvent = onEvent,
                 listState = listState,
-                history = history,
-                isLoading = isLoading,
-                isRefreshing = isRefreshing,
-                deleteHistoryEntry = deleteHistoryEntry,
-                navigateToBookInfo = navigateToBookInfo,
-                navigateToReader = navigateToReader
+                history = state.history,
+                isLoading = state.isLoading,
+                isRefreshing = state.isRefreshing,
             )
 
             HistoryEmptyPlaceholder(
-                isLoading = isLoading,
-                isRefreshing = isRefreshing,
-                isHistoryEmpty = historyIsEmpty
+                isLoading = state.isLoading,
+                isRefreshing = state.isRefreshing,
+                isHistoryEmpty = state.history.isEmpty(),
+                loadFailed = state.loadFailed,
+                onEvent = onEvent
             )
 
-            HistoryRefreshIndicator(
-                isRefreshing = isRefreshing,
-                refreshState = refreshState
-            )
+            ListRefreshIndicator(state = refreshState, isRefreshing = state.isRefreshing)
         }
     }
 }

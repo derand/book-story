@@ -26,7 +26,9 @@ fun BrowseEffects(effects: SharedFlow<BrowseEffect>, focusRequester: FocusReques
     val settings = LocalSettings.current
     val context = LocalContext.current
 
-    LaunchedEffect(effects, focusRequester, context, navigator, settings.browsePinnedPaths.value) {
+    // Not keyed on the pinned paths: the handler reads them when it runs, and
+    // restarting the collector on every pin would drop an effect sent meanwhile.
+    LaunchedEffect(effects, focusRequester, context, navigator, settings) {
         effects.collect { effect ->
             when (effect) {
                 is BrowseEffect.OnRequestFocus -> {

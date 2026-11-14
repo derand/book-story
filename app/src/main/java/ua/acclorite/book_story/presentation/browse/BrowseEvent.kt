@@ -58,8 +58,6 @@ sealed class BrowseEvent {
 
     data object OnActionAddDialog : BrowseEvent()
 
-    data object OnDismissDialog : BrowseEvent()
-
     data class OnUpdatePinnedPaths(
         val path: String
     ) : BrowseEvent()

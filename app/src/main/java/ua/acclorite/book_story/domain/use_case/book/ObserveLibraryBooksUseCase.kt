@@ -21,25 +21,31 @@ import javax.inject.Inject
 
 private const val TAG = "ObserveLibraryBooks"
 
+/** The whole library, and the part of it a search narrows it to. */
+data class LibraryBooks(
+    val all: List<Book>,
+    val matching: List<Book>
+)
+
 class ObserveLibraryBooksUseCase @Inject constructor(
     private val bookRepository: BookRepository
 ) {
 
     /**
-     * The library narrowed to [query] (blank: every book), again after each
-     * change to the books, their history or the query. A failed read leaves an
-     * empty list.
+     * The library and its books matching [query] (blank: every book), again
+     * after each change to the books, their history or the query. A failed
+     * read is the last value, a failure: nothing follows until the next call.
      */
-    operator fun invoke(query: Flow<String>): Flow<List<Book>> =
+    operator fun invoke(query: Flow<String>): Flow<Result<LibraryBooks>> =
         combine(
             bookRepository.observeLibraryBooks(),
             query.map { bookSearchTokens(it) }
         ) { allBooks, tokens ->
-            allBooks.filter { book -> book.matchesSearch(tokens) }.also {
-                logI(TAG, "Found [${it.size}] of [${allBooks.size}] books.")
-            }
+            val matching = allBooks.filter { book -> book.matchesSearch(tokens) }
+            logI(TAG, "Found [${matching.size}] of [${allBooks.size}] books.")
+            Result.success(LibraryBooks(all = allBooks, matching = matching))
         }.catch {
             logE(TAG, "Could not read the library: ${it.messageForLog()}")
-            emit(emptyList())
+            emit(Result.failure(it))
         }
 }

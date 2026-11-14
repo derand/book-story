@@ -30,7 +30,7 @@ fun HistoryEffects(
     effects: SharedFlow<HistoryEffect>,
     focusRequester: FocusRequester,
     snackbarState: SnackbarHostState,
-    restoreHistoryEntry: (HistoryEvent.OnRestoreHistoryEntry) -> Unit
+    onEvent: (HistoryEvent) -> Unit
 ) {
     val navigator = LocalNavigator.current
     val context = LocalContext.current
@@ -49,7 +49,7 @@ fun HistoryEffects(
                     )
 
                     if (snackbarResult == SnackbarResult.ActionPerformed) {
-                        restoreHistoryEntry(
+                        onEvent(
                             HistoryEvent.OnRestoreHistoryEntry(
                                 history = effect.history
                             )

@@ -17,8 +17,7 @@ import ua.acclorite.book_story.ui.common.components.dialog.Dialog
 @Composable
 fun LibraryDeleteDialog(
     selectedItemsCount: Int,
-    actionDeleteDialog: (LibraryEvent.OnActionDeleteDialog) -> Unit,
-    dismissDialog: (LibraryEvent.OnDismissDialog) -> Unit
+    onEvent: (LibraryEvent) -> Unit
 ) {
     Dialog(
         title = stringResource(id = R.string.delete_books),
@@ -29,10 +28,10 @@ fun LibraryDeleteDialog(
         ),
         actionEnabled = true,
         onDismiss = {
-            dismissDialog(LibraryEvent.OnDismissDialog)
+            onEvent(LibraryEvent.OnDismissDialog)
         },
         onAction = {
-            actionDeleteDialog(LibraryEvent.OnActionDeleteDialog)
+            onEvent(LibraryEvent.OnActionDeleteDialog)
         },
         withContent = false
     )

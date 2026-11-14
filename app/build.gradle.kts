@@ -150,11 +150,9 @@ dependencies {
     implementation("androidx.compose.material3:material3:1.5.0-alpha06")
     implementation("androidx.compose.material3:material3-window-size-class:1.4.0")
     implementation("androidx.compose.material:material-icons-extended:1.7.8")
-    implementation("androidx.compose.material:material:1.9.3")
 
     // All dependencies
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.9.1")
-    implementation("com.google.accompanist:accompanist-swiperefresh:0.36.0")
 
     // Dagger - Hilt
     implementation("com.google.dagger:hilt-android:2.57.2")

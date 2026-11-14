@@ -14,12 +14,12 @@ import ua.acclorite.book_story.presentation.browse.BrowseScreen
 @Composable
 fun BrowseBottomSheet(
     bottomSheet: BottomSheet?,
-    dismissBottomSheet: (BrowseEvent.OnDismissBottomSheet) -> Unit
+    onEvent: (BrowseEvent) -> Unit
 ) {
     when (bottomSheet) {
         BrowseScreen.FILTER_BOTTOM_SHEET -> {
             BrowseFilterBottomSheet(
-                dismissBottomSheet = dismissBottomSheet
+                onEvent = onEvent
             )
         }
     }

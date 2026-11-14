@@ -69,6 +69,10 @@
     <string name="error_could_not_reset_cover">Could not reset cover image.</string>
     <string name="error_closed_source">Closed source</string>
     <string name="error_no_file">File does not exist or inaccessible</string>
+    <string name="error_library_unreadable">Could not read the library</string>
+    <string name="error_history_unreadable">Could not read the history</string>
+    <string name="error_files_unreadable">Could not list the files</string>
+    <string name="try_again">Try again</string>
     <string name="error_field_empty">This field should not be empty.</string>
 
     <!-- Is Empty messages -->
