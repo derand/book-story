@@ -12,7 +12,6 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -21,10 +20,9 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.withContext
+import ua.acclorite.book_story.core.helpers.ListSearch
 import ua.acclorite.book_story.core.helpers.launchWhileSubscribed
 import ua.acclorite.book_story.domain.model.history.History
 import ua.acclorite.book_story.domain.use_case.book.GetBookUseCase
@@ -35,7 +33,6 @@ import ua.acclorite.book_story.domain.use_case.history.ObserveHistoryUseCase
 import ua.acclorite.book_story.domain.use_case.statistics.ObserveLibraryStatisticsUseCase
 import java.util.Date
 import javax.inject.Inject
-import kotlin.coroutines.coroutineContext
 
 @HiltViewModel
 class HistoryModel @Inject constructor(
@@ -47,16 +44,13 @@ class HistoryModel @Inject constructor(
     private val getBookUseCase: GetBookUseCase
 ) : ViewModel() {
 
-    private val mutex = Mutex()
-
     private val _state = MutableStateFlow(HistoryState())
     val state = _state.asStateFlow()
 
     private val _effects = MutableSharedFlow<HistoryEffect>()
     val effects = _effects.asSharedFlow()
 
-    /** What the list is narrowed to: the query once typing pauses, while search is shown. */
-    private val searchFilter = MutableStateFlow("")
+    private val search = ListSearch(viewModelScope)
 
     /** Bumped by pull-to-refresh, which reads the list again from scratch. */
     private val reload = MutableStateFlow(0)
@@ -69,7 +63,7 @@ class HistoryModel @Inject constructor(
         viewModelScope.launchWhileSubscribed(_state) {
             reload.collectLatest {
                 combine(
-                    observeHistoryUseCase(searchFilter),
+                    observeHistoryUseCase(search.filter),
                     observeLibraryStatisticsUseCase()
                 ) { history, statistics -> history to statistics }
                     .flowOn(Dispatchers.Default)
@@ -101,147 +95,109 @@ class HistoryModel @Inject constructor(
         }
     }
 
-    private var refreshJob: Job? = null
-    private var searchQueryChange: Job? = null
-
-    fun onEvent(event: HistoryEvent) {
-        viewModelScope.launch {
-            when (event) {
-                is HistoryEvent.OnRefreshList -> {
-                    refreshJob?.cancel()
-                    refreshJob = viewModelScope.launch {
-                        _state.update {
-                            it.copy(
-                                isRefreshing = true,
-                                isLoading = event.loading,
-                                showSearch = if (event.hideSearch) false else it.showSearch
-                            )
-                        }
-                        if (event.hideSearch) searchFilter.value = ""
-                        reload.value++
-
-                        delay(500) // Delay for UI smoothness
-                        _state.update {
-                            it.copy(
-                                isRefreshing = false
-                            )
-                        }
-                    }
-                }
-
-                is HistoryEvent.OnSearchVisibility -> {
-                    if (!event.show) searchFilter.value = ""
-
-                    _state.update {
-                        it.copy(
-                            showSearch = event.show,
-                            searchQuery = if (event.show) "" else it.searchQuery,
-                            hasFocused = if (event.show) false else it.hasFocused
-                        )
-                    }
-                }
-
-                is HistoryEvent.OnRequestFocus -> {
-                    if (!_state.value.hasFocused) {
-                        _effects.emit(HistoryEffect.OnRequestFocus)
-                        _state.update {
-                            it.copy(
-                                hasFocused = true
-                            )
-                        }
-                    }
-                }
-
-                is HistoryEvent.OnSearchQueryChange -> {
-                    _state.update {
-                        it.copy(
-                            searchQuery = event.query
-                        )
-                    }
-
-                    searchQueryChange?.cancel()
-                    searchQueryChange = viewModelScope.launch(Dispatchers.IO) {
-                        delay(500)
-                        onEvent(HistoryEvent.OnSearch)
-                    }
-                }
-
-                is HistoryEvent.OnSearch -> {
-                    searchFilter.value =
-                        if (_state.value.showSearch) _state.value.searchQuery else ""
-                }
-
-                is HistoryEvent.OnDeleteHistoryEntry -> {
-                    withContext(Dispatchers.Default) {
-                        deleteHistoryUseCase(event.history)
-                        _effects.emit(HistoryEffect.OnShowSnackbar(event.history))
-                    }
-                }
-
-                is HistoryEvent.OnRestoreHistoryEntry -> {
-                    withContext(Dispatchers.Default) {
-                        addHistoryUseCase(event.history)
-                    }
-                }
-
-                is HistoryEvent.OnShowDeleteWholeHistoryDialog -> {
-                    _state.update {
-                        it.copy(
-                            dialog = HistoryScreen.DELETE_WHOLE_HISTORY_DIALOG
-                        )
-                    }
-                }
-
-                is HistoryEvent.OnActionDeleteWholeHistoryDialog -> {
-                    withContext(Dispatchers.Default) {
-                        // No loading state: an empty history deletes no rows,
-                        // and with no change the list would never come back
-                        // to clear it.
-                        _state.update {
-                            it.copy(
-                                dialog = null,
-                                showSearch = false
-                            )
-                        }
-                        searchFilter.value = ""
-
-                        deleteWholeHistoryUseCase()
-
-                        _effects.emit(HistoryEffect.OnWholeHistoryDeleted)
-                    }
-                }
-
-                is HistoryEvent.OnDismissDialog -> {
-                    _state.update {
-                        it.copy(
-                            dialog = null
-                        )
-                    }
-                }
-
-                is HistoryEvent.OnNavigateToLibrary -> {
-                    _effects.emit(HistoryEffect.OnNavigateToLibrary)
-                }
-
-                is HistoryEvent.OnNavigateToStatistics -> {
-                    _effects.emit(HistoryEffect.OnNavigateToStatistics)
-                }
-
-                is HistoryEvent.OnNavigateToBookInfo -> {
-                    _effects.emit(HistoryEffect.OnNavigateToBookInfo(event.bookId))
-                }
-
-                is HistoryEvent.OnNavigateToReader -> {
-                    _effects.emit(HistoryEffect.OnNavigateToReader(event.bookId))
-                }
-            }
-        }
+    private fun send(effect: HistoryEffect) {
+        viewModelScope.launch { _effects.emit(effect) }
     }
 
-    private suspend inline fun <T> MutableStateFlow<T>.update(function: (T) -> T) {
-        mutex.withLock {
-            coroutineContext.ensureActive()
-            this.value = function(this.value)
+    private var refreshJob: Job? = null
+
+    /**
+     * Handled in the order sent: state changes at once, and only the work
+     * that waits (the database, an effect) is launched.
+     */
+    fun onEvent(event: HistoryEvent) {
+        when (event) {
+            is HistoryEvent.OnRefreshList -> {
+                _state.update {
+                    it.copy(
+                        isRefreshing = true,
+                        isLoading = event.loading,
+                        showSearch = if (event.hideSearch) false else it.showSearch
+                    )
+                }
+                if (event.hideSearch) search.clear()
+                reload.value++
+
+                refreshJob?.cancel()
+                refreshJob = viewModelScope.launch {
+                    delay(500) // Long enough for the indicator to be seen
+                    _state.update { it.copy(isRefreshing = false) }
+                }
+            }
+
+            is HistoryEvent.OnSearchVisibility -> {
+                if (!event.show) search.clear()
+                _state.update {
+                    it.copy(
+                        showSearch = event.show,
+                        searchQuery = if (event.show) "" else it.searchQuery,
+                        hasFocused = if (event.show) false else it.hasFocused
+                    )
+                }
+            }
+
+            is HistoryEvent.OnRequestFocus -> {
+                if (!_state.value.hasFocused) {
+                    _state.update { it.copy(hasFocused = true) }
+                    send(HistoryEffect.OnRequestFocus)
+                }
+            }
+
+            is HistoryEvent.OnSearchQueryChange -> {
+                _state.update { it.copy(searchQuery = event.query) }
+                search.type(event.query)
+            }
+
+            is HistoryEvent.OnSearch -> {
+                if (_state.value.showSearch) search.submit() else search.clear()
+            }
+
+            is HistoryEvent.OnDeleteHistoryEntry -> {
+                viewModelScope.launch {
+                    deleteHistoryUseCase(event.history)
+                    _effects.emit(HistoryEffect.OnShowSnackbar(event.history))
+                }
+            }
+
+            is HistoryEvent.OnRestoreHistoryEntry -> {
+                viewModelScope.launch { addHistoryUseCase(event.history) }
+            }
+
+            is HistoryEvent.OnShowDeleteWholeHistoryDialog -> {
+                _state.update { it.copy(dialog = HistoryScreen.DELETE_WHOLE_HISTORY_DIALOG) }
+            }
+
+            is HistoryEvent.OnActionDeleteWholeHistoryDialog -> {
+                // No loading state: an empty history deletes no rows, and with
+                // no change the list would never come back to clear it.
+                _state.update { it.copy(dialog = null, showSearch = false) }
+                search.clear()
+
+                viewModelScope.launch {
+                    deleteWholeHistoryUseCase()
+                    _effects.emit(HistoryEffect.OnWholeHistoryDeleted)
+                }
+            }
+
+            is HistoryEvent.OnDismissDialog -> {
+                _state.update { it.copy(dialog = null) }
+            }
+
+            is HistoryEvent.OnNavigateToLibrary -> {
+                send(HistoryEffect.OnNavigateToLibrary)
+            }
+
+            is HistoryEvent.OnNavigateToStatistics -> {
+                send(HistoryEffect.OnNavigateToStatistics)
+            }
+
+            is HistoryEvent.OnNavigateToBookInfo -> {
+                send(HistoryEffect.OnNavigateToBookInfo(event.bookId))
+            }
+
+            is HistoryEvent.OnNavigateToReader -> {
+                send(HistoryEffect.OnNavigateToReader(event.bookId))
+            }
         }
     }
 }
