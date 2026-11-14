@@ -48,9 +48,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -65,7 +67,6 @@ import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
 import ua.acclorite.book_story.R
 import ua.acclorite.book_story.domain.model.reader.ColorPreset
-import ua.acclorite.book_story.domain.model.reader.ColorPresetType
 import ua.acclorite.book_story.domain.model.reader.activeColorPreset
 import ua.acclorite.book_story.presentation.settings.SettingsEvent
 import ua.acclorite.book_story.presentation.settings.SettingsModel
@@ -74,21 +75,13 @@ import ua.acclorite.book_story.ui.common.components.common.IconButton
 import ua.acclorite.book_story.ui.common.components.common.StyledText
 import ua.acclorite.book_story.ui.common.components.settings.ColorPickerWithTitle
 import ua.acclorite.book_story.ui.common.helpers.LocalSettings
+import ua.acclorite.book_story.ui.common.helpers.title
 import ua.acclorite.book_story.ui.settings.components.SettingsSubcategoryTitle
 import ua.acclorite.book_story.ui.theme.FadeTransitionPreservingSpace
 import ua.acclorite.book_story.ui.theme.Transitions
 
-/** Localized display name for a built-in preset; user name otherwise. */
-@Composable
-private fun colorPresetTitle(colorPreset: ColorPreset): String {
-    return when (colorPreset.type) {
-        ColorPresetType.DARK -> stringResource(id = R.string.dark_theme_dark)
-        ColorPresetType.LIGHT -> stringResource(id = R.string.dark_theme_light)
-        ColorPresetType.CUSTOM -> colorPreset.name.trim().ifBlank {
-            stringResource(id = R.string.color_preset_query, colorPreset.id.toString())
-        }
-    }
-}
+/** Material's alpha for disabled content. */
+private const val DISABLED_ALPHA = 0.38f
 
 @Composable
 fun ColorPresetOption(backgroundColor: Color) {
@@ -97,9 +90,10 @@ fun ColorPresetOption(backgroundColor: Color) {
     val state = settingsModel.state.collectAsStateWithLifecycle()
 
     // The preset actually shown/edited: a built-in auto-follows the theme.
+    val isDark = settings.darkTheme.value.isDark()
     val activePreset = state.value.colorPresets.activeColorPreset(
         selected = state.value.selectedColorPreset,
-        isDark = settings.darkTheme.value.isDark()
+        isDark = isDark
     )
 
     val reorderableListState = rememberReorderableLazyListState(
@@ -154,6 +148,11 @@ fun ColorPresetOption(backgroundColor: Color) {
                                 colorPreset.id == activePreset.id
                             } else true
                         },
+                        // Selecting the other theme's built-in would apply this
+                        // theme's one, so a tap on it would change nothing.
+                        enabled = !colorPreset.isBuiltIn || state.value.colorPresets
+                            .activeColorPreset(selected = colorPreset, isDark = isDark)
+                            .id == colorPreset.id,
                         enableAnimation = state.value.animateColorPreset,
                         canDrag = remember(state.value.colorPresets.size) {
                             state.value.colorPresets.size > 1
@@ -260,12 +259,13 @@ fun ColorPresetOption(backgroundColor: Color) {
 private fun ReorderableCollectionItemScope.ColorPresetOptionRowItem(
     colorPreset: ColorPreset,
     isSelected: Boolean,
+    enabled: Boolean,
     canDrag: Boolean,
     enableAnimation: Boolean,
     onDragStopped: () -> Unit,
     onClick: () -> Unit
 ) {
-    val title = colorPresetTitle(colorPreset)
+    val title = colorPreset.title(LocalContext.current)
 
     val borderColor = remember(isSelected, colorPreset.fontColor) {
         if (!isSelected) colorPreset.fontColor.copy(0.3f)
@@ -287,6 +287,7 @@ private fun ReorderableCollectionItemScope.ColorPresetOptionRowItem(
 
     Row(
         Modifier
+            .alpha(if (enabled) 1f else DISABLED_ALPHA)
             .clip(CircleShape)
             .border(
                 width = 2.dp,
@@ -296,7 +297,7 @@ private fun ReorderableCollectionItemScope.ColorPresetOptionRowItem(
             )
             .padding(2.dp)
             .background(animatedBackgroundColor.value, CircleShape)
-            .clickable(enabled = !isSelected) {
+            .clickable(enabled = enabled && !isSelected) {
                 onClick()
             }
             .padding(horizontal = 16.dp, vertical = 10.dp),
@@ -367,7 +368,7 @@ private fun ColorPresetOptionConfigurationItem(
         if (colorPreset.isBuiltIn) {
             // Built-in presets have a fixed, non-editable name.
             StyledText(
-                text = colorPresetTitle(colorPreset),
+                text = colorPreset.title(LocalContext.current),
                 modifier = Modifier.weight(1f),
                 style = MaterialTheme.typography.titleLarge.copy(
                     color = MaterialTheme.colorScheme.onSurface
