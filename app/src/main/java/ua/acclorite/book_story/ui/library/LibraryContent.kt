@@ -16,6 +16,7 @@ import ua.acclorite.book_story.core.Dialog
 import ua.acclorite.book_story.domain.model.library.Category
 import ua.acclorite.book_story.presentation.library.LibraryEvent
 import ua.acclorite.book_story.presentation.library.model.LibraryLayout
+import ua.acclorite.book_story.presentation.library.model.LibraryPage
 import ua.acclorite.book_story.presentation.library.model.LibrarySortOrder
 import ua.acclorite.book_story.presentation.library.model.LibraryTitlePosition
 import ua.acclorite.book_story.presentation.library.model.SelectableBook
@@ -41,7 +42,7 @@ fun LibraryContent(
     isRefreshing: Boolean,
     doublePressExit: Boolean,
     categories: List<Category>,
-    showDefaultCategory: Boolean,
+    pages: List<LibraryPage>,
     perCategorySort: Boolean,
     sortOrder: LibrarySortOrder,
     sortOrderDescending: Boolean,
@@ -86,8 +87,7 @@ fun LibraryContent(
 
     LibraryBottomSheet(
         bottomSheet = bottomSheet,
-        categories = categories,
-        showDefaultCategory = showDefaultCategory,
+        pages = pages,
         pagerState = pagerState,
         sortOrder = sortOrder,
         sortOrderDescending = sortOrderDescending,
@@ -99,7 +99,6 @@ fun LibraryContent(
     )
 
     LibraryScaffold(
-        books = books,
         selectedItemsCount = selectedItemsCount,
         hasSelectedItems = hasSelectedItems,
         titlePosition = titlePosition,
@@ -117,11 +116,7 @@ fun LibraryContent(
         layout = layout,
         gridSize = gridSize,
         autoGridSize = autoGridSize,
-        categories = categories,
-        showDefaultCategory = showDefaultCategory,
-        perCategorySort = perCategorySort,
-        sortOrder = sortOrder,
-        sortOrderDescending = sortOrderDescending,
+        pages = pages,
         searchVisibility = searchVisibility,
         requestFocus = requestFocus,
         searchQueryChange = searchQueryChange,

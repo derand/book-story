@@ -27,7 +27,7 @@ import ua.acclorite.book_story.core.helpers.launchWhileSubscribed
 import ua.acclorite.book_story.domain.use_case.backup.DismissRestoreNoticeUseCase
 import ua.acclorite.book_story.domain.use_case.backup.GetRestoreNoticeUseCase
 import ua.acclorite.book_story.domain.use_case.book.DeleteBookUseCase
-import ua.acclorite.book_story.domain.model.library.Book
+import ua.acclorite.book_story.domain.use_case.book.LibraryBooks
 import ua.acclorite.book_story.domain.use_case.book.ObserveLibraryBooksUseCase
 import ua.acclorite.book_story.domain.use_case.book.UpdateBookUseCase
 import ua.acclorite.book_story.presentation.browse.BrowseScreen
@@ -79,12 +79,13 @@ class LibraryModel @Inject constructor(
     }
 
     /** A fresh read replaces the list; the books that were selected stay selected. */
-    private suspend fun showBooks(books: List<Book>) {
+    private suspend fun showBooks(books: LibraryBooks) {
         _state.update { state ->
             val selected = state.books.filter { it.selected }.mapTo(HashSet()) { it.data.id }
-            val list = books.map { book -> SelectableBook(book, book.id in selected) }
+            val list = books.matching.map { book -> SelectableBook(book, book.id in selected) }
             val selectedCount = list.count { it.selected }
             state.copy(
+                library = books.all,
                 books = list,
                 selectedItemsCount = selectedCount,
                 hasSelectedItems = selectedCount > 0,

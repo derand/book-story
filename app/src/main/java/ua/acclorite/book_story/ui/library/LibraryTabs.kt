@@ -29,13 +29,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
-import ua.acclorite.book_story.domain.model.library.Category
-import ua.acclorite.book_story.presentation.library.model.SelectableBook
+import ua.acclorite.book_story.presentation.library.model.LibraryPage
 import ua.acclorite.book_story.ui.common.components.common.StyledText
 
 @Composable
 fun LibraryTabs(
-    categoriesWithBooks: List<Pair<Category, List<SelectableBook>>>,
+    pages: List<LibraryPage>,
     pagerState: PagerState,
     itemCountBackgroundColor: Color,
     showBookCount: Boolean
@@ -71,7 +70,7 @@ fun LibraryTabs(
                 }
             }
         ) {
-            categoriesWithBooks.forEachIndexed { index, tabItem ->
+            pages.forEachIndexed { index, page ->
                 Tab(
                     selected = pagerState.currentPage == index,
                     onClick = {
@@ -84,7 +83,7 @@ fun LibraryTabs(
                     text = {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             StyledText(
-                                text = tabItem.first.title,
+                                text = page.title,
                                 style = MaterialTheme.typography.bodyLarge,
                                 maxLines = 1,
                             )
@@ -92,7 +91,7 @@ fun LibraryTabs(
                             if (showBookCount) {
                                 Spacer(modifier = Modifier.width(6.dp))
                                 StyledText(
-                                    text = tabItem.second.size.toString(),
+                                    text = page.books.size.toString(),
                                     modifier = Modifier
                                         .background(
                                             itemCountBackgroundColor,

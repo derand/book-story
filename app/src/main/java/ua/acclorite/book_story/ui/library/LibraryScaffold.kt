@@ -18,17 +18,14 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
-import ua.acclorite.book_story.domain.model.library.Category
 import ua.acclorite.book_story.presentation.library.LibraryEvent
 import ua.acclorite.book_story.presentation.library.model.LibraryLayout
-import ua.acclorite.book_story.presentation.library.model.LibrarySortOrder
+import ua.acclorite.book_story.presentation.library.model.LibraryPage
 import ua.acclorite.book_story.presentation.library.model.LibraryTitlePosition
-import ua.acclorite.book_story.presentation.library.model.SelectableBook
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun LibraryScaffold(
-    books: List<SelectableBook>,
     selectedItemsCount: Int,
     hasSelectedItems: Boolean,
     titlePosition: LibraryTitlePosition,
@@ -47,11 +44,7 @@ fun LibraryScaffold(
     layout: LibraryLayout,
     gridSize: Int,
     autoGridSize: Boolean,
-    categories: List<Category>,
-    showDefaultCategory: Boolean,
-    perCategorySort: Boolean,
-    sortOrder: LibrarySortOrder,
-    sortOrderDescending: Boolean,
+    pages: List<LibraryPage>,
     searchVisibility: (LibraryEvent.OnSearchVisibility) -> Unit,
     selectBook: (LibraryEvent.OnSelectBook) -> Unit,
     requestFocus: (LibraryEvent.OnRequestFocus) -> Unit,
@@ -73,7 +66,6 @@ fun LibraryScaffold(
         containerColor = MaterialTheme.colorScheme.surface,
         topBar = {
             LibraryTopBar(
-                books = books,
                 selectedItemsCount = selectedItemsCount,
                 hasSelectedItems = hasSelectedItems,
                 showBookCount = showBookCount,
@@ -85,8 +77,7 @@ fun LibraryScaffold(
                 pagerState = pagerState,
                 isLoading = isLoading,
                 isRefreshing = isRefreshing,
-                categories = categories,
-                showDefaultCategory = showDefaultCategory,
+                pages = pages,
                 searchVisibility = searchVisibility,
                 requestFocus = requestFocus,
                 searchQueryChange = searchQueryChange,
@@ -105,13 +96,8 @@ fun LibraryScaffold(
                 .padding(top = paddingValues.calculateTopPadding())
         ) {
             LibraryPager(
-                books = books,
+                pages = pages,
                 pagerState = pagerState,
-                categories = categories,
-                showDefaultCategory = showDefaultCategory,
-                perCategorySort = perCategorySort,
-                sortOrder = sortOrder,
-                sortOrderDescending = sortOrderDescending,
                 layout = layout,
                 gridSize = gridSize,
                 autoGridSize = autoGridSize,

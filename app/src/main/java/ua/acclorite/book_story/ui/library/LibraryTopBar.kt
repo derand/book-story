@@ -30,8 +30,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -41,9 +39,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ua.acclorite.book_story.R
-import ua.acclorite.book_story.domain.model.library.Category
 import ua.acclorite.book_story.presentation.library.LibraryEvent
-import ua.acclorite.book_story.presentation.library.model.SelectableBook
+import ua.acclorite.book_story.presentation.library.model.LibraryPage
+import ua.acclorite.book_story.presentation.library.model.pageAt
 import ua.acclorite.book_story.ui.common.components.common.AnimatedVisibility
 import ua.acclorite.book_story.ui.common.components.common.IconButton
 import ua.acclorite.book_story.ui.common.components.common.SearchTextField
@@ -55,7 +53,6 @@ import ua.acclorite.book_story.ui.navigator.NavigatorIconButton
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LibraryTopBar(
-    books: List<SelectableBook>,
     selectedItemsCount: Int,
     hasSelectedItems: Boolean,
     showBookCount: Boolean,
@@ -67,8 +64,7 @@ fun LibraryTopBar(
     pagerState: PagerState,
     isLoading: Boolean,
     isRefreshing: Boolean,
-    categories: List<Category>,
-    showDefaultCategory: Boolean,
+    pages: List<LibraryPage>,
     searchVisibility: (LibraryEvent.OnSearchVisibility) -> Unit,
     requestFocus: (LibraryEvent.OnRequestFocus) -> Unit,
     searchQueryChange: (LibraryEvent.OnSearchQueryChange) -> Unit,
@@ -79,37 +75,7 @@ fun LibraryTopBar(
     showDeleteDialog: (LibraryEvent.OnShowDeleteDialog) -> Unit,
     showFilterBottomSheet: (LibraryEvent.OnShowFilterBottomSheet) -> Unit
 ) {
-    val defaultCategory = stringResource(id = R.string.default_tab)
-    val categoriesWithBooks = remember(
-        books,
-        categories,
-        showDefaultCategory,
-        defaultCategory
-    ) {
-        derivedStateOf {
-            categories.filterNot { it.id == -1 }.map { category ->
-                category to books.filter { it.data.categories.any { it == category.id } }
-            }.toMutableList().apply {
-                if (showDefaultCategory) {
-                    val categoryIds = categories.map { it.id }.toSet()
-                    add(
-                        0,
-                        Category(
-                            id = -1,
-                            title = defaultCategory
-                        ) to books.filter { book ->
-                            book.data.categories.none { category -> category in categoryIds }
-                        }
-                    )
-                }
-            }.toList()
-        }
-    }
-    val currentCategory = remember(pagerState.currentPage, categoriesWithBooks) {
-        derivedStateOf {
-            categoriesWithBooks.value[pagerState.currentPage]
-        }
-    }
+    val currentPage = pages.pageAt(pagerState.currentPage)
 
     val animatedItemCountBackgroundColor = animateColorAsState(
         if (hasSelectedItems) MaterialTheme.colorScheme.surfaceContainerHighest
@@ -134,14 +100,14 @@ fun LibraryTopBar(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         StyledText(
                             text = if (showCategoryTabs) stringResource(id = R.string.library_screen)
-                            else currentCategory.value.first.title
+                            else currentPage.title
                         )
 
                         if (showBookCount) {
                             Spacer(modifier = Modifier.width(6.dp))
                             StyledText(
                                 text = if (showCategoryTabs) bookCount.toString()
-                                else currentCategory.value.second.size.toString(),
+                                else currentPage.books.size.toString(),
                                 modifier = Modifier
                                     .background(
                                         MaterialTheme.colorScheme.surfaceContainer,
@@ -235,7 +201,7 @@ fun LibraryTopBar(
                     ) {
                         selectBooks(
                             LibraryEvent.OnSelectBooks(
-                                books = currentCategory.value.second
+                                books = currentPage.books
                             )
                         )
                     }
@@ -265,7 +231,7 @@ fun LibraryTopBar(
                 exit = shrinkVertically()
             ) {
                 LibraryTabs(
-                    categoriesWithBooks = categoriesWithBooks.value,
+                    pages = pages,
                     pagerState = pagerState,
                     itemCountBackgroundColor = animatedItemCountBackgroundColor.value,
                     showBookCount = showBookCount
