@@ -27,7 +27,7 @@ private var initialPage = 0
 
 @Composable
 fun BrowseFilterBottomSheet(
-    dismissBottomSheet: (BrowseEvent.OnDismissBottomSheet) -> Unit
+    onEvent: (BrowseEvent) -> Unit
 ) {
     val scope = rememberCoroutineScope()
     val pagerState = rememberPagerState(initialPage) { 3 }
@@ -40,7 +40,7 @@ fun BrowseFilterBottomSheet(
             .fillMaxHeight(0.5f),
         dragHandle = {},
         onDismissRequest = {
-            dismissBottomSheet(BrowseEvent.OnDismissBottomSheet)
+            onEvent(BrowseEvent.OnDismissBottomSheet)
         },
         sheetGesturesEnabled = false
     ) {

@@ -33,9 +33,9 @@ class ObserveHistoryUseCase @Inject constructor(
     /**
      * The history narrowed to [query] (blank: every entry) and grouped by day,
      * again after each change to the history, its books or the query. A failed
-     * read leaves an empty list.
+     * read is the last value, a failure: nothing follows until the next call.
      */
-    operator fun invoke(query: Flow<String>): Flow<List<GroupedHistory>> =
+    operator fun invoke(query: Flow<String>): Flow<Result<List<GroupedHistory>>> =
         combine(
             historyRepository.observeHistory(),
             query.map { bookSearchTokens(it) }
@@ -46,9 +46,10 @@ class ObserveHistoryUseCase @Inject constructor(
                 .groupBy { history -> getDayLabel(history.time) }
                 .map { (day, history) -> GroupedHistory(day, filterMaxElementsById(history)) }
                 .also { logI(TAG, "Got ${it.size} grouped history entries.") }
+                .let { Result.success(it) }
         }.catch {
             logE(TAG, "Could not get grouped history entries with error: ${it.messageForLog()}")
-            emit(emptyList())
+            emit(Result.failure(it))
         }
 
     private fun getDayLabel(timeMillis: Long): String {

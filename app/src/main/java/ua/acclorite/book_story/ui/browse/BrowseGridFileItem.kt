@@ -20,7 +20,6 @@ import androidx.compose.material.icons.automirrored.filled.InsertDriveFile
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -32,29 +31,10 @@ import ua.acclorite.book_story.presentation.browse.model.SelectableFile
 import ua.acclorite.book_story.ui.common.components.common.CircularCheckbox
 import ua.acclorite.book_story.ui.common.components.common.StyledText
 import ua.acclorite.book_story.ui.theme.DefaultTransition
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 @Composable
 fun BrowseGridFileItem(file: SelectableFile, hasSelectedItems: Boolean) {
-    val lastModified = rememberSaveable {
-        SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
-            .format(Date(file.lastModified))
-    }
-
-    val sizeBytes = rememberSaveable { file.size }
-    val fileSizeKB = rememberSaveable {
-        if (sizeBytes > 0) sizeBytes.toDouble() / 1024.0 else 0.0
-    }
-    val fileSizeMB = rememberSaveable {
-        if (sizeBytes > 0) fileSizeKB / 1024.0 else 0.0
-    }
-    val fileSize = rememberSaveable {
-        if (fileSizeMB >= 1.0) "%.0f MB".format(fileSizeMB)
-        else if (fileSizeMB > 0.0) "%.0f KB".format(fileSizeKB)
-        else "0 KB"
-    }
+    val meta = rememberFileMeta(file, withTime = false)
 
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Box(
@@ -104,7 +84,7 @@ fun BrowseGridFileItem(file: SelectableFile, hasSelectedItems: Boolean) {
         )
         Spacer(modifier = Modifier.height(2.dp))
         StyledText(
-            text = "$fileSize, $lastModified",
+            text = meta,
             style = MaterialTheme.typography.bodySmall.copy(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             ),

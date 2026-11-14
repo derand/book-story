@@ -9,8 +9,8 @@ package ua.acclorite.book_story.presentation.browse
 import android.os.Parcelable
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material.pullrefresh.rememberPullRefreshState
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
@@ -37,7 +37,7 @@ object BrowseScreen : Screen, Parcelable {
     @IgnoredOnParcel
     val refreshListChannel: Channel<Unit> = Channel(Channel.CONFLATED)
 
-    @OptIn(ExperimentalMaterialApi::class)
+    @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     override fun Content() {
         val screenModel = hiltViewModel<BrowseModel>()
@@ -49,17 +49,7 @@ object BrowseScreen : Screen, Parcelable {
         val gridState = rememberLazyGridState()
 
         val focusRequester = remember { FocusRequester() }
-        val refreshState = rememberPullRefreshState(
-            refreshing = state.value.isRefreshing,
-            onRefresh = {
-                screenModel.onEvent(
-                    BrowseEvent.OnRefreshList(
-                        loading = false,
-                        hideSearch = true
-                    )
-                )
-            }
-        )
+        val refreshState = rememberPullToRefreshState()
 
         LaunchedEffect(
             settings.browseIncludedFilterItems.value,
@@ -80,13 +70,8 @@ object BrowseScreen : Screen, Parcelable {
         )
 
         BrowseContent(
-            files = state.value.files,
-            selectedBooksAddDialog = state.value.selectedBooksAddDialog,
+            state = state.value,
             refreshState = refreshState,
-            loadingAddDialog = state.value.loadingAddDialog,
-            addingBooks = state.value.addingBooks,
-            dialog = state.value.dialog,
-            bottomSheet = state.value.bottomSheet,
             listState = listState,
             gridState = gridState,
             layout = settings.browseLayout.value,
@@ -96,33 +81,8 @@ object BrowseScreen : Screen, Parcelable {
             pinnedPaths = settings.browsePinnedPaths.value,
             canScrollBackList = listState.canScrollBackward,
             canScrollBackGrid = gridState.canScrollBackward,
-            hasSelectedItems = state.value.hasSelectedItems,
-            selectedItemsCount = state.value.selectedItemsCount,
-            isRefreshing = state.value.isRefreshing,
-            isLoading = state.value.isLoading,
-            dialogHidden = state.value.dialog == null,
-            filesEmpty = state.value.files.isEmpty(),
-            sourcesGranted = state.value.sourcesGranted,
-            sourcesAvailable = state.value.sourcesAvailable,
-            showSearch = state.value.showSearch,
-            searchQuery = state.value.searchQuery,
+            onEvent = screenModel::onEvent,
             focusRequester = focusRequester,
-            searchVisibility = screenModel::onEvent,
-            searchQueryChange = screenModel::onEvent,
-            search = screenModel::onEvent,
-            requestFocus = screenModel::onEvent,
-            clearSelectedFiles = screenModel::onEvent,
-            selectFiles = screenModel::onEvent,
-            showFilterBottomSheet = screenModel::onEvent,
-            dismissBottomSheet = screenModel::onEvent,
-            showAddDialog = screenModel::onEvent,
-            dismissAddDialog = screenModel::onEvent,
-            selectAddDialog = screenModel::onEvent,
-            actionAddDialog = screenModel::onEvent,
-            cancelAddingBooks = screenModel::onEvent,
-            updatePinnedPaths = screenModel::onEvent,
-            navigateToLibrary = screenModel::onEvent,
-            navigateToBrowseSettings = screenModel::onEvent
         )
     }
 }

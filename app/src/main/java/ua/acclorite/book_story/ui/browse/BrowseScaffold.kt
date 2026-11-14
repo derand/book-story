@@ -11,24 +11,25 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.grid.LazyGridState
-import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material.pullrefresh.PullRefreshState
-import androidx.compose.material.pullrefresh.pullRefresh
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.pulltorefresh.PullToRefreshState
+import androidx.compose.material3.pulltorefresh.pullToRefresh
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import ua.acclorite.book_story.presentation.browse.BrowseEvent
+import ua.acclorite.book_story.ui.common.components.common.ListRefreshIndicator
+import ua.acclorite.book_story.presentation.browse.BrowseState
 import ua.acclorite.book_story.presentation.browse.model.BrowseLayout
-import ua.acclorite.book_story.presentation.browse.model.SelectableFile
 import ua.acclorite.book_story.ui.theme.DefaultTransition
 
-@OptIn(ExperimentalMaterialApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BrowseScaffold(
-    files: List<SelectableFile>,
-    refreshState: PullRefreshState,
+    state: BrowseState,
+    refreshState: PullToRefreshState,
     listState: LazyListState,
     gridState: LazyGridState,
     layout: BrowseLayout,
@@ -38,53 +39,29 @@ fun BrowseScaffold(
     pinnedPaths: List<String>,
     canScrollBackList: Boolean,
     canScrollBackGrid: Boolean,
-    hasSelectedItems: Boolean,
-    selectedItemsCount: Int,
-    isRefreshing: Boolean,
-    isLoading: Boolean,
-    dialogHidden: Boolean,
-    filesEmpty: Boolean,
-    sourcesGranted: Int,
-    sourcesAvailable: Int,
-    showSearch: Boolean,
-    searchQuery: String,
     focusRequester: FocusRequester,
-    searchVisibility: (BrowseEvent.OnSearchVisibility) -> Unit,
-    searchQueryChange: (BrowseEvent.OnSearchQueryChange) -> Unit,
-    search: (BrowseEvent.OnSearch) -> Unit,
-    requestFocus: (BrowseEvent.OnRequestFocus) -> Unit,
-    clearSelectedFiles: (BrowseEvent.OnClearSelectedFiles) -> Unit,
-    selectFiles: (BrowseEvent.OnSelectFiles) -> Unit,
-    showFilterBottomSheet: (BrowseEvent.OnShowFilterBottomSheet) -> Unit,
-    showAddDialog: (BrowseEvent.OnShowAddDialog) -> Unit,
-    updatePinnedPaths: (BrowseEvent.OnUpdatePinnedPaths) -> Unit,
-    navigateToBrowseSettings: (BrowseEvent.OnNavigateToBrowseSettings) -> Unit
+    onEvent: (BrowseEvent) -> Unit
 ) {
     Scaffold(
         modifier = Modifier
             .fillMaxSize()
-            .pullRefresh(refreshState),
+            .pullToRefresh(
+                isRefreshing = state.isRefreshing,
+                state = refreshState,
+                onRefresh = {
+                    onEvent(BrowseEvent.OnRefreshList(loading = false, hideSearch = true))
+                }
+            ),
         containerColor = MaterialTheme.colorScheme.surface,
         topBar = {
             BrowseTopBar(
-                files = files,
+                state = state,
                 layout = layout,
                 includedFilterItems = includedFilterItems,
                 canScrollBackList = canScrollBackList,
                 canScrollBackGrid = canScrollBackGrid,
-                hasSelectedItems = hasSelectedItems,
-                selectedItemsCount = selectedItemsCount,
-                showSearch = showSearch,
-                searchQuery = searchQuery,
                 focusRequester = focusRequester,
-                searchVisibility = searchVisibility,
-                searchQueryChange = searchQueryChange,
-                search = search,
-                requestFocus = requestFocus,
-                clearSelectedFiles = clearSelectedFiles,
-                selectFiles = selectFiles,
-                showFilterBottomSheet = showFilterBottomSheet,
-                showAddDialog = showAddDialog
+                onEvent = onEvent
             )
         }
     ) { padding ->
@@ -93,9 +70,9 @@ fun BrowseScaffold(
                 .fillMaxSize()
                 .padding(top = padding.calculateTopPadding())
         ) {
-            DefaultTransition(visible = !isLoading) {
+            DefaultTransition(visible = !state.isLoading) {
                 BrowseLayout(
-                    files = files,
+                    files = state.files,
                     pinnedPaths = pinnedPaths,
                     layout = layout,
                     gridSize = gridSize,
@@ -107,7 +84,7 @@ fun BrowseScaffold(
                             header = header,
                             pinned = pinned,
                             pin = {
-                                updatePinnedPaths(
+                                onEvent(
                                     BrowseEvent.OnUpdatePinnedPaths(
                                         path = header
                                     )
@@ -119,16 +96,16 @@ fun BrowseScaffold(
                         BrowseItem(
                             file = file,
                             layout = layout,
-                            hasSelectedItems = hasSelectedItems,
+                            hasSelectedItems = state.hasSelectedItems,
                             onLongClick = {
-                                selectFiles(
+                                onEvent(
                                     BrowseEvent.OnSelectFiles(
                                         files = groupFiles
                                     )
                                 )
                             },
                             onClick = {
-                                selectFiles(
+                                onEvent(
                                     BrowseEvent.OnSelectFiles(
                                         files = listOf(file)
                                     )
@@ -140,19 +117,17 @@ fun BrowseScaffold(
             }
 
             BrowseEmptyPlaceholder(
-                filesEmpty = filesEmpty,
-                sourcesGranted = sourcesGranted,
-                sourcesAvailable = sourcesAvailable,
-                dialogHidden = dialogHidden,
-                isLoading = isLoading,
-                isRefreshing = isRefreshing,
-                navigateToBrowseSettings = navigateToBrowseSettings
+                filesEmpty = state.files.isEmpty(),
+                sourcesGranted = state.sourcesGranted,
+                sourcesAvailable = state.sourcesAvailable,
+                dialogHidden = state.dialog == null,
+                isLoading = state.isLoading,
+                isRefreshing = state.isRefreshing,
+                loadFailed = state.loadFailed,
+                onEvent = onEvent
             )
 
-            BrowseRefreshIndicator(
-                isRefreshing = isRefreshing,
-                refreshState = refreshState
-            )
+            ListRefreshIndicator(state = refreshState, isRefreshing = state.isRefreshing)
         }
     }
 }

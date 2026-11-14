@@ -32,8 +32,7 @@ import ua.acclorite.book_story.ui.common.components.dialog.Dialog
 @Composable
 fun LibraryRestoreDialog(
     notice: RestoreNotice,
-    dismiss: (LibraryEvent.OnDismissRestoreNotice) -> Unit,
-    addFolders: (LibraryEvent.OnRestoreNoticeAddFolders) -> Unit
+    onEvent: (LibraryEvent) -> Unit
 ) {
     if (notice.failed) {
         Dialog(
@@ -42,8 +41,8 @@ fun LibraryRestoreDialog(
             description = stringResource(id = R.string.restore_failed_dialog_desc),
             actionEnabled = true,
             showDismiss = false,
-            onDismiss = { dismiss(LibraryEvent.OnDismissRestoreNotice) },
-            onAction = { dismiss(LibraryEvent.OnDismissRestoreNotice) },
+            onDismiss = { onEvent(LibraryEvent.OnDismissRestoreNotice) },
+            onAction = { onEvent(LibraryEvent.OnDismissRestoreNotice) },
             withContent = false
         )
         return
@@ -61,8 +60,8 @@ fun LibraryRestoreDialog(
             description = summary,
             actionEnabled = true,
             showDismiss = false,
-            onDismiss = { dismiss(LibraryEvent.OnDismissRestoreNotice) },
-            onAction = { dismiss(LibraryEvent.OnDismissRestoreNotice) },
+            onDismiss = { onEvent(LibraryEvent.OnDismissRestoreNotice) },
+            onAction = { onEvent(LibraryEvent.OnDismissRestoreNotice) },
             withContent = false
         )
         return
@@ -83,8 +82,8 @@ fun LibraryRestoreDialog(
         description = summary + "\n\n" +
                 stringResource(id = R.string.restore_done_dialog_missing, folders),
         actionEnabled = true,
-        onDismiss = { dismiss(LibraryEvent.OnDismissRestoreNotice) },
-        onAction = { addFolders(LibraryEvent.OnRestoreNoticeAddFolders) },
+        onDismiss = { onEvent(LibraryEvent.OnDismissRestoreNotice) },
+        onAction = { onEvent(LibraryEvent.OnRestoreNoticeAddFolders) },
         action = stringResource(id = R.string.restore_done_dialog_add_folders),
         dismiss = stringResource(id = R.string.restore_done_dialog_later),
         withContent = false

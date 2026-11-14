@@ -4,14 +4,14 @@
  * SPDX-License-Identifier: GPL-3.0-only
  */
 
-@file:OptIn(ExperimentalMaterialApi::class)
+@file:OptIn(ExperimentalMaterial3Api::class)
 
 package ua.acclorite.book_story.presentation.history
 
 import android.os.Parcelable
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material.pullrefresh.rememberPullRefreshState
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -44,51 +44,23 @@ object HistoryScreen : Screen, Parcelable {
 
         val snackbarState = remember { SnackbarHostState() }
         val focusRequester = remember { FocusRequester() }
-        val refreshState = rememberPullRefreshState(
-            refreshing = state.value.isRefreshing,
-            onRefresh = {
-                screenModel.onEvent(
-                    HistoryEvent.OnRefreshList(
-                        loading = false,
-                        hideSearch = true
-                    )
-                )
-            }
-        )
+        val refreshState = rememberPullToRefreshState()
 
         HistoryEffects(
             effects = screenModel.effects,
             focusRequester = focusRequester,
             snackbarState = snackbarState,
-            restoreHistoryEntry = screenModel::onEvent
+            onEvent = screenModel::onEvent
         )
 
         HistoryContent(
             refreshState = refreshState,
             snackbarState = snackbarState,
             listState = listState,
-            history = state.value.history,
-            statistics = state.value.statistics,
-            dialog = state.value.dialog,
+            state = state.value,
             canScrollBackward = listState.canScrollBackward,
-            showSearch = state.value.showSearch,
-            isLoading = state.value.isLoading,
-            isRefreshing = state.value.isRefreshing,
-            historyIsEmpty = state.value.history.isEmpty(),
+            onEvent = screenModel::onEvent,
             focusRequester = focusRequester,
-            searchQuery = state.value.searchQuery,
-            searchVisibility = screenModel::onEvent,
-            requestFocus = screenModel::onEvent,
-            searchQueryChange = screenModel::onEvent,
-            search = screenModel::onEvent,
-            deleteHistoryEntry = screenModel::onEvent,
-            showDeleteWholeHistoryDialog = screenModel::onEvent,
-            actionDeleteWholeHistoryDialog = screenModel::onEvent,
-            dismissDialog = screenModel::onEvent,
-            navigateToLibrary = screenModel::onEvent,
-            navigateToBookInfo = screenModel::onEvent,
-            navigateToReader = screenModel::onEvent,
-            navigateToStatistics = screenModel::onEvent
         )
     }
 }

@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import ua.acclorite.book_story.R
 import ua.acclorite.book_story.domain.model.library.Category
 import ua.acclorite.book_story.presentation.library.LibraryEvent
+import ua.acclorite.book_story.presentation.library.model.DEFAULT_CATEGORY_ID
 import ua.acclorite.book_story.presentation.library.model.SelectableBook
 import ua.acclorite.book_story.ui.common.components.common.StyledText
 import ua.acclorite.book_story.ui.common.components.dialog.CheckboxDialogItem
@@ -28,23 +29,16 @@ import ua.acclorite.book_story.ui.common.components.dialog.Dialog
 fun LibraryMoveDialog(
     books: List<SelectableBook>,
     categories: List<Category>,
-    actionMoveDialog: (LibraryEvent.OnActionMoveDialog) -> Unit,
-    dismissDialog: (LibraryEvent.OnDismissDialog) -> Unit,
-    navigateToLibrarySettings: (LibraryEvent.OnNavigateToLibrarySettings) -> Unit
+    onEvent: (LibraryEvent) -> Unit
 ) {
-    val selectedBooks = remember {
-        derivedStateOf {
-            books.filter { it.selected }
-        }
-    }
+    val choices = categories.filterNot { it.id == DEFAULT_CATEGORY_ID }
+    // Ticked to begin with: the categories every selected book is in already.
     val selectedCategories = remember {
+        val selectedBooks = books.filter { it.selected }
         mutableStateListOf<Category>().apply {
-            clear()
-            categories.filterNot { it.id == -1 }.forEach { category ->
-                if (selectedBooks.value.all { it.data.categories.any { it == category.id } }) {
-                    add(category)
-                }
-            }
+            addAll(choices.filter { category ->
+                selectedBooks.all { category.id in it.data.categories }
+            })
         }
     }
 
@@ -53,10 +47,10 @@ fun LibraryMoveDialog(
         description = null,
         actionEnabled = true,
         onDismiss = {
-            dismissDialog(LibraryEvent.OnDismissDialog)
+            onEvent(LibraryEvent.OnDismissDialog)
         },
         onAction = {
-            actionMoveDialog(
+            onEvent(
                 LibraryEvent.OnActionMoveDialog(
                     selectedCategories = selectedCategories
                 )
@@ -64,12 +58,12 @@ fun LibraryMoveDialog(
         },
         secondaryAction = stringResource(id = R.string.edit),
         onSecondaryAction = {
-            navigateToLibrarySettings(LibraryEvent.OnNavigateToLibrarySettings)
-            dismissDialog(LibraryEvent.OnDismissDialog)
+            onEvent(LibraryEvent.OnNavigateToLibrarySettings)
+            onEvent(LibraryEvent.OnDismissDialog)
         },
         withContent = true,
         items = {
-            items(categories.filterNot { it.id == -1 }) { category ->
+            items(choices) { category ->
                 val selected = remember(
                     category,
                     selectedCategories
@@ -88,7 +82,7 @@ fun LibraryMoveDialog(
                 }
             }
 
-            if (categories.isEmpty()) {
+            if (choices.isEmpty()) {
                 item {
                     StyledText(
                         text = stringResource(id = R.string.categories_empty),

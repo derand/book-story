@@ -13,15 +13,14 @@ import ua.acclorite.book_story.presentation.history.HistoryEvent
 @Composable
 fun HistoryBackHandler(
     showSearch: Boolean,
-    searchVisibility: (HistoryEvent.OnSearchVisibility) -> Unit,
-    navigateToLibrary: (HistoryEvent.OnNavigateToLibrary) -> Unit
+    onEvent: (HistoryEvent) -> Unit
 ) {
     BackHandler {
         if (showSearch) {
-            searchVisibility(HistoryEvent.OnSearchVisibility(false))
+            onEvent(HistoryEvent.OnSearchVisibility(false))
             return@BackHandler
         }
 
-        navigateToLibrary(HistoryEvent.OnNavigateToLibrary)
+        onEvent(HistoryEvent.OnNavigateToLibrary)
     }
 }
