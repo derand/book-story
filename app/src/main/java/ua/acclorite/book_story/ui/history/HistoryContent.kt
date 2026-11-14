@@ -7,19 +7,19 @@
 package ua.acclorite.book_story.ui.history
 
 import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material.pullrefresh.PullRefreshState
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.pulltorefresh.PullToRefreshState
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.focus.FocusRequester
 import ua.acclorite.book_story.presentation.history.HistoryEvent
 import ua.acclorite.book_story.presentation.history.HistoryState
 
-@OptIn(ExperimentalMaterialApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HistoryContent(
     state: HistoryState,
-    refreshState: PullRefreshState,
+    refreshState: PullToRefreshState,
     snackbarState: SnackbarHostState,
     listState: LazyListState,
     canScrollBackward: Boolean,

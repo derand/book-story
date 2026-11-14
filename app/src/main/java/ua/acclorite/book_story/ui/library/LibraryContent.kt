@@ -7,8 +7,8 @@
 package ua.acclorite.book_story.ui.library
 
 import androidx.compose.foundation.pager.PagerState
-import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material.pullrefresh.PullRefreshState
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.pulltorefresh.PullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.focus.FocusRequester
 import ua.acclorite.book_story.domain.model.library.Category
@@ -20,7 +20,7 @@ import ua.acclorite.book_story.presentation.library.model.LibrarySortOrder
 import ua.acclorite.book_story.presentation.library.model.LibraryTitlePosition
 import ua.acclorite.book_story.presentation.settings.SettingsEvent
 
-@OptIn(ExperimentalMaterialApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LibraryContent(
     state: LibraryState,
@@ -40,7 +40,7 @@ fun LibraryContent(
     layout: LibraryLayout,
     gridSize: Int,
     autoGridSize: Boolean,
-    refreshState: PullRefreshState,
+    refreshState: PullToRefreshState,
     updateCategory: (SettingsEvent.OnUpdateCategory) -> Unit,
     changeSortOrder: (LibrarySortOrder) -> Unit,
     changeSortOrderDescending: (Boolean) -> Unit,

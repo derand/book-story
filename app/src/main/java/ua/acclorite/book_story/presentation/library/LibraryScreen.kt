@@ -8,8 +8,8 @@ package ua.acclorite.book_story.presentation.library
 
 import android.os.Parcelable
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material.pullrefresh.rememberPullRefreshState
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
@@ -46,7 +46,7 @@ object LibraryScreen : Screen, Parcelable {
     @IgnoredOnParcel
     val scrollToPageCompositionChannel: Channel<Int> = Channel(Channel.CONFLATED)
 
-    @OptIn(ExperimentalMaterialApi::class)
+    @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     override fun Content() {
         val screenModel = hiltViewModel<LibraryModel>()
@@ -81,17 +81,7 @@ object LibraryScreen : Screen, Parcelable {
         }
 
         val focusRequester = remember { FocusRequester() }
-        val refreshState = rememberPullRefreshState(
-            refreshing = state.value.isRefreshing,
-            onRefresh = {
-                screenModel.onEvent(
-                    LibraryEvent.OnRefreshList(
-                        loading = false,
-                        hideSearch = true
-                    )
-                )
-            }
-        )
+        val refreshState = rememberPullToRefreshState()
 
         val pagerState = rememberPagerState { pages.size }
 

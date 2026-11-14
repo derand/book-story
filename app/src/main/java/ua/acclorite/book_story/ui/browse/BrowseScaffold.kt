@@ -11,24 +11,25 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.grid.LazyGridState
-import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material.pullrefresh.PullRefreshState
-import androidx.compose.material.pullrefresh.pullRefresh
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.pulltorefresh.PullToRefreshState
+import androidx.compose.material3.pulltorefresh.pullToRefresh
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import ua.acclorite.book_story.presentation.browse.BrowseEvent
+import ua.acclorite.book_story.ui.common.components.common.ListRefreshIndicator
 import ua.acclorite.book_story.presentation.browse.BrowseState
 import ua.acclorite.book_story.presentation.browse.model.BrowseLayout
 import ua.acclorite.book_story.ui.theme.DefaultTransition
 
-@OptIn(ExperimentalMaterialApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BrowseScaffold(
     state: BrowseState,
-    refreshState: PullRefreshState,
+    refreshState: PullToRefreshState,
     listState: LazyListState,
     gridState: LazyGridState,
     layout: BrowseLayout,
@@ -44,7 +45,13 @@ fun BrowseScaffold(
     Scaffold(
         modifier = Modifier
             .fillMaxSize()
-            .pullRefresh(refreshState),
+            .pullToRefresh(
+                isRefreshing = state.isRefreshing,
+                state = refreshState,
+                onRefresh = {
+                    onEvent(BrowseEvent.OnRefreshList(loading = false, hideSearch = true))
+                }
+            ),
         containerColor = MaterialTheme.colorScheme.surface,
         topBar = {
             BrowseTopBar(
@@ -120,10 +127,7 @@ fun BrowseScaffold(
                 onEvent = onEvent
             )
 
-            BrowseRefreshIndicator(
-                isRefreshing = state.isRefreshing,
-                refreshState = refreshState
-            )
+            ListRefreshIndicator(state = refreshState, isRefreshing = state.isRefreshing)
         }
     }
 }

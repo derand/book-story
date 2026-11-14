@@ -8,19 +8,19 @@ package ua.acclorite.book_story.ui.browse
 
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.grid.LazyGridState
-import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material.pullrefresh.PullRefreshState
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.pulltorefresh.PullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.focus.FocusRequester
 import ua.acclorite.book_story.presentation.browse.BrowseEvent
 import ua.acclorite.book_story.presentation.browse.BrowseState
 import ua.acclorite.book_story.presentation.browse.model.BrowseLayout
 
-@OptIn(ExperimentalMaterialApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BrowseContent(
     state: BrowseState,
-    refreshState: PullRefreshState,
+    refreshState: PullToRefreshState,
     listState: LazyListState,
     gridState: LazyGridState,
     layout: BrowseLayout,

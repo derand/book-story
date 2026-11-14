@@ -9,8 +9,8 @@ package ua.acclorite.book_story.presentation.browse
 import android.os.Parcelable
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material.pullrefresh.rememberPullRefreshState
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
@@ -37,7 +37,7 @@ object BrowseScreen : Screen, Parcelable {
     @IgnoredOnParcel
     val refreshListChannel: Channel<Unit> = Channel(Channel.CONFLATED)
 
-    @OptIn(ExperimentalMaterialApi::class)
+    @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     override fun Content() {
         val screenModel = hiltViewModel<BrowseModel>()
@@ -49,17 +49,7 @@ object BrowseScreen : Screen, Parcelable {
         val gridState = rememberLazyGridState()
 
         val focusRequester = remember { FocusRequester() }
-        val refreshState = rememberPullRefreshState(
-            refreshing = state.value.isRefreshing,
-            onRefresh = {
-                screenModel.onEvent(
-                    BrowseEvent.OnRefreshList(
-                        loading = false,
-                        hideSearch = true
-                    )
-                )
-            }
-        )
+        val refreshState = rememberPullToRefreshState()
 
         LaunchedEffect(
             settings.browseIncludedFilterItems.value,
