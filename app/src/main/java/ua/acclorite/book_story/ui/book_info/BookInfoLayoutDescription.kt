@@ -41,13 +41,14 @@ import androidx.compose.ui.unit.dp
 import ua.acclorite.book_story.R
 import ua.acclorite.book_story.domain.model.library.Book
 import ua.acclorite.book_story.presentation.book_info.BookInfoEvent
+import ua.acclorite.book_story.presentation.book_info.BookInfoState
 import ua.acclorite.book_story.ui.common.components.common.StyledText
 import ua.acclorite.book_story.ui.common.helpers.noRippleClickable
 
 @Composable
 fun BookInfoLayoutDescription(
     book: Book,
-    showDescriptionDialog: (BookInfoEvent.OnShowDescriptionDialog) -> Unit
+    onEvent: (BookInfoEvent) -> Unit
 ) {
     val expand = remember { mutableStateOf(false) }
     val expandable = remember(book.description) { (book.description?.length ?: 0) > 50 }
@@ -76,7 +77,7 @@ fun BookInfoLayoutDescription(
                     if (expandable) expand.value = !expand.value
                 },
                 onLongClick = {
-                    showDescriptionDialog(BookInfoEvent.OnShowDescriptionDialog)
+                    onEvent(BookInfoEvent.OnShowDialog(BookInfoState.Dialog.Description))
                 }
             )
             .padding(horizontal = 18.dp),

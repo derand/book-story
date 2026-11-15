@@ -35,7 +35,7 @@ import kotlin.math.roundToInt
 @Composable
 fun BookInfoLayoutStatistics(
     statistics: BookStatistics,
-    setFinished: (BookInfoEvent.OnSetFinished) -> Unit
+    onEvent: (BookInfoEvent) -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -127,7 +127,7 @@ fun BookInfoLayoutStatistics(
             )
             Switch(
                 checked = statistics.finished,
-                onCheckedChange = { setFinished(BookInfoEvent.OnSetFinished(it)) }
+                onCheckedChange = { onEvent(BookInfoEvent.OnSetFinished(it)) }
             )
         }
     }

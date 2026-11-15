@@ -7,8 +7,6 @@
 package ua.acclorite.book_story.presentation.book_info
 
 import androidx.compose.runtime.Immutable
-import ua.acclorite.book_story.core.BottomSheet
-import ua.acclorite.book_story.core.Dialog
 import ua.acclorite.book_story.domain.model.file.File
 import ua.acclorite.book_story.domain.model.library.Book
 import ua.acclorite.book_story.domain.model.statistics.BookStatistics
@@ -29,5 +27,19 @@ data class BookInfoState(
     val statistics: BookStatistics? = null,
 
     val dialog: Dialog? = null,
-    val bottomSheet: BottomSheet? = null
-)
+    val bottomSheet: Sheet? = null
+) {
+    sealed interface Dialog {
+        data object Title : Dialog
+        data object Author : Dialog
+        data object Description : Dialog
+        data object Path : Dialog
+        data object Delete : Dialog
+        data object Move : Dialog
+    }
+
+    sealed interface Sheet {
+        data object Details : Sheet
+        data object ChangeCover : Sheet
+    }
+}

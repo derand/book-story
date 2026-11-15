@@ -23,7 +23,7 @@ import ua.acclorite.book_story.ui.common.components.common.StyledText
 @Composable
 fun BookInfoLayoutButton(
     book: Book,
-    navigateToReader: (BookInfoEvent.OnNavigateToReader) -> Unit
+    onEvent: (BookInfoEvent) -> Unit
 ) {
     Button(
         modifier = Modifier
@@ -31,7 +31,7 @@ fun BookInfoLayoutButton(
             .padding(horizontal = 18.dp),
         shape = CircleShape,
         onClick = {
-            navigateToReader(BookInfoEvent.OnNavigateToReader)
+            onEvent(BookInfoEvent.OnNavigateToReader)
         }
     ) {
         StyledText(

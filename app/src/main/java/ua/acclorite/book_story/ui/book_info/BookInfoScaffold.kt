@@ -28,18 +28,7 @@ fun BookInfoScaffold(
     changingLocalCopy: Boolean,
     statistics: BookStatistics?,
     listState: LazyListState,
-    showChangeCoverBottomSheet: (BookInfoEvent.OnShowChangeCoverBottomSheet) -> Unit,
-    showDetailsBottomSheet: (BookInfoEvent.OnShowDetailsBottomSheet) -> Unit,
-    showTitleDialog: (BookInfoEvent.OnShowTitleDialog) -> Unit,
-    showAuthorDialog: (BookInfoEvent.OnShowAuthorDialog) -> Unit,
-    showDescriptionDialog: (BookInfoEvent.OnShowDescriptionDialog) -> Unit,
-    showMoveDialog: (BookInfoEvent.OnShowMoveDialog) -> Unit,
-    showDeleteDialog: (BookInfoEvent.OnShowDeleteDialog) -> Unit,
-    toggleLocalCopy: (BookInfoEvent.OnToggleLocalCopy) -> Unit,
-    refreshLocalCopy: (BookInfoEvent.OnRefreshLocalCopy) -> Unit,
-    setFinished: (BookInfoEvent.OnSetFinished) -> Unit,
-    navigateToReader: (BookInfoEvent.OnNavigateToReader) -> Unit,
-    navigateBack: (BookInfoEvent.OnNavigateBack) -> Unit
+    onEvent: (BookInfoEvent) -> Unit
 ) {
     Scaffold(
         Modifier
@@ -51,8 +40,7 @@ fun BookInfoScaffold(
             BookInfoTopBar(
                 book = book,
                 listState = listState,
-                showDetailsBottomSheet = showDetailsBottomSheet,
-                navigateBack = navigateBack
+                onEvent = onEvent
             )
         }
     ) { paddingValues ->
@@ -63,16 +51,7 @@ fun BookInfoScaffold(
             statistics = statistics,
             listState = listState,
             paddingValues = paddingValues,
-            showTitleDialog = showTitleDialog,
-            showAuthorDialog = showAuthorDialog,
-            showDescriptionDialog = showDescriptionDialog,
-            showChangeCoverBottomSheet = showChangeCoverBottomSheet,
-            showMoveDialog = showMoveDialog,
-            showDeleteDialog = showDeleteDialog,
-            toggleLocalCopy = toggleLocalCopy,
-            refreshLocalCopy = refreshLocalCopy,
-            setFinished = setFinished,
-            navigateToReader = navigateToReader
+            onEvent = onEvent
         )
     }
 }

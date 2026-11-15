@@ -16,17 +16,16 @@ import ua.acclorite.book_story.ui.common.components.dialog.DialogWithTextField
 @Composable
 fun BookInfoAuthorDialog(
     book: Book,
-    actionAuthorDialog: (BookInfoEvent.OnActionAuthorDialog) -> Unit,
-    dismissDialog: (BookInfoEvent.OnDismissDialog) -> Unit
+    onEvent: (BookInfoEvent) -> Unit
 ) {
     DialogWithTextField(
         initialValue = book.author.getAsString() ?: "",
         lengthLimit = 100,
         onDismiss = {
-            dismissDialog(BookInfoEvent.OnDismissDialog)
+            onEvent(BookInfoEvent.OnDismissDialog)
         },
         onAction = {
-            actionAuthorDialog(
+            onEvent(
                 BookInfoEvent.OnActionAuthorDialog(
                     author = if (it.isBlank()) UIText.StringResource(R.string.unknown_author)
                     else UIText.StringValue(it.trim().replace("\n", ""))

@@ -12,9 +12,9 @@ import ua.acclorite.book_story.presentation.book_info.BookInfoEvent
 
 @Composable
 fun BookInfoBackHandler(
-    navigateBack: (BookInfoEvent.OnNavigateBack) -> Unit
+    onEvent: (BookInfoEvent) -> Unit
 ) {
     BackHandler {
-        navigateBack(BookInfoEvent.OnNavigateBack)
+        onEvent(BookInfoEvent.OnNavigateBack)
     }
 }

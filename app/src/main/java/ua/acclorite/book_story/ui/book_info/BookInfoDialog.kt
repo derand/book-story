@@ -7,73 +7,60 @@
 package ua.acclorite.book_story.ui.book_info
 
 import androidx.compose.runtime.Composable
-import ua.acclorite.book_story.core.Dialog
 import ua.acclorite.book_story.domain.model.library.Book
 import ua.acclorite.book_story.domain.model.library.Category
 import ua.acclorite.book_story.presentation.book_info.BookInfoEvent
-import ua.acclorite.book_story.presentation.book_info.BookInfoScreen
+import ua.acclorite.book_story.presentation.book_info.BookInfoState
 
 @Composable
 fun BookInfoDialog(
-    dialog: Dialog?,
+    dialog: BookInfoState.Dialog?,
     book: Book,
     categories: List<Category>,
-    actionTitleDialog: (BookInfoEvent.OnActionTitleDialog) -> Unit,
-    actionAuthorDialog: (BookInfoEvent.OnActionAuthorDialog) -> Unit,
-    actionDescriptionDialog: (BookInfoEvent.OnActionDescriptionDialog) -> Unit,
-    actionPathDialog: (BookInfoEvent.OnActionPathDialog) -> Unit,
-    actionDeleteDialog: (BookInfoEvent.OnActionDeleteDialog) -> Unit,
-    actionMoveDialog: (BookInfoEvent.OnActionMoveDialog) -> Unit,
-    dismissDialog: (BookInfoEvent.OnDismissDialog) -> Unit,
-    navigateToLibrarySettings: (BookInfoEvent.OnNavigateToLibrarySettings) -> Unit
+    onEvent: (BookInfoEvent) -> Unit
 ) {
     when (dialog) {
-        BookInfoScreen.DELETE_DIALOG -> {
+        null -> Unit
+
+        BookInfoState.Dialog.Delete -> {
             BookInfoDeleteDialog(
-                actionDeleteDialog = actionDeleteDialog,
-                dismissDialog = dismissDialog
+                onEvent = onEvent
             )
         }
 
-        BookInfoScreen.MOVE_DIALOG -> {
+        BookInfoState.Dialog.Move -> {
             BookInfoMoveDialog(
                 book = book,
                 categories = categories,
-                actionMoveDialog = actionMoveDialog,
-                dismissDialog = dismissDialog,
-                navigateToLibrarySettings = navigateToLibrarySettings
+                onEvent = onEvent
             )
         }
 
-        BookInfoScreen.TITLE_DIALOG -> {
+        BookInfoState.Dialog.Title -> {
             BookInfoTitleDialog(
                 book = book,
-                actionTitleDialog = actionTitleDialog,
-                dismissDialog = dismissDialog
+                onEvent = onEvent
             )
         }
 
-        BookInfoScreen.AUTHOR_DIALOG -> {
+        BookInfoState.Dialog.Author -> {
             BookInfoAuthorDialog(
                 book = book,
-                actionAuthorDialog = actionAuthorDialog,
-                dismissDialog = dismissDialog
+                onEvent = onEvent
             )
         }
 
-        BookInfoScreen.DESCRIPTION_DIALOG -> {
+        BookInfoState.Dialog.Description -> {
             BookInfoDescriptionDialog(
                 book = book,
-                actionDescriptionDialog = actionDescriptionDialog,
-                dismissDialog = dismissDialog
+                onEvent = onEvent
             )
         }
 
-        BookInfoScreen.PATH_DIALOG -> {
+        BookInfoState.Dialog.Path -> {
             BookInfoPathDialog(
                 book = book,
-                actionPathDialog = actionPathDialog,
-                dismissDialog = dismissDialog
+                onEvent = onEvent
             )
         }
     }

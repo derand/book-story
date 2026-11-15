@@ -21,6 +21,7 @@ import ua.acclorite.book_story.core.data.ExtensionsData
 import ua.acclorite.book_story.domain.model.file.File
 import ua.acclorite.book_story.domain.model.library.Book
 import ua.acclorite.book_story.presentation.book_info.BookInfoEvent
+import ua.acclorite.book_story.presentation.book_info.BookInfoState
 import ua.acclorite.book_story.ui.common.components.common.LazyColumnWithScrollbar
 import ua.acclorite.book_story.ui.common.components.modal_bottom_sheet.ModalBottomSheet
 import ua.acclorite.book_story.ui.settings.components.SettingsSubcategoryTitle
@@ -33,8 +34,7 @@ fun BookInfoDetailsBottomSheet(
     book: Book,
     file: File?,
     loadingFile: Boolean,
-    showPathDialog: (BookInfoEvent.OnShowPathDialog) -> Unit,
-    dismissBottomSheet: (BookInfoEvent.OnDismissBottomSheet) -> Unit
+    onEvent: (BookInfoEvent) -> Unit
 ) {
     val pattern = remember { SimpleDateFormat("HH:mm dd MMM yyyy", Locale.getDefault()) }
     val lastOpened = remember(book.lastOpened) { pattern.format(Date(book.lastOpened ?: 0)) }
@@ -79,7 +79,7 @@ fun BookInfoDetailsBottomSheet(
     ModalBottomSheet(
         modifier = Modifier.fillMaxWidth(),
         onDismissRequest = {
-            dismissBottomSheet(BookInfoEvent.OnDismissBottomSheet)
+            onEvent(BookInfoEvent.OnDismissBottomSheet)
         },
         sheetGesturesEnabled = true
     ) {
@@ -102,7 +102,7 @@ fun BookInfoDetailsBottomSheet(
                     text = book.filePath,
                     editable = true,
                     onEdit = {
-                        showPathDialog(BookInfoEvent.OnShowPathDialog)
+                        onEvent(BookInfoEvent.OnShowDialog(BookInfoState.Dialog.Path))
                     },
                     showError = !fileExists,
                     errorMessage = stringResource(id = R.string.error_no_file),

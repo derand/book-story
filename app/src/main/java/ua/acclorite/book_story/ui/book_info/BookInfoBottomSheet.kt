@@ -7,46 +7,37 @@
 package ua.acclorite.book_story.ui.book_info
 
 import androidx.compose.runtime.Composable
-import ua.acclorite.book_story.core.BottomSheet
 import ua.acclorite.book_story.domain.model.file.File
 import ua.acclorite.book_story.domain.model.library.Book
 import ua.acclorite.book_story.presentation.book_info.BookInfoEvent
-import ua.acclorite.book_story.presentation.book_info.BookInfoScreen
+import ua.acclorite.book_story.presentation.book_info.BookInfoState
 
 @Composable
 fun BookInfoBottomSheet(
-    bottomSheet: BottomSheet?,
+    bottomSheet: BookInfoState.Sheet?,
     book: Book,
     file: File?,
     loadingFile: Boolean,
     canResetCover: Boolean,
-    showPathDialog: (BookInfoEvent.OnShowPathDialog) -> Unit,
-    changeCover: (BookInfoEvent.OnChangeCover) -> Unit,
-    resetCover: (BookInfoEvent.OnResetCover) -> Unit,
-    deleteCover: (BookInfoEvent.OnDeleteCover) -> Unit,
-    checkCoverReset: (BookInfoEvent.OnCheckCoverReset) -> Unit,
-    dismissBottomSheet: (BookInfoEvent.OnDismissBottomSheet) -> Unit
+    onEvent: (BookInfoEvent) -> Unit
 ) {
     when (bottomSheet) {
-        BookInfoScreen.CHANGE_COVER_BOTTOM_SHEET -> {
+        null -> Unit
+
+        BookInfoState.Sheet.ChangeCover -> {
             BookInfoChangeCoverBottomSheet(
                 book = book,
                 canResetCover = canResetCover,
-                changeCover = changeCover,
-                resetCover = resetCover,
-                deleteCover = deleteCover,
-                checkCoverReset = checkCoverReset,
-                dismissBottomSheet = dismissBottomSheet
+                onEvent = onEvent
             )
         }
 
-        BookInfoScreen.DETAILS_BOTTOM_SHEET -> {
+        BookInfoState.Sheet.Details -> {
             BookInfoDetailsBottomSheet(
                 book = book,
                 file = file,
                 loadingFile = loadingFile,
-                showPathDialog = showPathDialog,
-                dismissBottomSheet = dismissBottomSheet
+                onEvent = onEvent
             )
         }
     }

@@ -14,18 +14,17 @@ import ua.acclorite.book_story.ui.common.components.dialog.DialogWithTextField
 @Composable
 fun BookInfoPathDialog(
     book: Book,
-    actionPathDialog: (BookInfoEvent.OnActionPathDialog) -> Unit,
-    dismissDialog: (BookInfoEvent.OnDismissDialog) -> Unit
+    onEvent: (BookInfoEvent) -> Unit
 ) {
     DialogWithTextField(
         initialValue = book.filePath.trim(),
         lengthLimit = 10000,
         onDismiss = {
-            dismissDialog(BookInfoEvent.OnDismissDialog)
+            onEvent(BookInfoEvent.OnDismissDialog)
         },
         onAction = {
             if (it.isBlank()) return@DialogWithTextField
-            actionPathDialog(
+            onEvent(
                 BookInfoEvent.OnActionPathDialog(
                     path = it.trim().replace("\n", "")
                 )
