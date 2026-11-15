@@ -72,7 +72,7 @@ data class BookInfoScreen(
 
         DisposableEffect(Unit) {
             onDispose {
-                screenModel.clearAsync()
+                screenModel.leave()
             }
         }
 
