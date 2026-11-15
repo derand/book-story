@@ -39,8 +39,12 @@ fun BookInfoDetailsBottomSheet(
     val pattern = remember { SimpleDateFormat("HH:mm dd MMM yyyy", Locale.getDefault()) }
     val lastOpened = remember(book.lastOpened) { pattern.format(Date(book.lastOpened ?: 0)) }
 
-    val fileSize = remember(file) {
-        if (file != null) {
+    // Both keyed on loadingFile too: the sheet can open while the file is still
+    // being looked up, and a lookup that finds nothing leaves file at null, so a
+    // key on file alone would keep the "still loading" answer for good. A path
+    // change keeps the old file while it loads, so its size is not shown then.
+    val fileSize = remember(file, loadingFile) {
+        if (file != null && !loadingFile) {
             val sizeBytes = file.size
             val sizeKB = sizeBytes / 1024f
             val sizeMB = sizeKB / 1024f
@@ -52,7 +56,7 @@ fun BookInfoDetailsBottomSheet(
         } else ""
     }
 
-    val fileExists = remember(file) {
+    val fileExists = remember(file, loadingFile) {
         file.let { file ->
             if (loadingFile) return@let true
             if (file == null) return@let false
