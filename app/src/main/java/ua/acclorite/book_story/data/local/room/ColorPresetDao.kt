@@ -9,6 +9,7 @@ package ua.acclorite.book_story.data.local.room
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.Upsert
 import ua.acclorite.book_story.data.local.dto.ColorPresetEntity
 
@@ -29,6 +30,19 @@ interface ColorPresetDao {
     @Delete
     suspend fun deleteColorPreset(colorPreset: ColorPresetEntity)
 
-    @Query("DELETE FROM colorpresetentity")
-    suspend fun deleteColorPresets()
+    /** One statement, so exactly one preset is selected even if interrupted. */
+    @Query("UPDATE colorpresetentity SET isSelected = (id = :id)")
+    suspend fun selectOnly(id: Int)
+
+    @Query("UPDATE colorpresetentity SET `order` = :order WHERE id = :id")
+    suspend fun updateColorPresetOrder(id: Int, order: Int)
+
+    /**
+     * Writes only the order, all or nothing. It used to delete every row and
+     * insert them back one by one, so a kill in between left no presets.
+     */
+    @Transaction
+    suspend fun reorderColorPresets(ids: List<Int>) {
+        ids.forEachIndexed { order, id -> updateColorPresetOrder(id, order) }
+    }
 }

@@ -62,6 +62,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.drop
 import sh.calvin.reorderable.ReorderableCollectionItemScope
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
@@ -380,10 +381,12 @@ private fun ColorPresetOptionConfigurationItem(
                 mutableStateOf(colorPreset.name)
             }
 
+            // drop(1): the first emission is the stored name, which used to be
+            // written back on every open of the screen.
             LaunchedEffect(title) {
                 snapshotFlow {
                     title.value
-                }.debounce(50).collectLatest {
+                }.drop(1).debounce(50).collectLatest {
                     onTitleChange(it)
                 }
             }
