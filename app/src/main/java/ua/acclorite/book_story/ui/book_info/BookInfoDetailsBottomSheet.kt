@@ -21,6 +21,7 @@ import ua.acclorite.book_story.core.data.ExtensionsData
 import ua.acclorite.book_story.domain.model.file.File
 import ua.acclorite.book_story.domain.model.library.Book
 import ua.acclorite.book_story.presentation.book_info.BookInfoEvent
+import ua.acclorite.book_story.presentation.book_info.BookInfoState
 import ua.acclorite.book_story.ui.common.components.common.LazyColumnWithScrollbar
 import ua.acclorite.book_story.ui.common.components.modal_bottom_sheet.ModalBottomSheet
 import ua.acclorite.book_story.ui.settings.components.SettingsSubcategoryTitle
@@ -33,14 +34,17 @@ fun BookInfoDetailsBottomSheet(
     book: Book,
     file: File?,
     loadingFile: Boolean,
-    showPathDialog: (BookInfoEvent.OnShowPathDialog) -> Unit,
-    dismissBottomSheet: (BookInfoEvent.OnDismissBottomSheet) -> Unit
+    onEvent: (BookInfoEvent) -> Unit
 ) {
     val pattern = remember { SimpleDateFormat("HH:mm dd MMM yyyy", Locale.getDefault()) }
     val lastOpened = remember(book.lastOpened) { pattern.format(Date(book.lastOpened ?: 0)) }
 
-    val fileSize = remember(file) {
-        if (file != null) {
+    // Both keyed on loadingFile too: the sheet can open while the file is still
+    // being looked up, and a lookup that finds nothing leaves file at null, so a
+    // key on file alone would keep the "still loading" answer for good. A path
+    // change keeps the old file while it loads, so its size is not shown then.
+    val fileSize = remember(file, loadingFile) {
+        if (file != null && !loadingFile) {
             val sizeBytes = file.size
             val sizeKB = sizeBytes / 1024f
             val sizeMB = sizeKB / 1024f
@@ -52,7 +56,7 @@ fun BookInfoDetailsBottomSheet(
         } else ""
     }
 
-    val fileExists = remember(file) {
+    val fileExists = remember(file, loadingFile) {
         file.let { file ->
             if (loadingFile) return@let true
             if (file == null) return@let false
@@ -75,7 +79,7 @@ fun BookInfoDetailsBottomSheet(
     ModalBottomSheet(
         modifier = Modifier.fillMaxWidth(),
         onDismissRequest = {
-            dismissBottomSheet(BookInfoEvent.OnDismissBottomSheet)
+            onEvent(BookInfoEvent.OnDismissBottomSheet)
         },
         sheetGesturesEnabled = true
     ) {
@@ -98,7 +102,7 @@ fun BookInfoDetailsBottomSheet(
                     text = book.filePath,
                     editable = true,
                     onEdit = {
-                        showPathDialog(BookInfoEvent.OnShowPathDialog)
+                        onEvent(BookInfoEvent.OnShowDialog(BookInfoState.Dialog.Path))
                     },
                     showError = !fileExists,
                     errorMessage = stringResource(id = R.string.error_no_file),

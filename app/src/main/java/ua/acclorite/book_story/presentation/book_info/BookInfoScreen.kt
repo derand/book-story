@@ -34,18 +34,6 @@ data class BookInfoScreen(
     val changePath: Boolean = false
 ) : Screen, Parcelable {
 
-    companion object {
-        const val DELETE_DIALOG = "delete_dialog"
-        const val MOVE_DIALOG = "move_dialog"
-        const val TITLE_DIALOG = "title_dialog"
-        const val AUTHOR_DIALOG = "author_dialog"
-        const val DESCRIPTION_DIALOG = "description_dialog"
-        const val PATH_DIALOG = "path_dialog"
-
-        const val CHANGE_COVER_BOTTOM_SHEET = "change_cover_bottom_sheet"
-        const val DETAILS_BOTTOM_SHEET = "details_bottom_sheet"
-    }
-
     @Composable
     override fun Content() {
         val screenModel = hiltViewModel<BookInfoModel>()
@@ -72,7 +60,7 @@ data class BookInfoScreen(
 
         DisposableEffect(Unit) {
             onDispose {
-                screenModel.clearAsync()
+                screenModel.leave()
             }
         }
 
@@ -86,42 +74,10 @@ data class BookInfoScreen(
 
         if (state.value.book.id == bookId) {
             BookInfoContent(
-                book = state.value.book,
-                statistics = state.value.statistics,
-                file = state.value.file,
-                changingLocalCopy = state.value.changingLocalCopy,
-                loadingFile = state.value.loadingFile,
+                state = state.value,
                 categories = categories,
-                bottomSheet = state.value.bottomSheet,
-                dialog = state.value.dialog,
                 listState = listState,
-                canResetCover = state.value.canResetCover,
-                showTitleDialog = screenModel::onEvent,
-                actionTitleDialog = screenModel::onEvent,
-                showAuthorDialog = screenModel::onEvent,
-                actionAuthorDialog = screenModel::onEvent,
-                showDescriptionDialog = screenModel::onEvent,
-                actionDescriptionDialog = screenModel::onEvent,
-                showPathDialog = screenModel::onEvent,
-                actionPathDialog = screenModel::onEvent,
-                checkCoverReset = screenModel::onEvent,
-                changeCover = screenModel::onEvent,
-                resetCover = screenModel::onEvent,
-                deleteCover = screenModel::onEvent,
-                dismissBottomSheet = screenModel::onEvent,
-                dismissDialog = screenModel::onEvent,
-                showChangeCoverBottomSheet = screenModel::onEvent,
-                showDetailsBottomSheet = screenModel::onEvent,
-                showMoveDialog = screenModel::onEvent,
-                actionMoveDialog = screenModel::onEvent,
-                showDeleteDialog = screenModel::onEvent,
-                toggleLocalCopy = screenModel::onEvent,
-                refreshLocalCopy = screenModel::onEvent,
-                setFinished = screenModel::onEvent,
-                actionDeleteDialog = screenModel::onEvent,
-                navigateToReader = screenModel::onEvent,
-                navigateToLibrarySettings = screenModel::onEvent,
-                navigateBack = screenModel::onEvent
+                onEvent = screenModel::onEvent
             )
         }
     }

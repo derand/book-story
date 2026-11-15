@@ -158,7 +158,9 @@ class FakeBookRepository(
     override suspend fun keepOnlyBookImages(bookId: Int): Result<Unit> =
         unused("keepOnlyBookImages")
 
-    override suspend fun getFileFromBook(bookId: Int): Result<File> = unused("getFileFromBook")
+    /** No file behind any book: a lookup answers what a missing file does. */
+    override suspend fun getFileFromBook(bookId: Int): Result<File> =
+        Result.failure(NoSuchElementException("No file for [$bookId]."))
 
     override suspend fun addBook(book: Book): Result<Int> = unused("addBook")
 
@@ -169,8 +171,9 @@ class FakeBookRepository(
         documentId: String?
     ): Result<Book?> = unused("findLibraryBookForFile")
 
+    /** No book has a cover of its own to go back to. */
     override suspend fun getDefaultCover(book: Book): Result<CoverImage?> =
-        unused("getDefaultCover")
+        Result.success(null)
 
     override suspend fun updatePosition(
         bookId: Int,
@@ -179,8 +182,17 @@ class FakeBookRepository(
         progress: Float
     ): Result<Unit> = unused("updatePosition")
 
-    override suspend fun updateTitle(bookId: Int, title: String): Result<Unit> =
-        unused("updateTitle")
+    /** The titles written, as `<id> <title>`, once [onUpdateTitle] returned. */
+    val titleWrites = mutableListOf<String>()
+
+    /** Runs inside `updateTitle`, before the write counts. */
+    var onUpdateTitle: suspend () -> Unit = {}
+
+    override suspend fun updateTitle(bookId: Int, title: String): Result<Unit> {
+        onUpdateTitle()
+        titleWrites += "$bookId $title"
+        return Result.success(Unit)
+    }
 
     override suspend fun updateAuthor(bookId: Int, author: String): Result<Unit> =
         unused("updateAuthor")

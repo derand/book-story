@@ -28,9 +28,7 @@ import ua.acclorite.book_story.ui.common.components.dialog.Dialog
 fun BookInfoMoveDialog(
     book: Book,
     categories: List<Category>,
-    actionMoveDialog: (BookInfoEvent.OnActionMoveDialog) -> Unit,
-    dismissDialog: (BookInfoEvent.OnDismissDialog) -> Unit,
-    navigateToLibrarySettings: (BookInfoEvent.OnNavigateToLibrarySettings) -> Unit
+    onEvent: (BookInfoEvent) -> Unit
 ) {
     val selectedCategories = remember {
         mutableStateListOf<Category>().apply {
@@ -47,9 +45,9 @@ fun BookInfoMoveDialog(
         title = stringResource(id = R.string.move),
         description = null,
         actionEnabled = true,
-        onDismiss = { dismissDialog(BookInfoEvent.OnDismissDialog) },
+        onDismiss = { onEvent(BookInfoEvent.OnDismissDialog) },
         onAction = {
-            actionMoveDialog(
+            onEvent(
                 BookInfoEvent.OnActionMoveDialog(
                     selectedCategories = selectedCategories
                 )
@@ -57,8 +55,8 @@ fun BookInfoMoveDialog(
         },
         secondaryAction = stringResource(id = R.string.edit),
         onSecondaryAction = {
-            navigateToLibrarySettings(BookInfoEvent.OnNavigateToLibrarySettings)
-            dismissDialog(BookInfoEvent.OnDismissDialog)
+            onEvent(BookInfoEvent.OnNavigateToLibrarySettings)
+            onEvent(BookInfoEvent.OnDismissDialog)
         },
         withContent = true,
         items = {

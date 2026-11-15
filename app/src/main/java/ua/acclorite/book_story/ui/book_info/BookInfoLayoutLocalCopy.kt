@@ -43,8 +43,7 @@ fun BookInfoLayoutLocalCopy(
     book: Book,
     file: File?,
     changingLocalCopy: Boolean,
-    toggleLocalCopy: (BookInfoEvent.OnToggleLocalCopy) -> Unit,
-    refreshLocalCopy: (BookInfoEvent.OnRefreshLocalCopy) -> Unit
+    onEvent: (BookInfoEvent) -> Unit
 ) {
     val context = LocalContext.current
 
@@ -72,7 +71,7 @@ fun BookInfoLayoutLocalCopy(
             )
         }
     ) {
-        toggleLocalCopy(BookInfoEvent.OnToggleLocalCopy)
+        onEvent(BookInfoEvent.OnToggleLocalCopy)
     }
 
     // Only where there is something to refresh *from*. A copy does not notice
@@ -83,7 +82,7 @@ fun BookInfoLayoutLocalCopy(
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable(enabled = !changingLocalCopy) {
-                    refreshLocalCopy(BookInfoEvent.OnRefreshLocalCopy)
+                    onEvent(BookInfoEvent.OnRefreshLocalCopy)
                 }
                 .padding(horizontal = 18.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.Center

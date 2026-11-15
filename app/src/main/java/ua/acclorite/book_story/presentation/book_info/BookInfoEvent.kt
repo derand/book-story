@@ -13,9 +13,13 @@ import ua.acclorite.book_story.domain.model.library.Category
 
 @Immutable
 sealed class BookInfoEvent {
-    data object OnShowDetailsBottomSheet : BookInfoEvent()
+    data class OnShowDialog(
+        val dialog: BookInfoState.Dialog
+    ) : BookInfoEvent()
 
-    data object OnShowChangeCoverBottomSheet : BookInfoEvent()
+    data class OnShowBottomSheet(
+        val sheet: BookInfoState.Sheet
+    ) : BookInfoEvent()
 
     /**
      * The image the user picked, as the picker returned it. Reading it is the
@@ -30,8 +34,6 @@ sealed class BookInfoEvent {
 
     data object OnDeleteCover : BookInfoEvent()
 
-    data object OnCheckCoverReset : BookInfoEvent()
-
     /** The reader saying whether they consider this book read. */
     data class OnSetFinished(
         val finished: Boolean
@@ -39,31 +41,21 @@ sealed class BookInfoEvent {
 
     data object OnDismissBottomSheet : BookInfoEvent()
 
-    data object OnShowTitleDialog : BookInfoEvent()
-
     data class OnActionTitleDialog(
         val title: String
     ) : BookInfoEvent()
-
-    data object OnShowAuthorDialog : BookInfoEvent()
 
     data class OnActionAuthorDialog(
         val author: UIText
     ) : BookInfoEvent()
 
-    data object OnShowDescriptionDialog : BookInfoEvent()
-
     data class OnActionDescriptionDialog(
         val description: String?
     ) : BookInfoEvent()
 
-    data object OnShowPathDialog : BookInfoEvent()
-
     data class OnActionPathDialog(
         val path: String
     ) : BookInfoEvent()
-
-    data object OnShowDeleteDialog : BookInfoEvent()
 
     data object OnActionDeleteDialog : BookInfoEvent()
 
@@ -75,8 +67,6 @@ sealed class BookInfoEvent {
 
     /** Take the app's copy of this book from its source again. */
     data object OnRefreshLocalCopy : BookInfoEvent()
-
-    data object OnShowMoveDialog : BookInfoEvent()
 
     data class OnActionMoveDialog(
         val selectedCategories: List<Category>

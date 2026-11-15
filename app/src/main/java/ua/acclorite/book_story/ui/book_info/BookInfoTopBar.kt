@@ -17,6 +17,7 @@ import androidx.compose.runtime.remember
 import ua.acclorite.book_story.R
 import ua.acclorite.book_story.domain.model.library.Book
 import ua.acclorite.book_story.presentation.book_info.BookInfoEvent
+import ua.acclorite.book_story.presentation.book_info.BookInfoState
 import ua.acclorite.book_story.ui.common.components.common.IconButton
 import ua.acclorite.book_story.ui.common.components.common.StyledText
 import ua.acclorite.book_story.ui.common.components.top_bar.TopAppBar
@@ -29,8 +30,7 @@ import ua.acclorite.book_story.ui.theme.DefaultTransition
 fun BookInfoTopBar(
     book: Book,
     listState: LazyListState,
-    showDetailsBottomSheet: (BookInfoEvent.OnShowDetailsBottomSheet) -> Unit,
-    navigateBack: (BookInfoEvent.OnNavigateBack) -> Unit
+    onEvent: (BookInfoEvent) -> Unit
 ) {
     val firstVisibleItemIndex = remember {
         derivedStateOf {
@@ -49,7 +49,7 @@ fun BookInfoTopBar(
                 contentID = 0,
                 contentNavigationIcon = {
                     NavigatorBackIconButton {
-                        navigateBack(BookInfoEvent.OnNavigateBack)
+                        onEvent(BookInfoEvent.OnNavigateBack)
                     }
                 },
                 contentTitle = {
@@ -69,7 +69,7 @@ fun BookInfoTopBar(
                         contentDescription = R.string.file_details,
                         disableOnClick = false,
                         onClick = {
-                            showDetailsBottomSheet(BookInfoEvent.OnShowDetailsBottomSheet)
+                            onEvent(BookInfoEvent.OnShowBottomSheet(BookInfoState.Sheet.Details))
                         }
                     )
                 }

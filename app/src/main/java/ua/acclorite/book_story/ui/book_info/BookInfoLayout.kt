@@ -32,16 +32,7 @@ fun BookInfoLayout(
     statistics: BookStatistics?,
     listState: LazyListState,
     paddingValues: PaddingValues,
-    showChangeCoverBottomSheet: (BookInfoEvent.OnShowChangeCoverBottomSheet) -> Unit,
-    showTitleDialog: (BookInfoEvent.OnShowTitleDialog) -> Unit,
-    showAuthorDialog: (BookInfoEvent.OnShowAuthorDialog) -> Unit,
-    showDescriptionDialog: (BookInfoEvent.OnShowDescriptionDialog) -> Unit,
-    showMoveDialog: (BookInfoEvent.OnShowMoveDialog) -> Unit,
-    showDeleteDialog: (BookInfoEvent.OnShowDeleteDialog) -> Unit,
-    toggleLocalCopy: (BookInfoEvent.OnToggleLocalCopy) -> Unit,
-    refreshLocalCopy: (BookInfoEvent.OnRefreshLocalCopy) -> Unit,
-    setFinished: (BookInfoEvent.OnSetFinished) -> Unit,
-    navigateToReader: (BookInfoEvent.OnNavigateToReader) -> Unit
+    onEvent: (BookInfoEvent) -> Unit
 ) {
     LazyColumnWithScrollbar(
         modifier = Modifier.fillMaxSize(),
@@ -62,9 +53,7 @@ fun BookInfoLayout(
                     Spacer(modifier = Modifier.height(paddingValues.calculateTopPadding() + 12.dp))
                     BookInfoLayoutInfo(
                         book = book,
-                        showTitleDialog = showTitleDialog,
-                        showAuthorDialog = showAuthorDialog,
-                        showChangeCoverBottomSheet = showChangeCoverBottomSheet
+                        onEvent = onEvent
                     )
                 }
             }
@@ -73,8 +62,7 @@ fun BookInfoLayout(
         item {
             Spacer(Modifier.height(18.dp))
             BookInfoLayoutActions(
-                showMoveDialog = showMoveDialog,
-                showDeleteDialog = showDeleteDialog
+                onEvent = onEvent
             )
         }
 
@@ -84,8 +72,7 @@ fun BookInfoLayout(
                 book = book,
                 file = file,
                 changingLocalCopy = changingLocalCopy,
-                toggleLocalCopy = toggleLocalCopy,
-                refreshLocalCopy = refreshLocalCopy
+                onEvent = onEvent
             )
         }
 
@@ -93,7 +80,7 @@ fun BookInfoLayout(
             Spacer(Modifier.height(18.dp))
             BookInfoLayoutDescription(
                 book = book,
-                showDescriptionDialog = showDescriptionDialog
+                onEvent = onEvent
             )
         }
 
@@ -102,7 +89,7 @@ fun BookInfoLayout(
                 Spacer(Modifier.height(18.dp))
                 BookInfoLayoutStatistics(
                     statistics = statistics,
-                    setFinished = setFinished
+                    onEvent = onEvent
                 )
             }
         }
@@ -111,7 +98,7 @@ fun BookInfoLayout(
             Spacer(Modifier.height(18.dp))
             BookInfoLayoutButton(
                 book = book,
-                navigateToReader = navigateToReader
+                onEvent = onEvent
             )
         }
     }

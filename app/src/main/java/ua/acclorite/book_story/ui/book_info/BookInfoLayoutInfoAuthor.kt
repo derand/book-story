@@ -22,13 +22,14 @@ import androidx.compose.ui.unit.dp
 import ua.acclorite.book_story.R
 import ua.acclorite.book_story.domain.model.library.Book
 import ua.acclorite.book_story.presentation.book_info.BookInfoEvent
+import ua.acclorite.book_story.presentation.book_info.BookInfoState
 import ua.acclorite.book_story.ui.common.components.common.StyledText
 import ua.acclorite.book_story.ui.common.helpers.noRippleClickable
 
 @Composable
 fun BookInfoLayoutInfoAuthor(
     book: Book,
-    showAuthorDialog: (BookInfoEvent.OnShowAuthorDialog) -> Unit
+    onEvent: (BookInfoEvent) -> Unit
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -48,7 +49,7 @@ fun BookInfoLayoutInfoAuthor(
                 .noRippleClickable(
                     onClick = {},
                     onLongClick = {
-                        showAuthorDialog(BookInfoEvent.OnShowAuthorDialog)
+                        onEvent(BookInfoEvent.OnShowDialog(BookInfoState.Dialog.Author))
                     }
                 ),
             style = MaterialTheme.typography.bodyLarge.copy(

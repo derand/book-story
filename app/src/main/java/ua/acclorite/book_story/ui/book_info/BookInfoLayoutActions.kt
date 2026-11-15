@@ -22,11 +22,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import ua.acclorite.book_story.R
 import ua.acclorite.book_story.presentation.book_info.BookInfoEvent
+import ua.acclorite.book_story.presentation.book_info.BookInfoState
 
 @Composable
 fun BookInfoLayoutActions(
-    showMoveDialog: (BookInfoEvent.OnShowMoveDialog) -> Unit,
-    showDeleteDialog: (BookInfoEvent.OnShowDeleteDialog) -> Unit
+    onEvent: (BookInfoEvent) -> Unit
 ) {
     Row(
         Modifier
@@ -42,7 +42,7 @@ fun BookInfoLayoutActions(
             title = stringResource(id = R.string.move),
             icon = Icons.Default.MoveUp,
             onClick = {
-                showMoveDialog(BookInfoEvent.OnShowMoveDialog)
+                onEvent(BookInfoEvent.OnShowDialog(BookInfoState.Dialog.Move))
             }
         )
 
@@ -52,7 +52,7 @@ fun BookInfoLayoutActions(
             title = stringResource(id = R.string.delete),
             icon = Icons.Default.Delete,
             onClick = {
-                showDeleteDialog(BookInfoEvent.OnShowDeleteDialog)
+                onEvent(BookInfoEvent.OnShowDialog(BookInfoState.Dialog.Delete))
             }
         )
     }

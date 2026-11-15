@@ -8,6 +8,8 @@ package ua.acclorite.book_story.ui.book_info
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.flow.SharedFlow
 import ua.acclorite.book_story.R
@@ -30,7 +32,11 @@ fun BookInfoEffects(
     val navigator = LocalNavigator.current
     val context = LocalContext.current
 
-    LaunchedEffect(effects, context, navigator, book) {
+    // Keyed on the flow alone. Every edit replaces the book, and a collector
+    // restarted for it leaves a gap in which an effect is dropped.
+    val currentBook by rememberUpdatedState(book)
+
+    LaunchedEffect(effects, context, navigator) {
         effects.collect { effect ->
             when (effect) {
                 is BookInfoEffect.OnChangedCover -> {
@@ -107,6 +113,7 @@ fun BookInfoEffects(
                 }
 
                 is BookInfoEffect.OnNavigateToReader -> {
+                    val book = currentBook
                     if (book.id != -1) {
                         BookOpenTrace.start("book ${book.id} from book info")
                         HistoryScreen.insertHistoryChannel.trySend(book.id)

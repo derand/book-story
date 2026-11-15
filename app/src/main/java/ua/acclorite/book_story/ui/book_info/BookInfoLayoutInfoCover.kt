@@ -27,13 +27,14 @@ import androidx.compose.ui.unit.dp
 import ua.acclorite.book_story.R
 import ua.acclorite.book_story.domain.model.library.Book
 import ua.acclorite.book_story.presentation.book_info.BookInfoEvent
+import ua.acclorite.book_story.presentation.book_info.BookInfoState
 import ua.acclorite.book_story.ui.common.components.common.AsyncCoverImage
 import ua.acclorite.book_story.ui.common.helpers.noRippleClickable
 
 @Composable
 fun BookInfoLayoutInfoCover(
     book: Book,
-    showChangeCoverBottomSheet: (BookInfoEvent.OnShowChangeCoverBottomSheet) -> Unit
+    onEvent: (BookInfoEvent) -> Unit
 ) {
     val height = remember { 220.dp }
     val width = remember(height) { height * 0.66f }
@@ -47,7 +48,7 @@ fun BookInfoLayoutInfoCover(
             .noRippleClickable(
                 onClick = {},
                 onLongClick = {
-                    showChangeCoverBottomSheet(BookInfoEvent.OnShowChangeCoverBottomSheet)
+                    onEvent(BookInfoEvent.OnShowBottomSheet(BookInfoState.Sheet.ChangeCover))
                 }
             )
     ) {

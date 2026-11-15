@@ -18,7 +18,6 @@ import androidx.compose.material.icons.filled.HideImage
 import androidx.compose.material.icons.filled.ImageSearch
 import androidx.compose.material.icons.filled.Restore
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -31,11 +30,7 @@ import ua.acclorite.book_story.ui.common.components.modal_bottom_sheet.ModalBott
 fun BookInfoChangeCoverBottomSheet(
     book: Book,
     canResetCover: Boolean,
-    changeCover: (BookInfoEvent.OnChangeCover) -> Unit,
-    resetCover: (BookInfoEvent.OnResetCover) -> Unit,
-    deleteCover: (BookInfoEvent.OnDeleteCover) -> Unit,
-    checkCoverReset: (BookInfoEvent.OnCheckCoverReset) -> Unit,
-    dismissBottomSheet: (BookInfoEvent.OnDismissBottomSheet) -> Unit
+    onEvent: (BookInfoEvent) -> Unit
 ) {
     val photoPicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia(),
@@ -44,19 +39,15 @@ fun BookInfoChangeCoverBottomSheet(
         // the gallery returns is a photo of whatever size the camera makes.
         onResult = { uri ->
             if (uri != null) {
-                changeCover(BookInfoEvent.OnChangeCover(image = uri))
+                onEvent(BookInfoEvent.OnChangeCover(image = uri))
             }
         }
     )
 
-    LaunchedEffect(Unit) {
-        checkCoverReset(BookInfoEvent.OnCheckCoverReset)
-    }
-
     ModalBottomSheet(
         modifier = Modifier.fillMaxWidth(),
         onDismissRequest = {
-            dismissBottomSheet(BookInfoEvent.OnDismissBottomSheet)
+            onEvent(BookInfoEvent.OnDismissBottomSheet)
         },
         sheetGesturesEnabled = true
     ) {
@@ -68,7 +59,7 @@ fun BookInfoChangeCoverBottomSheet(
                         text = stringResource(id = R.string.reset_cover),
                         description = stringResource(id = R.string.reset_cover_desc)
                     ) {
-                        resetCover(BookInfoEvent.OnResetCover)
+                        onEvent(BookInfoEvent.OnResetCover)
                     }
                 }
             }
@@ -92,7 +83,7 @@ fun BookInfoChangeCoverBottomSheet(
                         text = stringResource(id = R.string.delete_cover),
                         description = stringResource(id = R.string.delete_cover_desc)
                     ) {
-                        deleteCover(BookInfoEvent.OnDeleteCover)
+                        onEvent(BookInfoEvent.OnDeleteCover)
                     }
                 }
             }

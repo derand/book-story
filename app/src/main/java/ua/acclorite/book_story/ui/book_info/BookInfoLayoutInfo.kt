@@ -21,9 +21,7 @@ import ua.acclorite.book_story.presentation.book_info.BookInfoEvent
 @Composable
 fun BookInfoLayoutInfo(
     book: Book,
-    showTitleDialog: (BookInfoEvent.OnShowTitleDialog) -> Unit,
-    showAuthorDialog: (BookInfoEvent.OnShowAuthorDialog) -> Unit,
-    showChangeCoverBottomSheet: (BookInfoEvent.OnShowChangeCoverBottomSheet) -> Unit
+    onEvent: (BookInfoEvent) -> Unit
 ) {
     Row(
         modifier = Modifier
@@ -34,7 +32,7 @@ fun BookInfoLayoutInfo(
     ) {
         BookInfoLayoutInfoCover(
             book = book,
-            showChangeCoverBottomSheet = showChangeCoverBottomSheet
+            onEvent = onEvent
         )
 
         Column(
@@ -42,12 +40,12 @@ fun BookInfoLayoutInfo(
         ) {
             BookInfoLayoutInfoTitle(
                 book = book,
-                showTitleDialog = showTitleDialog
+                onEvent = onEvent
             )
 
             BookInfoLayoutInfoAuthor(
                 book = book,
-                showAuthorDialog = showAuthorDialog
+                onEvent = onEvent
             )
 
             BookInfoLayoutInfoProgress(

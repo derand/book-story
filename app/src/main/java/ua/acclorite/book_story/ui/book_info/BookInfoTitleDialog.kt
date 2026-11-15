@@ -14,18 +14,17 @@ import ua.acclorite.book_story.ui.common.components.dialog.DialogWithTextField
 @Composable
 fun BookInfoTitleDialog(
     book: Book,
-    actionTitleDialog: (BookInfoEvent.OnActionTitleDialog) -> Unit,
-    dismissDialog: (BookInfoEvent.OnDismissDialog) -> Unit
+    onEvent: (BookInfoEvent) -> Unit
 ) {
     DialogWithTextField(
         initialValue = book.title,
         lengthLimit = 100,
         onDismiss = {
-            dismissDialog(BookInfoEvent.OnDismissDialog)
+            onEvent(BookInfoEvent.OnDismissDialog)
         },
         onAction = {
             if (it.isBlank()) return@DialogWithTextField
-            actionTitleDialog(
+            onEvent(
                 BookInfoEvent.OnActionTitleDialog(
                     title = it.trim().replace("\n", "")
                 )
