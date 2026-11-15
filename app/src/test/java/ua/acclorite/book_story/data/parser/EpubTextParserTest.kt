@@ -143,6 +143,76 @@ class EpubTextParserTest {
         assertEquals(listOf("З TOC"), parse(book).chapterTitles())
     }
 
+    // --- hrefs (#136) ---
+
+    @Test
+    fun aStrayPercentInAnImageSrcDoesNotEmptyTheBook() {
+        // URLDecoder threw on "50%." and the whole book came out empty
+        val book = epub(
+            "OEBPS/content.opf" to opf("one.xhtml"),
+            "OEBPS/toc.ncx" to ncx(navPoint("Розділ", "one.xhtml")),
+            "OEBPS/one.xhtml" to xhtml("<p>текст</p><img src=\"Images/pic50%.png\"/>"),
+            "OEBPS/Images/pic50%.png" to png
+        )
+
+        val text = parse(book).text
+        assertEquals(listOf("Розділ"), text.chapterTitles())
+        assertEquals(listOf("текст"), text.paragraphs())
+        assertEquals("pic50%.png", text.filterIsInstance<ReaderText.Image>().single().image.src)
+    }
+
+    @Test
+    fun aStrayPercentInTheTocOrTheManifestDoesNotEmptyTheBook() {
+        val book = epub(
+            "OEBPS/content.opf" to opf("100%-ch.xhtml"),
+            "OEBPS/toc.ncx" to ncx(navPoint("Розділ", "100%-ch.xhtml")),
+            "OEBPS/100%-ch.xhtml" to xhtml("<p>текст</p>")
+        )
+
+        assertEquals(listOf("Розділ"), parse(book).chapterTitles())
+    }
+
+    @Test
+    fun aPlusInAnHrefIsAPlus() {
+        val book = epub(
+            "OEBPS/content.opf" to opf("c++.xhtml"),
+            "OEBPS/toc.ncx" to ncx(navPoint("Розділ", "c++.xhtml")),
+            "OEBPS/c++.xhtml" to xhtml("<p>текст</p><img src=\"a+b.png\"/>"),
+            "OEBPS/a+b.png" to png
+        )
+
+        val text = parse(book).text
+        assertEquals(listOf("Розділ"), text.chapterTitles())
+        assertEquals("a+b.png", text.filterIsInstance<ReaderText.Image>().single().image.src)
+    }
+
+    @Test
+    fun anEscapedPercentInTheManifestIsDecodedOnce() {
+        // Decoded twice, "%25" became "%" and then threw
+        val book = epub(
+            "OEBPS/content.opf" to opf("50%2525.xhtml"),
+            "OEBPS/toc.ncx" to ncx(navPoint("Розділ", "50%2525.xhtml")),
+            "OEBPS/50%25.xhtml" to xhtml("<p>текст</p>")
+        )
+
+        assertEquals(listOf("Розділ"), parse(book).chapterTitles())
+    }
+
+    @Test
+    fun anEscapedUpperCaseLetterMatchesItsFile() {
+        // Lowercased before decoding, "%C3%89" stayed "É" and missed "é"
+        val book = epub(
+            "OEBPS/content.opf" to opf("%C3%89tude.xhtml"),
+            "OEBPS/toc.ncx" to ncx(navPoint("Розділ", "%C3%89tude.xhtml")),
+            "OEBPS/Étude.xhtml" to xhtml("<p>текст</p><img src=\"%C3%89.png\"/>"),
+            "OEBPS/É.png" to png
+        )
+
+        val text = parse(book).text
+        assertEquals(listOf("Розділ"), text.chapterTitles())
+        assertEquals(1, text.filterIsInstance<ReaderText.Image>().size)
+    }
+
     @Test
     fun withoutATocEntryTheFirstLineBecomesTheTitleAndLeavesTheText() {
         val book = epub(

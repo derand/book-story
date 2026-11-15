@@ -15,8 +15,7 @@ import ua.acclorite.book_story.core.helpers.rethrowIfCancellation
 import ua.acclorite.book_story.core.log.logE
 import ua.acclorite.book_story.core.log.messageForLog
 import ua.acclorite.book_story.data.model.file.CachedFile
-import java.net.URLDecoder
-import java.nio.charset.StandardCharsets
+import ua.acclorite.book_story.data.parser.decodeHref
 import java.util.zip.ZipFile
 import javax.inject.Inject
 
@@ -63,7 +62,7 @@ class EpubCoverParser @Inject constructor() : CoverParser {
                                 ?.attr("href")
                                 ?.also { src -> if (src.isBlank()) return@let null }
                         }
-                        ?.let { src -> URLDecoder.decode(src, StandardCharsets.UTF_8.name()) }
+                        ?.let(::decodeHref)
                         ?: return@use
 
                     zip.entries().asSequence().first { entry ->

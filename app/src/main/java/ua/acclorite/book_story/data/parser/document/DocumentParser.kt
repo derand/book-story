@@ -24,9 +24,8 @@ import ua.acclorite.book_story.core.log.messageForLog
 import ua.acclorite.book_story.core.log.timed
 import ua.acclorite.book_story.domain.model.reader.ReaderImage
 import ua.acclorite.book_story.domain.model.reader.ReaderText
+import ua.acclorite.book_story.data.parser.decodeHref
 import java.io.File
-import java.net.URLDecoder
-import java.nio.charset.StandardCharsets
 import java.util.zip.CRC32
 import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
@@ -85,9 +84,9 @@ class DocumentParser @Inject constructor() {
                 when (element.normalName()) {
                     "img" -> element.attr("src")
                         .trim()
-                        .substringAfterLast(File.separator)
+                        .substringAfterLast('/')
+                        .let(::decodeHref)
                         .lowercase()
-                        .let { src -> URLDecoder.decode(src, StandardCharsets.UTF_8.name()) }
                         .takeIf { src ->
                             src.containsVisibleText() && imageEntries.holds(src)
                         }
@@ -98,9 +97,9 @@ class DocumentParser @Inject constructor() {
                         .ifBlank { element.attr("href") }
                         .trim()
                         .removePrefix("#")
-                        .substringAfterLast(File.separator)
+                        .substringAfterLast('/')
+                        .let(::decodeHref)
                         .lowercase()
-                        .let { src -> URLDecoder.decode(src, StandardCharsets.UTF_8.name()) }
                         .takeIf { src ->
                             src.containsVisibleText() && (
                                     base64Images?.containsKey(src) == true ||

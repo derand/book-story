@@ -8,7 +8,6 @@
 
 package ua.acclorite.book_story.data.parser.text
 
-import androidx.core.net.toUri
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
@@ -26,12 +25,11 @@ import ua.acclorite.book_story.core.log.logI
 import ua.acclorite.book_story.core.log.logW
 import ua.acclorite.book_story.core.log.messageForLog
 import ua.acclorite.book_story.data.model.file.CachedFile
+import ua.acclorite.book_story.data.parser.decodeHref
 import ua.acclorite.book_story.data.parser.document.DocumentParser
 import ua.acclorite.book_story.domain.model.reader.ParsedText
 import ua.acclorite.book_story.domain.model.reader.ReaderText
 import java.io.File
-import java.net.URLDecoder
-import java.nio.charset.StandardCharsets
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
@@ -262,9 +260,7 @@ class EpubTextParser @Inject constructor(
 
             val source = navPoint.selectFirst("content")?.attr("src")?.trim()
                 .also { src -> if (src.isNullOrBlank()) return@forEach }
-                .let { src -> URLDecoder.decode(src, StandardCharsets.UTF_8.name()) }
-                .let { src -> src.toUri().path ?: src }
-                .substringAfterLast(File.separator)
+                .let { src -> tocSource(src!!) }
 
             val parent = navPoint.parent()
                 ?.let { parent ->
@@ -272,9 +268,7 @@ class EpubTextParser @Inject constructor(
 
                     val parentSource = parent.selectFirst("content")?.attr("src")?.trim()
                         .also { src -> if (src.isNullOrBlank()) return@forEach }
-                        .let { src -> URLDecoder.decode(src, StandardCharsets.UTF_8.name()) }
-                        .let { src -> src.toUri().path ?: src }
-                        .substringAfterLast(File.separator)
+                        .let { src -> tocSource(src!!) }
 
                     if (parentSource == source) return@let null
                     return@let parentSource
@@ -292,6 +286,13 @@ class EpubTextParser @Inject constructor(
 
         return titleMap
     }
+
+    /**
+     * The key a TOC `src` is filed under: without its fragment, decoded once,
+     * the file name only — what [getChapterTitleFromToc] looks up by.
+     */
+    private fun tocSource(src: String): Source =
+        decodeHref(src.substringBefore('#')).substringAfterLast('/')
 
     /**
      * Getting title from [chapterTitleMap].
@@ -325,9 +326,7 @@ class EpubTextParser @Inject constructor(
 
             val manifestItems = document.select("manifest > item").associate {
                 it.attr("id").to(
-                    it.attr("href").let { src ->
-                        URLDecoder.decode(src, StandardCharsets.UTF_8.name())
-                    }
+                    it.attr("href")
                 )
             }
 
@@ -336,10 +335,7 @@ class EpubTextParser @Inject constructor(
                 val chapterSource = manifestItems[spineId]
                     .let { src ->
                         if (src.isNullOrBlank()) return@mapNotNull null
-                        URLDecoder.decode(
-                            src.substringAfterLast(File.separator).lowercase(),
-                            StandardCharsets.UTF_8.name()
-                        )
+                        decodeHref(src.substringAfterLast('/')).lowercase()
                     }
 
                 zipEntries.find { entry ->
