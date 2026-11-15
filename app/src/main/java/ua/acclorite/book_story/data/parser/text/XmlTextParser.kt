@@ -15,6 +15,7 @@ import ua.acclorite.book_story.core.log.logI
 import ua.acclorite.book_story.core.log.messageForLog
 import ua.acclorite.book_story.core.log.timed
 import ua.acclorite.book_story.data.model.file.CachedFile
+import ua.acclorite.book_story.data.parser.document.Base64Images
 import ua.acclorite.book_story.data.parser.document.DocumentParser
 import androidx.compose.ui.text.AnnotatedString
 import ua.acclorite.book_story.domain.model.reader.ParsedText
@@ -61,7 +62,7 @@ class XmlTextParser @Inject constructor(
                 timed("    parseDoc") {
                     documentParser.parseDocument(
                         document = document,
-                        base64Images = base64Images,
+                        images = Base64Images(base64Images),
                         sectionTitles = true,
                         keepImageBytes = keepImageBytes
                     )

@@ -8,14 +8,12 @@ package ua.acclorite.book_story.data.parser.cover
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import org.jsoup.Jsoup
-import org.jsoup.parser.Parser
 import ua.acclorite.book_story.core.CoverImage
 import ua.acclorite.book_story.core.helpers.rethrowIfCancellation
 import ua.acclorite.book_story.core.log.logE
 import ua.acclorite.book_story.core.log.messageForLog
 import ua.acclorite.book_story.data.model.file.CachedFile
-import ua.acclorite.book_story.data.parser.decodeHref
+import ua.acclorite.book_story.data.parser.epub.EpubPackage
 import java.util.zip.ZipFile
 import javax.inject.Inject
 
@@ -32,46 +30,9 @@ class EpubCoverParser @Inject constructor() : CoverParser {
 
             withContext(Dispatchers.IO) {
                 ZipFile(rawFile).use { zip ->
-                    val opfEntry = zip.entries().asSequence().find { entry ->
-                        entry.name.endsWith(".opf", ignoreCase = true)
-                    } ?: return@withContext
-
-                    val opfContent = zip
-                        .getInputStream(opfEntry)
-                        .bufferedReader()
-                        .use { it.readText() }
-                    val document = Jsoup.parse(opfContent, Parser.xmlParser())
-
-                    val coverImagePath = document
-                        .select("metadata > meta[name=cover]")
-                        .attr("content")
-                        .let { coverId ->
-                            if (coverId.isNotBlank()) {
-                                document
-                                    .select("manifest > item[id=$coverId]")
-                                    .attr("href")
-                                    .also { src ->
-                                        if (src.isBlank()) return@also
-                                        return@let src
-                                    }
-                            }
-
-                            document
-                                .select("manifest > item[media-type*=image]")
-                                .firstOrNull()
-                                ?.attr("href")
-                                ?.also { src -> if (src.isBlank()) return@let null }
-                        }
-                        ?.let(::decodeHref)
-                        ?: return@use
-
-                    zip.entries().asSequence().first { entry ->
-                        if (entry.name.endsWith(coverImagePath)) {
-                            val imageBytes = zip.getInputStream(entry).readBytes()
-                            coverImage = decodeCover(imageBytes)
-                            return@first true
-                        } else return@first false
-                    }
+                    val epub = EpubPackage.open(zip)
+                    val cover = epub.coverImage ?: return@use
+                    coverImage = epub.imageBytes(cover.name)?.let { decodeCover(it) }
                 }
             }
             coverImage

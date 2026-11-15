@@ -15,6 +15,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import ua.acclorite.book_story.data.parser.document.Base64Images
 import ua.acclorite.book_story.data.parser.document.DocumentParser
 import ua.acclorite.book_story.domain.model.reader.ReaderText
 
@@ -81,7 +82,7 @@ class DocumentParserImageBytesTest {
 
         documentParser.parseDocument(
             document = document,
-            base64Images = mapOf("pic.png" to png),
+            images = Base64Images(mapOf("pic.png" to png)),
             sectionTitles = true,
             keepImageBytes = keepImageBytes
         ).filterIsInstance<ReaderText.Image>().single()

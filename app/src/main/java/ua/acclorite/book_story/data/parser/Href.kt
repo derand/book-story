@@ -60,3 +60,38 @@ private fun hexValue(char: Char): Int = when (char) {
     in 'A'..'F' -> char - 'A' + 10
     else -> -1
 }
+
+private val SCHEME = Regex("^[A-Za-z][A-Za-z0-9+.-]*:")
+
+/**
+ * The full zip path [href] points to, resolved against the file it appears in
+ * ([from], itself a full zip path): `../Images/a.jpg` from `OEBPS/Text/c1.xhtml`
+ * is `OEBPS/Images/a.jpg`. Relative URLs in an OPF, an NCX or a content document
+ * resolve against that document's own location (OPF 2.0.1 §2.3, EPUB 3.3 §5.2).
+ *
+ * The fragment and query are dropped, the path is decoded once ([decodeHref]),
+ * and `..` never climbs above the container root. A leading `/` (not allowed by
+ * the spec) is read from the root.
+ *
+ * @return Null for a blank href, a fragment-only one, or a URL with a scheme
+ *   (`http:`, `mailto:` …), which names nothing in the container.
+ */
+fun resolveHref(from: String, href: String): String? {
+    val path = href.trim().substringBefore('#').substringBefore('?')
+    if (path.isEmpty() || SCHEME.containsMatchIn(path)) return null
+
+    val decoded = decodeHref(path)
+    val segments = ArrayList<String>()
+    if (!decoded.startsWith('/')) {
+        segments.addAll(from.substringBeforeLast('/', "").split('/').filter { it.isNotEmpty() })
+    }
+    decoded.split('/').forEach { segment ->
+        when (segment) {
+            "", "." -> Unit
+            ".." -> segments.removeLastOrNull()
+            else -> segments.add(segment)
+        }
+    }
+
+    return segments.joinToString("/").ifEmpty { null }
+}
