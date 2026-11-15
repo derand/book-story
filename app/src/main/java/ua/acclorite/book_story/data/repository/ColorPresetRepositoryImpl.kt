@@ -49,11 +49,7 @@ class ColorPresetRepositoryImpl @Inject constructor(
         colorPreset: ColorPreset
     ): Result<Unit> = runCatchingCancellable {
         withContext(Dispatchers.IO) {
-            database.colorPresetDao.getColorPresets().map {
-                it.copy(isSelected = it.id == colorPreset.id)
-            }.forEach {
-                database.colorPresetDao.updateColorPreset(it)
-            }
+            database.colorPresetDao.selectOnly(colorPreset.id)
         }
     }
 
@@ -61,12 +57,7 @@ class ColorPresetRepositoryImpl @Inject constructor(
         colorPresets: List<ColorPreset>
     ): Result<Unit> = runCatchingCancellable {
         withContext(Dispatchers.IO) {
-            database.colorPresetDao.deleteColorPresets()
-            colorPresets.forEachIndexed { index, colorPreset ->
-                database.colorPresetDao.updateColorPreset(
-                    colorPresetMapper.toColorPresetEntity(colorPreset, order = index)
-                )
-            }
+            database.colorPresetDao.reorderColorPresets(colorPresets.map { it.id })
         }
     }
 

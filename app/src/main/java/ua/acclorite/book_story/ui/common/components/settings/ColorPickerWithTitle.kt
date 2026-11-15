@@ -22,6 +22,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
@@ -32,7 +33,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.debounce
 import ua.acclorite.book_story.R
 import ua.acclorite.book_story.ui.common.components.common.IconButton
@@ -50,13 +50,37 @@ fun ColorPickerWithTitle(
     onValueChange: (Color) -> Unit
 ) {
     val initialValue = rememberSaveable(presetId) { value.value.toString() }
-    var color by remember(value) { mutableStateOf(value) }
+    var color by remember(presetId) { mutableStateOf(value) }
 
-    LaunchedEffect(color) {
+    // Colours sent and not yet seen back as `value`. The model stores them in
+    // order, but a state flow may skip some, so a value that comes back drops
+    // every older one too. A value that is not ours was changed elsewhere
+    // (shuffle, reset) and replaces the local colour. Without this, an older
+    // value coming back mid-drag snapped the sliders back under the finger.
+    val sent = remember(presetId) { ArrayDeque<Color>() }
+    val currentValue by rememberUpdatedState(value)
+    val currentOnValueChange by rememberUpdatedState(onValueChange)
+
+    LaunchedEffect(presetId, value) {
+        val index = sent.indexOf(value)
+        if (index >= 0) {
+            repeat(index + 1) { sent.removeFirst() }
+        } else {
+            sent.clear()
+            color = value
+        }
+    }
+
+    // Sends only real changes: the first emission is the value as shown, which
+    // used to be written back on every open of the screen.
+    LaunchedEffect(presetId) {
         snapshotFlow {
             color
-        }.debounce(50).collectLatest {
-            onValueChange(it)
+        }.debounce(50).collect {
+            if (it != (sent.lastOrNull() ?: currentValue)) {
+                sent.addLast(it)
+                currentOnValueChange(it)
+            }
         }
     }
 
