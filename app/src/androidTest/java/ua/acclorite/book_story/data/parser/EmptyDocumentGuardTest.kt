@@ -21,6 +21,7 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import ua.acclorite.book_story.data.parser.document.DocumentParser
+import ua.acclorite.book_story.data.parser.epub.EpubPackage
 import ua.acclorite.book_story.domain.model.reader.ReaderText
 import java.io.File
 import java.io.FileOutputStream
@@ -53,7 +54,7 @@ class EmptyDocumentGuardTest {
         val app = ApplicationProvider.getApplicationContext<Application>()
         archive = File(app.cacheDir, "empty-guard-test.zip")
         ZipOutputStream(FileOutputStream(archive)).use { out ->
-            out.putNextEntry(ZipEntry("images/pic.png"))
+            out.putNextEntry(ZipEntry("OEBPS/images/pic.png"))
             out.write(Base64.decode(png, Base64.DEFAULT))
             out.closeEntry()
         }
@@ -68,7 +69,7 @@ class EmptyDocumentGuardTest {
 
     @Test
     fun aPageHoldingOnlyAnImageSurvives() {
-        val parsed = parse("<p><img src=\"pic.png\"/></p>")
+        val parsed = parse("<p><img src=\"../images/pic.png\"/></p>")
 
         assertEquals("one entry, the image", 1, parsed.size)
         assertTrue("it is the image", parsed.single() is ReaderText.Image)
@@ -83,7 +84,7 @@ class EmptyDocumentGuardTest {
             <div>
               <svg xmlns="http://www.w3.org/2000/svg" version="1.1"
                    width="100%" height="100%" viewBox="0 0 3 2">
-                <image width="3" height="2" xlink:href="pic.png"/>
+                <image width="3" height="2" xlink:href="../images/pic.png"/>
               </svg>
             </div>
             """.trimIndent()
@@ -94,7 +95,7 @@ class EmptyDocumentGuardTest {
 
     @Test
     fun anImageWithTextAroundItStillWorks() {
-        val parsed = parse("<p>Перед</p><p><img src=\"pic.png\"/></p><p>Після</p>")
+        val parsed = parse("<p>Перед</p><p><img src=\"../images/pic.png\"/></p><p>Після</p>")
 
         assertEquals(2, parsed.filterIsInstance<ReaderText.Text>().size)
         assertEquals(1, parsed.filterIsInstance<ReaderText.Image>().size)
@@ -120,8 +121,7 @@ class EmptyDocumentGuardTest {
     private fun parse(body: String): List<ReaderText> = runBlocking {
         documentParser.parseDocument(
             document = Jsoup.parse("<html><body>$body</body></html>", "", Parser.htmlParser()),
-            zipFile = zip,
-            imageEntries = zip.entries().toList(),
+            images = EpubPackage.open(zip).imagesOf(ZipEntry("OEBPS/text/chapter.xhtml")),
             includeChapter = false
         )
     }

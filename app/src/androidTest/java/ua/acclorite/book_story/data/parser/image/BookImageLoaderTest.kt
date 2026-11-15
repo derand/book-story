@@ -133,7 +133,7 @@ class BookImageLoaderTest {
     }
 
     @Test
-    fun loadsEpubEntriesByBasename() {
+    fun loadsEpubEntriesByFullPath() {
         val file = File(dir, "book.epub")
         ZipOutputStream(file.outputStream()).use { zip ->
             zip.putNextEntry(ZipEntry("OEBPS/images/cover.jpg"))
@@ -144,11 +144,15 @@ class BookImageLoaderTest {
             zip.closeEntry()
         }
 
-        val loaded = loadAll(file, setOf("cover.jpg", "page1.png")).toMap()
+        val loaded = loadAll(
+            file,
+            setOf("OEBPS/images/cover.jpg", "OEBPS/images/page1.png", "cover.jpg")
+        ).toMap()
 
-        assertEquals(setOf("cover.jpg", "page1.png"), loaded.keys)
-        assertArrayEquals(cover, loaded["cover.jpg"])
-        assertArrayEquals(page, loaded["page1.png"])
+        // A bare basename is no longer a key: two folders may hold the same name
+        assertEquals(setOf("OEBPS/images/cover.jpg", "OEBPS/images/page1.png"), loaded.keys)
+        assertArrayEquals(cover, loaded["OEBPS/images/cover.jpg"])
+        assertArrayEquals(page, loaded["OEBPS/images/page1.png"])
     }
 
     @Test

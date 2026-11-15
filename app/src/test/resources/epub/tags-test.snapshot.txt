@@ -78,16 +78,16 @@ Table header=true align=[Unspecified, Unspecified]
 Text "EXPECTED: columns sized to their content; in 5.3 the right column is right-aligned even in the header."
 Chapter depth=0 "06. Images"
 Text "Below is a 48×32 picture with a caption (alt). Tapping it must open the fullscreen viewer."
-Image square.png 48x32 bytes=112
+Image OEBPS/square.png 48x32 bytes=112
   caption Text "{i}An italic image caption{/i}"
 Text "The same picture without a caption:"
-Image square.png 48x32 bytes=112
+Image OEBPS/square.png 48x32 bytes=112
 Text "EXPECTED: both pictures visible; the first has an italic caption under it."
 Chapter depth=1 "07.1. Nested chapter"
 Text "This file is declared as a nested navPoint in toc.ncx, so the chapter list must show it indented (depth 1)."
 Text "EXPECTED: in the table of contents “07.1. Nested chapter” is nested under “06. Images”."
 Chapter depth=0 "08. A chapter with only a picture"
-Image square.png 48x32 bytes=112
+Image OEBPS/square.png 48x32 bytes=112
 Chapter depth=0 "09. Block tags without line breaks"
 Text "In the source this paragraph comes RIGHT after the h1, with no space and no line break. It must start on a new line, not stick to the heading."
 Text "{w500}Subheading h2{/w500}"

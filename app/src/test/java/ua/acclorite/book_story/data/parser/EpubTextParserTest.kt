@@ -119,17 +119,37 @@ class EpubTextParserTest {
     }
 
     @Test
-    fun twoNavPointsOnOneDocumentAreJoined() {
+    fun theFirstOfSeveralNavPointsOnOneDocumentNamesIt() {
+        // They used to be joined with " / ": a single-file book (a Google Docs
+        // export) got every heading of the book in one title
         val book = epub(
             "OEBPS/content.opf" to opf("one.xhtml"),
             "OEBPS/toc.ncx" to ncx(
                 navPoint("Перша назва", "one.xhtml"),
-                navPoint("Друга назва", "one.xhtml#middle")
+                navPoint("Друга назва", "one.xhtml#middle"),
+                navPoint("Третя назва", "one.xhtml#end")
             ),
             "OEBPS/one.xhtml" to xhtml("<p>текст</p>")
         )
 
-        assertEquals(listOf("Перша назва / Друга назва"), parse(book).chapterTitles())
+        assertEquals(listOf("Перша назва"), parse(book).chapterTitles())
+    }
+
+    @Test
+    fun aSingleFileBookWithANavKeepsItsFirstLineAsText() {
+        val book = epub(
+            "OEBPS/content.opf" to opf("book.xhtml", nav = "nav.xhtml"),
+            "OEBPS/nav.xhtml" to nav(
+                """<li><a href="book.xhtml#h0">Назва книги</a></li>""" +
+                        """<li><a href="book.xhtml#h1">Частина перша</a></li>""" +
+                        """<li><a href="book.xhtml#h2">Частина друга</a></li>"""
+            ),
+            "OEBPS/book.xhtml" to xhtml("<p>Застереження.</p><p>Текст.</p>")
+        )
+
+        val text = parse(book).text
+        assertEquals(listOf("Назва книги"), text.chapterTitles())
+        assertEquals(listOf("Застереження.", "Текст."), text.paragraphs())
     }
 
     @Test
@@ -141,6 +161,259 @@ class EpubTextParserTest {
         )
 
         assertEquals(listOf("З TOC"), parse(book).chapterTitles())
+    }
+
+    // --- hrefs (#136) ---
+
+    @Test
+    fun aStrayPercentInAnImageSrcDoesNotEmptyTheBook() {
+        // URLDecoder threw on "50%." and the whole book came out empty
+        val book = epub(
+            "OEBPS/content.opf" to opf("one.xhtml"),
+            "OEBPS/toc.ncx" to ncx(navPoint("Розділ", "one.xhtml")),
+            "OEBPS/one.xhtml" to xhtml("<p>текст</p><img src=\"Images/pic50%.png\"/>"),
+            "OEBPS/Images/pic50%.png" to png
+        )
+
+        val text = parse(book).text
+        assertEquals(listOf("Розділ"), text.chapterTitles())
+        assertEquals(listOf("текст"), text.paragraphs())
+        assertEquals(
+            "OEBPS/Images/pic50%.png",
+            text.filterIsInstance<ReaderText.Image>().single().image.src
+        )
+    }
+
+    @Test
+    fun aStrayPercentInTheTocOrTheManifestDoesNotEmptyTheBook() {
+        val book = epub(
+            "OEBPS/content.opf" to opf("100%-ch.xhtml"),
+            "OEBPS/toc.ncx" to ncx(navPoint("Розділ", "100%-ch.xhtml")),
+            "OEBPS/100%-ch.xhtml" to xhtml("<p>текст</p>")
+        )
+
+        assertEquals(listOf("Розділ"), parse(book).chapterTitles())
+    }
+
+    @Test
+    fun aPlusInAnHrefIsAPlus() {
+        val book = epub(
+            "OEBPS/content.opf" to opf("c++.xhtml"),
+            "OEBPS/toc.ncx" to ncx(navPoint("Розділ", "c++.xhtml")),
+            "OEBPS/c++.xhtml" to xhtml("<p>текст</p><img src=\"a+b.png\"/>"),
+            "OEBPS/a+b.png" to png
+        )
+
+        val text = parse(book).text
+        assertEquals(listOf("Розділ"), text.chapterTitles())
+        assertEquals("OEBPS/a+b.png", text.filterIsInstance<ReaderText.Image>().single().image.src)
+    }
+
+    @Test
+    fun anEscapedPercentInTheManifestIsDecodedOnce() {
+        // Decoded twice, "%25" became "%" and then threw
+        val book = epub(
+            "OEBPS/content.opf" to opf("50%2525.xhtml"),
+            "OEBPS/toc.ncx" to ncx(navPoint("Розділ", "50%2525.xhtml")),
+            "OEBPS/50%25.xhtml" to xhtml("<p>текст</p>")
+        )
+
+        assertEquals(listOf("Розділ"), parse(book).chapterTitles())
+    }
+
+    @Test
+    fun anEscapedUpperCaseLetterMatchesItsFile() {
+        // Lowercased before decoding, "%C3%89" stayed "É" and missed "é"
+        val book = epub(
+            "OEBPS/content.opf" to opf("%C3%89tude.xhtml"),
+            "OEBPS/toc.ncx" to ncx(navPoint("Розділ", "%C3%89tude.xhtml")),
+            "OEBPS/Étude.xhtml" to xhtml("<p>текст</p><img src=\"%C3%89.png\"/>"),
+            "OEBPS/É.png" to png
+        )
+
+        val text = parse(book).text
+        assertEquals(listOf("Розділ"), text.chapterTitles())
+        assertEquals(1, text.filterIsInstance<ReaderText.Image>().size)
+    }
+
+    // --- the package: container.xml → OPF → full paths (#136) ---
+
+    @Test
+    fun theOpfIsTheOneContainerXmlNamesNotTheFirstInTheArchive() {
+        val book = epub(
+            "backup/old.opf" to opf("old.xhtml"),
+            "backup/old.xhtml" to xhtml("<p>Стара версія</p><p>текст</p>"),
+            "META-INF/container.xml" to container("OEBPS/content.opf"),
+            "OEBPS/content.opf" to opf("new.xhtml"),
+            "OEBPS/new.xhtml" to xhtml("<p>Нова версія</p><p>текст</p>")
+        )
+
+        assertEquals(listOf("Нова версія"), parse(book).chapterTitles())
+    }
+
+    @Test
+    fun manifestHrefsResolveAgainstTheOpfsOwnFolder() {
+        val book = epub(
+            "META-INF/container.xml" to container("OPS/package/content.opf"),
+            "OPS/package/content.opf" to opf("../text/one.xhtml"),
+            "OPS/text/one.xhtml" to xhtml("<p>Розділ</p><p>текст</p><img src=\"../img/a.png\"/>"),
+            "OPS/img/a.png" to png
+        )
+
+        val text = parse(book).text
+        assertEquals(listOf("Розділ"), text.chapterTitles())
+        assertEquals("OPS/img/a.png", text.filterIsInstance<ReaderText.Image>().single().image.src)
+    }
+
+    @Test
+    fun twoDocumentsWithOneNameInTwoFoldersKeepTheirOwnTitlesAndImages() {
+        // Matched by file name, both got one title and one picture
+        val book = epub(
+            "OEBPS/content.opf" to opf("a/ch1.xhtml", "b/ch1.xhtml"),
+            "OEBPS/toc.ncx" to ncx(
+                navPoint("Перша частина", "a/ch1.xhtml"),
+                navPoint("Друга частина", "b/ch1.xhtml")
+            ),
+            "OEBPS/a/ch1.xhtml" to xhtml("<p>текст а</p><img src=\"pic.png\"/>"),
+            "OEBPS/a/pic.png" to png,
+            "OEBPS/b/ch1.xhtml" to xhtml("<p>текст б</p><img src=\"pic.png\"/>"),
+            "OEBPS/b/pic.png" to png
+        )
+
+        val text = parse(book).text
+        assertEquals(listOf("Перша частина", "Друга частина"), text.chapterTitles())
+        assertEquals(listOf("текст а", "текст б"), text.paragraphs())
+        assertEquals(
+            listOf("OEBPS/a/pic.png", "OEBPS/b/pic.png"),
+            text.filterIsInstance<ReaderText.Image>().map { it.image.src }
+        )
+    }
+
+    @Test
+    fun aPathOneLevelOffStillFindsTheOnlyFileOfThatName() {
+        // What matching by file name used to forgive
+        val book = epub(
+            "OEBPS/content.opf" to opf("one.xhtml"),
+            "OEBPS/toc.ncx" to ncx(navPoint("Розділ", "one.xhtml")),
+            "OEBPS/one.xhtml" to xhtml("<p>текст</p><img src=\"../Images/cover.png\"/>"),
+            "OEBPS/Images/cover.png" to png
+        )
+
+        assertEquals(
+            "OEBPS/Images/cover.png",
+            parse(book).text.filterIsInstance<ReaderText.Image>().single().image.src
+        )
+    }
+
+    @Test
+    fun aPathOffToANameTwoFilesShareIsNotGuessed() {
+        val book = epub(
+            "OEBPS/content.opf" to opf("one.xhtml"),
+            "OEBPS/toc.ncx" to ncx(navPoint("Розділ", "one.xhtml")),
+            "OEBPS/one.xhtml" to xhtml("<p>текст</p><img src=\"../x/pic.png\"/>"),
+            "OEBPS/a/pic.png" to png,
+            "OEBPS/b/pic.png" to png
+        )
+
+        assertTrue(parse(book).text.none { it is ReaderText.Image })
+    }
+
+    @Test
+    fun anHrefInAnotherCaseStillFindsItsFile() {
+        val book = epub(
+            "OEBPS/content.opf" to opf("Text/One.xhtml"),
+            "OEBPS/toc.ncx" to ncx(navPoint("Розділ", "text/one.XHTML")),
+            "OEBPS/text/one.xhtml" to xhtml("<p>текст</p>")
+        )
+
+        assertEquals(listOf("Розділ"), parse(book).chapterTitles())
+    }
+
+    // --- the TOC: EPUB 3 nav, else the NCX the spine names ---
+
+    @Test
+    fun anEpub3BookWithOnlyANavDocumentGetsItsTitlesAndNesting() {
+        val book = epub(
+            "OEBPS/content.opf" to opf("one.xhtml", "two.xhtml", nav = "nav.xhtml"),
+            "OEBPS/nav.xhtml" to nav(
+                """<li><a href="one.xhtml">Частина</a><ol>""" +
+                        """<li><a href="two.xhtml#s1">Розділ</a></li></ol></li>"""
+            ),
+            "OEBPS/one.xhtml" to xhtml("<p>текст один</p>"),
+            "OEBPS/two.xhtml" to xhtml("<p>текст два</p>")
+        )
+
+        val chapters = parse(book).text.filterIsInstance<ReaderText.Chapter>()
+        assertEquals(listOf("Частина", "Розділ"), chapters.map { it.title })
+        assertEquals(listOf(0, 1), chapters.map { it.depth })
+    }
+
+    @Test
+    fun theNavDocumentWinsOverTheNcx() {
+        val book = epub(
+            "OEBPS/content.opf" to opf("one.xhtml", nav = "nav.xhtml", ncx = "toc.ncx"),
+            "OEBPS/nav.xhtml" to nav("""<li><a href="one.xhtml">З nav</a></li>"""),
+            "OEBPS/toc.ncx" to ncx(navPoint("З NCX", "one.xhtml")),
+            "OEBPS/one.xhtml" to xhtml("<p>текст</p>")
+        )
+
+        assertEquals(listOf("З nav"), parse(book).chapterTitles())
+    }
+
+    @Test
+    fun theNavOfTypeTocIsReadNotTheLandmarks() {
+        val book = epub(
+            "OEBPS/content.opf" to opf("one.xhtml", nav = "nav.xhtml"),
+            "OEBPS/nav.xhtml" to
+                    """<?xml version="1.0" encoding="UTF-8"?>""" +
+                    """<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops"><body>""" +
+                    """<nav epub:type="landmarks"><ol><li><a href="one.xhtml">Початок</a></li></ol></nav>""" +
+                    """<nav epub:type="toc"><ol><li><a href="one.xhtml">Розділ</a></li></ol></nav>""" +
+                    "</body></html>",
+            "OEBPS/one.xhtml" to xhtml("<p>текст</p>")
+        )
+
+        assertEquals(listOf("Розділ"), parse(book).chapterTitles())
+    }
+
+    @Test
+    fun theNcxIsTheOneTheSpineNames() {
+        val book = epub(
+            "OEBPS/content.opf" to opf("one.xhtml", ncx = "real.ncx"),
+            "OEBPS/a-stray.ncx" to ncx(navPoint("Чужий", "one.xhtml")),
+            "OEBPS/real.ncx" to ncx(navPoint("Справжній", "one.xhtml")),
+            "OEBPS/one.xhtml" to xhtml("<p>текст</p>")
+        )
+
+        assertEquals(listOf("Справжній"), parse(book).chapterTitles())
+    }
+
+    @Test
+    fun ncxSourcesResolveAgainstTheNcxsOwnFolder() {
+        val book = epub(
+            "OEBPS/content.opf" to opf("text/one.xhtml", ncx = "toc/toc.ncx"),
+            "OEBPS/toc/toc.ncx" to ncx(navPoint("Розділ", "../text/one.xhtml")),
+            "OEBPS/text/one.xhtml" to xhtml("<p>текст</p>")
+        )
+
+        assertEquals(listOf("Розділ"), parse(book).chapterTitles())
+    }
+
+    @Test
+    fun aNavPointUnderAParentWithoutASourceIsKept() {
+        // It used to be dropped together with its title
+        val book = epub(
+            "OEBPS/content.opf" to opf("one.xhtml"),
+            "OEBPS/toc.ncx" to ncx(
+                """<navPoint id="p"><navLabel><text>Група</text></navLabel><content src=""/>""" +
+                        navPoint("Розділ", "one.xhtml") + "</navPoint>"
+            ),
+            "OEBPS/one.xhtml" to xhtml("<p>текст</p>")
+        )
+
+        val chapters = parse(book).text.filterIsInstance<ReaderText.Chapter>()
+        assertEquals(listOf("Розділ"), chapters.map { it.title })
+        assertEquals(listOf(0), chapters.map { it.depth })
     }
 
     @Test
@@ -274,7 +547,7 @@ class EpubTextParserTest {
                 navPoint("Обкладинка", "cover.xhtml"),
                 navPoint("Розділ", "one.xhtml")
             ),
-            "OEBPS/cover.xhtml" to xhtml("<div><img src=\"../Images/cover.png\"/></div>"),
+            "OEBPS/cover.xhtml" to xhtml("<div><img src=\"Images/cover.png\"/></div>"),
             "OEBPS/Images/cover.png" to png,
             "OEBPS/one.xhtml" to xhtml("<p>текст</p>")
         )
@@ -282,7 +555,7 @@ class EpubTextParserTest {
         val text = parse(book).text
         assertEquals(listOf("Обкладинка", "Розділ"), text.chapterTitles())
         val image = text.filterIsInstance<ReaderText.Image>().single()
-        assertEquals("cover.png", image.image.src)
+        assertEquals("OEBPS/Images/cover.png", image.image.src)
         assertEquals(3, image.image.width)
         assertEquals(2, image.image.height)
     }
@@ -339,17 +612,33 @@ class EpubTextParserTest {
         return book
     }
 
-    private fun opf(vararg spine: String): String = """
+    private fun opf(vararg spine: String, nav: String? = null, ncx: String? = null): String = """
         <?xml version="1.0" encoding="UTF-8"?>
-        <package xmlns="http://www.idpf.org/2007/opf" version="2.0">
+        <package xmlns="http://www.idpf.org/2007/opf" version="${if (nav != null) "3.0" else "2.0"}">
           <manifest>
             ${spine.withIndex().joinToString("") { (i, href) -> """<item id="c$i" href="$href" media-type="application/xhtml+xml"/>""" }}
+            ${nav?.let { """<item id="nav" href="$it" media-type="application/xhtml+xml" properties="nav"/>""" }.orEmpty()}
+            ${ncx?.let { """<item id="ncx" href="$it" media-type="application/x-dtbncx+xml"/>""" }.orEmpty()}
           </manifest>
-          <spine>
+          <spine${ncx?.let { " toc=\"ncx\"" }.orEmpty()}>
             ${spine.indices.joinToString("") { i -> """<itemref idref="c$i"/>""" }}
           </spine>
         </package>
     """.trimIndent()
+
+    private fun container(opfPath: String): String = """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
+          <rootfiles>
+            <rootfile full-path="$opfPath" media-type="application/oebps-package+xml"/>
+          </rootfiles>
+        </container>
+    """.trimIndent()
+
+    private fun nav(items: String): String =
+        """<?xml version="1.0" encoding="UTF-8"?>""" +
+                """<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops"><body>""" +
+                """<nav epub:type="toc"><ol>$items</ol></nav></body></html>"""
 
     private fun ncx(vararg navPoints: String): String = """
         <?xml version="1.0" encoding="UTF-8"?>

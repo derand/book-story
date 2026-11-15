@@ -9,13 +9,13 @@ package ua.acclorite.book_story.data.parser.file
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.jsoup.Jsoup
-import org.jsoup.parser.Parser
 import ua.acclorite.book_story.R
 import ua.acclorite.book_story.core.helpers.rethrowIfCancellation
 import ua.acclorite.book_story.core.log.logE
 import ua.acclorite.book_story.core.log.messageForLog
 import ua.acclorite.book_story.core.ui.UIText
 import ua.acclorite.book_story.data.model.file.CachedFile
+import ua.acclorite.book_story.data.parser.epub.EpubPackage
 import ua.acclorite.book_story.domain.model.library.Book
 import java.util.zip.ZipFile
 import javax.inject.Inject
@@ -33,15 +33,7 @@ class EpubFileParser @Inject constructor() : FileParser {
 
             withContext(Dispatchers.IO) {
                 ZipFile(rawFile).use { zip ->
-                    val opfEntry = zip.entries().asSequence().find { entry ->
-                        entry.name.endsWith(".opf", ignoreCase = true)
-                    } ?: return@withContext
-
-                    val opfContent = zip
-                        .getInputStream(opfEntry)
-                        .bufferedReader()
-                        .use { it.readText() }
-                    val document = Jsoup.parse(opfContent, Parser.xmlParser())
+                    val document = EpubPackage.open(zip).opf ?: return@withContext
 
                     val title = document.select("metadata > dc|title").text().trim().run {
                         ifBlank {

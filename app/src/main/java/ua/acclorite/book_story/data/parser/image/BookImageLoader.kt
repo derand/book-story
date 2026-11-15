@@ -12,8 +12,8 @@ import ua.acclorite.book_story.core.data.ExtensionsData
 import ua.acclorite.book_story.core.log.logE
 import ua.acclorite.book_story.core.log.messageForLog
 import ua.acclorite.book_story.data.model.file.CachedFile
+import ua.acclorite.book_story.data.parser.epub.EpubPackage
 import java.io.ByteArrayOutputStream
-import java.io.File
 import java.io.InputStream
 import java.util.zip.ZipFile
 import javax.inject.Inject
@@ -32,7 +32,7 @@ private val BINARY_ID_REGEX = Regex("""id\s*=\s*("([^"]*)"|'([^']*)')""")
  * from the source file — without re-parsing the text. Used to fill in images on a
  * parse-cache hit (the cache stores image metadata only). The `src` matching
  * mirrors [ua.acclorite.book_story.data.parser.document.DocumentParser]:
- * FB2 keys are the lowercased `<binary>` id, EPUB keys the lowercased basename.
+ * FB2 keys are the lowercased `<binary>` id, EPUB keys the image's full zip path.
  *
  * Images are handed over one by one as they are resolved, so the reader can show
  * each as soon as it is ready instead of waiting for the whole file. FB2 is
@@ -85,13 +85,10 @@ class BookImageLoader @Inject constructor() {
         if (rawFile == null || !rawFile.exists() || !rawFile.canRead()) return
         try {
             ZipFile(rawFile).use { zip ->
-                val entries = zip.entries().toList()
+                val epub = EpubPackage.open(zip)
                 srcs.forEach { src ->
-                    val entry = entries.find { entry ->
-                        src == entry.name.substringAfterLast(File.separator).lowercase()
-                    } ?: return@forEach
                     try {
-                        onImage(src, zip.getInputStream(entry).use { it.readBytes() })
+                        onImage(src, epub.imageBytes(src) ?: return@forEach)
                     } catch (e: Exception) {
                         logE(TAG, "Could not read EPUB image [$src]: ${e.messageForLog()}")
                     }

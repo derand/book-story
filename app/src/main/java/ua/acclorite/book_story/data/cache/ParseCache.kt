@@ -292,6 +292,10 @@ class ParseCache @Inject constructor(application: Application) {
         // 10: EPUB/FB2/HTML built by a DOM walk (block tags end a line, no
         //     markdown over the book's text, styles nest).
         // 11: Markdown fences and <pre> are one preformatted block (format 4).
-        const val VERSION = 11
+        // 12: EPUB hrefs decoded once, percent escapes only ("+" and a stray
+        //     "%" kept, case folded after decoding).
+        // 13: EPUB read through container.xml → OPF; images keyed by their
+        //     full zip path; TOC from the EPUB 3 nav when there is one.
+        const val VERSION = 13
     }
 }

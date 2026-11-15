@@ -7,7 +7,6 @@
 package ua.acclorite.book_story.data.parser.document
 
 import android.graphics.BitmapFactory
-import android.util.Base64
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.buildAnnotatedString
 import kotlinx.coroutines.Deferred
@@ -24,12 +23,7 @@ import ua.acclorite.book_story.core.log.messageForLog
 import ua.acclorite.book_story.core.log.timed
 import ua.acclorite.book_story.domain.model.reader.ReaderImage
 import ua.acclorite.book_story.domain.model.reader.ReaderText
-import java.io.File
-import java.net.URLDecoder
-import java.nio.charset.StandardCharsets
 import java.util.zip.CRC32
-import java.util.zip.ZipEntry
-import java.util.zip.ZipFile
 import javax.inject.Inject
 
 private const val TAG = "DocumentParser"
@@ -61,9 +55,7 @@ class DocumentParser @Inject constructor() {
      */
     suspend fun parseDocument(
         document: Document,
-        zipFile: ZipFile? = null,
-        imageEntries: List<ZipEntry>? = null,
-        base64Images: Map<String, String>? = null,
+        images: DocumentImages? = null,
         includeChapter: Boolean = true,
         sectionTitles: Boolean = false,
         keepImageBytes: Boolean = true
@@ -74,7 +66,7 @@ class DocumentParser @Inject constructor() {
         val imageJobs = mutableMapOf<String, Deferred<ReaderImage?>>()
         fun decode(src: String) = imageJobs.getOrPut(src) {
             async(Dispatchers.Default) {
-                loadImage(src, zipFile, imageEntries, base64Images, keepImageBytes)
+                loadImage(src, images, keepImageBytes)
             }
         }
 
@@ -84,30 +76,15 @@ class DocumentParser @Inject constructor() {
             image = { element ->
                 when (element.normalName()) {
                     "img" -> element.attr("src")
-                        .trim()
-                        .substringAfterLast(File.separator)
-                        .lowercase()
-                        .let { src -> URLDecoder.decode(src, StandardCharsets.UTF_8.name()) }
-                        .takeIf { src ->
-                            src.containsVisibleText() && imageEntries.holds(src)
-                        }
-
                     // FB2 <image> references a <binary> by id; SVG's by path
                     else -> element.attr("xlink:href")
                         .ifBlank { element.attr("l:href") }
                         .ifBlank { element.attr("href") }
-                        .trim()
-                        .removePrefix("#")
-                        .substringAfterLast(File.separator)
-                        .lowercase()
-                        .let { src -> URLDecoder.decode(src, StandardCharsets.UTF_8.name()) }
-                        .takeIf { src ->
-                            src.containsVisibleText() && (
-                                    base64Images?.containsKey(src) == true ||
-                                            imageEntries.holds(src)
-                                    )
-                        }
-                }?.let { src -> decode(src) }
+                }
+                    .trim()
+                    .takeIf { ref -> ref.containsVisibleText() }
+                    ?.let { ref -> images?.resolve(ref) }
+                    ?.let { src -> decode(src) }
             }
         )
 
@@ -171,31 +148,20 @@ class DocumentParser @Inject constructor() {
         }
     }
 
-    private fun List<ZipEntry>?.holds(src: String): Boolean =
-        this?.any { image -> src == image.name.substringAfterLast(File.separator).lowercase() } == true
-
     /**
-     * Loading the encoded image bytes from a [ZipFile] entry (EPUB)
-     * or a Base64 <binary> (FB2). Only the image bounds are decoded here,
+     * Loading the encoded image bytes of [src] from [images] — a zip entry
+     * (EPUB) or a Base64 <binary> (FB2). Only the image bounds are decoded here,
      * pixels are decoded lazily when the reader shows the image.
      *
      * @return Null if the image was not found or is not decodable.
      */
     private fun loadImage(
         src: String,
-        zipFile: ZipFile?,
-        imageEntries: List<ZipEntry>?,
-        base64Images: Map<String, String>?,
+        images: DocumentImages?,
         keepImageBytes: Boolean
     ): ReaderImage? {
         return try {
-            val bytes = base64Images?.get(src)?.let { encoded ->
-                Base64.decode(encoded, Base64.DEFAULT)
-            } ?: imageEntries?.find { image ->
-                src == image.name.substringAfterLast(File.separator).lowercase()
-            }?.let { imageEntry ->
-                zipFile?.getInputStream(imageEntry)?.use { it.readBytes() }
-            } ?: return null
+            val bytes = images?.bytes(src) ?: return null
 
             val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
             BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
