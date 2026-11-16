@@ -18,7 +18,18 @@ import ua.acclorite.book_story.ui.theme.model.ThemeContrast
 
 class CrashActivity : AppCompatActivity() {
 
+    companion object {
+        /**
+         * Set while this screen exists, so that a crash of the screen itself goes
+         * to the platform's handler instead of starting the screen again.
+         */
+        @Volatile
+        var isRunning = false
+            private set
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
+        isRunning = true
 
         // Default super
         super.onCreate(savedInstanceState)
@@ -37,5 +48,10 @@ class CrashActivity : AppCompatActivity() {
                 CrashScreen.Content()
             }
         }
+    }
+
+    override fun onDestroy() {
+        isRunning = false
+        super.onDestroy()
     }
 }
