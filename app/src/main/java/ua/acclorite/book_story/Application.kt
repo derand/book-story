@@ -30,7 +30,9 @@ class Application : Application() {
         swapPendingRestore(this)
 
         super.onCreate()
-        Thread.setDefaultUncaughtExceptionHandler(CrashHandler(this))
+        Thread.setDefaultUncaughtExceptionHandler(
+            CrashHandler(this, previous = Thread.getDefaultUncaughtExceptionHandler())
+        )
 
         // Reader image files and book copies of runs that never got to clean up
         // after themselves — being killed, or swiped away from the recents list, is
