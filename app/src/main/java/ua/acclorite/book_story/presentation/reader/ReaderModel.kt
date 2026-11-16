@@ -15,6 +15,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
@@ -128,7 +129,14 @@ class ReaderModel @Inject constructor(
 
     private var scrollJob: Job? = null
     private var searchJob: Job? = null
-    private val eventStack = mutableListOf<Job>()
+
+    /**
+     * Parent of every [onEvent] job, so that [clear] can stop the running ones.
+     * A job rather than a list of them: events are sent from several threads
+     * while [clear] walks them, and a finished child leaves on its own.
+     * Supervisor, so that one failed event does not cancel the others.
+     */
+    private val eventJobs = SupervisorJob(viewModelScope.coroutineContext.job)
 
     /** Start of the running reading session, or null when none is running. */
     private var sessionStartTime: Long? = null
@@ -208,7 +216,7 @@ class ReaderModel @Inject constructor(
     private var reachedEnd = false
 
     fun onEvent(event: ReaderEvent) {
-        viewModelScope.launch {
+        viewModelScope.launch(eventJobs) {
             when (event) {
                 is ReaderEvent.OnLoadText -> {
                     withContext(Dispatchers.Default) {
@@ -766,7 +774,7 @@ class ReaderModel @Inject constructor(
                     _effects.emit(ReaderEffect.OnNavigateToBookInfo(event.changePath))
                 }
             }
-        }.also { eventStack.add(it) }
+        }
     }
 
     fun init(bookId: Int) {
@@ -1170,11 +1178,7 @@ class ReaderModel @Inject constructor(
         sessionOverlayMs = 0
         overlayShownAt = null
 
-        eventStack.forEach { job ->
-            job.cancel()
-            job.join()
-        }
-        eventStack.clear()
+        eventJobs.children.forEach { it.cancelAndJoin() }
 
         // Joined, not just cancelled: the image pass ends in blocking file I/O
         // that cancellation cannot interrupt, and it must not still be publishing
