@@ -132,9 +132,13 @@ class ReaderModel @Inject constructor(
 
     /**
      * Parent of every [onEvent] job, so that [clear] can stop the running ones.
-     * A job rather than a list of them: events are sent from several threads
-     * while [clear] walks them, and a finished child leaves on its own.
+     * A job rather than a list of them: a finished child leaves on its own.
      * Supervisor, so that one failed event does not cancel the others.
+     *
+     * Every handler, and every job the model starts, runs on Main, so the
+     * model's fields and the list state are only ever touched from there. The
+     * passes over the whole book (parse, image split, word counts, search)
+     * go to Default and hand back a value; they change nothing themselves.
      */
     private val eventJobs = SupervisorJob(viewModelScope.coroutineContext.job)
 
@@ -219,86 +223,77 @@ class ReaderModel @Inject constructor(
         viewModelScope.launch(eventJobs) {
             when (event) {
                 is ReaderEvent.OnLoadText -> {
-                    withContext(Dispatchers.Default) {
-                        val parsedText = getTextUseCase(_state.value.book.id)
-                        val text = parsedText.text
-                        BookOpenTrace.mark("text parsed")
-                        ensureActive()
+                    // The parse and the image split below walk the whole book,
+                    // so they run on Default and only hand back what they made.
+                    // Everything is applied here, on Main, like every other
+                    // change to the model.
+                    val parsedText = withContext(Dispatchers.Default) {
+                        getTextUseCase(_state.value.book.id)
+                    }
+                    val text = parsedText.text
+                    BookOpenTrace.mark("text parsed")
+                    ensureActive()
 
-                        if (text.isEmpty()) {
-                            val failure = failureMessage(_state.value.book)
-                            _state.update {
-                                it.copy(
-                                    isLoading = false,
-                                    errorMessage = failure.first,
-                                    errorOffersPathChange = failure.second
-                                )
-                            }
-                            _effects.emit(ReaderEffect.OnSystemBarsVisibility(show = true))
-                            return@withContext
-                        }
-
-                        _effects.emit(ReaderEffect.OnSystemBarsVisibility(show = null))
-
-                        // A freshly parsed book carries its image bytes, one
-                        // restored from the cache carries metadata only. Either
-                        // way the bytes are kept out of the state: [OnLoadImages]
-                        // hands them to the store in the background, which holds
-                        // a bounded few and puts the rest on disk. Holding them
-                        // here as well would pin tens of megabytes for the whole
-                        // session.
-                        val bytes = HashMap<String, ByteArray>()
-                        val strippedText = text.map { entry ->
-                            when {
-                                entry !is ReaderText.Image -> entry
-                                entry.image.bytes.isEmpty() -> entry
-                                else -> {
-                                    bytes[entry.image.src] = entry.image.bytes
-                                    entry.copy(image = entry.image.withoutBytes())
-                                }
-                            }
-                        }
-                        parsedImageBytes = bytes
-                        imageStore.reset(
-                            strippedText.filterIsInstance<ReaderText.Image>()
-                                .map { it.image.src }
-                        )
-
-                        val lastOpened = getHistoryForBookUseCase(_state.value.book.id)?.time
+                    if (text.isEmpty()) {
+                        val failure = failureMessage(_state.value.book)
                         _state.update {
                             it.copy(
-                                showMenu = false,
-                                book = it.book.copy(
-                                    lastOpened = lastOpened
-                                ),
-                                text = strippedText,
-                                notes = parsedText.notes
+                                isLoading = false,
+                                errorMessage = failure.first,
+                                errorOffersPathChange = failure.second
                             )
                         }
-                        BookOpenTrace.mark("text in state")
-                        ensureActive()
-
-                        // The session starts when there is something to read,
-                        // not when the book was opened: a cold parse is not
-                        // reading time.
-                        startSession()
-
-                        // Separately, because counting every word of the book is
-                        // one pass over all of it and the first frame is still
-                        // ahead — [OnRestoreScroll] below is what ends the
-                        // loading placeholder.
-                        coverageJob = viewModelScope.launch(Dispatchers.Default) {
-                            loadCoverage(strippedText)
-                        }
-
-                        // No row write here: nothing about the row changed (the
-                        // `lastOpened` above is not a column), and writing back
-                        // the copy read before the parse could only undo
-                        // something written meanwhile. The lists are refreshed
-                        // by the history insert that came with the open.
-
-                        onEvent(ReaderEvent.OnRestoreScroll)
+                        _effects.emit(ReaderEffect.OnSystemBarsVisibility(show = true))
+                        return@launch
                     }
+
+                    _effects.emit(ReaderEffect.OnSystemBarsVisibility(show = null))
+
+                    // A freshly parsed book carries its image bytes, one
+                    // restored from the cache carries metadata only. Either
+                    // way the bytes are kept out of the state: [OnLoadImages]
+                    // hands them to the store in the background, which holds
+                    // a bounded few and puts the rest on disk. Holding them
+                    // here as well would pin tens of megabytes for the whole
+                    // session.
+                    val split = withContext(Dispatchers.Default) { splitImageBytes(text) }
+                    parsedImageBytes = split.bytes
+                    imageStore.reset(split.imageSrcs)
+
+                    val lastOpened = getHistoryForBookUseCase(_state.value.book.id)?.time
+                    _state.update {
+                        it.copy(
+                            showMenu = false,
+                            book = it.book.copy(
+                                lastOpened = lastOpened
+                            ),
+                            text = split.text,
+                            notes = parsedText.notes
+                        )
+                    }
+                    BookOpenTrace.mark("text in state")
+                    ensureActive()
+
+                    // The session starts when there is something to read,
+                    // not when the book was opened: a cold parse is not
+                    // reading time.
+                    startSession()
+
+                    // Separately, because counting every word of the book is
+                    // one pass over all of it and the first frame is still
+                    // ahead — [OnRestoreScroll] below is what ends the
+                    // loading placeholder.
+                    coverageJob = viewModelScope.launch {
+                        loadCoverage(split.text)
+                    }
+
+                    // No row write here: nothing about the row changed (the
+                    // `lastOpened` above is not a column), and writing back
+                    // the copy read before the parse could only undo
+                    // something written meanwhile. The lists are refreshed
+                    // by the history insert that came with the open.
+
+                    onEvent(ReaderEvent.OnRestoreScroll)
                 }
 
                 is ReaderEvent.OnLoadImages -> {
@@ -308,7 +303,9 @@ class ReaderModel @Inject constructor(
 
                     val bookId = _state.value.book.id
                     val parsed = parsedImageBytes
-                    imageJob = viewModelScope.launch(Dispatchers.IO) {
+                    imageJob = viewModelScope.launch {
+                        // The pass switches to IO itself and calls back from
+                        // there; the store is snapshot state and takes that.
                         loadBookImagesUseCase(bookId, pending, parsed) { src, image ->
                             imageStore.put(src, image)
                         }
@@ -342,43 +339,41 @@ class ReaderModel @Inject constructor(
                 }
 
                 is ReaderEvent.OnMenuVisibility -> {
-                    withContext(Dispatchers.Default) {
-                        if (_state.value.lockMenu) return@withContext
+                    if (_state.value.lockMenu) return@launch
 
-                        _effects.emit(
-                            ReaderEffect.OnSystemBarsVisibility(
-                                show = if (event.show) true
-                                else null
+                    _effects.emit(
+                        ReaderEffect.OnSystemBarsVisibility(
+                            show = if (event.show) true
+                            else null
+                        )
+                    )
+
+                    if (event.saveCheckpoint && event.show) {
+                        val checkpoints = _state.value.checkpoints.toMutableList()
+                        checkpoints.removeIf {
+                            it.index == _state.value.listState.firstVisibleItemIndex
+                        }
+                        checkpoints.add(
+                            Checkpoint(
+                                _state.value.listState.firstVisibleItemIndex,
+                                _state.value.listState.firstVisibleItemScrollOffset
                             )
                         )
 
-                        if (event.saveCheckpoint && event.show) {
-                            val checkpoints = _state.value.checkpoints.toMutableList()
-                            checkpoints.removeIf {
-                                it.index == _state.value.listState.firstVisibleItemIndex
-                            }
-                            checkpoints.add(
-                                Checkpoint(
-                                    _state.value.listState.firstVisibleItemIndex,
-                                    _state.value.listState.firstVisibleItemScrollOffset
-                                )
-                            )
-
-                            _state.update {
-                                it.copy(checkpoints = checkpoints)
-                            }
-                        }
-
                         _state.update {
-                            it.copy(showMenu = event.show)
+                            it.copy(checkpoints = checkpoints)
                         }
+                    }
 
-                        // With the search open, the bars going away is the
-                        // reader turning back to the text — and coming back is
-                        // the search covering it again.
-                        if (_state.value.search.active) {
-                            if (event.show) overlayShown() else overlayHidden()
-                        }
+                    _state.update {
+                        it.copy(showMenu = event.show)
+                    }
+
+                    // With the search open, the bars going away is the
+                    // reader turning back to the text — and coming back is
+                    // the search covering it again.
+                    if (_state.value.search.active) {
+                        if (event.show) overlayShown() else overlayHidden()
                     }
                 }
 
@@ -408,28 +403,26 @@ class ReaderModel @Inject constructor(
                 }
 
                 is ReaderEvent.OnScrollToChapter -> {
-                    withContext(Dispatchers.Default) {
-                        val chapterIndex = _state.value.text
-                            .indexOf(event.chapter)
-                            .takeIf { it != -1 }
-                        if (chapterIndex == null) return@withContext
+                    val chapterIndex = _state.value.text
+                        .indexOf(event.chapter)
+                        .takeIf { it != -1 }
+                    if (chapterIndex == null) return@launch
 
-                        clearCurrentMatch()
-                        _state.value.listState.requestScrollToItem(
-                            index = chapterIndex,
-                            scrollOffset = 0
-                        )
+                    clearCurrentMatch()
+                    _state.value.listState.requestScrollToItem(
+                        index = chapterIndex,
+                        scrollOffset = 0
+                    )
 
-                        // The new position is saved by [updateProgress] once the
-                        // list lands: measured here, before the next layout, the
-                        // progress would describe the screen being left.
-                        onEvent(ReaderEvent.OnUpdateChapter(chapterIndex))
-                    }
+                    // The new position is saved by [updateProgress] once the
+                    // list lands: measured here, before the next layout, the
+                    // progress would describe the screen being left.
+                    onEvent(ReaderEvent.OnUpdateChapter(chapterIndex))
                 }
 
                 is ReaderEvent.OnScroll -> {
                     scrollJob?.cancel()
-                    scrollJob = viewModelScope.launch(Dispatchers.IO) {
+                    scrollJob = viewModelScope.launch {
                         delay(300)
 
                         val scrollTo = (_state.value.text.lastIndex * event.progress).roundToInt()
@@ -446,26 +439,24 @@ class ReaderModel @Inject constructor(
                 }
 
                 is ReaderEvent.OnRestoreCheckpoint -> {
-                    withContext(Dispatchers.Default) {
-                        _state.update {
-                            val checkpoints = it.checkpoints.toMutableList()
-                            if (checkpoints.size > 1) checkpoints.remove(event.checkpoint)
+                    _state.update {
+                        val checkpoints = it.checkpoints.toMutableList()
+                        if (checkpoints.size > 1) checkpoints.remove(event.checkpoint)
 
-                            it.copy(
-                                checkpoints = checkpoints
-                            )
-                        }
-
-                        clearCurrentMatch()
-                        _state.value.listState.requestScrollToItem(
-                            index = event.checkpoint.index,
-                            scrollOffset = event.checkpoint.offset
+                        it.copy(
+                            checkpoints = checkpoints
                         )
-
-                        // Saved by [updateProgress] once the list lands, as for
-                        // a chapter.
-                        onEvent(ReaderEvent.OnUpdateChapter(event.checkpoint.index))
                     }
+
+                    clearCurrentMatch()
+                    _state.value.listState.requestScrollToItem(
+                        index = event.checkpoint.index,
+                        scrollOffset = event.checkpoint.offset
+                    )
+
+                    // Saved by [updateProgress] once the list lands, as for
+                    // a chapter.
+                    onEvent(ReaderEvent.OnUpdateChapter(event.checkpoint.index))
                 }
 
                 is ReaderEvent.OnSearchVisibility -> {
@@ -523,13 +514,14 @@ class ReaderModel @Inject constructor(
                     }
                     if (!searchable) return@launch
 
-                    searchJob = viewModelScope.launch(Dispatchers.Default) {
+                    searchJob = viewModelScope.launch {
                         delay(SEARCH_DEBOUNCE)
 
-                        val matches = _state.value.text.findSearchMatches(
-                            query = query,
-                            notes = _state.value.notes
-                        )
+                        val text = _state.value.text
+                        val notes = _state.value.notes
+                        val matches = withContext(Dispatchers.Default) {
+                            text.findSearchMatches(query = query, notes = notes)
+                        }
                         ensureActive()
 
                         _state.update {
@@ -548,31 +540,29 @@ class ReaderModel @Inject constructor(
                 }
 
                 is ReaderEvent.OnSearchStep -> {
-                    withContext(Dispatchers.Default) {
-                        val target = _state.value.search.stepTarget(
-                            forward = event.forward,
-                            visible = visibleRange()
-                        ) ?: return@withContext
-                        val match = _state.value.search.matches[target]
+                    val target = _state.value.search.stepTarget(
+                        forward = event.forward,
+                        visible = visibleRange()
+                    ) ?: return@launch
+                    val match = _state.value.search.matches[target]
 
-                        _state.update {
-                            it.copy(search = it.search.copy(current = target))
-                        }
-
-                        // Stepping through matches lands on screens nobody reads,
-                        // exactly like dragging the slider does.
-                        jumpedToPosition()
-                        _state.value.listState.requestScrollToItem(
-                            index = match.itemIndex,
-                            // Negative: the item is pushed *down* the screen,
-                            // out from under the bar that was used to find it.
-                            scrollOffset = searchLandingOffset()
-                        )
-                        // The landing is saved like any settled position
-                        // ([updateProgress]); [OnSearchReturn] brings the reader
-                        // back to where the search started.
-                        onEvent(ReaderEvent.OnUpdateChapter(match.itemIndex))
+                    _state.update {
+                        it.copy(search = it.search.copy(current = target))
                     }
+
+                    // Stepping through matches lands on screens nobody reads,
+                    // exactly like dragging the slider does.
+                    jumpedToPosition()
+                    _state.value.listState.requestScrollToItem(
+                        index = match.itemIndex,
+                        // Negative: the item is pushed *down* the screen,
+                        // out from under the bar that was used to find it.
+                        scrollOffset = searchLandingOffset()
+                    )
+                    // The landing is saved like any settled position
+                    // ([updateProgress]); [OnSearchReturn] brings the reader
+                    // back to where the search started.
+                    onEvent(ReaderEvent.OnUpdateChapter(match.itemIndex))
                 }
 
                 is ReaderEvent.OnSearchReturn -> {
@@ -778,7 +768,7 @@ class ReaderModel @Inject constructor(
     }
 
     fun init(bookId: Int) {
-        viewModelScope.launch(Dispatchers.Default) {
+        viewModelScope.launch {
             val book = timed("  init: book row") { getBookUseCase(bookId) }
 
             if (book == null) {
@@ -873,7 +863,7 @@ class ReaderModel @Inject constructor(
                 }
 
                 startSession()
-                coverageJob = viewModelScope.launch(Dispatchers.Default) {
+                coverageJob = viewModelScope.launch {
                     loadCoverage(_state.value.text)
                 }
 
@@ -1069,7 +1059,8 @@ class ReaderModel @Inject constructor(
         // needs the preview guard of its own; see [startSession].
         if (!_state.value.book.inLibrary) return
 
-        val prefix = text.wordPrefixSums()
+        // The one pass over every word of the book; the rest is applied here.
+        val prefix = withContext(Dispatchers.Default) { text.wordPrefixSums() }
         val bookWords = prefix.last()
         val stored = getBookCoverageUseCase(
             bookId = _state.value.book.id,
@@ -1090,10 +1081,31 @@ class ReaderModel @Inject constructor(
         // moves, so on a book big enough for this load to lose that race the
         // first screen would never be credited at all — which is how a fresh
         // trilogy ended a whole session with empty coverage (device QA,
-        // 2026-08-05). On Main, where every other credit happens.
-        withContext(Dispatchers.Main) {
-            creditVisible(_state.value.listState.layoutInfo.visibleItemsInfo)
+        // 2026-08-05).
+        creditVisible(_state.value.listState.layoutInfo.visibleItemsInfo)
+    }
+
+    private class ImageSplit(
+        val text: List<ReaderText>,
+        val bytes: Map<String, ByteArray>,
+        val imageSrcs: List<String>
+    )
+
+    /** [text] without its image bytes, the bytes by `src`, and every image's `src`. */
+    private fun splitImageBytes(text: List<ReaderText>): ImageSplit {
+        val bytes = HashMap<String, ByteArray>()
+        val stripped = text.map { entry ->
+            when {
+                entry !is ReaderText.Image -> entry
+                entry.image.bytes.isEmpty() -> entry
+                else -> {
+                    bytes[entry.image.src] = entry.image.bytes
+                    entry.copy(image = entry.image.withoutBytes())
+                }
+            }
         }
+        val srcs = stripped.filterIsInstance<ReaderText.Image>().map { it.image.src }
+        return ImageSplit(stripped, bytes, srcs)
     }
 
     /** The reader is about to move the list itself; see [landingAfterJump]. */
@@ -1108,7 +1120,7 @@ class ReaderModel @Inject constructor(
      */
     private fun creditVisible(visible: List<LazyListItemInfo>) {
         // Nothing is credited outside a session, the way a note is not: the
-        // coverage pass finishes on its own thread and can land after the
+        // coverage pass finishes in a job of its own and can land after the
         // session that started it has been banked and its ledger cleared — a
         // book opened and left at once would then pay its last screen into the
         // *next* book's first session.
