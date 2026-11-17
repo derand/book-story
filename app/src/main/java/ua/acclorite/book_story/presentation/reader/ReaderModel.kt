@@ -30,8 +30,6 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import ua.acclorite.book_story.domain.model.library.Book
 import androidx.core.net.toUri
@@ -68,7 +66,6 @@ import ua.acclorite.book_story.presentation.reader.model.ReaderSearch
 import ua.acclorite.book_story.presentation.reader.model.readingProgress
 import ua.acclorite.book_story.presentation.reader.model.stepTarget
 import javax.inject.Inject
-import kotlin.coroutines.coroutineContext
 import kotlin.math.roundToInt
 
 /**
@@ -103,8 +100,6 @@ class ReaderModel @Inject constructor(
     private val discardPreviewsUseCase: DiscardPreviewsUseCase,
     private val grantPersistableUriPermissionUseCase: GrantPersistableUriPermissionUseCase
 ) : ViewModel() {
-
-    private val mutex = Mutex()
 
     private val _state = MutableStateFlow(ReaderState())
     val state = _state.asStateFlow()
@@ -236,7 +231,7 @@ class ReaderModel @Inject constructor(
 
                     if (text.isEmpty()) {
                         val failure = failureMessage(_state.value.book)
-                        _state.update {
+                        _state.updateIfActive {
                             it.copy(
                                 isLoading = false,
                                 errorMessage = failure.first,
@@ -261,7 +256,7 @@ class ReaderModel @Inject constructor(
                     imageStore.reset(split.imageSrcs)
 
                     val lastOpened = getHistoryForBookUseCase(_state.value.book.id)?.time
-                    _state.update {
+                    _state.updateIfActive {
                         it.copy(
                             showMenu = false,
                             book = it.book.copy(
@@ -324,7 +319,7 @@ class ReaderModel @Inject constructor(
                         scrollOffset = _state.value.book.scrollOffset
                     )
 
-                    _state.update {
+                    _state.updateIfActive {
                         val (currentChapter, currentChapterProgress) = getChapterProgressUseCase(
                             it.book.scrollIndex,
                             it.text
@@ -360,12 +355,12 @@ class ReaderModel @Inject constructor(
                             )
                         )
 
-                        _state.update {
+                        _state.updateIfActive {
                             it.copy(checkpoints = checkpoints)
                         }
                     }
 
-                    _state.update {
+                    _state.updateIfActive {
                         it.copy(showMenu = event.show)
                     }
 
@@ -384,13 +379,13 @@ class ReaderModel @Inject constructor(
                     // dragged value now would pair it with the old position,
                     // and a book left before the list moved reopened there with
                     // its progress jumping back.
-                    _state.update {
+                    _state.updateIfActive {
                         it.copy(book = it.book.copy(progress = event.progress))
                     }
                 }
 
                 is ReaderEvent.OnUpdateChapter -> {
-                    _state.update {
+                    _state.updateIfActive {
                         val (currentChapter, currentChapterProgress) = getChapterProgressUseCase(
                             event.index,
                             _state.value.text
@@ -439,7 +434,7 @@ class ReaderModel @Inject constructor(
                 }
 
                 is ReaderEvent.OnRestoreCheckpoint -> {
-                    _state.update {
+                    _state.updateIfActive {
                         val checkpoints = it.checkpoints.toMutableList()
                         if (checkpoints.size > 1) checkpoints.remove(event.checkpoint)
 
@@ -466,7 +461,7 @@ class ReaderModel @Inject constructor(
                         true -> {
                             creditOpenNote()
                             overlayShown()
-                            _state.update {
+                            _state.updateIfActive {
                                 it.copy(
                                     search = ReaderSearch(
                                         active = true,
@@ -484,7 +479,7 @@ class ReaderModel @Inject constructor(
                         // whatever position it took them to.
                         false -> {
                             overlayHidden()
-                            _state.update { it.copy(search = ReaderSearch()) }
+                            _state.updateIfActive { it.copy(search = ReaderSearch()) }
                         }
                     }
                 }
@@ -500,7 +495,7 @@ class ReaderModel @Inject constructor(
 
                     val query = event.query
                     val searchable = query.trim().length >= SEARCH_MIN_QUERY_LENGTH
-                    _state.update {
+                    _state.updateIfActive {
                         it.copy(
                             search = it.search.copy(
                                 query = query,
@@ -524,10 +519,10 @@ class ReaderModel @Inject constructor(
                         }
                         ensureActive()
 
-                        _state.update {
+                        _state.updateIfActive {
                             // A query that moved on while this scan ran owns the
                             // bar now; these matches are for a string nobody typed.
-                            if (it.search.query != query) return@update it
+                            if (it.search.query != query) return@updateIfActive it
                             it.copy(
                                 search = it.search.copy(
                                     matches = matches,
@@ -546,7 +541,7 @@ class ReaderModel @Inject constructor(
                     ) ?: return@launch
                     val match = _state.value.search.matches[target]
 
-                    _state.update {
+                    _state.updateIfActive {
                         it.copy(search = it.search.copy(current = target))
                     }
 
@@ -570,7 +565,7 @@ class ReaderModel @Inject constructor(
 
                     val origin = _state.value.search.origin
                     overlayHidden()
-                    _state.update { it.copy(search = ReaderSearch()) }
+                    _state.updateIfActive { it.copy(search = ReaderSearch()) }
 
                     if (origin != null) {
                         // Not a jump for the statistics: this lands where the
@@ -588,7 +583,7 @@ class ReaderModel @Inject constructor(
                     // navigates, and a second Back in that time would run it all
                     // again and pop whatever is below the reader as well.
                     if (_state.value.lockMenu) return@launch
-                    _state.update {
+                    _state.updateIfActive {
                         it.copy(
                             lockMenu = true
                         )
@@ -611,7 +606,7 @@ class ReaderModel @Inject constructor(
                         _state.value.text.isNotEmpty() &&
                         _state.value.errorMessage != null
                     ) {
-                        _state.update {
+                        _state.updateIfActive {
                             it.copy(
                                 book = it.book.copy(
                                     progress = calculateProgress(),
@@ -676,7 +671,7 @@ class ReaderModel @Inject constructor(
                 is ReaderEvent.OnShowSettingsBottomSheet -> {
                     creditOpenNote()
                     overlayShown()
-                    _state.update {
+                    _state.updateIfActive {
                         it.copy(
                             bottomSheet = ReaderScreen.SETTINGS_BOTTOM_SHEET,
                             drawer = null
@@ -693,7 +688,7 @@ class ReaderModel @Inject constructor(
                     // are credited, so its time is reading time.
                     overlayHidden()
                     openNoteId = id
-                    _state.update {
+                    _state.updateIfActive {
                         it.copy(
                             bottomSheet = ReaderScreen.NOTE_BOTTOM_SHEET,
                             currentNote = note,
@@ -705,7 +700,7 @@ class ReaderModel @Inject constructor(
                 is ReaderEvent.OnOpenImage -> {
                     creditOpenNote()
                     overlayShown()
-                    _state.update {
+                    _state.updateIfActive {
                         it.copy(
                             fullscreenImage = event.image,
                             bottomSheet = null,
@@ -716,7 +711,7 @@ class ReaderModel @Inject constructor(
 
                 is ReaderEvent.OnDismissImage -> {
                     overlayHidden()
-                    _state.update {
+                    _state.updateIfActive {
                         it.copy(
                             fullscreenImage = null
                         )
@@ -728,7 +723,7 @@ class ReaderModel @Inject constructor(
                 is ReaderEvent.OnDismissBottomSheet -> {
                     creditOpenNote()
                     overlayHidden()
-                    _state.update {
+                    _state.updateIfActive {
                         it.copy(
                             bottomSheet = null
                         )
@@ -739,7 +734,7 @@ class ReaderModel @Inject constructor(
                 is ReaderEvent.OnShowChaptersDrawer -> {
                     creditOpenNote()
                     overlayShown()
-                    _state.update {
+                    _state.updateIfActive {
                         it.copy(
                             drawer = ReaderScreen.CHAPTERS_DRAWER,
                             bottomSheet = null
@@ -749,7 +744,7 @@ class ReaderModel @Inject constructor(
 
                 is ReaderEvent.OnDismissDrawer -> {
                     overlayHidden()
-                    _state.update {
+                    _state.updateIfActive {
                         it.copy(
                             drawer = null
                         )
@@ -787,7 +782,7 @@ class ReaderModel @Inject constructor(
             // point where they stop being the ones worth keeping.
             timed("  init: drop other images") { keepOnlyBookImagesUseCase(bookId) }
 
-            _state.update {
+            _state.updateIfActive {
                 ReaderState(
                     book = book
                 )
@@ -823,13 +818,13 @@ class ReaderModel @Inject constructor(
      */
     private suspend fun keep() {
         if (_state.value.addingToLibrary || _state.value.lockMenu) return
-        _state.update { it.copy(addingToLibrary = true) }
+        _state.updateIfActive { it.copy(addingToLibrary = true) }
         keepJob = currentCoroutineContext().job
         try {
             addToLibrary()
         } finally {
             keepJob = null
-            _state.update { it.copy(addingToLibrary = false) }
+            _state.updateIfActive { it.copy(addingToLibrary = false) }
         }
     }
 
@@ -852,7 +847,7 @@ class ReaderModel @Inject constructor(
                 // may have moved while the copy was being made. Nothing here
                 // writes the row back whole any more, but the reader opens its
                 // file from this copy, so it has to name where the book now is.
-                _state.update {
+                _state.updateIfActive {
                     it.copy(
                         book = it.book.copy(
                             inLibrary = true,
@@ -1204,7 +1199,7 @@ class ReaderModel @Inject constructor(
         imageStore.reset()
         parsedImageBytes = emptyMap()
 
-        _state.update { ReaderState() }
+        _state.updateIfActive { ReaderState() }
     }
 
     @OptIn(FlowPreview::class)
@@ -1241,7 +1236,7 @@ class ReaderModel @Inject constructor(
                 text = _state.value.text
             )
 
-            _state.update {
+            _state.updateIfActive {
                 it.copy(
                     book = it.book.copy(
                         progress = progress,
@@ -1301,7 +1296,7 @@ class ReaderModel @Inject constructor(
      */
     private suspend fun clearCurrentMatch() {
         if (_state.value.search.current == -1) return
-        _state.update { it.copy(search = it.search.copy(current = -1)) }
+        _state.updateIfActive { it.copy(search = it.search.copy(current = -1)) }
     }
 
     private fun calculateProgress(firstVisibleItemIndex: Int? = null): Float {
@@ -1321,10 +1316,17 @@ class ReaderModel @Inject constructor(
         )
     }
 
-    private suspend inline fun <T> MutableStateFlow<T>.update(function: (T) -> T) {
-        mutex.withLock {
-            coroutineContext.ensureActive()
-            this.value = function(this.value)
-        }
+    /**
+     * Sets the state from [function], unless the calling coroutine has been
+     * cancelled. Not kotlinx's `update`: there is no compare-and-set loop,
+     * because every caller runs on Main and nothing can write in between.
+     *
+     * The check is the point. [clear] cancels the previous book's events and
+     * jobs, and one of them that has not reached its next suspension point yet
+     * would otherwise write the old book's results into the new book's state.
+     */
+    private suspend inline fun <T> MutableStateFlow<T>.updateIfActive(function: (T) -> T) {
+        currentCoroutineContext().ensureActive()
+        value = function(value)
     }
 }
