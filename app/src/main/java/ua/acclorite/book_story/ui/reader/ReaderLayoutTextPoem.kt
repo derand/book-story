@@ -17,23 +17,17 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.LineBreak
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import ua.acclorite.book_story.domain.model.reader.ReaderText.Poem
 import ua.acclorite.book_story.domain.model.reader.ReaderTextRole
 import ua.acclorite.book_story.domain.model.reader.SearchMatch
 import ua.acclorite.book_story.presentation.reader.ReaderEvent
-import ua.acclorite.book_story.presentation.reader.model.ReaderFontThickness
 import ua.acclorite.book_story.ui.common.components.common.StyledText
-import ua.acclorite.book_story.ui.reader.model.FontWithName
+import ua.acclorite.book_story.ui.reader.model.ReaderTextLook
 
 /**
  * An FB2 poem laid out as one block: as wide as its longest line, shifted one
@@ -46,27 +40,18 @@ fun LazyItemScope.ReaderLayoutTextPoem(
     searchMatches: List<SearchMatch>,
     currentSearchMatch: SearchMatch?,
     poem: Poem,
-    fontFamily: FontWithName,
-    fontColor: Color,
-    lineHeight: TextUnit,
-    fontThickness: ReaderFontThickness,
-    fontStyle: FontStyle,
-    fontSize: TextUnit,
-    letterSpacing: TextUnit,
-    sidePadding: Dp,
-    highlightedReading: Boolean,
-    highlightedReadingThickness: FontWeight,
+    look: ReaderTextLook,
     openNote: (ReaderEvent.OnOpenNote) -> Unit
 ) {
-    val poemFontSize = fontSize * POEM_FONT_SCALE
-    val poemLineHeight = lineHeight * POEM_FONT_SCALE
+    val poemFontSize = look.fontSize * POEM_FONT_SCALE
+    val poemLineHeight = look.lineHeight * POEM_FONT_SCALE
     val authorExtraIndent = with(LocalDensity.current) { poemFontSize.toDp() }
 
     Column(
         modifier = Modifier
             .animateItem(fadeInSpec = null, fadeOutSpec = null)
             .fillMaxWidth()
-            .padding(horizontal = sidePadding)
+            .padding(horizontal = look.sidePadding)
             .padding(start = BLOCK_INDENT_STEP),
         horizontalAlignment = Alignment.Start
     ) {
@@ -79,7 +64,7 @@ fun LazyItemScope.ReaderLayoutTextPoem(
             poem.lines.forEachIndexed { part, line ->
                 StyledText(
                     text = remember(
-                        line.line, openNote, part, searchMatches, currentSearchMatch, fontColor
+                        line.line, openNote, part, searchMatches, currentSearchMatch, look.fontColor
                     ) {
                         line.line
                             .withReferenceListeners { tag ->
@@ -88,7 +73,7 @@ fun LazyItemScope.ReaderLayoutTextPoem(
                             .withSearchHighlights(
                                 matches = searchMatches,
                                 current = currentSearchMatch,
-                                fontColor = fontColor,
+                                fontColor = look.fontColor,
                                 part = part
                             )
                     },
@@ -101,18 +86,18 @@ fun LazyItemScope.ReaderLayoutTextPoem(
                                     } else 0.dp
                         ),
                     style = TextStyle(
-                        fontFamily = fontFamily.font,
-                        fontWeight = fontThickness.thickness,
+                        fontFamily = look.fontFamily.font,
+                        fontWeight = look.fontThickness.thickness,
                         textAlign = TextAlign.Start,
-                        fontStyle = fontStyle,
-                        letterSpacing = letterSpacing,
+                        fontStyle = look.fontStyle,
+                        letterSpacing = look.letterSpacing,
                         fontSize = poemFontSize,
                         lineHeight = poemLineHeight,
-                        color = fontColor,
+                        color = look.fontColor,
                         lineBreak = LineBreak.Paragraph
                     ),
-                    highlightText = highlightedReading,
-                    highlightThickness = highlightedReadingThickness
+                    highlightText = look.highlightedReading,
+                    highlightThickness = look.highlightedReadingThickness
                 )
             }
         }

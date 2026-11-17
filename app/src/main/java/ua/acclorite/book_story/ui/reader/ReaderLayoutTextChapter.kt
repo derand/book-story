@@ -19,30 +19,23 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextLayoutResult
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import ua.acclorite.book_story.domain.model.reader.ReaderText.Chapter
 import ua.acclorite.book_story.domain.model.reader.SearchMatch
 import ua.acclorite.book_story.presentation.reader.ReaderEvent
-import ua.acclorite.book_story.presentation.reader.model.ReaderTextAlignment
 import ua.acclorite.book_story.ui.common.components.common.StyledText
+import ua.acclorite.book_story.ui.reader.model.ReaderTextLook
 
 @Composable
 fun LazyItemScope.ReaderLayoutTextChapter(
     searchMatches: List<SearchMatch>,
     currentSearchMatch: SearchMatch?,
     chapter: Chapter,
-    chapterTitleAlignment: ReaderTextAlignment,
-    fontColor: Color,
-    sidePadding: Dp,
-    highlightedReading: Boolean,
-    highlightedReadingThickness: FontWeight,
+    look: ReaderTextLook,
     toolbarHidden: Boolean,
     openNote: (ReaderEvent.OnOpenNote) -> Unit
 ) {
@@ -50,7 +43,7 @@ fun LazyItemScope.ReaderLayoutTextChapter(
     // handler is attached here, at render time (see [withReferenceListeners]).
     val styledTitle = chapter.styledTitle
     val title = remember(
-        styledTitle, chapter.title, openNote, searchMatches, currentSearchMatch, fontColor
+        styledTitle, chapter.title, openNote, searchMatches, currentSearchMatch, look.fontColor
     ) {
         val rendered = styledTitle?.withReferenceListeners { tag ->
             openNote(ReaderEvent.OnOpenNote(tag))
@@ -59,7 +52,7 @@ fun LazyItemScope.ReaderLayoutTextChapter(
         rendered.withSearchHighlights(
             matches = searchMatches,
             current = currentSearchMatch,
-            fontColor = fontColor
+            fontColor = look.fontColor
         )
     }
 
@@ -80,7 +73,7 @@ fun LazyItemScope.ReaderLayoutTextChapter(
             text = title,
             onTextLayout = { layoutResult = it },
             modifier = Modifier
-                .padding(horizontal = sidePadding)
+                .padding(horizontal = look.sidePadding)
                 .fillMaxWidth()
                 .then(
                     if (toolbarHidden && styledTitle != null) {
@@ -114,12 +107,12 @@ fun LazyItemScope.ReaderLayoutTextChapter(
                 base.copy(
                     fontSize = base.fontSize * scale,
                     lineHeight = base.lineHeight * scale,
-                    color = fontColor,
-                    textAlign = chapterTitleAlignment.textAlignment
+                    color = look.fontColor,
+                    textAlign = look.chapterTitleAlignment.textAlignment
                 )
             },
-            highlightText = highlightedReading,
-            highlightThickness = highlightedReadingThickness
+            highlightText = look.highlightedReading,
+            highlightThickness = look.highlightedReadingThickness
         )
     }
 }

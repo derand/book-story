@@ -18,29 +18,21 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.LineBreak
 import androidx.compose.ui.text.style.TextIndent
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import ua.acclorite.book_story.domain.model.reader.ReaderText.Text
 import ua.acclorite.book_story.domain.model.reader.ReaderTextRole
 import ua.acclorite.book_story.domain.model.reader.SearchMatch
 import ua.acclorite.book_story.presentation.reader.ReaderEvent
-import ua.acclorite.book_story.presentation.reader.model.ReaderFontThickness
-import ua.acclorite.book_story.presentation.reader.model.ReaderTextAlignment
 import ua.acclorite.book_story.ui.common.components.common.StyledText
-import ua.acclorite.book_story.ui.reader.model.FontWithName
+import ua.acclorite.book_story.ui.reader.model.ReaderTextLook
 
 /**
  * One step of block indentation. A paragraph's leading indent is
@@ -65,31 +57,19 @@ fun LazyItemScope.ReaderLayoutTextParagraph(
     searchMatches: List<SearchMatch>,
     currentSearchMatch: SearchMatch?,
     paragraph: Text,
-    fontFamily: FontWithName,
-    fontColor: Color,
-    lineHeight: TextUnit,
-    fontThickness: ReaderFontThickness,
-    fontStyle: FontStyle,
-    textAlignment: ReaderTextAlignment,
-    horizontalAlignment: Alignment.Horizontal,
-    fontSize: TextUnit,
-    letterSpacing: TextUnit,
-    sidePadding: Dp,
-    paragraphIndentation: TextUnit,
-    highlightedReading: Boolean,
-    highlightedReadingThickness: FontWeight,
+    look: ReaderTextLook,
     toolbarHidden: Boolean,
     openNote: (ReaderEvent.OnOpenNote) -> Unit
 ) {
     val blockIndent = BLOCK_INDENT_STEP * paragraph.role.indentSteps +
             if (paragraph.role == ReaderTextRole.TextAuthor) {
                 // Authors are shifted one extra (current) character height
-                with(LocalDensity.current) { fontSize.toDp() }
+                with(LocalDensity.current) { look.fontSize.toDp() }
             } else 0.dp
 
     // Note/anchor references are parsed as listener-less clickable links;
     // the actual handler is attached here, at render time
-    val line = remember(paragraph.line, openNote, searchMatches, currentSearchMatch, fontColor) {
+    val line = remember(paragraph.line, openNote, searchMatches, currentSearchMatch, look.fontColor) {
         paragraph.line
             .withReferenceListeners { tag ->
                 openNote(ReaderEvent.OnOpenNote(tag))
@@ -97,7 +77,7 @@ fun LazyItemScope.ReaderLayoutTextParagraph(
             .withSearchHighlights(
                 matches = searchMatches,
                 current = currentSearchMatch,
-                fontColor = fontColor
+                fontColor = look.fontColor
             )
     }
 
@@ -110,10 +90,10 @@ fun LazyItemScope.ReaderLayoutTextParagraph(
         modifier = Modifier
             .animateItem(fadeInSpec = null, fadeOutSpec = null)
             .fillMaxWidth()
-            .padding(horizontal = sidePadding)
+            .padding(horizontal = look.sidePadding)
             .padding(start = blockIndent),
         verticalArrangement = Arrangement.Center,
-        horizontalAlignment = horizontalAlignment
+        horizontalAlignment = look.horizontalAlignment
     ) {
         StyledText(
             text = line,
@@ -151,19 +131,19 @@ fun LazyItemScope.ReaderLayoutTextParagraph(
                 } else Modifier
             ),
             style = TextStyle(
-                fontFamily = fontFamily.font,
-                fontWeight = fontThickness.thickness,
-                textAlign = textAlignment.textAlignment,
-                textIndent = TextIndent(firstLine = paragraphIndentation),
-                fontStyle = fontStyle,
-                letterSpacing = letterSpacing,
-                fontSize = fontSize,
-                lineHeight = lineHeight,
-                color = fontColor,
+                fontFamily = look.fontFamily.font,
+                fontWeight = look.fontThickness.thickness,
+                textAlign = look.textAlignment.textAlignment,
+                textIndent = TextIndent(firstLine = look.paragraphIndentation),
+                fontStyle = look.fontStyle,
+                letterSpacing = look.letterSpacing,
+                fontSize = look.fontSize,
+                lineHeight = look.lineHeight,
+                color = look.fontColor,
                 lineBreak = LineBreak.Paragraph
             ),
-            highlightText = highlightedReading,
-            highlightThickness = highlightedReadingThickness
+            highlightText = look.highlightedReading,
+            highlightThickness = look.highlightedReadingThickness
         )
     }
 }

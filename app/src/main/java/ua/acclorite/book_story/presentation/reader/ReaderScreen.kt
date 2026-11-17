@@ -18,27 +18,17 @@ import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.systemBarsIgnoringVisibility
-import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.BlendMode
-import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.text.font.FontStyle
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.em
-import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -50,9 +40,7 @@ import kotlinx.parcelize.Parcelize
 import ua.acclorite.book_story.core.helpers.calculateProgress
 import ua.acclorite.book_story.core.log.BookOpenTrace
 import ua.acclorite.book_story.presentation.navigator.Screen
-import ua.acclorite.book_story.presentation.reader.model.ReaderColorEffects
 import ua.acclorite.book_story.presentation.reader.model.ReaderProgressCount
-import ua.acclorite.book_story.presentation.reader.model.ReaderTextAlignment
 import ua.acclorite.book_story.presentation.settings.SettingsModel
 import ua.acclorite.book_story.ui.common.helpers.LocalActivity
 import ua.acclorite.book_story.domain.model.reader.activeColorPreset
@@ -84,36 +72,30 @@ data class ReaderScreen(val bookId: Int) : Screen, Parcelable {
 
         val activity = LocalActivity.current
         val lifecycleOwner = LocalLifecycleOwner.current
-        val density = LocalDensity.current
-        val listState = rememberSaveable(
-            state.value.listState,
-            saver = LazyListState.Saver
-        ) {
-            state.value.listState
-        }
+        // The model scrolls this very object, so the screen must not swap it for
+        // a restored copy.
+        val listState = state.value.listState
         val nestedScrollConnection = remember {
-            derivedStateOf {
-                object : NestedScrollConnection {
-                    override fun onPostScroll(
-                        consumed: Offset,
-                        available: Offset,
-                        source: NestedScrollSource
-                    ): Offset {
-                        consumed.y.let { velocity ->
-                            if (velocity in -70f..70f) return@let
-                            if (!state.value.showMenu) return@let
-                            if (state.value.lockMenu) return@let
-                            if (!settings.hideBarsOnFastScroll.lastValue) return@let
+            object : NestedScrollConnection {
+                override fun onPostScroll(
+                    consumed: Offset,
+                    available: Offset,
+                    source: NestedScrollSource
+                ): Offset {
+                    consumed.y.let { velocity ->
+                        if (velocity in -70f..70f) return@let
+                        if (!state.value.showMenu) return@let
+                        if (state.value.lockMenu) return@let
+                        if (!settings.hideBarsOnFastScroll.lastValue) return@let
 
-                            screenModel.onEvent(
-                                ReaderEvent.OnMenuVisibility(
-                                    show = false,
-                                    saveCheckpoint = false
-                                )
+                        screenModel.onEvent(
+                            ReaderEvent.OnMenuVisibility(
+                                show = false,
+                                saveCheckpoint = false
                             )
-                        }
-                        return super.onPostScroll(consumed, available, source)
+                        )
                     }
+                    return super.onPostScroll(consumed, available, source)
                 }
             }
         }
@@ -129,180 +111,25 @@ data class ReaderScreen(val bookId: Int) : Screen, Parcelable {
         val fontColor = animateColorAsState(
             targetValue = activePreset.fontColor
         )
-        val lineHeight = remember(
-            settings.fontSize.value,
-            settings.lineHeight.value
-        ) {
-            (settings.fontSize.lastValue + settings.lineHeight.lastValue).sp
-        }
-        val letterSpacing = remember(settings.letterSpacing.value) {
-            (settings.letterSpacing.lastValue / 100f).em
-        }
-        val sidePadding = remember(settings.sidePadding.value) {
-            (settings.sidePadding.lastValue * 3).dp
-        }
-        val verticalPadding = remember(settings.verticalPadding.value) {
-            (settings.verticalPadding.lastValue * 4.5f).dp
-        }
-        val paragraphHeight = remember(
-            settings.paragraphHeight.value,
-            settings.lineHeight.value
-        ) {
-            ((settings.paragraphHeight.lastValue * 3).dp).coerceAtLeast(
-                with(density) { settings.lineHeight.lastValue.sp.toDp().value * 0.5f }.dp
-            )
-        }
-        val fontStyle = remember(settings.italic.value) {
-            when (settings.italic.lastValue) {
-                true -> FontStyle.Italic
-                false -> FontStyle.Normal
-            }
-        }
-        val paragraphIndentation = remember(
-            settings.paragraphIndentation.value,
-            settings.textAlignment.value
-        ) {
-            if (
-                settings.textAlignment.lastValue == ReaderTextAlignment.CENTER ||
-                settings.textAlignment.lastValue == ReaderTextAlignment.END
-            ) return@remember 0.sp
-            (settings.paragraphIndentation.lastValue * 6).sp
-        }
-        val perceptionExpanderPadding = remember(
-            sidePadding,
-            settings.perceptionExpanderPadding.value
-        ) {
-            sidePadding + (settings.perceptionExpanderPadding.lastValue * 8).dp
-        }
-        val perceptionExpanderThickness = remember(
-            settings.perceptionExpanderThickness.value
-        ) {
-            (settings.perceptionExpanderThickness.lastValue * 0.25f).dp
-        }
-        val horizontalLimiterHeight = remember(
-            settings.horizontalLimiterHeight.value
-        ) {
-            (settings.horizontalLimiterHeight.lastValue * 20).dp
-        }
-        val horizontalLimiterRulerThickness = remember(
-            settings.horizontalLimiterRulerThickness.value
-        ) {
-            (settings.horizontalLimiterRulerThickness.lastValue * 0.25f).dp
-        }
-        val horizontalGestureSensitivity = remember(settings.horizontalGestureSensitivity.value) {
-            (36f + settings.horizontalGestureSensitivity.lastValue * (4f - 36f)).dp
-        }
-        val highlightedReadingThickness = remember(settings.highlightedReadingThickness.value) {
-            when (settings.highlightedReadingThickness.lastValue) {
-                2 -> FontWeight.SemiBold
-                3 -> FontWeight.Bold
-                else -> FontWeight.Medium
-            }
-        }
-        val horizontalAlignment = remember(settings.textAlignment.value) {
-            when (settings.textAlignment.lastValue) {
-                ReaderTextAlignment.START, ReaderTextAlignment.JUSTIFY -> Alignment.Start
-                ReaderTextAlignment.CENTER -> Alignment.CenterHorizontally
-                ReaderTextAlignment.END -> Alignment.End
-            }
-        }
-        val imagesWidth = remember(settings.imagesWidth.value) {
-            settings.imagesWidth.lastValue.coerceAtLeast(0.01f)
-        }
-        val imagesCornersRoundness = remember(
-            settings.imagesCornersRoundness.value,
-            settings.imagesWidth.value
-        ) {
-            (settings.imagesCornersRoundness.lastValue * 3 * imagesWidth).dp
-        }
-        val imagesColorEffects = remember(
-            settings.imagesColorEffects.value,
-            fontColor.value,
-            backgroundColor.value
-        ) {
-            when (settings.imagesColorEffects.lastValue) {
-                ReaderColorEffects.OFF -> null
+        val look = settings.readerLook(
+            fontColor = fontColor.value,
+            backgroundColor = backgroundColor.value
+        )
+        val controls = settings.readerControls()
 
-                ReaderColorEffects.GRAYSCALE -> ColorFilter.colorMatrix(
-                    ColorMatrix().apply { setToSaturation(0f) }
-                )
-
-                ReaderColorEffects.FONT -> ColorFilter.tint(
-                    color = fontColor.value,
-                    blendMode = BlendMode.Color
-                )
-
-                ReaderColorEffects.BACKGROUND -> ColorFilter.tint(
-                    color = backgroundColor.value,
-                    blendMode = BlendMode.Color
-                )
-            }
-        }
-        val progressBarPadding = remember(settings.progressBarPadding.value) {
-            (settings.progressBarPadding.lastValue * 3).dp
-        }
-        val progressBarFontSize = remember(settings.progressBarFontSize.value) {
-            (settings.progressBarFontSize.lastValue * 2).sp
-        }
-
-        val layoutDirection = LocalLayoutDirection.current
-        val cutoutInsets = WindowInsets.displayCutout
-        val systemBarsInsets = WindowInsets.systemBarsIgnoringVisibility
-
-        val cutoutInsetsPadding = remember(settings.cutoutPadding.value) {
-            derivedStateOf {
-                cutoutInsets.asPaddingValues(density = density).run {
-                    if (settings.cutoutPadding.lastValue) PaddingValues(
-                        top = calculateTopPadding(),
-                        start = calculateStartPadding(layoutDirection),
-                        end = calculateEndPadding(layoutDirection),
-                        bottom = calculateBottomPadding()
-                    ) else PaddingValues(0.dp)
-                }
-            }
-        }
-        val systemBarsInsetsPadding = remember(settings.fullscreen.value) {
-            derivedStateOf {
-                systemBarsInsets.asPaddingValues(density = density).run {
-                    if (!settings.fullscreen.lastValue) PaddingValues(
-                        top = calculateTopPadding(),
-                        start = calculateStartPadding(layoutDirection),
-                        end = calculateEndPadding(layoutDirection),
-                        bottom = calculateBottomPadding()
-                    ) else PaddingValues(0.dp)
-                }
-            }
-        }
-        val contentPadding = remember(
-            cutoutInsetsPadding.value,
-            systemBarsInsetsPadding.value
-        ) {
-            PaddingValues(
-                top = systemBarsInsetsPadding.value.calculateTopPadding().run {
-                    if (equals(0.dp)) return@run cutoutInsetsPadding.value
-                        .calculateTopPadding()
-                    this
-                },
-                start = systemBarsInsetsPadding.value.calculateStartPadding(layoutDirection).run {
-                    if (equals(0.dp)) return@run cutoutInsetsPadding.value
-                        .calculateStartPadding(layoutDirection)
-                    this
-                },
-                end = systemBarsInsetsPadding.value.calculateEndPadding(layoutDirection).run {
-                    if (equals(0.dp)) return@run cutoutInsetsPadding.value
-                        .calculateEndPadding(layoutDirection)
-                    this
-                },
-                bottom = systemBarsInsetsPadding.value.calculateBottomPadding().run {
-                    if (equals(0.dp)) return@run cutoutInsetsPadding.value
-                        .calculateBottomPadding()
-                    this
-                }
-            )
-        }
-        val bottomBarPadding = remember(settings.bottomBarPadding.value) {
-            (settings.bottomBarPadding.lastValue * 4f).dp
-        }
+        // Read in composition on purpose: the insets are state, so a rotation
+        // or the system bars coming back recomposes with the new values.
+        val noPadding = PaddingValues(0.dp)
+        val systemBarsPadding =
+            if (settings.fullscreen.value) noPadding
+            else WindowInsets.systemBarsIgnoringVisibility.asPaddingValues()
+        val cutoutPadding =
+            if (settings.cutoutPadding.value) WindowInsets.displayCutout.asPaddingValues()
+            else noPadding
+        val contentPadding = systemBarsPadding.orWhereZero(
+            fallback = cutoutPadding,
+            layoutDirection = LocalLayoutDirection.current
+        )
 
         val bookProgress = remember(
             state.value.book.progress,
@@ -439,17 +266,7 @@ data class ReaderScreen(val bookId: Int) : Screen, Parcelable {
                 fullscreenImage = state.value.fullscreenImage,
                 listState = listState,
                 currentChapter = state.value.currentChapter,
-                nestedScrollConnection = nestedScrollConnection.value,
-                fastColorPresetChange = settings.fastColorPresetChange.value,
-                perceptionExpander = settings.perceptionExpander.value,
-                perceptionExpanderPadding = perceptionExpanderPadding,
-                perceptionExpanderThickness = perceptionExpanderThickness,
-                horizontalLimiter = settings.horizontalLimiter.value,
-                horizontalLimiterHeight = horizontalLimiterHeight,
-                horizontalLimiterVerticalOffset = settings.horizontalLimiterVerticalOffset.value,
-                horizontalLimiterRuler = settings.horizontalLimiterRuler.value,
-                horizontalLimiterRulerThickness = horizontalLimiterRulerThickness,
-                horizontalLimiterDimming = settings.horizontalLimiterDimming.value,
+                nestedScrollConnection = nestedScrollConnection,
                 currentChapterProgress = state.value.currentChapterProgress,
                 isLoading = state.value.isLoading,
                 errorMessage = state.value.errorMessage,
@@ -459,72 +276,33 @@ data class ReaderScreen(val bookId: Int) : Screen, Parcelable {
                 showMenu = state.value.showMenu,
                 lockMenu = state.value.lockMenu,
                 contentPadding = contentPadding,
-                verticalPadding = verticalPadding,
-                horizontalGesture = settings.horizontalGesture.value,
-                horizontalGestureSensitivity = horizontalGestureSensitivity,
-                horizontalGestureAlphaAnim = settings.horizontalGestureAlphaAnim.value,
-                horizontalGesturePullAnim = settings.horizontalGesturePullAnim.value,
-                tapPaging = settings.tapPaging.value,
-                volumePaging = settings.volumePaging.value,
-                disableScrolling = settings.disableScrolling.value,
-                pageTurnOverlap = settings.pageTurnOverlap.value,
-                pageTurnAnimation = settings.pageTurnAnimation.value,
-                highlightedReading = settings.highlightedReading.value,
-                highlightedReadingThickness = highlightedReadingThickness,
+                look = look,
+                controls = controls,
                 progress = progress,
-                progressBar = settings.progressBar.value,
-                progressBarPadding = progressBarPadding,
-                progressBarAlignment = settings.progressBarAlignment.value,
-                progressBarFontSize = progressBarFontSize,
-                chapterBreak = settings.chapterBreak.value,
-                paragraphHeight = paragraphHeight,
-                sidePadding = sidePadding,
-                bottomBarPadding = bottomBarPadding,
-                backgroundColor = backgroundColor.value,
-                fontColor = fontColor.value,
-                images = settings.images.value,
-                imagesCaptions = settings.imagesCaptions.value,
-                imagesCornersRoundness = imagesCornersRoundness,
-                imagesAlignment = settings.imagesAlignment.value,
-                imagesWidth = imagesWidth,
-                imagesColorEffects = imagesColorEffects,
-                fontFamily = settings.fontFamily.value,
-                lineHeight = lineHeight,
-                fontThickness = settings.fontThickness.value,
-                fontStyle = fontStyle,
-                chapterTitleAlignment = settings.chapterTitleAlignment.value,
-                textAlignment = settings.textAlignment.value,
-                horizontalAlignment = horizontalAlignment,
-                fontSize = settings.fontSize.value.sp,
-                letterSpacing = letterSpacing,
-                paragraphIndentation = paragraphIndentation,
-                doubleClickTranslation = settings.doubleClickTranslation.value,
                 switchColorPreset = settingsModel::onEvent,
-                leave = screenModel::onEvent,
-                restoreCheckpoint = screenModel::onEvent,
-                scroll = screenModel::onEvent,
-                dragProgress = screenModel::onEvent,
-                menuVisibility = screenModel::onEvent,
-                openShareApp = screenModel::onEvent,
-                openWebBrowser = screenModel::onEvent,
-                openTranslator = screenModel::onEvent,
-                openNote = screenModel::onEvent,
-                openImage = screenModel::onEvent,
-                dismissImage = screenModel::onEvent,
-                scrollToChapter = screenModel::onEvent,
-                showSettingsBottomSheet = screenModel::onEvent,
-                dismissBottomSheet = screenModel::onEvent,
-                showChaptersDrawer = screenModel::onEvent,
-                searchVisibility = screenModel::onEvent,
-                searchQueryChange = screenModel::onEvent,
-                searchStep = screenModel::onEvent,
-                searchReturn = screenModel::onEvent,
-                addingToLibrary = state.value.addingToLibrary || state.value.lockMenu,
-                addToLibrary = screenModel::onEvent,
-                dismissDrawer = screenModel::onEvent,
-                navigateBack = screenModel::onEvent,
-                navigateToBookInfo = screenModel::onEvent
+                onEvent = screenModel::onEvent,
+                addingToLibrary = state.value.addingToLibrary || state.value.lockMenu
             )
         }
     }
+}
+
+/**
+ * Per side: this padding where it is not zero, [fallback]'s otherwise — the
+ * system bars already cover the cutout on their own side, so the cutout counts
+ * only where there is no bar.
+ */
+internal fun PaddingValues.orWhereZero(
+    fallback: PaddingValues,
+    layoutDirection: LayoutDirection
+): PaddingValues {
+    fun Dp.or(other: Dp) = if (this == 0.dp) other else this
+    return PaddingValues(
+        start = calculateStartPadding(layoutDirection)
+            .or(fallback.calculateStartPadding(layoutDirection)),
+        top = calculateTopPadding().or(fallback.calculateTopPadding()),
+        end = calculateEndPadding(layoutDirection)
+            .or(fallback.calculateEndPadding(layoutDirection)),
+        bottom = calculateBottomPadding().or(fallback.calculateBottomPadding())
+    )
 }

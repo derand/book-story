@@ -21,28 +21,23 @@ import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFontFamilyResolver
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.MultiParagraphIntrinsics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.Density
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import ua.acclorite.book_story.domain.model.reader.ReaderText.Table
 import ua.acclorite.book_story.domain.model.reader.TableAlignment
 import ua.acclorite.book_story.domain.model.reader.SearchMatch
-import ua.acclorite.book_story.presentation.reader.model.ReaderFontThickness
 import ua.acclorite.book_story.ui.common.components.common.StyledText
-import ua.acclorite.book_story.ui.reader.model.FontWithName
 import kotlin.math.ceil
+import ua.acclorite.book_story.ui.reader.model.ReaderTextLook
 
 private val CELL_PADDING = 8.dp
 private val LINE_THICKNESS = 1.dp
@@ -57,16 +52,9 @@ fun LazyItemScope.ReaderLayoutTextTable(
     searchMatches: List<SearchMatch>,
     currentSearchMatch: SearchMatch?,
     table: Table,
-    fontFamily: FontWithName,
-    fontColor: Color,
-    lineHeight: TextUnit,
-    fontThickness: ReaderFontThickness,
-    fontStyle: FontStyle,
-    fontSize: TextUnit,
-    letterSpacing: TextUnit,
-    sidePadding: Dp
+    look: ReaderTextLook,
 ) {
-    val lineColor = fontColor.copy(alpha = 0.4f)
+    val lineColor = look.fontColor.copy(alpha = 0.4f)
     val columns = table.rows.maxOfOrNull { it.size } ?: 0
     if (columns == 0) return
 
@@ -74,13 +62,13 @@ fun LazyItemScope.ReaderLayoutTextTable(
     val fontFamilyResolver = LocalFontFamilyResolver.current
 
     val bodyStyle = TextStyle(
-        fontFamily = fontFamily.font,
-        fontWeight = fontThickness.thickness,
-        fontStyle = fontStyle,
-        letterSpacing = letterSpacing,
-        fontSize = fontSize,
-        lineHeight = lineHeight,
-        color = fontColor,
+        fontFamily = look.fontFamily.font,
+        fontWeight = look.fontThickness.thickness,
+        fontStyle = look.fontStyle,
+        letterSpacing = look.letterSpacing,
+        fontSize = look.fontSize,
+        lineHeight = look.lineHeight,
+        color = look.fontColor,
         // StyledText forces this too — keep the measured and drawn styles equal.
         textDirection = TextDirection.Content
     )
@@ -99,7 +87,7 @@ fun LazyItemScope.ReaderLayoutTextTable(
         modifier = Modifier
             .animateItem(fadeInSpec = null, fadeOutSpec = null)
             .fillMaxWidth()
-            .padding(horizontal = sidePadding)
+            .padding(horizontal = look.sidePadding)
     ) {
         val gridWidth = constraints.maxWidth
         val columnWidths = remember(
@@ -135,7 +123,7 @@ fun LazyItemScope.ReaderLayoutTextTable(
                                 .withSearchHighlights(
                                     matches = searchMatches,
                                     current = currentSearchMatch,
-                                    fontColor = fontColor,
+                                    fontColor = look.fontColor,
                                     // The same numbering [forEachCell] hands the
                                     // scanner: a position in the drawn grid.
                                     part = rowIndex * columns + columnIndex
