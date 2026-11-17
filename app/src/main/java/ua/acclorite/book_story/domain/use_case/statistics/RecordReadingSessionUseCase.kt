@@ -23,10 +23,13 @@ class RecordReadingSessionUseCase @Inject constructor(
 ) {
 
     /**
-     * The session as it was recorded, or null when it was too short to keep —
-     * or when statistics are not being collected at all. The caller already
-     * treats null as "nothing was banked", so switching collection off needs no
-     * second path through the reader.
+     * Records a session and folds it into the book's record ([title], [author],
+     * [coveragePercent] and [reachedEnd] are the record's), both or neither.
+     *
+     * The session as it was stored, or null when nothing was: too short to
+     * keep, statistics not being collected, or the write failed. A session too
+     * short to count must not quietly bump the book's totals either, which is
+     * why the two writes share this one gate.
      */
     suspend operator fun invoke(
         bookId: Int,
@@ -34,7 +37,11 @@ class RecordReadingSessionUseCase @Inject constructor(
         lastActiveTime: Long,
         endTime: Long,
         wordsRead: Int,
-        overlayMs: Long
+        overlayMs: Long,
+        title: String,
+        author: String,
+        coveragePercent: Float,
+        reachedEnd: Boolean
     ): ReadingSession? {
         if (!settings.collectStatistics.lastValue) return null
 
@@ -54,15 +61,21 @@ class RecordReadingSessionUseCase @Inject constructor(
 
         logI(TAG, "Recording ${session.durationMs}ms session for [$bookId].")
 
-        statisticsRepository.addSession(session).fold(
+        return statisticsRepository.recordSession(
+            session = session,
+            title = title,
+            author = author,
+            coveragePercent = coveragePercent,
+            reachedEnd = reachedEnd
+        ).fold(
             onSuccess = {
                 logI(TAG, "Successfully recorded session for [$bookId].")
+                session
             },
             onFailure = {
                 logE(TAG, "Could not record session for [$bookId] with error: ${it.messageForLog()}")
+                null
             }
         )
-
-        return session
     }
 }

@@ -6,7 +6,6 @@
 
 package ua.acclorite.book_story.presentation.reader
 
-import androidx.compose.foundation.lazy.LazyListItemInfo
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.snapshotFlow
 import androidx.lifecycle.ViewModel
@@ -42,8 +41,6 @@ import ua.acclorite.book_story.domain.model.reader.ReaderText
 import ua.acclorite.book_story.domain.model.reader.ReaderText.Chapter
 import ua.acclorite.book_story.domain.model.reader.SEARCH_MIN_QUERY_LENGTH
 import ua.acclorite.book_story.domain.model.reader.findSearchMatches
-import ua.acclorite.book_story.domain.model.statistics.ReadingCoverage
-import ua.acclorite.book_story.domain.model.statistics.SessionWords
 import ua.acclorite.book_story.domain.model.statistics.wordCount
 import ua.acclorite.book_story.domain.model.statistics.wordPrefixSums
 import ua.acclorite.book_story.domain.use_case.file_system.GetBookSourcesUseCase
@@ -60,9 +57,9 @@ import ua.acclorite.book_story.domain.use_case.history.GetHistoryForBookUseCase
 import ua.acclorite.book_story.domain.use_case.statistics.GetBookCoverageUseCase
 import ua.acclorite.book_story.domain.use_case.statistics.RecordReadingSessionUseCase
 import ua.acclorite.book_story.domain.use_case.statistics.SaveBookCoverageUseCase
-import ua.acclorite.book_story.domain.use_case.statistics.UpdateReadBookUseCase
 import ua.acclorite.book_story.presentation.reader.model.Checkpoint
 import ua.acclorite.book_story.presentation.reader.model.ReaderSearch
+import ua.acclorite.book_story.presentation.reader.model.ReadingSessionTracker
 import ua.acclorite.book_story.presentation.reader.model.readingProgress
 import ua.acclorite.book_story.presentation.reader.model.stepTarget
 import javax.inject.Inject
@@ -95,7 +92,6 @@ class ReaderModel @Inject constructor(
     private val recordReadingSessionUseCase: RecordReadingSessionUseCase,
     private val getBookCoverageUseCase: GetBookCoverageUseCase,
     private val saveBookCoverageUseCase: SaveBookCoverageUseCase,
-    private val updateReadBookUseCase: UpdateReadBookUseCase,
     private val addPreviewToLibraryUseCase: AddPreviewToLibraryUseCase,
     private val discardPreviewsUseCase: DiscardPreviewsUseCase,
     private val grantPersistableUriPermissionUseCase: GrantPersistableUriPermissionUseCase
@@ -137,82 +133,15 @@ class ReaderModel @Inject constructor(
      */
     private val eventJobs = SupervisorJob(viewModelScope.coroutineContext.job)
 
-    /** Start of the running reading session, or null when none is running. */
-    private var sessionStartTime: Long? = null
-
-    /**
-     * When the reader last settled on a position. Only the idle *after* it is
-     * capped, so a device left open on a page stops counting while a pause in
-     * the middle of a sitting does not.
-     */
-    private var sessionLastActive: Long = 0L
-
-    /**
-     * What of the open book has been read — item indices, loaded with the text
-     * and saved when the session ends. Held apart from [state] because it
-     * changes on every settled scroll and nothing draws it.
-     */
-    private val coveredItems = mutableSetOf<Int>()
-    private var coveredWords = 0
-    private var coverageItemCount = 0
-    private var coverageBookWords = 0
+    /** The statistics ledger; see [ReadingSessionTracker]. */
+    private val tracker = ReadingSessionTracker(
+        itemWords = { index -> _state.value.text.getOrNull(index)?.wordCount() },
+        noteWords = { id -> _state.value.notes[id]?.wordCount() ?: 0 }
+    )
     private var coverageJob: Job? = null
 
     /** The Keep in progress, for [ReaderEvent.OnLeave] to wait for. */
     private var keepJob: Job? = null
-
-    /**
-     * Words before each item, built by the pass that counts the book. It is
-     * what makes "left to read" a forecast: the bookmark's index reads straight
-     * out of it, with no second walk over the text.
-     */
-    private var itemWordPrefix: IntArray? = null
-
-    /**
-     * Until the stored coverage has been read back, nothing is credited: the
-     * set is about to be replaced by it.
-     */
-    private var coverageReady = false
-
-    /** What this session has credited, de-duplicated; see [SessionWords]. */
-    private val sessionWords = SessionWords()
-
-    /**
-     * The note the sheet is showing. Credited when it closes rather than when it
-     * opens, so a mis-tap that is dismissed at once counts nothing.
-     */
-    private var openNoteId: String? = null
-
-    /**
-     * How long the text has been covered this session by something that earns
-     * no words, and when the covering started. The session's interval is left
-     * alone — this is subtracted only where a speed is divided.
-     *
-     * The note sheet does not count: [creditOpenNote] credits its words, so its
-     * time belongs in that denominator.
-     */
-    private var sessionOverlayMs = 0L
-    private var overlayShownAt: Long? = null
-
-    /**
-     * Set while dragging the progress slider, whose landings are screens nobody
-     * read — it stops wherever the drag pauses.
-     *
-     * Deliberately *not* set for the other ways the reader moves the list
-     * itself. Restoring the bookmark, opening a chapter and returning to a
-     * checkpoint all land where the reading is about to happen, and that landing
-     * is the only sample that screen will ever get: suppressing it left the
-     * first screen of every book uncredited, so reading one cover to cover
-     * stopped short of 100 % (found in device QA, 2026-08-05).
-     */
-    private var landingAfterJump = false
-
-    /**
-     * Whether this session got to the end of the book. Carried to the book's
-     * record when the session is written, rather than set the moment it
-     * happens: there may be no record yet to set it on.
-     */
-    private var reachedEnd = false
 
     fun onEvent(event: ReaderEvent) {
         viewModelScope.launch(eventJobs) {
@@ -368,7 +297,7 @@ class ReaderModel @Inject constructor(
                     // reader turning back to the text — and coming back is
                     // the search covering it again.
                     if (_state.value.search.active) {
-                        if (event.show) overlayShown() else overlayHidden()
+                        if (event.show) tracker.overlayShown() else tracker.overlayHidden()
                     }
                 }
 
@@ -423,11 +352,7 @@ class ReaderModel @Inject constructor(
                         val scrollTo = (_state.value.text.lastIndex * event.progress).roundToInt()
 
                         clearCurrentMatch()
-                        jumpedToPosition()
-                        _state.value.listState.requestScrollToItem(
-                            index = scrollTo,
-                            scrollOffset = 0
-                        )
+                        jumpTo(index = scrollTo, offset = 0)
 
                         onEvent(ReaderEvent.OnUpdateChapter(scrollTo))
                     }
@@ -459,8 +384,8 @@ class ReaderModel @Inject constructor(
 
                     when (event.show) {
                         true -> {
-                            creditOpenNote()
-                            overlayShown()
+                            tracker.creditOpenNote()
+                            tracker.overlayShown()
                             _state.updateIfActive {
                                 it.copy(
                                     search = ReaderSearch(
@@ -478,7 +403,7 @@ class ReaderModel @Inject constructor(
                         // "Stay here": the search ends and the reader keeps
                         // whatever position it took them to.
                         false -> {
-                            overlayHidden()
+                            tracker.overlayHidden()
                             _state.updateIfActive { it.copy(search = ReaderSearch()) }
                         }
                     }
@@ -491,7 +416,7 @@ class ReaderModel @Inject constructor(
                     // this, time spent composing a query and reading the count
                     // would be measured from the last scroll and cut off the end
                     // of the session by the idle cap.
-                    markActive()
+                    tracker.markActive()
 
                     val query = event.query
                     val searchable = query.trim().length >= SEARCH_MIN_QUERY_LENGTH
@@ -547,12 +472,11 @@ class ReaderModel @Inject constructor(
 
                     // Stepping through matches lands on screens nobody reads,
                     // exactly like dragging the slider does.
-                    jumpedToPosition()
-                    _state.value.listState.requestScrollToItem(
+                    jumpTo(
                         index = match.itemIndex,
                         // Negative: the item is pushed *down* the screen,
                         // out from under the bar that was used to find it.
-                        scrollOffset = searchLandingOffset()
+                        offset = searchLandingOffset()
                     )
                     // The landing is saved like any settled position
                     // ([updateProgress]); [OnSearchReturn] brings the reader
@@ -564,7 +488,7 @@ class ReaderModel @Inject constructor(
                     searchJob?.cancel()
 
                     val origin = _state.value.search.origin
-                    overlayHidden()
+                    tracker.overlayHidden()
                     _state.updateIfActive { it.copy(search = ReaderSearch()) }
 
                     if (origin != null) {
@@ -669,8 +593,8 @@ class ReaderModel @Inject constructor(
                 }
 
                 is ReaderEvent.OnShowSettingsBottomSheet -> {
-                    creditOpenNote()
-                    overlayShown()
+                    tracker.creditOpenNote()
+                    tracker.overlayShown()
                     _state.updateIfActive {
                         it.copy(
                             bottomSheet = ReaderScreen.SETTINGS_BOTTOM_SHEET,
@@ -686,8 +610,8 @@ class ReaderModel @Inject constructor(
                     // Whatever it replaces stops covering the text, and the
                     // note sheet itself never counts as an overlay: its words
                     // are credited, so its time is reading time.
-                    overlayHidden()
-                    openNoteId = id
+                    tracker.overlayHidden()
+                    tracker.noteOpened(id)
                     _state.updateIfActive {
                         it.copy(
                             bottomSheet = ReaderScreen.NOTE_BOTTOM_SHEET,
@@ -698,8 +622,8 @@ class ReaderModel @Inject constructor(
                 }
 
                 is ReaderEvent.OnOpenImage -> {
-                    creditOpenNote()
-                    overlayShown()
+                    tracker.creditOpenNote()
+                    tracker.overlayShown()
                     _state.updateIfActive {
                         it.copy(
                             fullscreenImage = event.image,
@@ -710,7 +634,7 @@ class ReaderModel @Inject constructor(
                 }
 
                 is ReaderEvent.OnDismissImage -> {
-                    overlayHidden()
+                    tracker.overlayHidden()
                     _state.updateIfActive {
                         it.copy(
                             fullscreenImage = null
@@ -721,8 +645,8 @@ class ReaderModel @Inject constructor(
                 }
 
                 is ReaderEvent.OnDismissBottomSheet -> {
-                    creditOpenNote()
-                    overlayHidden()
+                    tracker.creditOpenNote()
+                    tracker.overlayHidden()
                     _state.updateIfActive {
                         it.copy(
                             bottomSheet = null
@@ -732,8 +656,8 @@ class ReaderModel @Inject constructor(
                 }
 
                 is ReaderEvent.OnShowChaptersDrawer -> {
-                    creditOpenNote()
-                    overlayShown()
+                    tracker.creditOpenNote()
+                    tracker.overlayShown()
                     _state.updateIfActive {
                         it.copy(
                             drawer = ReaderScreen.CHAPTERS_DRAWER,
@@ -743,7 +667,7 @@ class ReaderModel @Inject constructor(
                 }
 
                 is ReaderEvent.OnDismissDrawer -> {
-                    overlayHidden()
+                    tracker.overlayHidden()
                     _state.updateIfActive {
                         it.copy(
                             drawer = null
@@ -906,7 +830,7 @@ class ReaderModel @Inject constructor(
     }
 
     private fun startSession() {
-        if (sessionStartTime != null) return
+        if (tracker.isRunning) return
         if (_state.value.text.isEmpty()) return
 
         // A book being previewed from a file manager records nothing. Skimming a
@@ -917,15 +841,7 @@ class ReaderModel @Inject constructor(
         // being open.
         if (!_state.value.book.inLibrary) return
 
-        val now = System.currentTimeMillis()
-        sessionStartTime = now
-        sessionLastActive = now
-        sessionOverlayMs = 0
-
-        // Coming back to a text that is still covered — stopped from inside the
-        // image viewer, say. The span the stop closed out resumes here, or the
-        // whole of it would be counted as reading.
-        overlayShownAt = if (isOverlayShowing()) now else null
+        tracker.start(overlayShowing = isOverlayShowing())
     }
 
     /** Whether something that earns no words is covering the text right now. */
@@ -939,114 +855,37 @@ class ReaderModel @Inject constructor(
                 (search.active && showMenu)
     }
 
-    private fun overlayShown() {
-        markActive()
-        if (overlayShownAt == null) overlayShownAt = System.currentTimeMillis()
-    }
-
     /**
      * Starts the overlay clock again if something is *still* covering the text
      * after one of them closed — the search bar an image was opened over, say.
      * Called after the state has been updated, which is what tells the two
-     * apart; [overlayHidden] runs before it and has to bank the span either way.
+     * apart; [ReadingSessionTracker.overlayHidden] runs before it and has to
+     * bank the span either way.
      */
     private fun resumeOverlayIfCovered() {
-        if (isOverlayShowing()) overlayShown()
-    }
-
-    private fun overlayHidden() {
-        markActive()
-        accrueOverlay()
-    }
-
-    /**
-     * Banks a running overlay span, without touching [sessionLastActive]. The
-     * end of a session goes through here rather than [overlayHidden]: marking
-     * the reader active at that moment would move the last sign of life to
-     * *now* and so lift the idle cap off every session that ends.
-     */
-    private fun accrueOverlay() {
-        val shownAt = overlayShownAt ?: return
-        overlayShownAt = null
-        sessionOverlayMs += (System.currentTimeMillis() - shownAt).coerceAtLeast(0)
+        if (isOverlayShowing()) tracker.overlayShown()
     }
 
     private suspend fun endSession() {
-        val startTime = sessionStartTime ?: return
+        // Everything the writes need is taken here, before the first of them
+        // suspends; see [ReadingSessionTracker.end].
+        val book = _state.value.book
+        val ended = tracker.end(bookId = book.id, bookmarkIndex = book.scrollIndex) ?: return
 
-        // A note still open when the reader is stopped was read like any other:
-        // credit it before the session's words are written. An overlay still up
-        // is closed out for the same reason — being stopped from inside the
-        // image viewer must not lose the time it was holding.
-        creditOpenNote()
-        accrueOverlay()
-        sessionStartTime = null
+        ended.coverage?.let { saveBookCoverageUseCase(it) }
 
-        if (coverageReady) {
-            saveBookCoverageUseCase(
-                ReadingCoverage(
-                    bookId = _state.value.book.id,
-                    itemCount = coverageItemCount,
-                    bookWords = coverageBookWords,
-                    covered = coveredItems.toSet(),
-                    coveredWords = coveredWords,
-                    wordsBeforeBookmark = wordsBeforeBookmark()
-                )
-            )
-        }
-
-        val session = recordReadingSessionUseCase(
-            bookId = _state.value.book.id,
-            startTime = startTime,
-            lastActiveTime = sessionLastActive,
-            endTime = System.currentTimeMillis(),
-            wordsRead = sessionWords.total,
-            overlayMs = sessionOverlayMs
+        recordReadingSessionUseCase(
+            bookId = book.id,
+            startTime = ended.startTime,
+            lastActiveTime = ended.lastActive,
+            endTime = ended.endTime,
+            wordsRead = ended.wordsRead,
+            overlayMs = ended.overlayMs,
+            title = book.title,
+            author = book.author.getAsString() ?: "",
+            coveragePercent = ended.coveragePercent,
+            reachedEnd = ended.reachedEnd
         )
-
-        // Only a session the statistics kept: one too short to count must not
-        // quietly bump the book's totals either.
-        if (session != null) {
-            val book = _state.value.book
-            updateReadBookUseCase(
-                session = session,
-                title = book.title,
-                author = book.author.getAsString() ?: "",
-                coveragePercent = if (coverageItemCount <= 0) 0f
-                else coveredItems.size.toFloat() / coverageItemCount,
-                reachedEnd = reachedEnd
-            )
-        }
-
-        sessionWords.clear()
-        reachedEnd = false
-    }
-
-    /**
-     * Something that is not a scroll but is still the reader at work — opening
-     * or closing a note. Without it the idle cap would measure from the last
-     * scroll, and ten minutes spent in a long note would be cut off the end of
-     * the session as if the device had been put down.
-     */
-    private fun markActive() {
-        sessionLastActive = System.currentTimeMillis()
-    }
-
-    /**
-     * Credits the note the sheet was showing, if any.
-     *
-     * Note words are **volume only**: notes are not items, so they enter neither
-     * [coveredItems] nor [coverageBookWords]. Putting them in the book's total
-     * would mean no book could ever reach 100 % coverage without opening every
-     * note; leaving them out of the session's words leaves the time counted and
-     * the words not, which drags every speed figure down.
-     */
-    private fun creditOpenNote() {
-        val id = openNoteId ?: return
-        openNoteId = null
-
-        if (sessionStartTime == null) return
-        sessionWords.creditNote(id, _state.value.notes[id]?.wordCount() ?: 0)
     }
 
     private suspend fun loadCoverage(text: List<ReaderText>) {
@@ -1063,13 +902,7 @@ class ReaderModel @Inject constructor(
             bookWords = bookWords
         )
 
-        coverageItemCount = text.size
-        coverageBookWords = bookWords
-        itemWordPrefix = prefix
-        coveredItems.clear()
-        coveredItems.addAll(stored.covered)
-        coveredWords = stored.coveredWords
-        coverageReady = true
+        tracker.loadCoverage(stored, itemCount = text.size, prefix = prefix)
 
         // Credit what is already on screen. The scroll flow emits its one
         // opening sample about 300 ms in and then nothing until something
@@ -1077,7 +910,7 @@ class ReaderModel @Inject constructor(
         // first screen would never be credited at all — which is how a fresh
         // trilogy ended a whole session with empty coverage (device QA,
         // 2026-08-05).
-        creditVisible(_state.value.listState.layoutInfo.visibleItemsInfo)
+        tracker.creditVisible(visibleIndices())
     }
 
     private class ImageSplit(
@@ -1103,54 +936,25 @@ class ReaderModel @Inject constructor(
         return ImageSplit(stripped, bytes, srcs)
     }
 
-    /** The reader is about to move the list itself; see [landingAfterJump]. */
-    private fun jumpedToPosition() {
-        landingAfterJump = true
-    }
-
     /**
-     * Marks what is on screen as read. Called only for *settled* positions, so
-     * a fling across half the book credits nothing it flew past: the flow never
-     * emits those in between.
+     * Moves the list to a screen nobody is about to read (the slider, the
+     * search arrows), so that its landing is not credited; see
+     * [ReadingSessionTracker.jumped].
      */
-    private fun creditVisible(visible: List<LazyListItemInfo>) {
-        // Nothing is credited outside a session, the way a note is not: the
-        // coverage pass finishes in a job of its own and can land after the
-        // session that started it has been banked and its ledger cleared — a
-        // book opened and left at once would then pay its last screen into the
-        // *next* book's first session.
-        if (sessionStartTime == null) return
-
-        if (landingAfterJump) {
-            landingAfterJump = false
-            return
-        }
-        if (!coverageReady) return
-
-        val text = _state.value.text
-        for (item in visible) {
-            val entry = text.getOrNull(item.index) ?: continue
-            val words = entry.wordCount()
-
-            sessionWords.creditItem(item.index, words)
-            if (coveredItems.add(item.index)) coveredWords += words
-        }
+    private fun jumpTo(index: Int, offset: Int) {
+        val listState = _state.value.listState
+        tracker.jumped(
+            from = Checkpoint(
+                index = listState.firstVisibleItemIndex,
+                offset = listState.firstVisibleItemScrollOffset
+            ),
+            to = Checkpoint(index = index, offset = offset)
+        )
+        listState.requestScrollToItem(index = index, scrollOffset = offset)
     }
 
-    /**
-     * Words before the bookmark, as the session leaves it. Recorded here rather
-     * than on every settled scroll because the coverage row is written here
-     * anyway, and the position at the end of a session is the one being
-     * described.
-     *
-     * The index is clamped only to keep the lookup in range; a text that has
-     * been reparsed under the bookmark is caught properly by the coverage row's
-     * item count.
-     */
-    private fun wordsBeforeBookmark(): Int? {
-        val prefix = itemWordPrefix ?: return null
-        return prefix[_state.value.book.scrollIndex.coerceIn(0, prefix.lastIndex)]
-    }
+    private fun visibleIndices(): List<Int> =
+        _state.value.listState.layoutInfo.visibleItemsInfo.map { it.index }
 
     /**
      * Clears up after the reader of [bookId] — and does nothing if the model has
@@ -1174,16 +978,7 @@ class ReaderModel @Inject constructor(
 
         searchJob?.cancel()
         coverageJob?.cancelAndJoin()
-        coverageReady = false
-        coveredItems.clear()
-        coveredWords = 0
-        coverageItemCount = 0
-        coverageBookWords = 0
-        itemWordPrefix = null
-        landingAfterJump = false
-        openNoteId = null
-        sessionOverlayMs = 0
-        overlayShownAt = null
+        tracker.reset()
 
         eventJobs.children.forEach { it.cancelAndJoin() }
 
@@ -1207,10 +1002,7 @@ class ReaderModel @Inject constructor(
         snapshotFlow {
             listState.firstVisibleItemIndex to listState.firstVisibleItemScrollOffset
         }.distinctUntilChanged().debounce(300).collectLatest { (index, offset) ->
-            // Every settled position is a sign of life, even one the guard below
-            // discards: the reader is being scrolled either way.
-            sessionLastActive = System.currentTimeMillis()
-            creditVisible(listState.layoutInfo.visibleItemsInfo)
+            tracker.settled(listState.layoutInfo.visibleItemsInfo.map { it.index })
 
             // Scrolled away from the match the counter is pinned to: "34 / 57"
             // would go on claiming a place the reader has left.
@@ -1229,7 +1021,7 @@ class ReaderModel @Inject constructor(
             ) return@collectLatest
 
             val progress = calculateProgress(index)
-            if (progress >= 1f) reachedEnd = true
+            tracker.progressed(progress)
 
             val (currentChapter, currentChapterProgress) = getChapterProgressUseCase(
                 index = index,

@@ -15,25 +15,23 @@ import ua.acclorite.book_story.domain.model.statistics.ReadingSession
 
 interface StatisticsRepository {
 
-    suspend fun addSession(session: ReadingSession): Result<Unit>
+    /**
+     * Stores [session] and folds it into its book's record, creating the record
+     * if needed — both or neither.
+     */
+    suspend fun recordSession(
+        session: ReadingSession,
+        title: String,
+        author: String,
+        coveragePercent: Float,
+        reachedEnd: Boolean
+    ): Result<Unit>
 
     suspend fun getCoverage(bookId: Int): Result<ReadingCoverage?>
 
     suspend fun saveCoverage(coverage: ReadingCoverage): Result<Unit>
 
     suspend fun getReadBook(bookId: Int): Result<ReadBook?>
-
-    /** Folds a finished session into the book's record, creating it if needed. */
-    suspend fun addSessionToReadBook(
-        bookId: Int,
-        title: String,
-        author: String,
-        timeMs: Long,
-        words: Int,
-        endedAt: Long,
-        coveragePercent: Float,
-        reachedEnd: Boolean
-    ): Result<Unit>
 
     suspend fun setFinished(
         bookId: Int,

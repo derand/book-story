@@ -21,8 +21,37 @@ import ua.acclorite.book_story.data.local.dto.SessionSpan
 @Dao
 interface StatisticsDao {
 
+    /** Called only from [recordSession], which supplies the transaction. */
     @Insert
     suspend fun insertSession(session: ReadingSessionEntity)
+
+    /**
+     * Stores a session and folds it into its book's record, or neither. The
+     * record's time, words and session count are sums over the sessions table;
+     * written apart, a failure or a kill between the two left one counting a
+     * session the other does not have.
+     */
+    @Transaction
+    suspend fun recordSession(
+        session: ReadingSessionEntity,
+        timeMs: Long,
+        coveragePercent: Float,
+        reachedEnd: Boolean,
+        title: String,
+        author: String
+    ) {
+        insertSession(session)
+        addSessionToBookRecord(
+            bookId = checkNotNull(session.bookId),
+            timeMs = timeMs,
+            words = session.wordsRead,
+            endedAt = session.endTime,
+            coveragePercent = coveragePercent,
+            reachedEnd = reachedEnd,
+            title = title,
+            author = author
+        )
+    }
 
     /**
      * Unlinks a deleted book's sessions instead of deleting them. The per-book
@@ -93,6 +122,8 @@ interface StatisticsDao {
     /**
      * Folds one finished session into the book's record, starting that record
      * on the first session.
+     *
+     * Called only from [recordSession], whose transaction this joins.
      *
      * Both halves in one transaction, because the pair is a read-then-write:
      * the update reports whether a record existed, and between two separate

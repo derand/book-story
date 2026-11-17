@@ -233,18 +233,15 @@ class BookInfoModelTest {
         override suspend fun getCoverage(bookId: Int): Result<ReadingCoverage?> =
             Result.success(null)
 
-        override suspend fun addSession(session: ReadingSession): Result<Unit> = unused()
-        override suspend fun saveCoverage(coverage: ReadingCoverage): Result<Unit> = unused()
-        override suspend fun addSessionToReadBook(
-            bookId: Int,
+        override suspend fun recordSession(
+            session: ReadingSession,
             title: String,
             author: String,
-            timeMs: Long,
-            words: Int,
-            endedAt: Long,
             coveragePercent: Float,
             reachedEnd: Boolean
         ): Result<Unit> = unused()
+
+        override suspend fun saveCoverage(coverage: ReadingCoverage): Result<Unit> = unused()
 
         override suspend fun setFinished(
             bookId: Int,

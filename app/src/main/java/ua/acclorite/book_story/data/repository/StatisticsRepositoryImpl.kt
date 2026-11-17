@@ -35,20 +35,30 @@ class StatisticsRepositoryImpl @Inject constructor(
 
     // Mapped here rather than through a Mapper class: the row is the model, with
     // nothing to join and no UI type to build.
-    override suspend fun addSession(session: ReadingSession): Result<Unit> =
-        runCatchingCancellable {
-            withContext(Dispatchers.IO) {
-                database.statisticsDao.insertSession(
-                    ReadingSessionEntity(
-                        bookId = session.bookId,
-                        startTime = session.startTime,
-                        endTime = session.endTime,
-                        wordsRead = session.wordsRead,
-                        overlayMs = session.overlayMs
-                    )
-                )
-            }
+    override suspend fun recordSession(
+        session: ReadingSession,
+        title: String,
+        author: String,
+        coveragePercent: Float,
+        reachedEnd: Boolean
+    ): Result<Unit> = runCatchingCancellable {
+        withContext(Dispatchers.IO) {
+            database.statisticsDao.recordSession(
+                session = ReadingSessionEntity(
+                    bookId = session.bookId,
+                    startTime = session.startTime,
+                    endTime = session.endTime,
+                    wordsRead = session.wordsRead,
+                    overlayMs = session.overlayMs
+                ),
+                timeMs = session.durationMs,
+                coveragePercent = coveragePercent,
+                reachedEnd = reachedEnd,
+                title = title,
+                author = author
+            )
         }
+    }
 
     override suspend fun getCoverage(bookId: Int): Result<ReadingCoverage?> =
         runCatchingCancellable {
@@ -109,32 +119,6 @@ class StatisticsRepositoryImpl @Inject constructor(
                 }
             }
         }
-
-    override suspend fun addSessionToReadBook(
-        bookId: Int,
-        title: String,
-        author: String,
-        timeMs: Long,
-        words: Int,
-        endedAt: Long,
-        coveragePercent: Float,
-        reachedEnd: Boolean
-    ): Result<Unit> = runCatchingCancellable {
-        withContext(Dispatchers.IO) {
-            // Updating an existing record or starting one is a single
-            // transaction in the DAO: the two halves must not be separable.
-            database.statisticsDao.addSessionToBookRecord(
-                bookId = bookId,
-                timeMs = timeMs,
-                words = words,
-                endedAt = endedAt,
-                coveragePercent = coveragePercent,
-                reachedEnd = reachedEnd,
-                title = title,
-                author = author
-            )
-        }
-    }
 
     override suspend fun setFinished(
         bookId: Int,
