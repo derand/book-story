@@ -80,9 +80,18 @@ class ReadingSessionTracker(
      * Whether this session got to the end of the book. Carried to the book's
      * record when the session is written, rather than set the moment it
      * happens: there may be no record yet to set it on.
+     *
+     * Only a running session sets it, and only on a screen it credits. A
+     * preview scrolled to its end runs no session, and a flag it set used to
+     * survive into the next library book read and mark *that* one finished;
+     * a slider dropped at the end is a landing nobody read, like the screen
+     * [landingAfterJump] refuses.
      */
     var reachedEnd = false
         private set
+
+    /** The last settled sample was a landing [creditVisible] skipped. */
+    private var skippedLanding = false
 
     /**
      * What of the open book has been read — item indices, loaded with the text
@@ -130,6 +139,7 @@ class ReadingSessionTracker(
         lastActive = now
         overlayMs = 0
         overlayShownAt = if (overlayShowing) now else null
+        reachedEnd = false
     }
 
     /**
@@ -230,8 +240,12 @@ class ReadingSessionTracker(
         creditVisible(visible)
     }
 
-    /** The settled position is [progress] of the way through the book. */
+    /**
+     * The position just [settled] on is [progress] of the way through the
+     * book; see [reachedEnd].
+     */
     fun progressed(progress: Float) {
+        if (startTime == null || skippedLanding) return
         if (progress >= 1f) reachedEnd = true
     }
 
@@ -248,6 +262,7 @@ class ReadingSessionTracker(
         // *next* book's first session.
         if (startTime == null) return
 
+        skippedLanding = landingAfterJump
         if (landingAfterJump) {
             landingAfterJump = false
             return
@@ -317,6 +332,8 @@ class ReadingSessionTracker(
         coverageBookWords = 0
         itemWordPrefix = null
         landingAfterJump = false
+        skippedLanding = false
+        reachedEnd = false
         openNoteId = null
         overlayMs = 0
         overlayShownAt = null

@@ -214,4 +214,49 @@ class ReadingSessionTrackerTest {
         assertFalse(tracker.reachedEnd)
         assertEquals(0, tracker.wordsRead)
     }
+
+    @Test
+    fun `a preview read to its end does not finish the next book`() {
+        // A preview runs no session; the reader still reports its progress.
+        loaded()
+        tracker.settled(listOf(9))
+        tracker.progressed(1f)
+        tracker.reset()
+
+        loaded()
+        tracker.start(overlayShowing = false)
+        tracker.settled(listOf(0))
+        tracker.progressed(0.1f)
+
+        assertFalse(tracker.reachedEnd)
+    }
+
+    @Test
+    fun `leaving the book forgets that it was finished`() {
+        loaded()
+        tracker.start(overlayShowing = false)
+        tracker.settled(listOf(9))
+        tracker.progressed(1f)
+        tracker.stop()
+        tracker.reset()
+
+        tracker.start(overlayShowing = false)
+        assertFalse(tracker.reachedEnd)
+    }
+
+    @Test
+    fun `a slider dropped at the end does not finish the book`() {
+        loaded()
+        tracker.start(overlayShowing = false)
+
+        tracker.jumped()
+        tracker.settled(listOf(9))
+        tracker.progressed(1f)
+        assertFalse(tracker.reachedEnd)
+
+        // Reading on from there is reading the end.
+        tracker.settled(listOf(8, 9))
+        tracker.progressed(1f)
+        assertTrue(tracker.reachedEnd)
+    }
 }
