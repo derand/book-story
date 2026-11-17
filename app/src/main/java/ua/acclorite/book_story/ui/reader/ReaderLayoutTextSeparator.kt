@@ -13,14 +13,12 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import ua.acclorite.book_story.ui.reader.model.ReaderTextLook
 
 @Composable
 fun LazyItemScope.ReaderLayoutTextSeparator(
-    sidePadding: Dp,
-    fontColor: Color
+    look: ReaderTextLook,
 ) {
     HorizontalDivider(
         thickness = 3.dp,
@@ -29,8 +27,8 @@ fun LazyItemScope.ReaderLayoutTextSeparator(
                 fadeInSpec = null,
                 fadeOutSpec = null
             )
-            .padding(horizontal = sidePadding)
+            .padding(horizontal = look.sidePadding)
             .clip(CircleShape),
-        color = fontColor.copy(0.3f)
+        color = look.fontColor.copy(0.3f)
     )
 }

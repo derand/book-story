@@ -16,20 +16,16 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.LineBreak
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import ua.acclorite.book_story.core.ui.MonospaceFontFamily
 import ua.acclorite.book_story.domain.model.reader.ReaderText.Preformatted
 import ua.acclorite.book_story.domain.model.reader.SearchMatch
 import ua.acclorite.book_story.presentation.reader.ReaderEvent
-import ua.acclorite.book_story.presentation.reader.model.ReaderFontThickness
 import ua.acclorite.book_story.ui.common.components.common.StyledText
+import ua.acclorite.book_story.ui.reader.model.ReaderTextLook
 
 /** Relative, so it tracks the reader font size. */
 private const val PREFORMATTED_FONT_SCALE = 0.875f
@@ -48,21 +44,16 @@ fun LazyItemScope.ReaderLayoutTextPreformatted(
     searchMatches: List<SearchMatch>,
     currentSearchMatch: SearchMatch?,
     preformatted: Preformatted,
-    fontColor: Color,
-    lineHeight: TextUnit,
-    fontThickness: ReaderFontThickness,
-    fontStyle: FontStyle,
-    fontSize: TextUnit,
-    sidePadding: Dp,
+    look: ReaderTextLook,
     openNote: (ReaderEvent.OnOpenNote) -> Unit
 ) {
     Column(
         modifier = Modifier
             .animateItem(fadeInSpec = null, fadeOutSpec = null)
             .fillMaxWidth()
-            .padding(horizontal = sidePadding)
+            .padding(horizontal = look.sidePadding)
             .background(
-                color = fontColor.copy(alpha = PREFORMATTED_BACKGROUND_ALPHA),
+                color = look.fontColor.copy(alpha = PREFORMATTED_BACKGROUND_ALPHA),
                 shape = RoundedCornerShape(4.dp)
             )
             .padding(horizontal = 12.dp, vertical = 8.dp)
@@ -70,7 +61,7 @@ fun LazyItemScope.ReaderLayoutTextPreformatted(
         preformatted.lines.forEachIndexed { part, line ->
             StyledText(
                 text = remember(
-                    line, openNote, part, searchMatches, currentSearchMatch, fontColor
+                    line, openNote, part, searchMatches, currentSearchMatch, look.fontColor
                 ) {
                     line
                         .withReferenceListeners { tag ->
@@ -79,18 +70,18 @@ fun LazyItemScope.ReaderLayoutTextPreformatted(
                         .withSearchHighlights(
                             matches = searchMatches,
                             current = currentSearchMatch,
-                            fontColor = fontColor,
+                            fontColor = look.fontColor,
                             part = part
                         )
                 },
                 style = TextStyle(
                     fontFamily = MonospaceFontFamily,
-                    fontWeight = fontThickness.thickness,
+                    fontWeight = look.fontThickness.thickness,
                     textAlign = TextAlign.Start,
-                    fontStyle = fontStyle,
-                    fontSize = fontSize * PREFORMATTED_FONT_SCALE,
-                    lineHeight = lineHeight * PREFORMATTED_FONT_SCALE,
-                    color = fontColor,
+                    fontStyle = look.fontStyle,
+                    fontSize = look.fontSize * PREFORMATTED_FONT_SCALE,
+                    lineHeight = look.lineHeight * PREFORMATTED_FONT_SCALE,
+                    color = look.fontColor,
                     lineBreak = LineBreak.Simple
                 )
             )

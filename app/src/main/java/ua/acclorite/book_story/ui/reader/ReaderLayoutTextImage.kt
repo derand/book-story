@@ -16,54 +16,28 @@ import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.TextUnit
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import ua.acclorite.book_story.domain.model.reader.BookImage
 import ua.acclorite.book_story.domain.model.reader.ReaderText
 import ua.acclorite.book_story.domain.model.reader.SearchMatch
 import ua.acclorite.book_story.presentation.reader.ReaderEvent
-import ua.acclorite.book_story.presentation.reader.model.ReaderFontThickness
-import ua.acclorite.book_story.presentation.reader.model.ReaderTextAlignment
 import ua.acclorite.book_story.ui.common.helpers.LocalBookImages
+import ua.acclorite.book_story.ui.reader.model.ReaderTextLook
 import ua.acclorite.book_story.ui.common.helpers.noRippleClickable
-import ua.acclorite.book_story.ui.reader.model.FontWithName
-import ua.acclorite.book_story.ui.theme.model.HorizontalAlignment
 
 @Composable
 fun LazyItemScope.ReaderLayoutTextImage(
     searchMatches: List<SearchMatch>,
     currentSearchMatch: SearchMatch?,
     entry: ReaderText.Image,
-    sidePadding: Dp,
-    imagesCornersRoundness: Dp,
-    imagesAlignment: HorizontalAlignment,
-    imagesWidth: Float,
-    imagesColorEffects: ColorFilter?,
-    imagesCaptions: Boolean,
+    look: ReaderTextLook,
     captionSpacing: Dp,
-    fontFamily: FontWithName,
-    fontColor: Color,
-    lineHeight: TextUnit,
-    fontThickness: ReaderFontThickness,
-    fontStyle: FontStyle,
-    textAlignment: ReaderTextAlignment,
-    horizontalAlignment: Alignment.Horizontal,
-    fontSize: TextUnit,
-    letterSpacing: TextUnit,
-    paragraphIndentation: TextUnit,
-    highlightedReading: Boolean,
-    highlightedReadingThickness: FontWeight,
     toolbarHidden: Boolean,
     openNote: (ReaderEvent.OnOpenNote) -> Unit
 ) {
@@ -82,8 +56,8 @@ fun LazyItemScope.ReaderLayoutTextImage(
                 .build()
         }
     }
-    val shape = remember(imagesCornersRoundness) {
-        RoundedCornerShape(imagesCornersRoundness)
+    val shape = remember(look.imagesCornersRoundness) {
+        RoundedCornerShape(look.imagesCornersRoundness)
     }
 
     Column(
@@ -97,22 +71,22 @@ fun LazyItemScope.ReaderLayoutTextImage(
     ) {
         Box(
             modifier = Modifier
-                .padding(horizontal = sidePadding)
+                .padding(horizontal = look.sidePadding)
                 .fillMaxWidth(),
-            contentAlignment = imagesAlignment.alignment
+            contentAlignment = look.imagesAlignment.alignment
         ) {
             // The slot is sized from the image's width/height either way, so an
             // image landing later cannot reflow the text around it.
             val slot = Modifier
                 .clip(shape)
-                .fillMaxWidth(imagesWidth)
+                .fillMaxWidth(look.imagesWidth)
                 .aspectRatio(entry.image.aspectRatio)
 
             when (imageRequest) {
                 null -> ReaderLayoutTextImagePlaceholder(
                     modifier = slot,
                     shape = shape,
-                    fontColor = fontColor,
+                    fontColor = look.fontColor,
                     missing = image is BookImage.Missing
                 )
 
@@ -125,31 +99,19 @@ fun LazyItemScope.ReaderLayoutTextImage(
                     modifier = slot,
                     model = imageRequest,
                     contentDescription = entry.caption?.line?.text,
-                    colorFilter = imagesColorEffects,
+                    colorFilter = look.imagesColorEffects,
                     contentScale = ContentScale.FillWidth
                 )
             }
         }
 
-        if (imagesCaptions) {
+        if (look.imagesCaptions) {
             entry.caption?.let { caption ->
                 ReaderLayoutTextParagraph(
                     searchMatches = searchMatches,
                     currentSearchMatch = currentSearchMatch,
                     paragraph = caption,
-                    fontFamily = fontFamily,
-                    fontColor = fontColor,
-                    lineHeight = lineHeight,
-                    fontThickness = fontThickness,
-                    fontStyle = fontStyle,
-                    textAlignment = textAlignment,
-                    horizontalAlignment = horizontalAlignment,
-                    fontSize = fontSize,
-                    letterSpacing = letterSpacing,
-                    sidePadding = sidePadding,
-                    paragraphIndentation = paragraphIndentation,
-                    highlightedReading = highlightedReading,
-                    highlightedReadingThickness = highlightedReadingThickness,
+                    look = look,
                     toolbarHidden = toolbarHidden,
                     openNote = openNote
                 )
