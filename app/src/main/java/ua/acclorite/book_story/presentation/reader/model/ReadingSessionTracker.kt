@@ -225,8 +225,20 @@ class ReadingSessionTracker(
         sessionWords.creditNote(id, noteWords(id))
     }
 
-    /** The reader is about to move the list itself; see [landingAfterJump]. */
-    fun jumped() {
+    /**
+     * The reader is about to move the list itself, from [from] to [to]; see
+     * [landingAfterJump].
+     *
+     * Nothing is flagged for a jump to where the list already stands — the
+     * slider released twice on one spot. The scroll flow is distinct, so no
+     * sample would come to clear the flag, and it would swallow the next screen
+     * actually read. Any other target does produce a sample, even one the list
+     * ends up normalising back to where it was (a negative offset onto the item
+     * before, a target past the end): the list holds the requested position
+     * until its next layout, and the flow sees both.
+     */
+    fun jumped(from: Checkpoint, to: Checkpoint) {
+        if (from == to) return
         landingAfterJump = true
     }
 

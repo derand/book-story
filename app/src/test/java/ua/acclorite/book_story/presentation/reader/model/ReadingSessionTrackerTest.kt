@@ -25,6 +25,8 @@ class ReadingSessionTrackerTest {
     )
     private val prefix = IntArray(11) { it * 10 }
 
+    private fun at(index: Int) = Checkpoint(index = index, offset = 0)
+
     private fun loaded(covered: Set<Int> = emptySet()) {
         tracker.loadCoverage(
             stored = ReadingCoverage(
@@ -111,12 +113,37 @@ class ReadingSessionTrackerTest {
         loaded()
         tracker.start(overlayShowing = false)
 
-        tracker.jumped()
+        tracker.jumped(from = at(0), to = at(5))
         tracker.settled(listOf(5))
         assertEquals(0, tracker.wordsRead)
 
         tracker.settled(listOf(6))
         assertEquals(10, tracker.wordsRead)
+    }
+
+    @Test
+    fun `a jump to where the list already stands does not swallow the next screen`() {
+        // The slider released twice on one spot: no sample comes for the second.
+        loaded()
+        tracker.start(overlayShowing = false)
+
+        tracker.jumped(from = at(5), to = at(5))
+
+        tracker.settled(listOf(6))
+        assertEquals(10, tracker.wordsRead)
+    }
+
+    @Test
+    fun `a jump the list normalises back is still a landing`() {
+        // A search step to the next match in the same paragraph: the request
+        // (item 5, pushed down) differs from the position (item 4, scrolled),
+        // so a sample does come, at the old position, and must not be credited.
+        loaded()
+        tracker.start(overlayShowing = false)
+
+        tracker.jumped(from = Checkpoint(index = 4, offset = 120), to = Checkpoint(index = 5, offset = -300))
+        tracker.settled(listOf(4, 5))
+        assertEquals(0, tracker.wordsRead)
     }
 
     @Test
@@ -249,7 +276,7 @@ class ReadingSessionTrackerTest {
         loaded()
         tracker.start(overlayShowing = false)
 
-        tracker.jumped()
+        tracker.jumped(from = at(0), to = at(5))
         tracker.settled(listOf(9))
         tracker.progressed(1f)
         assertFalse(tracker.reachedEnd)

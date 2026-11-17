@@ -354,11 +354,7 @@ class ReaderModel @Inject constructor(
                         val scrollTo = (_state.value.text.lastIndex * event.progress).roundToInt()
 
                         clearCurrentMatch()
-                        tracker.jumped()
-                        _state.value.listState.requestScrollToItem(
-                            index = scrollTo,
-                            scrollOffset = 0
-                        )
+                        jumpTo(index = scrollTo, offset = 0)
 
                         onEvent(ReaderEvent.OnUpdateChapter(scrollTo))
                     }
@@ -478,12 +474,11 @@ class ReaderModel @Inject constructor(
 
                     // Stepping through matches lands on screens nobody reads,
                     // exactly like dragging the slider does.
-                    tracker.jumped()
-                    _state.value.listState.requestScrollToItem(
+                    jumpTo(
                         index = match.itemIndex,
                         // Negative: the item is pushed *down* the screen,
                         // out from under the bar that was used to find it.
-                        scrollOffset = searchLandingOffset()
+                        offset = searchLandingOffset()
                     )
                     // The landing is saved like any settled position
                     // ([updateProgress]); [OnSearchReturn] brings the reader
@@ -952,6 +947,23 @@ class ReaderModel @Inject constructor(
         }
         val srcs = stripped.filterIsInstance<ReaderText.Image>().map { it.image.src }
         return ImageSplit(stripped, bytes, srcs)
+    }
+
+    /**
+     * Moves the list to a screen nobody is about to read (the slider, the
+     * search arrows), so that its landing is not credited; see
+     * [ReadingSessionTracker.jumped].
+     */
+    private fun jumpTo(index: Int, offset: Int) {
+        val listState = _state.value.listState
+        tracker.jumped(
+            from = Checkpoint(
+                index = listState.firstVisibleItemIndex,
+                offset = listState.firstVisibleItemScrollOffset
+            ),
+            to = Checkpoint(index = index, offset = offset)
+        )
+        listState.requestScrollToItem(index = index, scrollOffset = offset)
     }
 
     private fun visibleIndices(): List<Int> =
