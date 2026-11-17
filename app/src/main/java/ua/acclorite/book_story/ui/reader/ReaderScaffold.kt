@@ -19,37 +19,25 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.text.font.FontStyle
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.TextUnit
 import ua.acclorite.book_story.domain.model.library.Book
 import ua.acclorite.book_story.domain.model.reader.ReaderText
 import ua.acclorite.book_story.domain.model.reader.ReaderText.Chapter
 import ua.acclorite.book_story.presentation.reader.ReaderEvent
 import ua.acclorite.book_story.presentation.reader.model.Checkpoint
-import ua.acclorite.book_story.presentation.reader.model.ReaderFontThickness
 import ua.acclorite.book_story.presentation.reader.model.ReaderSearch
-import ua.acclorite.book_story.presentation.reader.model.ReaderHorizontalGesture
-import ua.acclorite.book_story.presentation.reader.model.ReaderTapPaging
-import ua.acclorite.book_story.presentation.reader.model.ReaderTextAlignment
-import ua.acclorite.book_story.presentation.reader.model.ReaderVolumePaging
 import ua.acclorite.book_story.presentation.settings.SettingsEvent
 import ua.acclorite.book_story.ui.common.components.common.AnimatedVisibility
-import ua.acclorite.book_story.ui.reader.model.FontWithName
-import ua.acclorite.book_story.ui.theme.model.HorizontalAlignment
+import ua.acclorite.book_story.ui.reader.model.ReaderControls
+import ua.acclorite.book_story.ui.reader.model.ReaderLook
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
@@ -59,16 +47,6 @@ fun ReaderScaffold(
     listState: LazyListState,
     currentChapter: Chapter?,
     nestedScrollConnection: NestedScrollConnection,
-    fastColorPresetChange: Boolean,
-    perceptionExpander: Boolean,
-    perceptionExpanderPadding: Dp,
-    perceptionExpanderThickness: Dp,
-    horizontalLimiter: Boolean,
-    horizontalLimiterHeight: Dp,
-    horizontalLimiterVerticalOffset: Float,
-    horizontalLimiterRulerThickness: Dp,
-    horizontalLimiterRuler: Boolean,
-    horizontalLimiterDimming: Float,
     currentChapterProgress: Float,
     isLoading: Boolean,
     checkpoints: List<Checkpoint>,
@@ -77,46 +55,9 @@ fun ReaderScaffold(
     coveredByBottomSheet: Boolean,
     lockMenu: Boolean,
     contentPadding: PaddingValues,
-    verticalPadding: Dp,
-    horizontalGesture: ReaderHorizontalGesture,
-    horizontalGestureSensitivity: Dp,
-    horizontalGestureAlphaAnim: Boolean,
-    horizontalGesturePullAnim: Boolean,
-    tapPaging: ReaderTapPaging,
-    volumePaging: ReaderVolumePaging,
-    disableScrolling: Boolean,
-    pageTurnOverlap: Float,
-    pageTurnAnimation: Boolean,
-    highlightedReading: Boolean,
-    highlightedReadingThickness: FontWeight,
+    look: ReaderLook,
+    controls: ReaderControls,
     progress: String,
-    progressBar: Boolean,
-    progressBarPadding: Dp,
-    progressBarAlignment: HorizontalAlignment,
-    progressBarFontSize: TextUnit,
-    chapterBreak: Float,
-    paragraphHeight: Dp,
-    sidePadding: Dp,
-    bottomBarPadding: Dp,
-    backgroundColor: Color,
-    fontColor: Color,
-    images: Boolean,
-    imagesCaptions: Boolean,
-    imagesCornersRoundness: Dp,
-    imagesAlignment: HorizontalAlignment,
-    imagesWidth: Float,
-    imagesColorEffects: ColorFilter?,
-    fontFamily: FontWithName,
-    lineHeight: TextUnit,
-    fontThickness: ReaderFontThickness,
-    fontStyle: FontStyle,
-    chapterTitleAlignment: ReaderTextAlignment,
-    textAlignment: ReaderTextAlignment,
-    horizontalAlignment: Alignment.Horizontal,
-    fontSize: TextUnit,
-    letterSpacing: TextUnit,
-    paragraphIndentation: TextUnit,
-    doubleClickTranslation: Boolean,
     switchColorPreset: (SettingsEvent.OnSwitchColorPreset) -> Unit,
     menuVisibility: (ReaderEvent.OnMenuVisibility) -> Unit,
     leave: (ReaderEvent.OnLeave) -> Unit,
@@ -163,7 +104,7 @@ fun ReaderScaffold(
                 ReaderTopBar(
                     book = book,
                     currentChapter = currentChapter,
-                    fastColorPresetChange = fastColorPresetChange,
+                    fastColorPresetChange = controls.fastColorPresetChange,
                     currentChapterProgress = currentChapterProgress,
                     isLoading = isLoading,
                     lockMenu = lockMenu,
@@ -201,7 +142,7 @@ fun ReaderScaffold(
                         listState = listState,
                         lockMenu = lockMenu,
                         checkpoints = checkpoints,
-                        bottomBarPadding = bottomBarPadding,
+                        bottomBarPadding = look.bottomBarPadding,
                         restoreCheckpoint = restoreCheckpoint,
                         scroll = scroll,
                         dragProgress = dragProgress
@@ -227,45 +168,45 @@ fun ReaderScaffold(
                 end = contentPadding.calculateEndPadding(layoutDirection),
                 bottom = contentPadding.calculateBottomPadding() + previewBarHeight
             ),
-            verticalPadding = verticalPadding,
-            horizontalGesture = horizontalGesture,
-            horizontalGestureSensitivity = horizontalGestureSensitivity,
-            horizontalGestureAlphaAnim = horizontalGestureAlphaAnim,
-            horizontalGesturePullAnim = horizontalGesturePullAnim,
-            tapPaging = tapPaging,
-            volumePaging = volumePaging,
-            disableScrolling = disableScrolling,
-            pageTurnOverlap = pageTurnOverlap,
-            pageTurnAnimation = pageTurnAnimation,
-            highlightedReading = highlightedReading,
-            highlightedReadingThickness = highlightedReadingThickness,
+            verticalPadding = look.verticalPadding,
+            horizontalGesture = controls.horizontalGesture,
+            horizontalGestureSensitivity = controls.horizontalGestureSensitivity,
+            horizontalGestureAlphaAnim = controls.horizontalGestureAlphaAnim,
+            horizontalGesturePullAnim = controls.horizontalGesturePullAnim,
+            tapPaging = controls.tapPaging,
+            volumePaging = controls.volumePaging,
+            disableScrolling = controls.disableScrolling,
+            pageTurnOverlap = controls.pageTurnOverlap,
+            pageTurnAnimation = controls.pageTurnAnimation,
+            highlightedReading = look.text.highlightedReading,
+            highlightedReadingThickness = look.text.highlightedReadingThickness,
             progress = progress,
-            progressBar = progressBar,
-            progressBarPadding = progressBarPadding,
-            progressBarAlignment = progressBarAlignment,
-            progressBarFontSize = progressBarFontSize,
-            chapterBreak = chapterBreak,
-            paragraphHeight = paragraphHeight,
-            sidePadding = sidePadding,
-            backgroundColor = backgroundColor,
-            fontColor = fontColor,
-            images = images,
-            imagesCaptions = imagesCaptions,
-            imagesCornersRoundness = imagesCornersRoundness,
-            imagesAlignment = imagesAlignment,
-            imagesWidth = imagesWidth,
-            imagesColorEffects = imagesColorEffects,
-            fontFamily = fontFamily,
-            lineHeight = lineHeight,
-            fontThickness = fontThickness,
-            fontStyle = fontStyle,
-            chapterTitleAlignment = chapterTitleAlignment,
-            textAlignment = textAlignment,
-            horizontalAlignment = horizontalAlignment,
-            fontSize = fontSize,
-            letterSpacing = letterSpacing,
-            paragraphIndentation = paragraphIndentation,
-            doubleClickTranslation = doubleClickTranslation,
+            progressBar = look.progressBar,
+            progressBarPadding = look.progressBarPadding,
+            progressBarAlignment = look.progressBarAlignment,
+            progressBarFontSize = look.progressBarFontSize,
+            chapterBreak = look.chapterBreak,
+            paragraphHeight = look.paragraphHeight,
+            sidePadding = look.text.sidePadding,
+            backgroundColor = look.backgroundColor,
+            fontColor = look.text.fontColor,
+            images = look.images,
+            imagesCaptions = look.text.imagesCaptions,
+            imagesCornersRoundness = look.text.imagesCornersRoundness,
+            imagesAlignment = look.text.imagesAlignment,
+            imagesWidth = look.text.imagesWidth,
+            imagesColorEffects = look.text.imagesColorEffects,
+            fontFamily = look.text.fontFamily,
+            lineHeight = look.text.lineHeight,
+            fontThickness = look.text.fontThickness,
+            fontStyle = look.text.fontStyle,
+            chapterTitleAlignment = look.text.chapterTitleAlignment,
+            textAlignment = look.text.textAlignment,
+            horizontalAlignment = look.text.horizontalAlignment,
+            fontSize = look.text.fontSize,
+            letterSpacing = look.text.letterSpacing,
+            paragraphIndentation = look.text.paragraphIndentation,
+            doubleClickTranslation = controls.doubleClickTranslation,
             searchMatches = search.matches,
             currentSearchMatch = search.currentMatch,
             isLoading = isLoading,
@@ -279,21 +220,21 @@ fun ReaderScaffold(
         )
 
         ReaderPerceptionExpander(
-            perceptionExpander = perceptionExpander,
-            perceptionExpanderPadding = perceptionExpanderPadding,
-            perceptionExpanderThickness = perceptionExpanderThickness,
-            perceptionExpanderColor = fontColor
+            perceptionExpander = look.perceptionExpander,
+            perceptionExpanderPadding = look.perceptionExpanderPadding,
+            perceptionExpanderThickness = look.perceptionExpanderThickness,
+            perceptionExpanderColor = look.text.fontColor
         )
 
         ReaderHorizontalLimiter(
-            horizontalLimiter = horizontalLimiter,
-            horizontalLimiterHeight = horizontalLimiterHeight,
-            horizontalLimiterVerticalOffset = horizontalLimiterVerticalOffset,
-            horizontalLimiterRulerThickness = horizontalLimiterRulerThickness,
-            horizontalLimiterRuler = horizontalLimiterRuler,
-            horizontalLimiterDimming = horizontalLimiterDimming,
-            horizontalLimiterDimmingColor = backgroundColor,
-            horizontalLimiterRulerColor = fontColor
+            horizontalLimiter = look.horizontalLimiter,
+            horizontalLimiterHeight = look.horizontalLimiterHeight,
+            horizontalLimiterVerticalOffset = look.horizontalLimiterVerticalOffset,
+            horizontalLimiterRulerThickness = look.horizontalLimiterRulerThickness,
+            horizontalLimiterRuler = look.horizontalLimiterRuler,
+            horizontalLimiterDimming = look.horizontalLimiterDimming,
+            horizontalLimiterDimmingColor = look.backgroundColor,
+            horizontalLimiterRulerColor = look.text.fontColor
         )
 
         if (isLoading) {

@@ -89,16 +89,6 @@ fun ReaderContent(
             listState = listState,
             currentChapter = currentChapter,
             nestedScrollConnection = nestedScrollConnection,
-            fastColorPresetChange = controls.fastColorPresetChange,
-            perceptionExpander = look.perceptionExpander,
-            perceptionExpanderPadding = look.perceptionExpanderPadding,
-            perceptionExpanderThickness = look.perceptionExpanderThickness,
-            horizontalLimiter = look.horizontalLimiter,
-            horizontalLimiterHeight = look.horizontalLimiterHeight,
-            horizontalLimiterVerticalOffset = look.horizontalLimiterVerticalOffset,
-            horizontalLimiterRuler = look.horizontalLimiterRuler,
-            horizontalLimiterRulerThickness = look.horizontalLimiterRulerThickness,
-            horizontalLimiterDimming = look.horizontalLimiterDimming,
             currentChapterProgress = currentChapterProgress,
             isLoading = isLoading,
             checkpoints = checkpoints,
@@ -107,57 +97,20 @@ fun ReaderContent(
             coveredByBottomSheet = bottomSheet == ReaderScreen.SETTINGS_BOTTOM_SHEET,
             lockMenu = lockMenu,
             contentPadding = contentPadding,
-            verticalPadding = look.verticalPadding,
-            horizontalGesture = controls.horizontalGesture,
-            horizontalGestureSensitivity = controls.horizontalGestureSensitivity,
-            horizontalGestureAlphaAnim = controls.horizontalGestureAlphaAnim,
-            horizontalGesturePullAnim = controls.horizontalGesturePullAnim,
-            tapPaging = controls.tapPaging,
+            look = look,
             // Anything drawn over the reader takes the keys back with it. The
             // image viewer and a note's sheet both open with the menu hidden,
             // so the menu alone does not answer for them, and turning pages
             // under a picture the reader is looking at is a page turn nobody
             // sees — while the volume, which the overlay leaves alone, is what
             // the keys are expected to do there.
-            volumePaging = when {
+            controls = when {
                 bottomSheet != null || drawer != null || fullscreenImage != null ->
-                    ReaderVolumePaging.OFF
+                    controls.copy(volumePaging = ReaderVolumePaging.OFF)
 
-                else -> controls.volumePaging
+                else -> controls
             },
-            disableScrolling = controls.disableScrolling,
-            pageTurnOverlap = controls.pageTurnOverlap,
-            pageTurnAnimation = controls.pageTurnAnimation,
-            highlightedReading = look.text.highlightedReading,
-            highlightedReadingThickness = look.text.highlightedReadingThickness,
             progress = progress,
-            progressBar = look.progressBar,
-            progressBarPadding = look.progressBarPadding,
-            progressBarAlignment = look.progressBarAlignment,
-            progressBarFontSize = look.progressBarFontSize,
-            chapterBreak = look.chapterBreak,
-            paragraphHeight = look.paragraphHeight,
-            sidePadding = look.text.sidePadding,
-            bottomBarPadding = look.bottomBarPadding,
-            backgroundColor = look.backgroundColor,
-            fontColor = look.text.fontColor,
-            images = look.images,
-            imagesCaptions = look.text.imagesCaptions,
-            imagesCornersRoundness = look.text.imagesCornersRoundness,
-            imagesAlignment = look.text.imagesAlignment,
-            imagesWidth = look.text.imagesWidth,
-            imagesColorEffects = look.text.imagesColorEffects,
-            fontFamily = look.text.fontFamily,
-            lineHeight = look.text.lineHeight,
-            fontThickness = look.text.fontThickness,
-            fontStyle = look.text.fontStyle,
-            chapterTitleAlignment = look.text.chapterTitleAlignment,
-            textAlignment = look.text.textAlignment,
-            horizontalAlignment = look.text.horizontalAlignment,
-            fontSize = look.text.fontSize,
-            letterSpacing = look.text.letterSpacing,
-            paragraphIndentation = look.text.paragraphIndentation,
-            doubleClickTranslation = controls.doubleClickTranslation,
             switchColorPreset = switchColorPreset,
             menuVisibility = menuVisibility,
             leave = leave,
