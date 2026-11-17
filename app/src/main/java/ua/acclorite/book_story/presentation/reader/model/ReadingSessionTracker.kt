@@ -143,25 +143,36 @@ class ReadingSessionTracker(
     }
 
     /**
-     * Stops the running session and returns when it started, or null when none
-     * was running. A note still open was read like any other and is credited;
-     * an overlay still up is closed out, so being stopped from inside the image
-     * viewer does not lose the time it was holding.
+     * Ends the running session and hands back everything to write for it, or
+     * null when none was running. A note still open was read like any other and
+     * is credited; an overlay still up is closed out, so being stopped from
+     * inside the image viewer does not lose the time it was holding.
      *
-     * The ledger is left for the caller to read; [closeLedger] empties it.
+     * One call, nothing to read afterwards: the writes that follow suspend, and
+     * a quick stop and start (the shade, a short app switch) starts the next
+     * session in between. Reading the ledger after them recorded the old
+     * session with the new one's values, and emptying it then erased what the
+     * new one had credited meanwhile.
      */
-    fun stop(): Long? {
+    fun end(bookId: Int, bookmarkIndex: Int): EndedSession? {
         val start = startTime ?: return null
         creditOpenNote()
         accrueOverlay()
         startTime = null
-        return start
-    }
 
-    /** Empties the session's words and end flag once it has been written. */
-    fun closeLedger() {
+        val ended = EndedSession(
+            startTime = start,
+            lastActive = lastActive,
+            endTime = clock(),
+            wordsRead = sessionWords.total,
+            overlayMs = overlayMs,
+            coverage = coverage(bookId, bookmarkIndex),
+            coveragePercent = coveragePercent,
+            reachedEnd = reachedEnd
+        )
         sessionWords.clear()
         reachedEnd = false
+        return ended
     }
 
     /**
@@ -351,3 +362,18 @@ class ReadingSessionTracker(
         overlayShownAt = null
     }
 }
+
+/**
+ * A session as [ReadingSessionTracker.end] left it, for the reader to write.
+ * [coverage] is null while the book's coverage had not been loaded.
+ */
+class EndedSession(
+    val startTime: Long,
+    val lastActive: Long,
+    val endTime: Long,
+    val wordsRead: Int,
+    val overlayMs: Long,
+    val coverage: ReadingCoverage?,
+    val coveragePercent: Float,
+    val reachedEnd: Boolean
+)

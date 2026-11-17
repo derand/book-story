@@ -869,36 +869,33 @@ class ReaderModel @Inject constructor(
     }
 
     private suspend fun endSession() {
-        val startTime = tracker.stop() ?: return
-        val bookId = _state.value.book.id
+        // Everything the writes need is taken here, before the first of them
+        // suspends; see [ReadingSessionTracker.end].
+        val book = _state.value.book
+        val ended = tracker.end(bookId = book.id, bookmarkIndex = book.scrollIndex) ?: return
 
-        tracker.coverage(bookId, _state.value.book.scrollIndex)?.let {
-            saveBookCoverageUseCase(it)
-        }
+        ended.coverage?.let { saveBookCoverageUseCase(it) }
 
         val session = recordReadingSessionUseCase(
-            bookId = bookId,
-            startTime = startTime,
-            lastActiveTime = tracker.lastActive,
-            endTime = System.currentTimeMillis(),
-            wordsRead = tracker.wordsRead,
-            overlayMs = tracker.overlayMs
+            bookId = book.id,
+            startTime = ended.startTime,
+            lastActiveTime = ended.lastActive,
+            endTime = ended.endTime,
+            wordsRead = ended.wordsRead,
+            overlayMs = ended.overlayMs
         )
 
         // Only a session the statistics kept: one too short to count must not
         // quietly bump the book's totals either.
         if (session != null) {
-            val book = _state.value.book
             updateReadBookUseCase(
                 session = session,
                 title = book.title,
                 author = book.author.getAsString() ?: "",
-                coveragePercent = tracker.coveragePercent,
-                reachedEnd = tracker.reachedEnd
+                coveragePercent = ended.coveragePercent,
+                reachedEnd = ended.reachedEnd
             )
         }
-
-        tracker.closeLedger()
     }
 
     private suspend fun loadCoverage(text: List<ReaderText>) {

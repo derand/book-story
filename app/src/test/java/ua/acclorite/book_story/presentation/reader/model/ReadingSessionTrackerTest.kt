@@ -48,9 +48,11 @@ class ReadingSessionTrackerTest {
         assertTrue(tracker.isRunning)
 
         now = 5_000L
-        assertEquals(1_000L, tracker.stop())
+        val ended = tracker.end(bookId = 1, bookmarkIndex = 0)
+        assertEquals(1_000L, ended?.startTime)
+        assertEquals(5_000L, ended?.endTime)
         assertFalse(tracker.isRunning)
-        assertNull(tracker.stop())
+        assertNull(tracker.end(bookId = 1, bookmarkIndex = 0))
     }
 
     @Test
@@ -59,7 +61,7 @@ class ReadingSessionTrackerTest {
         now = 3_000L
         tracker.start(overlayShowing = false)
 
-        assertEquals(1_000L, tracker.stop())
+        assertEquals(1_000L, tracker.end(bookId = 1, bookmarkIndex = 0)?.startTime)
     }
 
     @Test
@@ -171,15 +173,15 @@ class ReadingSessionTrackerTest {
     }
 
     @Test
-    fun `a stop closes the overlay without moving the last sign of life`() {
+    fun `the end closes the overlay without moving the last sign of life`() {
         tracker.start(overlayShowing = false)
         now = 2_000L
         tracker.overlayShown()
         now = 9_000L
-        tracker.stop()
+        val ended = tracker.end(bookId = 1, bookmarkIndex = 0)
 
-        assertEquals(7_000L, tracker.overlayMs)
-        assertEquals(2_000L, tracker.lastActive)
+        assertEquals(7_000L, ended?.overlayMs)
+        assertEquals(2_000L, ended?.lastActive)
     }
 
     @Test
@@ -203,12 +205,11 @@ class ReadingSessionTrackerTest {
     }
 
     @Test
-    fun `a note still open is credited by the stop`() {
+    fun `a note still open is credited by the end`() {
         tracker.start(overlayShowing = false)
         tracker.noteOpened("n")
-        tracker.stop()
 
-        assertEquals(7, tracker.wordsRead)
+        assertEquals(7, tracker.end(bookId = 1, bookmarkIndex = 0)?.wordsRead)
     }
 
     @Test
@@ -228,7 +229,7 @@ class ReadingSessionTrackerTest {
     }
 
     @Test
-    fun `the end of the book is carried until the ledger is closed`() {
+    fun `the end of the book is carried to the session that reached it`() {
         tracker.start(overlayShowing = false)
         tracker.progressed(0.5f)
         assertFalse(tracker.reachedEnd)
@@ -236,10 +237,48 @@ class ReadingSessionTrackerTest {
         tracker.progressed(1f)
         assertTrue(tracker.reachedEnd)
 
-        tracker.stop()
-        tracker.closeLedger()
+        assertEquals(true, tracker.end(bookId = 1, bookmarkIndex = 0)?.reachedEnd)
         assertFalse(tracker.reachedEnd)
         assertEquals(0, tracker.wordsRead)
+    }
+
+    @Test
+    fun `the end hands over the coverage as it stood`() {
+        loaded()
+        tracker.start(overlayShowing = false)
+        tracker.settled(listOf(1, 2))
+
+        val ended = tracker.end(bookId = 7, bookmarkIndex = 3)
+        assertEquals(setOf(1, 2), ended?.coverage?.covered)
+        assertEquals(7, ended?.coverage?.bookId)
+        assertEquals(30, ended?.coverage?.wordsBeforeBookmark)
+        assertEquals(0.2f, ended?.coveragePercent)
+    }
+
+    @Test
+    fun `a session started while the last one is written keeps to itself`() {
+        // ON_STOP, then ON_START before the writes of the first end are done.
+        loaded()
+        tracker.start(overlayShowing = false)
+        tracker.settled(listOf(1))
+        now = 2_000L
+        tracker.overlayShown()
+        now = 3_000L
+        val first = tracker.end(bookId = 1, bookmarkIndex = 0)
+
+        now = 3_100L
+        tracker.start(overlayShowing = false)
+        tracker.settled(listOf(2, 3))
+
+        assertEquals(10, first?.wordsRead)
+        assertEquals(1_000L, first?.overlayMs)
+        assertEquals(2_000L, first?.lastActive)
+        assertEquals(setOf(1), first?.coverage?.covered)
+
+        val second = tracker.end(bookId = 1, bookmarkIndex = 0)
+        assertEquals(20, second?.wordsRead)
+        assertEquals(0L, second?.overlayMs)
+        assertEquals(3_100L, second?.startTime)
     }
 
     @Test
@@ -264,7 +303,7 @@ class ReadingSessionTrackerTest {
         tracker.start(overlayShowing = false)
         tracker.settled(listOf(9))
         tracker.progressed(1f)
-        tracker.stop()
+        tracker.end(bookId = 1, bookmarkIndex = 0)
         tracker.reset()
 
         tracker.start(overlayShowing = false)
