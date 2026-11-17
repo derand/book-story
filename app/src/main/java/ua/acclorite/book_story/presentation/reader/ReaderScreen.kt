@@ -21,7 +21,6 @@ import androidx.compose.foundation.layout.systemBarsIgnoringVisibility
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.geometry.Offset
@@ -34,6 +33,8 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
@@ -238,61 +239,19 @@ data class ReaderScreen(val bookId: Int) : Screen, Parcelable {
             (settings.progressBarFontSize.lastValue * 2).sp
         }
 
-        val layoutDirection = LocalLayoutDirection.current
-        val cutoutInsets = WindowInsets.displayCutout
-        val systemBarsInsets = WindowInsets.systemBarsIgnoringVisibility
-
-        val cutoutInsetsPadding = remember(settings.cutoutPadding.value) {
-            derivedStateOf {
-                cutoutInsets.asPaddingValues(density = density).run {
-                    if (settings.cutoutPadding.lastValue) PaddingValues(
-                        top = calculateTopPadding(),
-                        start = calculateStartPadding(layoutDirection),
-                        end = calculateEndPadding(layoutDirection),
-                        bottom = calculateBottomPadding()
-                    ) else PaddingValues(0.dp)
-                }
-            }
-        }
-        val systemBarsInsetsPadding = remember(settings.fullscreen.value) {
-            derivedStateOf {
-                systemBarsInsets.asPaddingValues(density = density).run {
-                    if (!settings.fullscreen.lastValue) PaddingValues(
-                        top = calculateTopPadding(),
-                        start = calculateStartPadding(layoutDirection),
-                        end = calculateEndPadding(layoutDirection),
-                        bottom = calculateBottomPadding()
-                    ) else PaddingValues(0.dp)
-                }
-            }
-        }
-        val contentPadding = remember(
-            cutoutInsetsPadding.value,
-            systemBarsInsetsPadding.value
-        ) {
-            PaddingValues(
-                top = systemBarsInsetsPadding.value.calculateTopPadding().run {
-                    if (equals(0.dp)) return@run cutoutInsetsPadding.value
-                        .calculateTopPadding()
-                    this
-                },
-                start = systemBarsInsetsPadding.value.calculateStartPadding(layoutDirection).run {
-                    if (equals(0.dp)) return@run cutoutInsetsPadding.value
-                        .calculateStartPadding(layoutDirection)
-                    this
-                },
-                end = systemBarsInsetsPadding.value.calculateEndPadding(layoutDirection).run {
-                    if (equals(0.dp)) return@run cutoutInsetsPadding.value
-                        .calculateEndPadding(layoutDirection)
-                    this
-                },
-                bottom = systemBarsInsetsPadding.value.calculateBottomPadding().run {
-                    if (equals(0.dp)) return@run cutoutInsetsPadding.value
-                        .calculateBottomPadding()
-                    this
-                }
-            )
-        }
+        // Read in composition on purpose: the insets are state, so a rotation
+        // or the system bars coming back recomposes with the new values.
+        val noPadding = PaddingValues(0.dp)
+        val systemBarsPadding =
+            if (settings.fullscreen.value) noPadding
+            else WindowInsets.systemBarsIgnoringVisibility.asPaddingValues()
+        val cutoutPadding =
+            if (settings.cutoutPadding.value) WindowInsets.displayCutout.asPaddingValues()
+            else noPadding
+        val contentPadding = systemBarsPadding.orWhereZero(
+            fallback = cutoutPadding,
+            layoutDirection = LocalLayoutDirection.current
+        )
         val bottomBarPadding = remember(settings.bottomBarPadding.value) {
             (settings.bottomBarPadding.lastValue * 4f).dp
         }
@@ -520,4 +479,24 @@ data class ReaderScreen(val bookId: Int) : Screen, Parcelable {
             )
         }
     }
+}
+
+/**
+ * Per side: this padding where it is not zero, [fallback]'s otherwise — the
+ * system bars already cover the cutout on their own side, so the cutout counts
+ * only where there is no bar.
+ */
+internal fun PaddingValues.orWhereZero(
+    fallback: PaddingValues,
+    layoutDirection: LayoutDirection
+): PaddingValues {
+    fun Dp.or(other: Dp) = if (this == 0.dp) other else this
+    return PaddingValues(
+        start = calculateStartPadding(layoutDirection)
+            .or(fallback.calculateStartPadding(layoutDirection)),
+        top = calculateTopPadding().or(fallback.calculateTopPadding()),
+        end = calculateEndPadding(layoutDirection)
+            .or(fallback.calculateEndPadding(layoutDirection)),
+        bottom = calculateBottomPadding().or(fallback.calculateBottomPadding())
+    )
 }
