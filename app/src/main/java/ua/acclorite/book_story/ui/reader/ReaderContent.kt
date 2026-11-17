@@ -51,35 +51,13 @@ fun ReaderContent(
     controls: ReaderControls,
     progress: String,
     switchColorPreset: (SettingsEvent.OnSwitchColorPreset) -> Unit,
-    menuVisibility: (ReaderEvent.OnMenuVisibility) -> Unit,
-    leave: (ReaderEvent.OnLeave) -> Unit,
-    restoreCheckpoint: (ReaderEvent.OnRestoreCheckpoint) -> Unit,
-    scroll: (ReaderEvent.OnScroll) -> Unit,
-    dragProgress: (ReaderEvent.OnDragProgress) -> Unit,
-    openShareApp: (ReaderEvent.OnOpenShareApp) -> Unit,
-    openWebBrowser: (ReaderEvent.OnOpenWebBrowser) -> Unit,
-    openTranslator: (ReaderEvent.OnOpenTranslator) -> Unit,
-    openNote: (ReaderEvent.OnOpenNote) -> Unit,
-    openImage: (ReaderEvent.OnOpenImage) -> Unit,
-    dismissImage: (ReaderEvent.OnDismissImage) -> Unit,
-    scrollToChapter: (ReaderEvent.OnScrollToChapter) -> Unit,
-    showSettingsBottomSheet: (ReaderEvent.OnShowSettingsBottomSheet) -> Unit,
-    dismissBottomSheet: (ReaderEvent.OnDismissBottomSheet) -> Unit,
-    showChaptersDrawer: (ReaderEvent.OnShowChaptersDrawer) -> Unit,
-    searchVisibility: (ReaderEvent.OnSearchVisibility) -> Unit,
-    searchQueryChange: (ReaderEvent.OnSearchQueryChange) -> Unit,
-    searchStep: (ReaderEvent.OnSearchStep) -> Unit,
-    searchReturn: (ReaderEvent.OnSearchReturn) -> Unit,
-    addingToLibrary: Boolean,
-    addToLibrary: (ReaderEvent.OnAddToLibrary) -> Unit,
-    dismissDrawer: (ReaderEvent.OnDismissDrawer) -> Unit,
-    navigateToBookInfo: (ReaderEvent.OnNavigateToBookInfo) -> Unit,
-    navigateBack: (ReaderEvent.OnNavigateBack) -> Unit
+    onEvent: (ReaderEvent) -> Unit,
+    addingToLibrary: Boolean
 ) {
     ReaderBottomSheet(
         bottomSheet = bottomSheet,
         currentNote = currentNote,
-        dismissBottomSheet = dismissBottomSheet
+        dismissBottomSheet = onEvent
     )
 
     if (isLoading || errorMessage == null) {
@@ -112,34 +90,16 @@ fun ReaderContent(
             },
             progress = progress,
             switchColorPreset = switchColorPreset,
-            menuVisibility = menuVisibility,
-            leave = leave,
-            restoreCheckpoint = restoreCheckpoint,
-            scroll = scroll,
-            dragProgress = dragProgress,
-            openShareApp = openShareApp,
-            openWebBrowser = openWebBrowser,
-            openTranslator = openTranslator,
-            openNote = openNote,
-            openImage = openImage,
-            showSettingsBottomSheet = showSettingsBottomSheet,
-            showChaptersDrawer = showChaptersDrawer,
-            searchVisibility = searchVisibility,
-            searchQueryChange = searchQueryChange,
-            searchStep = searchStep,
-            searchReturn = searchReturn,
-            addingToLibrary = addingToLibrary,
-            addToLibrary = addToLibrary,
-            navigateBack = navigateBack,
-            navigateToBookInfo = navigateToBookInfo
+            onEvent = onEvent,
+            addingToLibrary = addingToLibrary
         )
     } else {
         ReaderErrorPlaceholder(
             errorMessage = errorMessage,
             offersPathChange = errorOffersPathChange,
-            leave = leave,
-            navigateToBookInfo = navigateToBookInfo,
-            navigateBack = navigateBack
+            leave = onEvent,
+            navigateToBookInfo = onEvent,
+            navigateBack = onEvent
         )
     }
 
@@ -148,15 +108,15 @@ fun ReaderContent(
         chapters = remember(text) { text.filterIsInstance<Chapter>() },
         currentChapter = currentChapter,
         currentChapterProgress = currentChapterProgress,
-        scrollToChapter = scrollToChapter,
-        dismissDrawer = dismissDrawer
+        scrollToChapter = onEvent,
+        dismissDrawer = onEvent
     )
 
     ReaderBackHandler(
         searchActive = search.active,
-        searchReturn = searchReturn,
-        leave = leave,
-        navigateBack = navigateBack
+        searchReturn = onEvent,
+        leave = onEvent,
+        navigateBack = onEvent
     )
 
     // Last on purpose, on both counts: it draws over the reader and its menu,
@@ -165,7 +125,7 @@ fun ReaderContent(
     fullscreenImage?.let { image ->
         ReaderImageViewer(
             entry = image,
-            dismiss = { dismissImage(ReaderEvent.OnDismissImage) }
+            dismiss = { onEvent(ReaderEvent.OnDismissImage) }
         )
     }
 }

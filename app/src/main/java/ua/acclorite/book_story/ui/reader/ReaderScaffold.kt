@@ -59,26 +59,8 @@ fun ReaderScaffold(
     controls: ReaderControls,
     progress: String,
     switchColorPreset: (SettingsEvent.OnSwitchColorPreset) -> Unit,
-    menuVisibility: (ReaderEvent.OnMenuVisibility) -> Unit,
-    leave: (ReaderEvent.OnLeave) -> Unit,
-    restoreCheckpoint: (ReaderEvent.OnRestoreCheckpoint) -> Unit,
-    scroll: (ReaderEvent.OnScroll) -> Unit,
-    dragProgress: (ReaderEvent.OnDragProgress) -> Unit,
-    openShareApp: (ReaderEvent.OnOpenShareApp) -> Unit,
-    openWebBrowser: (ReaderEvent.OnOpenWebBrowser) -> Unit,
-    openTranslator: (ReaderEvent.OnOpenTranslator) -> Unit,
-    openNote: (ReaderEvent.OnOpenNote) -> Unit,
-    openImage: (ReaderEvent.OnOpenImage) -> Unit,
-    showSettingsBottomSheet: (ReaderEvent.OnShowSettingsBottomSheet) -> Unit,
-    showChaptersDrawer: (ReaderEvent.OnShowChaptersDrawer) -> Unit,
-    searchVisibility: (ReaderEvent.OnSearchVisibility) -> Unit,
-    searchQueryChange: (ReaderEvent.OnSearchQueryChange) -> Unit,
-    searchStep: (ReaderEvent.OnSearchStep) -> Unit,
-    searchReturn: (ReaderEvent.OnSearchReturn) -> Unit,
-    addingToLibrary: Boolean,
-    addToLibrary: (ReaderEvent.OnAddToLibrary) -> Unit,
-    navigateToBookInfo: (ReaderEvent.OnNavigateToBookInfo) -> Unit,
-    navigateBack: (ReaderEvent.OnNavigateBack) -> Unit
+    onEvent: (ReaderEvent) -> Unit,
+    addingToLibrary: Boolean
 ) {
     // How much of the page the preview bar is taking, so the text can end above
     // it. Zero for a book in the library, which has no such bar.
@@ -110,16 +92,16 @@ fun ReaderScaffold(
                     lockMenu = lockMenu,
                     search = search,
                     listState = listState,
-                    leave = leave,
+                    leave = onEvent,
                     switchColorPreset = switchColorPreset,
-                    showSettingsBottomSheet = showSettingsBottomSheet,
-                    showChaptersDrawer = showChaptersDrawer,
-                    searchVisibility = searchVisibility,
-                    searchQueryChange = searchQueryChange,
-                    searchStep = searchStep,
-                    searchReturn = searchReturn,
-                    navigateBack = navigateBack,
-                    navigateToBookInfo = navigateToBookInfo
+                    showSettingsBottomSheet = onEvent,
+                    showChaptersDrawer = onEvent,
+                    searchVisibility = onEvent,
+                    searchQueryChange = onEvent,
+                    searchStep = onEvent,
+                    searchReturn = onEvent,
+                    navigateBack = onEvent,
+                    navigateToBookInfo = onEvent
                 )
             }
         },
@@ -143,16 +125,16 @@ fun ReaderScaffold(
                         lockMenu = lockMenu,
                         checkpoints = checkpoints,
                         bottomBarPadding = look.bottomBarPadding,
-                        restoreCheckpoint = restoreCheckpoint,
-                        scroll = scroll,
-                        dragProgress = dragProgress
+                        restoreCheckpoint = onEvent,
+                        scroll = onEvent,
+                        dragProgress = onEvent
                     )
                 }
 
                 if (!book.inLibrary && !coveredByBottomSheet) {
                     ReaderPreviewBar(
                         addingToLibrary = addingToLibrary,
-                        addToLibrary = addToLibrary,
+                        addToLibrary = onEvent,
                         onHeightChanged = { previewBarHeight = it }
                     )
                 }
@@ -175,12 +157,7 @@ fun ReaderScaffold(
             currentSearchMatch = search.currentMatch,
             isLoading = isLoading,
             showMenu = showMenu,
-            menuVisibility = menuVisibility,
-            openShareApp = openShareApp,
-            openWebBrowser = openWebBrowser,
-            openTranslator = openTranslator,
-            openNote = openNote,
-            openImage = openImage
+            onEvent = onEvent
         )
 
         ReaderPerceptionExpander(

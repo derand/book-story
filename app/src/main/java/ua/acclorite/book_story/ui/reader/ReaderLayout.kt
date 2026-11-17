@@ -60,12 +60,7 @@ fun ReaderLayout(
     currentSearchMatch: SearchMatch?,
     isLoading: Boolean,
     showMenu: Boolean,
-    menuVisibility: (ReaderEvent.OnMenuVisibility) -> Unit,
-    openShareApp: (ReaderEvent.OnOpenShareApp) -> Unit,
-    openWebBrowser: (ReaderEvent.OnOpenWebBrowser) -> Unit,
-    openTranslator: (ReaderEvent.OnOpenTranslator) -> Unit,
-    openNote: (ReaderEvent.OnOpenNote) -> Unit,
-    openImage: (ReaderEvent.OnOpenImage) -> Unit
+    onEvent: (ReaderEvent) -> Unit
 ) {
     val activity = LocalActivity.current
 
@@ -141,21 +136,21 @@ fun ReaderLayout(
             }
         },
         onShareRequested = { textToShare ->
-            openShareApp(
+            onEvent(
                 ReaderEvent.OnOpenShareApp(
                     textToShare = textToShare
                 )
             )
         },
         onWebSearchRequested = { textToSearch ->
-            openWebBrowser(
+            onEvent(
                 ReaderEvent.OnOpenWebBrowser(
                     textToSearch = textToSearch
                 )
             )
         },
         onTranslateRequested = { textToTranslate ->
-            openTranslator(
+            onEvent(
                 ReaderEvent.OnOpenTranslator(
                     textToTranslate = textToTranslate,
                     translateWholeParagraph = false
@@ -177,7 +172,7 @@ fun ReaderLayout(
                 .fillMaxSize()
                 .background(look.backgroundColor)
                 .readerMenuTap(enabled = !isLoading && toolbarHidden) {
-                    menuVisibility(
+                    onEvent(
                         ReaderEvent.OnMenuVisibility(
                             show = !showMenu,
                             saveCheckpoint = true
@@ -218,9 +213,9 @@ fun ReaderLayout(
                         lineHeight = lineHeightDp,
                         showMenu = showMenu,
                         doubleClickTranslation = controls.doubleClickTranslation,
-                        menuVisibility = menuVisibility,
-                        openImage = openImage,
-                        openTranslator = openTranslator
+                        menuVisibility = onEvent,
+                        openImage = onEvent,
+                        openTranslator = onEvent
                     ),
                 modifier = Modifier.fillMaxSize(),
                 userScrollEnabled = readerScrollEnabled(
@@ -266,7 +261,7 @@ fun ReaderLayout(
                                     look = look.text,
                                     captionSpacing = look.paragraphHeight,
                                     toolbarHidden = toolbarHidden,
-                                    openNote = openNote
+                                    openNote = onEvent
                                 )
 
                                 // A chapter boundary is marked below the

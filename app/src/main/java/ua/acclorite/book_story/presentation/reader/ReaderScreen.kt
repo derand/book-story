@@ -280,30 +280,8 @@ data class ReaderScreen(val bookId: Int) : Screen, Parcelable {
                 controls = controls,
                 progress = progress,
                 switchColorPreset = settingsModel::onEvent,
-                leave = screenModel::onEvent,
-                restoreCheckpoint = screenModel::onEvent,
-                scroll = screenModel::onEvent,
-                dragProgress = screenModel::onEvent,
-                menuVisibility = screenModel::onEvent,
-                openShareApp = screenModel::onEvent,
-                openWebBrowser = screenModel::onEvent,
-                openTranslator = screenModel::onEvent,
-                openNote = screenModel::onEvent,
-                openImage = screenModel::onEvent,
-                dismissImage = screenModel::onEvent,
-                scrollToChapter = screenModel::onEvent,
-                showSettingsBottomSheet = screenModel::onEvent,
-                dismissBottomSheet = screenModel::onEvent,
-                showChaptersDrawer = screenModel::onEvent,
-                searchVisibility = screenModel::onEvent,
-                searchQueryChange = screenModel::onEvent,
-                searchStep = screenModel::onEvent,
-                searchReturn = screenModel::onEvent,
-                addingToLibrary = state.value.addingToLibrary || state.value.lockMenu,
-                addToLibrary = screenModel::onEvent,
-                dismissDrawer = screenModel::onEvent,
-                navigateBack = screenModel::onEvent,
-                navigateToBookInfo = screenModel::onEvent
+                onEvent = screenModel::onEvent,
+                addingToLibrary = state.value.addingToLibrary || state.value.lockMenu
             )
         }
     }
