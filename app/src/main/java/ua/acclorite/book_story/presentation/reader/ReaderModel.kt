@@ -57,7 +57,6 @@ import ua.acclorite.book_story.domain.use_case.history.GetHistoryForBookUseCase
 import ua.acclorite.book_story.domain.use_case.statistics.GetBookCoverageUseCase
 import ua.acclorite.book_story.domain.use_case.statistics.RecordReadingSessionUseCase
 import ua.acclorite.book_story.domain.use_case.statistics.SaveBookCoverageUseCase
-import ua.acclorite.book_story.domain.use_case.statistics.UpdateReadBookUseCase
 import ua.acclorite.book_story.presentation.reader.model.Checkpoint
 import ua.acclorite.book_story.presentation.reader.model.ReaderSearch
 import ua.acclorite.book_story.presentation.reader.model.ReadingSessionTracker
@@ -93,7 +92,6 @@ class ReaderModel @Inject constructor(
     private val recordReadingSessionUseCase: RecordReadingSessionUseCase,
     private val getBookCoverageUseCase: GetBookCoverageUseCase,
     private val saveBookCoverageUseCase: SaveBookCoverageUseCase,
-    private val updateReadBookUseCase: UpdateReadBookUseCase,
     private val addPreviewToLibraryUseCase: AddPreviewToLibraryUseCase,
     private val discardPreviewsUseCase: DiscardPreviewsUseCase,
     private val grantPersistableUriPermissionUseCase: GrantPersistableUriPermissionUseCase
@@ -876,26 +874,18 @@ class ReaderModel @Inject constructor(
 
         ended.coverage?.let { saveBookCoverageUseCase(it) }
 
-        val session = recordReadingSessionUseCase(
+        recordReadingSessionUseCase(
             bookId = book.id,
             startTime = ended.startTime,
             lastActiveTime = ended.lastActive,
             endTime = ended.endTime,
             wordsRead = ended.wordsRead,
-            overlayMs = ended.overlayMs
+            overlayMs = ended.overlayMs,
+            title = book.title,
+            author = book.author.getAsString() ?: "",
+            coveragePercent = ended.coveragePercent,
+            reachedEnd = ended.reachedEnd
         )
-
-        // Only a session the statistics kept: one too short to count must not
-        // quietly bump the book's totals either.
-        if (session != null) {
-            updateReadBookUseCase(
-                session = session,
-                title = book.title,
-                author = book.author.getAsString() ?: "",
-                coveragePercent = ended.coveragePercent,
-                reachedEnd = ended.reachedEnd
-            )
-        }
     }
 
     private suspend fun loadCoverage(text: List<ReaderText>) {
