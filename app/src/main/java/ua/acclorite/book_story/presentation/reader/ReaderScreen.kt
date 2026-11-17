@@ -18,13 +18,11 @@ import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.systemBarsIgnoringVisibility
-import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.BlendMode
@@ -85,35 +83,30 @@ data class ReaderScreen(val bookId: Int) : Screen, Parcelable {
         val activity = LocalActivity.current
         val lifecycleOwner = LocalLifecycleOwner.current
         val density = LocalDensity.current
-        val listState = rememberSaveable(
-            state.value.listState,
-            saver = LazyListState.Saver
-        ) {
-            state.value.listState
-        }
+        // The model scrolls this very object, so the screen must not swap it for
+        // a restored copy.
+        val listState = state.value.listState
         val nestedScrollConnection = remember {
-            derivedStateOf {
-                object : NestedScrollConnection {
-                    override fun onPostScroll(
-                        consumed: Offset,
-                        available: Offset,
-                        source: NestedScrollSource
-                    ): Offset {
-                        consumed.y.let { velocity ->
-                            if (velocity in -70f..70f) return@let
-                            if (!state.value.showMenu) return@let
-                            if (state.value.lockMenu) return@let
-                            if (!settings.hideBarsOnFastScroll.lastValue) return@let
+            object : NestedScrollConnection {
+                override fun onPostScroll(
+                    consumed: Offset,
+                    available: Offset,
+                    source: NestedScrollSource
+                ): Offset {
+                    consumed.y.let { velocity ->
+                        if (velocity in -70f..70f) return@let
+                        if (!state.value.showMenu) return@let
+                        if (state.value.lockMenu) return@let
+                        if (!settings.hideBarsOnFastScroll.lastValue) return@let
 
-                            screenModel.onEvent(
-                                ReaderEvent.OnMenuVisibility(
-                                    show = false,
-                                    saveCheckpoint = false
-                                )
+                        screenModel.onEvent(
+                            ReaderEvent.OnMenuVisibility(
+                                show = false,
+                                saveCheckpoint = false
                             )
-                        }
-                        return super.onPostScroll(consumed, available, source)
+                        )
                     }
+                    return super.onPostScroll(consumed, available, source)
                 }
             }
         }
@@ -439,7 +432,7 @@ data class ReaderScreen(val bookId: Int) : Screen, Parcelable {
                 fullscreenImage = state.value.fullscreenImage,
                 listState = listState,
                 currentChapter = state.value.currentChapter,
-                nestedScrollConnection = nestedScrollConnection.value,
+                nestedScrollConnection = nestedScrollConnection,
                 fastColorPresetChange = settings.fastColorPresetChange.value,
                 perceptionExpander = settings.perceptionExpander.value,
                 perceptionExpanderPadding = perceptionExpanderPadding,
