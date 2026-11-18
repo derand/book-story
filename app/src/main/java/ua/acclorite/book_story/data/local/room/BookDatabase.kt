@@ -80,6 +80,21 @@ abstract class BookDatabase : RoomDatabase() {
 @Suppress("ClassName")
 object DatabaseHelper {
 
+    /**
+     * The hand-written migrations, in the order Room needs them. Where one
+     * shares its versions with an auto-migration, this one wins. The app and
+     * the migration test both open the database with this list.
+     */
+    val MANUAL_MIGRATIONS: Array<Migration>
+        get() = arrayOf(
+            MANUAL_MIGRATION_2_3, // creates LanguageHistoryEntity table(if does not exist)
+            MANUAL_MIGRATION_4_5, // creates ColorPresetEntity table(if does not exist)
+            MANUAL_MIGRATION_5_6, // creates FavoriteDirectoryEntity table(if does not exist)
+            MANUAL_MIGRATION_13_14, // remove nullability from ColorPresetEntity
+            MANUAL_MIGRATION_14_15, // remove author nullability from BookEntity
+            MANUAL_MIGRATION_15_16, // merge CategoryEntity and CategorySortEntity
+        )
+
     val MANUAL_MIGRATION_2_3 = object : Migration(2, 3) {
         override fun migrate(db: SupportSQLiteDatabase) {
             db.execSQL(

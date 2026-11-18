@@ -59,12 +59,7 @@ object AppModule {
             // DatabaseSnapshot can only tell a quiet copy from a torn one in WAL.
             RoomDatabase.JournalMode.WRITE_AHEAD_LOGGING
         ).addMigrations(
-            DatabaseHelper.MANUAL_MIGRATION_2_3, // creates LanguageHistoryEntity table(if does not exist)
-            DatabaseHelper.MANUAL_MIGRATION_4_5, // creates ColorPresetEntity table(if does not exist)
-            DatabaseHelper.MANUAL_MIGRATION_5_6, // creates FavoriteDirectoryEntity table(if does not exist)
-            DatabaseHelper.MANUAL_MIGRATION_13_14, // remove nullability from ColorPresetEntity
-            DatabaseHelper.MANUAL_MIGRATION_14_15, // remove author nullability from BookEntity
-            DatabaseHelper.MANUAL_MIGRATION_15_16, // merge CategoryEntity and CategorySortEntity
+            *DatabaseHelper.MANUAL_MIGRATIONS
         ).allowMainThreadQueries().build().also { database ->
             // Additional Migrations
             DatabaseHelper.AUTO_MIGRATION_7_8.removeBooksDir(app)
