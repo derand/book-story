@@ -105,11 +105,7 @@ fun BrowseScaffold(
                                 )
                             },
                             onClick = {
-                                onEvent(
-                                    BrowseEvent.OnSelectFiles(
-                                        files = listOf(file)
-                                    )
-                                )
+                                onEvent(BrowseEvent.OnToggleFile(file.uri))
                             }
                         )
                     }
