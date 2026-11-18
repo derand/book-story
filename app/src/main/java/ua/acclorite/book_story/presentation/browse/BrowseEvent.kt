@@ -31,6 +31,12 @@ sealed class BrowseEvent {
 
     data object OnClearSelectedFiles : BrowseEvent()
 
+    /** A tap on a file: flips that one file. */
+    data class OnToggleFile(
+        val uri: String
+    ) : BrowseEvent()
+
+    /** A long-press on a group, or "select all": selects them all. */
     data class OnSelectFiles(
         val files: List<SelectableFile>
     ) : BrowseEvent()

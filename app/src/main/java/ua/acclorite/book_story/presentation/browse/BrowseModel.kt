@@ -39,6 +39,8 @@ import ua.acclorite.book_story.presentation.browse.model.AddingBooks
 import ua.acclorite.book_story.presentation.browse.model.NullableBook
 import ua.acclorite.book_story.presentation.browse.model.SelectableFile
 import ua.acclorite.book_story.presentation.browse.model.SelectableNullableBook
+import ua.acclorite.book_story.presentation.browse.model.toggled
+import ua.acclorite.book_story.presentation.browse.model.withSelected
 import ua.acclorite.book_story.presentation.library.LibraryScreen
 import javax.inject.Inject
 
@@ -83,6 +85,23 @@ class BrowseModel @Inject constructor(
 
     private fun send(effect: BrowseEffect) {
         viewModelScope.launch { _effects.emit(effect) }
+    }
+
+    /**
+     * Replaces the selection, and the flag that follows from it. The count
+     * keeps its last value at zero: the top bar still shows it while it
+     * animates away.
+     */
+    private fun select(change: (List<SelectableFile>) -> List<SelectableFile>) {
+        _state.update {
+            val files = change(it.files)
+            val count = files.count { file -> file.selected }
+            it.copy(
+                files = files,
+                selectedItemsCount = if (count == 0) it.selectedItemsCount else count,
+                hasSelectedItems = count > 0
+            )
+        }
     }
 
     /** Lists the files again; a refresh already running gives way to this one. */
@@ -187,25 +206,9 @@ class BrowseModel @Inject constructor(
                 }
             }
 
-            is BrowseEvent.OnSelectFiles -> {
-                _state.update {
-                    val editedList = it.files.map { file ->
-                        if (event.files.any { file.path.startsWith(it.path, true) }) {
-                            file.copy(
-                                selected = if (event.files.size > 1) true else !file.selected
-                            )
-                        } else file
-                    }
-                    val selectedCount = editedList.count { file -> file.selected }
+            is BrowseEvent.OnToggleFile -> select { it.toggled(event.uri) }
 
-                    it.copy(
-                        files = editedList,
-                        selectedItemsCount = if (selectedCount == 0) it.selectedItemsCount
-                        else selectedCount,
-                        hasSelectedItems = selectedCount > 0
-                    )
-                }
-            }
+            is BrowseEvent.OnSelectFiles -> select { it.withSelected(event.files) }
 
             is BrowseEvent.OnShowFilterBottomSheet -> {
                 _state.update { it.copy(bottomSheet = BrowseScreen.FILTER_BOTTOM_SHEET) }
