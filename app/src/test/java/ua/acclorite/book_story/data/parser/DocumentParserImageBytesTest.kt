@@ -7,9 +7,6 @@
 
 package ua.acclorite.book_story.data.parser
 
-import kotlinx.coroutines.runBlocking
-import org.jsoup.Jsoup
-import org.jsoup.parser.Parser
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -29,10 +26,6 @@ import ua.acclorite.book_story.domain.model.reader.ReaderText
 class DocumentParserImageBytesTest {
 
     private val documentParser = DocumentParser()
-
-    /** A 3x2 PNG. */
-    private val png = "iVBORw0KGgoAAAANSUhEUgAAAAMAAAACCAIAAAASFvFNAAAAEElEQVR4nGP4" +
-            "z8AAQQxwFgBB0gX7h/C5SAAAAABJRU5ErkJggg=="
 
     @Test
     fun keptBytesAreTheImageItself() {
@@ -63,28 +56,18 @@ class DocumentParserImageBytesTest {
         )
     }
 
-    private fun parseImage(keepImageBytes: Boolean): ReaderText.Image = runBlocking {
-        val document = Jsoup.parse(
+    private fun parseImage(keepImageBytes: Boolean): ReaderText.Image = documentParser
+        .parseFb2Body(
             """
-            <FictionBook>
-                <body>
-                    <section>
-                        <title><p>Chapter</p></title>
-                        <p>Text around the picture.</p>
-                        <image l:href="#pic.png"/>
-                    </section>
-                </body>
-            </FictionBook>
+            <section>
+                <title><p>Chapter</p></title>
+                <p>Text around the picture.</p>
+                <image l:href="#pic.png"/>
+            </section>
             """.trimIndent(),
-            "",
-            Parser.xmlParser()
-        )
-
-        documentParser.parseDocument(
-            document = document,
-            images = Base64Images(mapOf("pic.png" to png)),
-            sectionTitles = true,
+            images = Base64Images(mapOf("pic.png" to TINY_PNG_BASE64)),
             keepImageBytes = keepImageBytes
-        ).filterIsInstance<ReaderText.Image>().single()
-    }
+        )
+        .filterIsInstance<ReaderText.Image>()
+        .single()
 }

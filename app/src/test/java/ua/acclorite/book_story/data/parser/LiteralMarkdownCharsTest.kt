@@ -9,9 +9,6 @@ package ua.acclorite.book_story.data.parser
 
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
-import kotlinx.coroutines.runBlocking
-import org.jsoup.Jsoup
-import org.jsoup.parser.Parser
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -195,13 +192,5 @@ class LiteralMarkdownCharsTest {
         parse("<section><title><p>Розділ</p></title>$body</section>")
             .filterIsInstance<ReaderText.Text>()
 
-    /** Runs the FB2 body through the parser the way [XmlTextParser] does. */
-    private fun parse(body: String): List<ReaderText> = runBlocking {
-        val document = Jsoup.parse(
-            """<FictionBook><body>$body</body></FictionBook>""",
-            "",
-            Parser.xmlParser()
-        )
-        documentParser.parseDocument(document, sectionTitles = true)
-    }
+    private fun parse(body: String): List<ReaderText> = documentParser.parseFb2Body(body)
 }

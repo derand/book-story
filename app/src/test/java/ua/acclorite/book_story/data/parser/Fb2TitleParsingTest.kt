@@ -11,9 +11,6 @@ import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.BaselineShift
-import kotlinx.coroutines.runBlocking
-import org.jsoup.Jsoup
-import org.jsoup.parser.Parser
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
@@ -169,13 +166,5 @@ class Fb2TitleParsingTest {
         parse("<section>$title<p>Текст секції.</p></section>")
             .filterIsInstance<ReaderText.Chapter>()
 
-    /** Runs the FB2 body through the parser the way [XmlTextParser] does. */
-    private fun parse(body: String): List<ReaderText> = runBlocking {
-        val document = Jsoup.parse(
-            """<FictionBook><body>$body</body></FictionBook>""",
-            "",
-            Parser.xmlParser()
-        )
-        documentParser.parseDocument(document, sectionTitles = true)
-    }
+    private fun parse(body: String): List<ReaderText> = documentParser.parseFb2Body(body)
 }
