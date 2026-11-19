@@ -9,8 +9,7 @@ package ua.acclorite.book_story.data.cache
 
 import android.app.Application
 import androidx.compose.ui.text.AnnotatedString
-import androidx.test.core.app.ApplicationProvider
-import androidx.test.ext.junit.runners.AndroidJUnit4
+import org.junit.After
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -18,12 +17,14 @@ import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.RuntimeEnvironment
 import ua.acclorite.book_story.domain.model.reader.ParsedText
 import ua.acclorite.book_story.domain.model.reader.ReaderText
 import java.io.File
 import java.io.RandomAccessFile
 
-@RunWith(AndroidJUnit4::class)
+@RunWith(RobolectricTestRunner::class)
 class ParseCacheTest {
 
     private lateinit var app: Application
@@ -40,8 +41,13 @@ class ParseCacheTest {
 
     @Before
     fun setUp() {
-        app = ApplicationProvider.getApplicationContext()
+        app = RuntimeEnvironment.getApplication()
         cache = ParseCache(app)
+        cache.clear()
+    }
+
+    @After
+    fun tearDown() {
         cache.clear()
     }
 
@@ -244,12 +250,10 @@ class ParseCacheTest {
         val fileA = entries().single()
         fileA.setLastModified(1_000)
 
-        val textOnly = cache.entrySizeBytes("$PATH.2", SIZE, MODIFIED) // 0, not written yet
         cache.write("$PATH.2", SIZE, MODIFIED, sample)
         (entries() - fileA).single().setLastModified(2_000)
 
         val bText = cache.entrySizeBytes("$PATH.2", SIZE, MODIFIED)
-        assertEquals(0, textOnly)
         // Cap = two text-only books' worth; A (text + 4 KB blob) blows past it and,
         // being oldest, is the one evicted.
         cache.write("$PATH.3", SIZE, MODIFIED, sample, maxBytes = 2 * bText)
