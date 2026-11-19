@@ -18,7 +18,6 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 import ua.acclorite.book_story.data.local.dto.BookEntity
 import ua.acclorite.book_story.data.local.dto.CategoryEntity
 import ua.acclorite.book_story.data.local.dto.ColorPresetEntity
-import ua.acclorite.book_story.data.local.dto.HistoryEntity
 import ua.acclorite.book_story.data.local.dto.ReadBookEntity
 import ua.acclorite.book_story.data.local.dto.ReadingCoverageEntity
 import ua.acclorite.book_story.data.local.dto.ReadingSessionEntity
@@ -29,12 +28,11 @@ import java.io.File
  * restore compares a backup's against it: an older database is migrated by
  * Room, a newer one would make the app fail on its first start.
  */
-const val DATABASE_VERSION = 24
+const val DATABASE_VERSION = 25
 
 @Database(
     entities = [
         BookEntity::class,
-        HistoryEntity::class,
         ColorPresetEntity::class,
         CategoryEntity::class,
         ReadingSessionEntity::class,
@@ -66,12 +64,12 @@ const val DATABASE_VERSION = 24
         AutoMigration(21, 22), // BookEntity.inLibrary (default 1: every existing book)
         AutoMigration(22, 23), // BookEntity.documentAuthority/documentId (both null)
         AutoMigration(23, 24), // BookEntity.origin* (all null: no book is a copy yet)
+        AutoMigration(24, 25, spec = DatabaseHelper.AUTO_MIGRATION_24_25::class), // HistoryEntity gone
     ],
     exportSchema = true
 )
 abstract class BookDatabase : RoomDatabase() {
     abstract val bookDao: BookDao
-    abstract val historyDao: HistoryDao
     abstract val colorPresetDao: ColorPresetDao
     abstract val categoryDao: CategoryDao
     abstract val statisticsDao: StatisticsDao
@@ -230,6 +228,14 @@ object DatabaseHelper {
 
     @DeleteTable("CategorySortEntity")
     class AUTO_MIGRATION_15_16 : AutoMigrationSpec
+
+    /**
+     * History is read from the reading sessions now; the table of book opens
+     * goes, with nothing carried over (a book opened only before statistics
+     * existed has no "last read").
+     */
+    @DeleteTable("HistoryEntity")
+    class AUTO_MIGRATION_24_25 : AutoMigrationSpec
 
     val MANUAL_MIGRATION_15_16 = object : Migration(15, 16) {
         override fun migrate(database: SupportSQLiteDatabase) {
