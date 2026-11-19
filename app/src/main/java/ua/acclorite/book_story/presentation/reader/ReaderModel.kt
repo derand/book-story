@@ -53,7 +53,6 @@ import ua.acclorite.book_story.domain.use_case.book.KeepOnlyBookImagesUseCase
 import ua.acclorite.book_story.domain.use_case.book.LoadBookImagesUseCase
 import ua.acclorite.book_story.domain.use_case.book.UpdateBookUseCase
 import ua.acclorite.book_story.domain.use_case.permission.GrantPersistableUriPermissionUseCase
-import ua.acclorite.book_story.domain.use_case.history.GetHistoryForBookUseCase
 import ua.acclorite.book_story.domain.use_case.statistics.GetBookCoverageUseCase
 import ua.acclorite.book_story.domain.use_case.statistics.RecordReadingSessionUseCase
 import ua.acclorite.book_story.domain.use_case.statistics.SaveBookCoverageUseCase
@@ -85,7 +84,6 @@ class ReaderModel @Inject constructor(
     private val getTextUseCase: GetTextUseCase,
     private val getBookSourcesUseCase: GetBookSourcesUseCase,
     private val getBookUseCase: GetBookUseCase,
-    private val getHistoryForBookUseCase: GetHistoryForBookUseCase,
     private val getChapterProgressUseCase: GetChapterProgressUseCase,
     private val loadBookImagesUseCase: LoadBookImagesUseCase,
     private val keepOnlyBookImagesUseCase: KeepOnlyBookImagesUseCase,
@@ -184,13 +182,9 @@ class ReaderModel @Inject constructor(
                     parsedImageBytes = split.bytes
                     imageStore.reset(split.imageSrcs)
 
-                    val lastOpened = getHistoryForBookUseCase(_state.value.book.id)?.time
                     _state.updateIfActive {
                         it.copy(
                             showMenu = false,
-                            book = it.book.copy(
-                                lastOpened = lastOpened
-                            ),
                             text = split.text,
                             notes = parsedText.notes
                         )
@@ -211,11 +205,9 @@ class ReaderModel @Inject constructor(
                         loadCoverage(split.text)
                     }
 
-                    // No row write here: nothing about the row changed (the
-                    // `lastOpened` above is not a column), and writing back
-                    // the copy read before the parse could only undo
-                    // something written meanwhile. The lists are refreshed
-                    // by the history insert that came with the open.
+                    // No row write here: nothing about the row changed, and
+                    // writing back the copy read before the parse could only
+                    // undo something written meanwhile.
 
                     onEvent(ReaderEvent.OnRestoreScroll)
                 }

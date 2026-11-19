@@ -11,14 +11,14 @@ import ua.acclorite.book_story.core.log.logI
 import ua.acclorite.book_story.core.log.messageForLog
 import ua.acclorite.book_story.domain.model.library.Book
 import ua.acclorite.book_story.domain.repository.BookRepository
-import ua.acclorite.book_story.domain.repository.HistoryRepository
+import ua.acclorite.book_story.domain.repository.StatisticsRepository
 import javax.inject.Inject
 
 private const val TAG = "GetBook"
 
 class GetBookUseCase @Inject constructor(
     private val bookRepository: BookRepository,
-    private val historyRepository: HistoryRepository
+    private val statisticsRepository: StatisticsRepository
 ) {
 
     suspend operator fun invoke(bookId: Int): Book? {
@@ -26,12 +26,13 @@ class GetBookUseCase @Inject constructor(
 
         bookRepository.getBook(bookId).fold(
             onSuccess = { book ->
-                val history = historyRepository.getHistoryForBook(book.id).getOrNull()
+                // A record with no sessions is a book only marked finished
+                // by hand: nothing was read, so it has no "last read".
+                val lastRead = statisticsRepository.getReadBook(book.id).getOrNull()
+                    ?.takeIf { it.sessions > 0 }?.lastReadAt
 
                 logI(TAG, "Successfully got book: [$bookId].")
-                return book.copy(
-                    lastOpened = history?.time
-                )
+                return book.copy(lastOpened = lastRead)
             },
             onFailure = {
                 logE(TAG, "Could not get book [$bookId] with error: ${it.messageForLog()}")

@@ -64,31 +64,52 @@ class ObservedListsTest {
 
     private suspend fun <T> Channel<T>.next(): T = withTimeout(5_000) { receive() }
 
+    /** One finished reading session of [bookId], as the reader records it. */
+    private suspend fun read(bookId: Int, start: Long, end: Long) =
+        database.statisticsDao.recordSession(
+            session = ReadingSessionEntity(
+                bookId = bookId,
+                startTime = start,
+                endTime = end,
+                wordsRead = 100
+            ),
+            timeMs = end - start,
+            coveragePercent = 0.1f,
+            reachedEnd = false,
+            title = "t",
+            author = "a"
+        )
+
     @Test
-    fun `a library row carries its latest open, and previews are left out`() = runBlocking {
-        val opened = insertBook("opened")
+    fun `a library row carries when it was last read, and previews are left out`() = runBlocking {
+        val read = insertBook("read")
         val never = insertBook("never")
+        val marked = insertBook("marked")
         insertBook("preview", inLibrary = false)
-        database.historyDao.insertHistory(HistoryEntity(bookId = opened, time = 5))
-        database.historyDao.insertHistory(HistoryEntity(bookId = opened, time = 9))
+        read(read, start = 1, end = 5)
+        read(read, start = 6, end = 9)
+        // A record with no sessions: marked finished by hand, never read.
+        database.statisticsDao.setBookFinished(
+            bookId = marked, title = "marked", author = "a", finished = true, now = 7
+        )
 
         val rows = database.bookDao.observeLibraryBooks().first()
 
         assertEquals(
-            mapOf(opened to 9L, never to null),
+            mapOf(read to 9L, never to null, marked to null),
             rows.associate { it.book.id to it.lastOpened }
         )
     }
 
     @Test
-    fun `the library re-emits after a book is added and after an open`() = runBlocking {
+    fun `the library re-emits after a book is added and after a reading session`() = runBlocking {
         val library = emissions(database.bookDao.observeLibraryBooks())
         assertEquals(emptyList<Int>(), library.next().map { it.book.id })
 
         val id = insertBook("added")
         assertEquals(listOf(id), library.next().map { it.book.id })
 
-        database.historyDao.insertHistory(HistoryEntity(bookId = id, time = 7))
+        read(id, start = 3, end = 7)
         assertEquals(7L, library.next().single().lastOpened)
 
         coroutineContext.cancelChildren()
