@@ -44,7 +44,6 @@
     <string name="double_press_exit_option">Dvojitým zpětným klepnutím ukončíte</string>
     <string name="credits_icon">Ikony</string>
     <string name="credits_ideas">Nápady</string>
-    <string name="delete_history">Smazat historii čtení?</string>
     <string name="unknown">Neznámý</string>
     <string name="credits_fonts">Fonty</string>
     <string name="theme_contrast_standard">Standardní</string>
@@ -78,7 +77,6 @@
     <string name="reset_cover_desc">Resetovat obálku knihy na výchozí</string>
     <string name="books_deleted">Všechny vybrané videa byly úspěšně smazány.</string>
     <string name="sort_order_last_modified">Naposledy změněno</string>
-    <string name="delete_history_description">Smaže to celou historii z databáze. Po smazaní z historie bude pořadí knih resetováno.</string>
     <string name="library_screen">Knihovna</string>
     <string name="grid_size_auto">Automaticky</string>
     <string name="delete_cover">Smazat obálku</string>
@@ -159,7 +157,6 @@
     <string name="purple_theme">Jupiter</string>
     <string name="pink2_theme">Ganymede</string>
     <string name="cover_image_changed">Obálka byla úspěšně změněna.</string>
-    <string name="history_deleted">Historie byla úspěšně smazána.</string>
     <string name="slava_ukraini">Sláva Ukrajině!</string>
     <string name="credits_design">Design</string>
     <string name="credits_translation">Překlad</string>
@@ -188,7 +185,6 @@
     <string name="continue_reading_content_desc">Pokračovat ve čtení</string>
     <string name="library_content_desc">Vaše knihovna</string>
     <string name="open_reader_settings_content_desc">Nastavení čtečky</string>
-    <string name="delete_whole_history_content_desc">Smazat celou historii</string>
     <string name="color_preset_placeholder">Pojmenujete nastavení…</string>
     <string name="start_welcome_desc">Ve světe, kde slova okouzlují, učí a vedou k neuvěřitelným dobrodružstvím! Pojďme nastavit pár věcí!</string>
     <string name="yellow2_theme">Makemake</string>
@@ -318,7 +314,6 @@
     <string name="author_changed">Autor byl úspěšně změněn.</string>
     <string name="description_changed">Popis byl úspěšně změněn.</string>
     <string name="path_changed">Cesta k souboru byla úspěšně změněna.</string>
-    <string name="history_element_deleted">Prvek historie byl úspěšně odstraněn.</string>
     <string name="start_reading">Start</string>
     <string name="continue_reading_query">Pokračovat od %1$s</string>
     <string name="file_details">Podrobnosti souboru</string>
@@ -330,7 +325,6 @@
     <string name="select_all_books_content_desc">Vybrat všechny knihy</string>
     <string name="exit_search_content_desc">Ukončit vyhledávání</string>
     <string name="revert_content_desc">Vrátit</string>
-    <string name="delete_history_element_content_desc">Odstranit prvek historie</string>
     <string name="arrow_content_desc">Šipka</string>
     <string name="delete_color_preset_content_desc">Odstranit předvolbu barvy</string>
     <string name="create_color_preset_content_desc">Vytvořit nové přednastavení barev</string>

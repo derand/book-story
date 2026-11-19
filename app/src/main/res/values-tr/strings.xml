@@ -17,7 +17,6 @@
     <string name="add_books">Kitaplar eklensin mi?</string>
     <string name="delete_books">Kitaplar silinsin mi?</string>
     <string name="delete_book">Kitap silinsin mi?</string>
-    <string name="delete_history">Okuma geçmişi silinsin mi?</string>
     <string name="edit">Düzenle</string>
     <!-- Dialog Descriptions -->
     <string name="add_books_description">
@@ -32,10 +31,6 @@
     <string name="delete_book_description">
         Bu kitap veritabanından silinecektir.
         Ancak cihazınızdan silinmeyecektir.
-    </string>
-    <string name="delete_history_description">
-        Tüm geçmiş veritabanından silinecektir.
-        Geçmişi sildikten sonra kitapların sıralaması sıfırlanacaktır.
     </string>
     <!-- Errors -->
     <string name="error_no_description">
@@ -279,14 +274,12 @@
     <string name="book_deleted">Bu kitap başarıyla silindi.</string>
     <string name="book_moved">Bu kitap başarıyla taşındı.</string>
     <string name="copied">Kopyalandı</string>
-    <string name="history_deleted">Geçmiş başarıyla silindi.</string>
     <string name="cover_reset">Kapak resmi başarıyla sıfırlandı.</string>
     <string name="title_changed">Başlık başarıyla değiştirildi.</string>
     <string name="author_changed">Yazar başarıyla değiştirildi.</string>
     <string name="description_changed">Açıklama başarıyla değiştirildi.</string>
     <string name="path_changed">Dosya yolu başarıyla değiştirildi.</string>
     <!-- Snackbar messages -->
-    <string name="history_element_deleted">Geçmiş öğesi başarıyla silindi.</string>
     <!-- BookInfo -->
     <string name="start_reading">Başla</string>
     <string name="continue_reading_query">%1$s konumundan devam et</string>
@@ -342,13 +335,11 @@
     <string name="add_files_content_desc">Dosya ekle</string>
     <string name="select_all_files_content_desc">Tüm dosyaları seç</string>
     <string name="exit_search_content_desc">Aramadan çık</string>
-    <string name="delete_whole_history_content_desc">Tüm geçmişi sil</string>
     <string name="move_books_content_desc">Seçili kitapları taşı</string>
     <string name="delete_books_content_desc">Seçili kitapları sil</string>
     <string name="revert_content_desc">Geri</string>
     <string name="selected_content_desc">Seçildi</string>
     <string name="app_icon_content_desc">Uygulama simgesi</string>
-    <string name="delete_history_element_content_desc">Geçmiş öğesini sil</string>
     <string name="library_content_desc">Kütüphaneniz</string>
     <string name="history_content_desc">Okuma geçmişi</string>
     <string name="browse_content_desc">Kitap ekle</string>

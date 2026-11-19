@@ -16,7 +16,6 @@ import ua.acclorite.book_story.R
 import ua.acclorite.book_story.core.log.BookOpenTrace
 import ua.acclorite.book_story.domain.model.library.Book
 import ua.acclorite.book_story.presentation.book_info.BookInfoEffect
-import ua.acclorite.book_story.presentation.history.HistoryScreen
 import ua.acclorite.book_story.presentation.reader.ReaderScreen
 import ua.acclorite.book_story.presentation.settings.LibrarySettingsScreen
 import ua.acclorite.book_story.ui.common.helpers.showToast
@@ -116,7 +115,6 @@ fun BookInfoEffects(
                     val book = currentBook
                     if (book.id != -1) {
                         BookOpenTrace.start("book ${book.id} from book info")
-                        HistoryScreen.insertHistoryChannel.trySend(book.id)
                         navigator.push(ReaderScreen(book.id))
                     }
                 }

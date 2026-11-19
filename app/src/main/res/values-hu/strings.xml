@@ -25,12 +25,10 @@
     <string name="add_books">Könyv hozzáadása?</string>
     <string name="delete_books">Könyvek törlése?</string>
     <string name="delete_book">Könyv törlése?</string>
-    <string name="delete_history">Előzmények törlése?</string>
     <string name="remove_category">Kategória törlése?</string>
     <string name="add_books_description">Kiválaszthatod, mely könyveket szeretnéd hozzáadni. A könyv címét és borítóképét később is szerkesztheted. A betöltési folyamat akár több percig is eltarthat.</string>
     <string name="delete_books_description">Ez törli az összes kiválasztott könyveket (%1$s) az adatbázisból. A kiválasztott könyveket a készülékedről nem törli.</string>
     <string name="delete_book_description">Ez törli az összes kiválasztott könyvet az adatbázisból. A kiválasztott könyvet a készülékedről nem törli.</string>
-    <string name="delete_history_description">Ez törli az egész előzményt az adatbázisból. Az előzmények teljes törlése után a könyvek sorrendje alaphelyzetbe áll.</string>
     <string name="remove_category_description">Ez eltávolítja ezt a kategóriát a könyvtárból, de a könyveket nem törli.</string>
     <string name="error_no_description">Nincs leírás.</string>
     <string name="error_something_went_wrong">Hiba történt.</string>

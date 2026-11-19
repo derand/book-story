@@ -52,7 +52,6 @@
     <string name="app_version_option">Versione app</string>
     <string name="books_moved">Tutti i libri selezionati sono stati spostati correttamente.</string>
     <string name="error_no_browser">Nessuna app browser trovata.</string>
-    <string name="delete_history">Cancellare la cronologia di lettura?</string>
     <string name="done">Fatto</string>
     <string name="share">Condividi</string>
     <string name="delete_color_preset_content_desc">Elimina preset di colori</string>
@@ -80,7 +79,6 @@
     <string name="books_added">Tutti i libri selezionati sono stati aggiunti correttamente.</string>
     <string name="delete_book_description">Eliminerà questo libro dal database. Non eliminerà questo libro dal tuo dispositivo.</string>
     <string name="add_books_description">Puoi scegliere quali libri vuoi aggiungere. È possibile modificare il titolo e l\'immagine di copertina in seguito. Il processo di caricamento può richiedere fino a diversi minuti.</string>
-    <string name="delete_history_description">Elimina l\'intera cronologia dal database. Dopo avere eliminato la cronologia, l\'ordine dei libri sarà reimpostato.</string>
     <string name="delete_books_description">Eliminerà tutti i libri selezionati (%1$s) dal database. Non eliminerà i libri selezionati dal tuo dispositivo.</string>
     <string name="error_no_description">Nessuna descrizione.</string>
     <string name="error_something_went_wrong">Qualcosa è andato storto.</string>
@@ -133,7 +131,6 @@
     <string name="dark_theme_option">Tema scuro</string>
     <string name="filter_browse_settings">Filtro</string>
     <string name="font_style_normal">Normale</string>
-    <string name="delete_whole_history_content_desc">Elimina tutta la cronologia</string>
     <string name="yesterday">Ieri</string>
     <string name="screen_orientation_option">Orientamento dello schermo</string>
     <string name="dark_theme_off">Disabilitato</string>
@@ -162,7 +159,6 @@
     <string name="font_family_option">Famiglia di font</string>
     <string name="start_welcome">Benvenuti in %1$s!</string>
     <string name="grid_size_per_row">per riga</string>
-    <string name="history_deleted">La cronologia è stata eliminata correttamente.</string>
     <string name="press_again_toast">Premere di nuovo Indietro per uscire</string>
     <string name="file_size">Dimensione</string>
     <string name="checkbox_content_desc">Casella di controllo</string>
@@ -176,7 +172,6 @@
     <string name="double_click_translation_option">Traduzione con doppio clic</string>
     <string name="lavender_theme">Eris</string>
     <string name="select_all_files_content_desc">Seleziona tutti i file</string>
-    <string name="delete_history_element_content_desc">Elimina cronologia elemento</string>
     <string name="clear_selected_items_content_desc">Cancella gli elementi selezionati</string>
     <string name="revert_content_desc">Ripristina</string>
     <string name="reading_mode_reader_settings">Modalità di lettura</string>
@@ -186,7 +181,6 @@
     <string name="credits_contribution">Contributo</string>
     <string name="cover_image_changed">L\'immagine di copertina è stata modificata con successo.</string>
     <string name="book_deleted">Questo libro è stato eliminato con successo.</string>
-    <string name="history_element_deleted">L\'elemento cronologia è stato eliminato correttamente.</string>
     <string name="arrow_content_desc">Freccia</string>
     <string name="bottom_bar_padding_option">Margine barra inferiore</string>
     <string name="misc_reader_settings">Varie</string>

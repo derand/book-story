@@ -19,29 +19,18 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import ua.acclorite.book_story.core.helpers.ListSearch
 import ua.acclorite.book_story.core.helpers.launchWhileSubscribed
-import ua.acclorite.book_story.domain.model.history.History
-import ua.acclorite.book_story.domain.use_case.book.GetBookUseCase
-import ua.acclorite.book_story.domain.use_case.history.AddHistoryUseCase
-import ua.acclorite.book_story.domain.use_case.history.DeleteHistoryUseCase
-import ua.acclorite.book_story.domain.use_case.history.DeleteWholeHistoryUseCase
 import ua.acclorite.book_story.domain.use_case.history.ObserveHistoryUseCase
 import ua.acclorite.book_story.domain.use_case.statistics.ObserveLibraryStatisticsUseCase
-import java.util.Date
 import javax.inject.Inject
 
 @HiltViewModel
 class HistoryModel @Inject constructor(
     private val observeHistoryUseCase: ObserveHistoryUseCase,
-    private val addHistoryUseCase: AddHistoryUseCase,
-    private val observeLibraryStatisticsUseCase: ObserveLibraryStatisticsUseCase,
-    private val deleteHistoryUseCase: DeleteHistoryUseCase,
-    private val deleteWholeHistoryUseCase: DeleteWholeHistoryUseCase,
-    private val getBookUseCase: GetBookUseCase
+    private val observeLibraryStatisticsUseCase: ObserveLibraryStatisticsUseCase
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(HistoryState())
@@ -77,20 +66,6 @@ class HistoryModel @Inject constructor(
                             )
                         }
                     }
-            }
-        }
-
-        viewModelScope.launch {
-            HistoryScreen.insertHistoryChannel.receiveAsFlow().collectLatest { bookId ->
-                getBookUseCase(bookId)?.let { book ->
-                    addHistoryUseCase(
-                        History(
-                            id = 0,
-                            book = book,
-                            time = Date().time
-                        )
-                    )
-                }
             }
         }
     }
@@ -152,43 +127,16 @@ class HistoryModel @Inject constructor(
                 if (_state.value.showSearch) search.submit() else search.clear()
             }
 
-            is HistoryEvent.OnDeleteHistoryEntry -> {
-                viewModelScope.launch {
-                    deleteHistoryUseCase(event.history)
-                    _effects.emit(HistoryEffect.OnShowSnackbar(event.history))
-                }
-            }
-
-            is HistoryEvent.OnRestoreHistoryEntry -> {
-                viewModelScope.launch { addHistoryUseCase(event.history) }
-            }
-
-            is HistoryEvent.OnShowDeleteWholeHistoryDialog -> {
-                _state.update { it.copy(dialog = HistoryScreen.DELETE_WHOLE_HISTORY_DIALOG) }
-            }
-
-            is HistoryEvent.OnActionDeleteWholeHistoryDialog -> {
-                // No loading state: an empty history deletes no rows, and with
-                // no change the list would never come back to clear it.
-                _state.update { it.copy(dialog = null, showSearch = false) }
-                search.clear()
-
-                viewModelScope.launch {
-                    deleteWholeHistoryUseCase()
-                    _effects.emit(HistoryEffect.OnWholeHistoryDeleted)
-                }
-            }
-
-            is HistoryEvent.OnDismissDialog -> {
-                _state.update { it.copy(dialog = null) }
-            }
-
             is HistoryEvent.OnNavigateToLibrary -> {
                 send(HistoryEffect.OnNavigateToLibrary)
             }
 
             is HistoryEvent.OnNavigateToStatistics -> {
                 send(HistoryEffect.OnNavigateToStatistics)
+            }
+
+            is HistoryEvent.OnNavigateToStatisticsSettings -> {
+                send(HistoryEffect.OnNavigateToStatisticsSettings)
             }
 
             is HistoryEvent.OnNavigateToBookInfo -> {

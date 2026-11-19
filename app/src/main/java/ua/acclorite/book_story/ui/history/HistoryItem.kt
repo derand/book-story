@@ -21,22 +21,21 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ua.acclorite.book_story.R
 import ua.acclorite.book_story.domain.model.history.History
 import ua.acclorite.book_story.ui.common.components.common.BookCover
-import ua.acclorite.book_story.ui.common.components.common.IconButton
 import ua.acclorite.book_story.ui.common.components.common.StyledText
 import ua.acclorite.book_story.ui.common.helpers.noRippleClickable
+import ua.acclorite.book_story.ui.statistics.formatLongDuration
 import java.util.Date
 
 @Composable
@@ -44,14 +43,34 @@ fun LazyItemScope.HistoryItem(
     historyEntry: History,
     isRefreshing: Boolean,
     onBodyClick: () -> Unit,
-    onTitleClick: () -> Unit,
-    onDeleteClick: () -> Unit
+    onTitleClick: () -> Unit
 ) {
     // The user's 12/24-hour setting, not a fixed "HH:mm".
     val context = LocalContext.current
-    val time = remember(historyEntry.time) {
-        DateFormat.getTimeFormat(context).format(Date(historyEntry.time))
+    val time = remember(historyEntry.lastReadAt) {
+        DateFormat.getTimeFormat(context).format(Date(historyEntry.lastReadAt))
     }
+    val duration = formatLongDuration(historyEntry.timeMs)
+    val words = pluralStringResource(
+        R.plurals.history_words_plural,
+        historyEntry.words,
+        historyEntry.words
+    )
+    val sessions = pluralStringResource(
+        R.plurals.history_sessions_plural,
+        historyEntry.sessions,
+        historyEntry.sessions
+    )
+    // A session spent on images alone earns no words; "0 words" says nothing,
+    // and neither does "1 session". On a phone the line wraps: each part is
+    // kept whole ("3501 words", not "3501 / words"), and the dot stays at the
+    // end of a line rather than starting the next one.
+    val summary = listOfNotNull(
+        time,
+        duration,
+        words.takeIf { historyEntry.words > 0 },
+        sessions.takeIf { historyEntry.sessions > 1 }
+    ).joinToString("\u00A0· ") { it.replace(' ', '\u00A0') }
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -61,7 +80,7 @@ fun LazyItemScope.HistoryItem(
             .clickable(enabled = !isRefreshing) {
                 onBodyClick()
             }
-            .padding(top = 6.dp, bottom = 6.dp, start = 16.dp, end = 10.dp)
+            .padding(top = 6.dp, bottom = 6.dp, start = 16.dp, end = 16.dp)
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -100,25 +119,15 @@ fun LazyItemScope.HistoryItem(
                     maxLines = 2
                 )
                 StyledText(
-                    text = time,
+                    text = summary,
                     modifier = Modifier.fillMaxWidth(),
                     style = MaterialTheme.typography.bodyMedium.copy(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     ),
-                    maxLines = 1
+                    // Two lines: on a phone the session count would be cut off.
+                    maxLines = 2
                 )
             }
-        }
-
-        Spacer(Modifier.width(10.dp))
-        IconButton(
-            icon = Icons.Outlined.Delete,
-            contentDescription = R.string.delete_history_element_content_desc,
-            disableOnClick = true,
-            enabled = !isRefreshing,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        ) {
-            onDeleteClick()
         }
     }
 }

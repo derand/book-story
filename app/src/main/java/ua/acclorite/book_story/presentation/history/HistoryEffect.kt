@@ -7,21 +7,16 @@
 package ua.acclorite.book_story.presentation.history
 
 import androidx.compose.runtime.Immutable
-import ua.acclorite.book_story.domain.model.history.History
 
 @Immutable
 sealed class HistoryEffect {
     data object OnRequestFocus : HistoryEffect()
 
-    data class OnShowSnackbar(
-        val history: History
-    ) : HistoryEffect()
-
-    data object OnWholeHistoryDeleted : HistoryEffect()
-
     data object OnNavigateToLibrary : HistoryEffect()
 
     data object OnNavigateToStatistics : HistoryEffect()
+
+    data object OnNavigateToStatisticsSettings : HistoryEffect()
 
     data class OnNavigateToBookInfo(
         val bookId: Int

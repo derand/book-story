@@ -12,7 +12,6 @@
     <string name="about_screen">À propos de l\'application</string>
     <string name="delete_books">Supprimer des livres ?</string>
     <string name="delete_book">Supprimer le livre ?</string>
-    <string name="delete_history">Effacer l\'historique de lecture ?</string>
     <string name="add_books_description">Vous pouvez choisir les livres que vous souhaitez ajouter. Vous pouvez modifier le titre et l\'image de couverture du livre par la suite. Le chargement peut prendre plusieurs minutes.</string>
     <string name="delete_books_description">Cela supprimera tous les livres sélectionnés (%1$s) de la base de données. Ceci ne supprimera pas les livres sélectionnés de votre appareil.</string>
     <string name="delete_book_description">Cela supprimera ce livre de la base de données. Ceci ne le supprimera pas de votre appareil.</string>
@@ -114,9 +113,7 @@
     <string name="book_deleted">Ce livre a été supprimé avec succès.</string>
     <string name="book_moved">Ce livre a été déplacé avec succès.</string>
     <string name="copied">Copié</string>
-    <string name="history_deleted">L\'historique a été supprimé avec succès.</string>
     <string name="cover_reset">L\'image de couverture a été réinitialisée avec succès.</string>
-    <string name="history_element_deleted">Cet élément de l\'historique a été supprimé avec succès.</string>
     <string name="file_path">Chemin</string>
     <string name="file_last_opened">Dernier ouvert</string>
     <string name="file_size">Taille</string>
@@ -147,13 +144,11 @@
     <string name="add_files_content_desc">Ajouter des fichiers</string>
     <string name="select_all_files_content_desc">Sélectionner tous les fichiers</string>
     <string name="exit_search_content_desc">Quitter la recherche</string>
-    <string name="delete_whole_history_content_desc">Effacer tout l\'historique</string>
     <string name="move_books_content_desc">Déplacer les livres sélectionnés</string>
     <string name="delete_books_content_desc">Supprimer les livres sélectionnés</string>
     <string name="revert_content_desc">Revenir en arrière</string>
     <string name="selected_content_desc">Sélectionné</string>
     <string name="app_icon_content_desc">Icône de l\'application</string>
-    <string name="delete_history_element_content_desc">Effacer l\'élément de l\'historique</string>
     <string name="library_content_desc">Votre librairie</string>
     <string name="browse_content_desc">Ajouter les livres</string>
     <string name="arrow_content_desc">Flèche</string>
@@ -165,7 +160,6 @@
     <string name="add_books">Ajouter des livres ?</string>
     <string name="error_no_description">Pas de description.</string>
     <string name="error_something_went_wrong">Quelque chose s\'est mal passé.</string>
-    <string name="delete_history_description">L\'historique complet sera supprimé de la base de données. Après la suppression de tout l\'historique, l\'ordre des livres sera réinitialisé.</string>
     <string name="error_no_browser">Aucune application de navigation n\'a été trouvée.</string>
     <string name="error_could_not_get_text">Le fichier est vide, manquant ou inaccessible. Contrôlez le fichier, modifiez les paramètres de scan ou changez le chemin du fichier, puis réessayez.</string>
     <string name="history_empty">Laissez le dernier livre que vous avez lu ouvrir les pages d\'une grande et nouvelle histoire dans votre aventure de lecture</string>

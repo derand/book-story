@@ -14,12 +14,10 @@
     <string name="add_books">Thêm sách?</string>
     <string name="delete_books">Xoá sách?</string>
     <string name="delete_book">Xoá sách?</string>
-    <string name="delete_history">Xoá lịch sử đọc?</string>
     <string name="remove_category">Xoá thể loại?</string>
     <string name="add_books_description">Bạn có thể chọn sách muốn thêm. Bạn có thể chỉnh sửa Tên sách và Ảnh bìa sau. Quá trình tải có thể mất vài phút.</string>
     <string name="delete_books_description">Thao tác này sẽ xóa tất cả sách đã chọn (%1$s) khỏi cơ sở dữ liệu. Thao tác này sẽ không xóa những sách đã chọn khỏi thiết bị của bạn.</string>
     <string name="delete_book_description">Thao tác này sẽ xóa cuốn sách này khỏi cơ sở dữ liệu. Nó sẽ không xóa cuốn sách này khỏi thiết bị của bạn.</string>
-    <string name="delete_history_description">Nó sẽ xóa toàn bộ lịch sử khỏi cơ sở dữ liệu. Sau khi xóa toàn bộ lịch sử, thứ tự các cuốn sách sẽ được đặt lại.</string>
     <string name="remove_category_description">Thao tác này sẽ xóa danh mục này khỏi Thư viện nhưng sẽ không xóa bất kỳ cuốn sách nào.</string>
     <string name="error_no_description">Không có mô tả.</string>
     <string name="error_something_went_wrong">Có gì đó không ổn.</string>

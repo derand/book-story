@@ -56,3 +56,17 @@ fun BoxScope.HistoryEmptyPlaceholder(
         )
     }
 }
+/** In place of the list while statistics are not collected: History is built from them. */
+@Composable
+fun BoxScope.HistoryStatisticsOffPlaceholder(
+    onEvent: (HistoryEvent) -> Unit
+) {
+    EmptyPlaceholder(
+        modifier = Modifier.align(Alignment.Center),
+        message = stringResource(id = R.string.history_statistics_off),
+        icon = painterResource(id = R.drawable.empty_history),
+        actionTitle = stringResource(id = R.string.history_open_statistics_settings)
+    ) {
+        onEvent(HistoryEvent.OnNavigateToStatisticsSettings)
+    }
+}

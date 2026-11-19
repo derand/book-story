@@ -57,7 +57,6 @@
     <string name="language_option">ऐप भाषा</string>
     <string name="delete_books">किताबें हटाएँ?</string>
     <string name="browse_screen">और देखें</string>
-    <string name="delete_history">पढ़ने का इतिहास मिटाएँ?</string>
     <string name="general_settings_desc">ऐप भाषा</string>
     <string name="general_settings">सामान्य</string>
     <string name="appearance_settings">दिखावट</string>
@@ -67,7 +66,6 @@
     <string name="add_books_description">आप चुन सकते हैं कि आप कौन सी किताबें जोड़ना चाहते हैं। आप बाद में किताब का शीर्षक और कवर छवि संपादित कर सकते हैं। लोडिंग प्रक्रिया में कई मिनट लग सकते हैं।</string>
     <string name="delete_books_description">यह डेटाबेस से सभी चयनित पुस्तकों(%1$s) को हटा देगा। यह आपके डिवाइस से चयनित पुस्तकों को नहीं हटाएगा।</string>
     <string name="delete_book_description">यह इस पुस्तक को डेटाबेस से हटा देगा. यह आपकी डिवाइस से इस पुस्तक को नहीं हटाएगा।</string>
-    <string name="delete_history_description">यह डेटाबेस से पूरा इतिहास मिटा देगा। पूरा इतिहास मिटाने के बाद, किताबों का क्रम फिर से सेट हो जाएगा।</string>
     <string name="error_no_description">कोई वर्णन नहीं।</string>
     <string name="error_no_browser">कोई ब्राउज़र ऐप नहीं मिला ।</string>
     <string name="error_could_not_get_text">पुस्तक की सामग्री रिक्त है। कृपया जाँच करें कि पुस्तक की सामग्री रिक्त न हो और उसे अपडेट करें।</string>
@@ -154,7 +152,6 @@
     <string name="cover_image_deleted">कवर छवि सफलतापूर्वक मिटाई गई।</string>
     <string name="books_deleted">सभी चयनित पुस्तकें सफलतापूर्वक मिटाई गईं।</string>
     <string name="book_deleted">यह पुस्तक सफलतापूर्वक मिटाई गई।</string>
-    <string name="history_deleted">इतिहास सफलतापूर्वक मिटाया गया।</string>
     <string name="line_height_option">लाइन की ऊंचाई</string>
     <string name="paragraph_height_option">पैराग्राफ की ऊंचाई</string>
     <string name="paragraph_indentation_option">पैराग्राफ इंडेंटेशन</string>
@@ -185,7 +182,6 @@
     <string name="credits_fonts">फ़ॉन्ट्स</string>
     <string name="credits_translation">अनुवाद</string>
     <string name="credits_contribution">योगदान</string>
-    <string name="history_element_deleted">इतिहास तत्व सफलतापूर्वक हटा दिया गया।</string>
     <string name="unknown">अज्ञात</string>
     <string name="report_bug_option">एक बग रिपोर्ट करो</string>
     <string name="credits_updates">नए अपडेट का प्रबंधन</string>

@@ -22,8 +22,9 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import ua.acclorite.book_story.data.local.dto.BookEntity
-import ua.acclorite.book_story.data.local.dto.HistoryEntity
 import ua.acclorite.book_story.data.local.dto.ReadingSessionEntity
+import ua.acclorite.book_story.data.mapper.book.BookMapperImpl
+import ua.acclorite.book_story.data.repository.HistoryRepositoryImpl
 
 /**
  * The Library and History lists are whatever these flows emit, with no refresh
@@ -118,14 +119,27 @@ class ObservedListsTest {
     @Test
     fun `the history re-emits after a book it shows is renamed`() = runBlocking {
         val id = insertBook("old")
-        database.historyDao.insertHistory(HistoryEntity(bookId = id, time = 1))
-        val history = emissions(database.historyDao.observeHistoryWithBook())
+        read(id, start = 1, end = 2)
+        val history = emissions(database.statisticsDao.observeSessionsWithBook())
         assertEquals("old", history.next().single().book?.title)
 
         database.bookDao.updateTitle(id, "new")
         assertEquals("new", history.next().single().book?.title)
 
         coroutineContext.cancelChildren()
+    }
+
+    @Test
+    fun `a deleted book's sessions leave the history`() = runBlocking {
+        val kept = insertBook("kept")
+        val deleted = insertBook("deleted")
+        read(kept, start = 1, end = 2)
+        read(deleted, start = 3, end = 4)
+        database.statisticsDao.anonymiseBookSessions(deleted)
+
+        val history = HistoryRepositoryImpl(database, BookMapperImpl()).observeHistory().first()
+
+        assertEquals(listOf(kept), history.map { it.book.id })
     }
 
     @Test

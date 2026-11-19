@@ -30,7 +30,6 @@
     <string name="keep_local_copy_option_desc">Copy the file into the app, so opening the book never depends on the folder it came from. Uses more space.</string>
     <string name="delete_books">Delete books?</string>
     <string name="delete_book">Delete book?</string>
-    <string name="delete_history">Delete reading history?</string>
     <string name="remove_category">Remove category?</string>
 
     <!-- Dialog Descriptions -->
@@ -46,10 +45,6 @@
     <string name="delete_book_description">
         It will delete this book from the database.
         It will not delete this book from your device.
-    </string>
-    <string name="delete_history_description">
-        It will delete the whole history from the database.
-        After deleting the whole history, the order of the books will be reset.
     </string>
     <string name="remove_category_description">
         This will remove this category from the Library but will not delete any books.
@@ -70,6 +65,16 @@
     <string name="error_closed_source">Closed source</string>
     <string name="error_no_file">File does not exist or inaccessible</string>
     <string name="error_library_unreadable">Could not read the library</string>
+    <string name="history_statistics_off">History is made of reading statistics, and collecting them is off.</string>
+    <string name="history_open_statistics_settings">Open settings</string>
+    <plurals name="history_words_plural">
+        <item quantity="one">%d word</item>
+        <item quantity="other">%d words</item>
+    </plurals>
+    <plurals name="history_sessions_plural">
+        <item quantity="one">%d session</item>
+        <item quantity="other">%d sessions</item>
+    </plurals>
     <string name="error_history_unreadable">Could not read the history</string>
     <string name="error_files_unreadable">Could not list the files</string>
     <string name="try_again">Try again</string>
@@ -558,22 +563,18 @@
     <string name="book_deleted">This book was successfully deleted.</string>
     <string name="book_moved">This book was successfully moved.</string>
     <string name="copied">Copied</string>
-    <string name="history_deleted">History was successfully deleted.</string>
     <string name="cover_reset">Cover image was successfully reset.</string>
     <string name="title_changed">Title was successfully changed.</string>
     <string name="author_changed">Author was successfully changed.</string>
     <string name="description_changed">Description was successfully changed.</string>
     <string name="path_changed">File path was successfully changed.</string>
 
-    <!-- Snackbar messages -->
-    <string name="history_element_deleted">History element was successfully deleted.</string>
-
     <!-- BookInfo -->
     <string name="start_reading">Start</string>
     <string name="continue_reading_query">Continue from %1$s</string>
     <string name="file_details">File details</string>
     <string name="file_path">Path</string>
-    <string name="file_last_opened">Last opened</string>
+    <string name="file_last_opened">Last read</string>
     <string name="file_size">Size</string>
     <string name="unknown">Unknown</string>
 
@@ -645,13 +646,11 @@
     <string name="select_all_files_content_desc">Select all files</string>
     <string name="select_all_books_content_desc">Select all books</string>
     <string name="exit_search_content_desc">Exit search</string>
-    <string name="delete_whole_history_content_desc">Delete whole history</string>
     <string name="move_books_content_desc">Move selected books</string>
     <string name="delete_books_content_desc">Delete selected books</string>
     <string name="revert_content_desc">Revert</string>
     <string name="selected_content_desc">Selected</string>
     <string name="app_icon_content_desc">App icon</string>
-    <string name="delete_history_element_content_desc">Delete history element</string>
     <string name="library_content_desc">Your library</string>
     <string name="history_content_desc">Reading history</string>
     <string name="browse_content_desc">Add books</string>

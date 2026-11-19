@@ -7,7 +7,6 @@
 package ua.acclorite.book_story.presentation.history
 
 import androidx.compose.runtime.Immutable
-import ua.acclorite.book_story.domain.model.history.History
 
 @Immutable
 sealed class HistoryEvent {
@@ -28,23 +27,12 @@ sealed class HistoryEvent {
 
     data object OnSearch : HistoryEvent()
 
-    data class OnDeleteHistoryEntry(
-        val history: History
-    ) : HistoryEvent()
-
-    data class OnRestoreHistoryEntry(
-        val history: History
-    ) : HistoryEvent()
-
-    data object OnShowDeleteWholeHistoryDialog : HistoryEvent()
-
-    data object OnActionDeleteWholeHistoryDialog : HistoryEvent()
-
-    data object OnDismissDialog : HistoryEvent()
-
     data object OnNavigateToLibrary : HistoryEvent()
 
     data object OnNavigateToStatistics : HistoryEvent()
+
+    /** Where statistics are switched on and off, and deleted. */
+    data object OnNavigateToStatisticsSettings : HistoryEvent()
 
     data class OnNavigateToBookInfo(
         val bookId: Int

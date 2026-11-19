@@ -19,14 +19,12 @@
     <string name="add_books">Додати книги?</string>
     <string name="delete_books">Видалити книги?</string>
     <string name="delete_book">Видалити книгу?</string>
-    <string name="delete_history">Видалити історію читання?</string>
     <string name="remove_category">Видалити категорію?</string>
 
     <!-- Dialog Descriptions -->
     <string name="add_books_description">Ви можете вибрати книги, які хочете додати. Ви зможете відредагувати Назву та Обкладинку книги пізніше. Процес завантаження може зайняти декілька хвилин.</string>
     <string name="delete_books_description">Це видалить всі обрані книги(%1$s) з бази даних. Це не видалить обрані книги з вашого пристрою.</string>
     <string name="delete_book_description">Це видалить цю книгу з бази даних. Це не видалить цю книгу з вашого пристрою.</string>
-    <string name="delete_history_description">Це видалить всю історію з бази даних. Після видалення всієї історії порядок книг буде скинутий.</string>
     <string name="remove_category_description">
         Це видалить цю категорію з Бібліотеки, але не видалить книги.
     </string>
@@ -363,7 +361,6 @@
     <string name="book_deleted">Ця книга була успішно видалена.</string>
     <string name="book_moved">Ця книга була успішно переміщена.</string>
     <string name="copied">Скопійовано</string>
-    <string name="history_deleted">Історія була успішно видалена.</string>
     <string name="cover_reset">Обкладинка була успішно скинута.</string>
     <string name="title_changed">Назва була успішно змінена.</string>
     <string name="author_changed">Автор був успішно змінений.</string>
@@ -371,14 +368,13 @@
     <string name="path_changed">Шлях до файлу був успішно змінений.</string>
 
     <!-- Snackbar messages -->
-    <string name="history_element_deleted">Елемент історії був успішно видалений.</string>
 
     <!-- BookInfo -->
     <string name="start_reading">Почати</string>
     <string name="continue_reading_query">Продовжити з %1$s</string>
     <string name="file_details">Подробиці файла</string>
     <string name="file_path">Шлях</string>
-    <string name="file_last_opened">Останнє відкриття</string>
+    <string name="file_last_opened">Останнє читання</string>
     <string name="file_size">Розмір</string>
     <string name="unknown">Невідомо</string>
 
@@ -440,13 +436,11 @@
     <string name="select_all_files_content_desc">Вибрати всі файли</string>
     <string name="select_all_books_content_desc">Вибрати всі книги</string>
     <string name="exit_search_content_desc">Вийти з пошуку</string>
-    <string name="delete_whole_history_content_desc">Видалити всю історію</string>
     <string name="move_books_content_desc">Перемістити обрані книги</string>
     <string name="delete_books_content_desc">Видалити обрані книги</string>
     <string name="revert_content_desc">Повернути</string>
     <string name="selected_content_desc">Вибрано</string>
     <string name="app_icon_content_desc">Іконка застосунку</string>
-    <string name="delete_history_element_content_desc">Видалити елемент історії</string>
     <string name="library_content_desc">Ваша бібліотека</string>
     <string name="history_content_desc">Історія читання</string>
     <string name="browse_content_desc">Додавайте книги</string>

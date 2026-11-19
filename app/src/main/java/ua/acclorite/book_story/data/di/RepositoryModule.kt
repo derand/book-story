@@ -20,8 +20,6 @@ import ua.acclorite.book_story.data.mapper.color_preset.ColorPresetMapper
 import ua.acclorite.book_story.data.mapper.color_preset.ColorPresetMapperImpl
 import ua.acclorite.book_story.data.mapper.file.FileMapper
 import ua.acclorite.book_story.data.mapper.file.FileMapperImpl
-import ua.acclorite.book_story.data.mapper.history.HistoryMapper
-import ua.acclorite.book_story.data.mapper.history.HistoryMapperImpl
 import ua.acclorite.book_story.data.parser.cover.CoverParser
 import ua.acclorite.book_story.data.parser.cover.CoverParserImpl
 import ua.acclorite.book_story.data.parser.file.FileParser
@@ -100,12 +98,6 @@ abstract class RepositoryModule {
     abstract fun bindBookMapper(
         bookMapperImpl: BookMapperImpl
     ): BookMapper
-
-    @Binds
-    @Singleton
-    abstract fun bindHistoryMapper(
-        historyMapperImpl: HistoryMapperImpl
-    ): HistoryMapper
 
     @Binds
     @Singleton

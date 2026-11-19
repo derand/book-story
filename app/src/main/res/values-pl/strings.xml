@@ -53,9 +53,7 @@
     <string name="add_books">Dodać książki?</string>
     <string name="delete_books">Usunąć książki?</string>
     <string name="delete_book">Usunąć książkę?</string>
-    <string name="delete_history">Usunąć historię czytania?</string>
     <string name="delete_book_description">To spowoduje usunięcie tej książki z bazy danych, ale nie usunie jej z twojego urządzenia.</string>
-    <string name="delete_history_description">To spowoduje usuniecie całej historii z bazy danych. Po usunięciu całej historii kolejność książek zostanie zresetowana.</string>
     <string name="error_no_description">Brak opisu.</string>
     <string name="error_something_went_wrong">Coś poszło nie tak.</string>
     <string name="error_no_share_app">Nie znaleziono aplikacji do udostępniania.</string>
@@ -152,7 +150,6 @@
     <string name="cover_image_changed">Obraz okładki został pomyślnie zmieniony.</string>
     <string name="book_moved">Ta książka została pomyślnie przeniesiona.</string>
     <string name="cover_reset">Obraz okładki został pomyślnie zresetowany.</string>
-    <string name="history_element_deleted">Element historii został pomyślnie usunięty.</string>
     <string name="file_last_opened">Ostatnio otwarte</string>
     <string name="file_size">Rozmiar</string>
     <string name="unknown">Nieznany</string>
@@ -171,7 +168,6 @@
     <string name="open_reader_settings_content_desc">Ustawienia czytnika</string>
     <string name="checkbox_content_desc">Pole wyboru</string>
     <string name="add_files_content_desc">Dodaj pliki</string>
-    <string name="delete_history_element_content_desc">Usuń element historii</string>
     <string name="library_content_desc">Twoja biblioteka</string>
     <string name="arrow_content_desc">Strzałka</string>
     <string name="open_in_web_content_desc">Otwórz w sieci</string>
@@ -183,7 +179,6 @@
     <string name="theme_appearance_settings">Preferencje motywu</string>
     <string name="font_style_italic">Kursywa</string>
     <string name="delete_color_preset_content_desc">Usuń ustawienie koloru</string>
-    <string name="history_deleted">Historia została pomyślnie usunięta.</string>
     <string name="shuffle_color_preset_content_desc">Losowo pomieszaj kolory</string>
     <string name="filter_content_desc">Filtr/przefiltruj</string>
     <string name="chapters_content_desc">Rozdziały</string>
@@ -192,7 +187,6 @@
     <string name="history_content_desc">Historia czytania</string>
     <string name="exit_search_content_desc">Opuść wyszukiwanie</string>
     <string name="books_moved">Wszystkie wybrane książki zostały pomyślnie przeniesione.</string>
-    <string name="delete_whole_history_content_desc">Usuń całą historię</string>
     <string name="start_welcome_desc">Do świata, w którym słowa oczarowują, uczą i prowadzą niesamowite przygody! Ustawmy kilka rzeczy!</string>
     <string name="books_deleted">Wszystkie wybrane książki zostały pomyślnie usunięte.</string>
     <string name="book_deleted">Ta książka została pomyślnie usunięta.</string>

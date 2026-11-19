@@ -12,7 +12,6 @@
     <string name="about_screen">Über diese App</string>
     <string name="delete_books">Bücher löschen?</string>
     <string name="delete_book">Buch löschen?</string>
-    <string name="delete_history">Leseverlauf löschen?</string>
     <string name="add_books_description">Sie können auswählen, welche Bücher Sie hinzufügen möchten. Titel und Coverbild des Buches können Sie später bearbeiten. Der Ladevorgang kann mehrere Minuten dauern.</string>
     <string name="delete_book_description">Dadurch wird das Buch aus der Datenbank gelöscht. Von Ihrem Gerät wird das Buch jedoch nicht gelöscht.</string>
     <string name="error_no_description">Keine Beschreibung.</string>
@@ -80,9 +79,7 @@
     <string name="book_deleted">Dieses Buch wurde erfolgreich gelöscht.</string>
     <string name="book_moved">Dieses Buch wurde erfolgreich verschoben.</string>
     <string name="copied">Kopieren</string>
-    <string name="history_deleted">Der Verlauf wurde erfolgreich gelöscht.</string>
     <string name="cover_reset">Das Titelbild wurde erfolgreich zurückgesetzt.</string>
-    <string name="history_element_deleted">Das Verlaufselement wurde erfolgreich gelöscht.</string>
     <string name="dynamic_theme">Quecksilber</string>
     <string name="file_path">Pfad</string>
     <string name="file_last_opened">Zuletzt geöffnet</string>
@@ -105,7 +102,6 @@
     <string name="clear_selected_items_content_desc">Ausgewählte Elemente löschen</string>
     <string name="add_files_content_desc">Dateien hinzufügen</string>
     <string name="exit_search_content_desc">Suche beenden</string>
-    <string name="delete_whole_history_content_desc">Gesamten Verlauf löschen</string>
     <string name="move_books_content_desc">Ausgewählte Bücher verschieben</string>
     <string name="delete_books_content_desc">Ausgewählte Bücher löschen</string>
     <string name="revert_content_desc">Zurücksetzen</string>
@@ -113,7 +109,6 @@
     <string name="app_icon_content_desc">App-Symbol</string>
     <string name="add_books">Bücher hinzufügen?</string>
     <string name="delete_books_description">Es werden alle ausgewählten Bücher (%1$s) aus der Datenbank gelöscht. Ausgewählte Bücher werden nicht von Ihrem Gerät gelöscht.</string>
-    <string name="delete_history_description">Dadurch wird der gesamte Verlauf aus der Datenbank gelöscht. Nach dem Löschen des gesamten Verlaufs wird die Reihenfolge der Bücher zurückgesetzt.</string>
     <string name="error_something_went_wrong">Etwas ist schief gelaufen.</string>
     <string name="error_no_translator">Keine Übersetzungsapp gefunden.</string>
     <string name="error_no_browser">Keine Browserapp gefunden.</string>
@@ -154,7 +149,6 @@
     <string name="start_welcome_desc">In eine Welt, in der Worte verzaubern, lehren und zu unglaublichen Abenteuern führen! Lassen Sie uns ein paar Dinge vorbereiten!</string>
     <string name="start_language_preferences">Spracheinstellungen</string>
     <string name="start_theme_preferences">Themeneinstellungen</string>
-    <string name="delete_history_element_content_desc">Lösche Verlaufselement</string>
     <string name="library_content_desc">Deine Bibliothek</string>
     <string name="history_content_desc">Leseverlauf</string>
     <string name="browse_content_desc">Bücher hinzufügen</string>

@@ -12,17 +12,22 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import ua.acclorite.book_story.R
+import ua.acclorite.book_story.domain.model.history.GroupedHistory
 import ua.acclorite.book_story.domain.model.statistics.LibraryStatistics
 import ua.acclorite.book_story.presentation.history.HistoryEvent
-import ua.acclorite.book_story.presentation.history.model.GroupedHistory
 import ua.acclorite.book_story.ui.common.components.common.LazyColumnWithScrollbar
 import ua.acclorite.book_story.ui.common.data.ScrollbarData
 import ua.acclorite.book_story.ui.settings.components.SettingsSubcategoryTitle
 import ua.acclorite.book_story.ui.theme.DefaultTransition
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 
 @Composable
 fun HistoryLayout(
@@ -56,18 +61,14 @@ fun HistoryLayout(
             }
 
             history.forEachIndexed { index, groupedHistory ->
-                item(key = groupedHistory.title) {
+                item(key = groupedHistory.day.toString()) {
                     if (index > 0) {
                         Spacer(modifier = Modifier.height(8.dp))
                     }
 
                     SettingsSubcategoryTitle(
                         modifier = Modifier.animateItem(),
-                        title = when (groupedHistory.title) {
-                            "today" -> stringResource(id = R.string.today)
-                            "yesterday" -> stringResource(id = R.string.yesterday)
-                            else -> groupedHistory.title
-                        },
+                        title = dayTitle(groupedHistory.day),
                         padding = 16.dp
                     )
 
@@ -76,7 +77,7 @@ fun HistoryLayout(
 
                 items(
                     groupedHistory.history,
-                    key = { it.id }
+                    key = { "${it.day}/${it.book.id}" }
                 ) { historyEntry ->
                     HistoryItem(
                         historyEntry = historyEntry,
@@ -94,13 +95,6 @@ fun HistoryLayout(
                                     historyEntry.book.id
                                 )
                             )
-                        },
-                        onDeleteClick = {
-                            onEvent(
-                                HistoryEvent.OnDeleteHistoryEntry(
-                                    history = historyEntry
-                                )
-                            )
                         }
                     )
                 }
@@ -109,6 +103,19 @@ fun HistoryLayout(
             item {
                 Spacer(modifier = Modifier.height(12.dp))
             }
+        }
+    }
+}
+/** "Today", "Yesterday", or the date in the app locale's medium format. */
+@Composable
+private fun dayTitle(day: LocalDate): String {
+    val today = LocalDate.now()
+    val locale = LocalConfiguration.current.locales[0]
+    return when (day) {
+        today -> stringResource(id = R.string.today)
+        today.minusDays(1) -> stringResource(id = R.string.yesterday)
+        else -> remember(day, locale) {
+            day.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(locale))
         }
     }
 }

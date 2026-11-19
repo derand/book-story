@@ -5,7 +5,6 @@
   ~ Copyright (C) 2024-2026 Acclorite
   ~ SPDX-License-Identifier: GPL-3.0-only
   --><resources>
-    <string name="delete_history">删除阅读历史？</string>
     <string name="delete_book">删除书籍？</string>
     <string name="web_search">网络搜索</string>
     <string name="share">分享</string>
@@ -24,7 +23,6 @@
     <string name="about_screen">关于 Book\'s Story</string>
     <string name="delete_books_description">所有已选择的书（%1$s）将会从数据库中删除，但不会从您的设备上删除。</string>
     <string name="delete_book_description">这本书将会从数据库中删除，但不会从您的设备上删除。</string>
-    <string name="delete_history_description">所有的历史将从数据库中被删除。删除所有的历史后，书的顺序将会被重置。</string>
     <string name="error_no_description">无简介。</string>
     <string name="error_something_went_wrong">出现了一些错误。</string>
     <string name="error_no_share_app">未找到要共享的应用。</string>
@@ -164,9 +162,7 @@
     <string name="book_deleted">这本书已被成功删除。</string>
     <string name="book_moved">这本书已被成功移动。</string>
     <string name="copied">已复制</string>
-    <string name="history_deleted">成功删除历史。</string>
     <string name="cover_image_changed">成功更改了封面图片。</string>
-    <string name="history_element_deleted">成功删除了历史元素。</string>
     <string name="books_moved">成功移动所有已选择的书。</string>
     <string name="no_chapters">无章节</string>
     <string name="chapters">章节</string>
@@ -222,7 +218,6 @@
     <string name="delete_color_preset_content_desc">删除颜色预设</string>
     <string name="checkpoint_back_content_desc">检查点撤回</string>
     <string name="library_content_desc">你的书库</string>
-    <string name="delete_history_element_content_desc">删除历史元素</string>
     <string name="selected_content_desc">已选</string>
     <string name="history_content_desc">阅读历史</string>
     <string name="browse_content_desc">添加书籍</string>
@@ -233,7 +228,6 @@
     <string name="checkbox_content_desc">复选框</string>
     <string name="add_files_content_desc">添加文件</string>
     <string name="select_all_files_content_desc">选择所有文件</string>
-    <string name="delete_whole_history_content_desc">删除全部历史记录</string>
     <string name="open_in_web_content_desc">在网页中打开</string>
     <string name="create_color_preset_content_desc">创建新颜色预设</string>
     <string name="drag_content_desc">拖动</string>
