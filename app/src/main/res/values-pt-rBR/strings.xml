@@ -58,7 +58,6 @@
     <string name="dark_theme_follow_system">Sistema</string>
     <string name="theme_contrast_standard">Padrão</string>
     <string name="font_style_normal">Normal</string>
-    <string name="delete_history">Apagar histórico de leitura?</string>
     <string name="author">Autor</string>
     <string name="blue_color">Azul</string>
     <string name="layout_grid">Grade</string>
@@ -107,7 +106,6 @@
     <string name="appearance_settings_desc">Tema, cores</string>
     <string name="language_option">Linguagem do aplicativo</string>
     <string name="dark_theme_option">Tema escuro</string>
-    <string name="delete_history_description">Isto irá deletar todo o histórico da base de dados. Após deletá-lo, a ordem dos livros será restaurada.</string>
     <string name="paragraph_indentation_option">Recuo de parágrafo</string>
     <string name="letter_spacing_option">Espaçamento das letras</string>
     <string name="color_preset_query">Padrão %1$s</string>
@@ -228,10 +226,8 @@
     <string name="highlighted_reading_option_desc">Destaque o início de cada palavra</string>
     <string name="open_in_web_content_desc">Abrir no navegador</string>
     <string name="color_preset_placeholder">Nomeie o padrão…</string>
-    <string name="history_element_deleted">Elemento da história foi alterado com sucesso.</string>
     <string name="books_deleted">Todos os livros selecionados foram apagados com sucesso.</string>
     <string name="highlighted_reading_level">nível</string>
-    <string name="delete_history_element_content_desc">Apagar elemento do histórico</string>
     <string name="checkpoint_back_content_desc">Voltar ao ponto-salvo</string>
     <string name="highlighted_reading_thickness_option">Espessura da marcação</string>
     <string name="cover_image_changed">Imagem da capa foi alterada com sucesso.</string>
@@ -243,7 +239,6 @@
     <string name="progress_bar_option">Barra de progresso</string>
     <string name="books_added">Todos os livros selecionados foram adicionados com sucesso.</string>
     <string name="start_done_desc">Configuração completa. Gostaria de ir à tela de Ajuda?</string>
-    <string name="history_deleted">Histórico foi apagado com sucesso.</string>
     <string name="press_again_toast">Voltar para sair</string>
     <string name="books_moved">Todos os livros selecionados foram movidos com sucesso.</string>
     <string name="cover_image_deleted">Imagem da capa apagada com sucesso.</string>
@@ -270,7 +265,6 @@
     <string name="cover_reset">A imagem da capa foi redefininda com sucesso.</string>
     <string name="book_moved">Esse livro foi movido com sucesso.</string>
     <string name="horizontal_gesture_inverse">Ligado (Inverso)</string>
-    <string name="delete_whole_history_content_desc">Apagar o histórico inteiro</string>
     <string name="yellow2_theme">Makemake</string>
     <string name="pin_content_desc">Fixar</string>
     <string name="error_no_file">Arquivo não existe ou está inacessível</string>

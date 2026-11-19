@@ -8,9 +8,9 @@ package ua.acclorite.book_story.data.local.dto
 
 import androidx.room.Embedded
 
-/** A library book with its latest history entry's time, read in one query. */
+/** A library book with when it was last read, read in one query. */
 data class LibraryBookRow(
     @Embedded val book: BookEntity,
-    /** Null for a book never opened. */
+    /** Null for a book never read (no reading session recorded). */
     val lastOpened: Long?
 )

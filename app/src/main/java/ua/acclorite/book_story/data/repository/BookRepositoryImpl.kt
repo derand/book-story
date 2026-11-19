@@ -689,7 +689,6 @@ class BookRepositoryImpl @Inject constructor(
                 val row = database.bookDao.findBookById(bookId)
                     ?: throw NoSuchElementException("No book [$bookId] to delete.")
 
-                database.historyDao.deleteHistoryForBook(bookId = bookId)
                 database.statisticsDao.anonymiseBookSessions(bookId = bookId)
                 database.statisticsDao.deleteCoverage(bookId = bookId)
                 database.statisticsDao.unlinkReadBook(bookId = bookId)

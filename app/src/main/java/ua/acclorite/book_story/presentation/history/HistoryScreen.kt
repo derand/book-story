@@ -12,14 +12,11 @@ import android.os.Parcelable
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.focus.FocusRequester
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import kotlinx.coroutines.channels.Channel
-import kotlinx.parcelize.IgnoredOnParcel
 import kotlinx.parcelize.Parcelize
 import ua.acclorite.book_story.presentation.navigator.Screen
 import ua.acclorite.book_story.ui.history.HistoryContent
@@ -27,12 +24,6 @@ import ua.acclorite.book_story.ui.history.HistoryEffects
 
 @Parcelize
 object HistoryScreen : Screen, Parcelable {
-
-    @IgnoredOnParcel
-    const val DELETE_WHOLE_HISTORY_DIALOG = "delete_whole_history_dialog"
-
-    @IgnoredOnParcel
-    val insertHistoryChannel: Channel<Int> = Channel(Channel.CONFLATED)
 
     @Composable
     override fun Content() {
@@ -42,20 +33,16 @@ object HistoryScreen : Screen, Parcelable {
 
         val listState = rememberLazyListState()
 
-        val snackbarState = remember { SnackbarHostState() }
         val focusRequester = remember { FocusRequester() }
         val refreshState = rememberPullToRefreshState()
 
         HistoryEffects(
             effects = screenModel.effects,
-            focusRequester = focusRequester,
-            snackbarState = snackbarState,
-            onEvent = screenModel::onEvent
+            focusRequester = focusRequester
         )
 
         HistoryContent(
             refreshState = refreshState,
-            snackbarState = snackbarState,
             listState = listState,
             state = state.value,
             canScrollBackward = listState.canScrollBackward,

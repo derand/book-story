@@ -25,13 +25,11 @@ import org.robolectric.RuntimeEnvironment
 import org.robolectric.Shadows.shadowOf
 import ua.acclorite.book_story.core.CoverImage
 import ua.acclorite.book_story.core.ui.UIText
-import ua.acclorite.book_story.domain.model.history.History
 import ua.acclorite.book_story.domain.model.library.Book
 import ua.acclorite.book_story.domain.model.statistics.LibraryStatistics
 import ua.acclorite.book_story.domain.model.statistics.ReadBook
 import ua.acclorite.book_story.domain.model.statistics.ReadingCoverage
 import ua.acclorite.book_story.domain.model.statistics.ReadingSession
-import ua.acclorite.book_story.domain.repository.HistoryRepository
 import ua.acclorite.book_story.domain.repository.StatisticsRepository
 import ua.acclorite.book_story.domain.service.CoverImageHandler
 import ua.acclorite.book_story.domain.use_case.book.CanResetCoverImageUseCase
@@ -202,7 +200,7 @@ class BookInfoModelTest {
         return BookInfoModel(
             updateCoverImageUseCase = UpdateCoverImageUseCase(repository, covers),
             updateBookUseCase = UpdateBookUseCase(repository),
-            getBookUseCase = GetBookUseCase(repository, NoHistory()),
+            getBookUseCase = GetBookUseCase(repository, NoStatistics()),
             getFileFromBookUseCase = GetFileFromBookUseCase(repository),
             deleteBookUseCase = DeleteBookUseCase(repository, covers),
             canResetCoverImageUseCase = CanResetCoverImageUseCase(
@@ -215,16 +213,6 @@ class BookInfoModelTest {
             releaseBookCopyUseCase = ReleaseBookCopyUseCase(repository),
             refreshBookCopyUseCase = RefreshBookCopyUseCase(repository)
         )
-    }
-
-    private class NoHistory : HistoryRepository {
-        override suspend fun getHistoryForBook(bookId: Int): Result<History> =
-            Result.failure(NoSuchElementException("No history."))
-
-        override suspend fun addHistory(history: History): Result<Unit> = unused()
-        override fun observeHistory(): Flow<List<History>> = unused()
-        override suspend fun deleteWholeHistory(): Result<Unit> = unused()
-        override suspend fun deleteHistory(history: History): Result<Unit> = unused()
     }
 
     /** A book never read: no record, no coverage. */

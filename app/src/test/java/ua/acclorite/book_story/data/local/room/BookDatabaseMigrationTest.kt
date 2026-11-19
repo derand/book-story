@@ -65,6 +65,13 @@ class BookDatabaseMigrationTest {
             try {
                 val db = database.openHelper.writableDatabase
                 assertEquals(DATABASE_VERSION, db.version)
+                // Room checks only the tables it has entities for; a table a
+                // migration should have dropped would linger unnoticed.
+                assertEquals(
+                    "$version → $DATABASE_VERSION: tables",
+                    current.keys.map(String::lowercase).toSortedSet(),
+                    db.tables().map(String::lowercase).toSortedSet()
+                )
 
                 for ((table, before) in written) {
                     val columns = current[table]?.columns?.map(Column::name)?.toSet() ?: continue
@@ -164,6 +171,14 @@ class BookDatabaseMigrationTest {
         execSQL("INSERT INTO `${table.name}` ($names) VALUES ($values)")
         return rawQuery("SELECT * FROM `${table.name}`", null).use { it.rows() }.single()
     }
+
+    /** The app's own tables: not SQLite's, Room's or Android's bookkeeping. */
+    private fun SupportSQLiteDatabase.tables(): List<String> =
+        query(
+            "SELECT name FROM sqlite_master WHERE type = 'table' " +
+                    "AND name NOT LIKE 'sqlite_%' " +
+                    "AND name NOT IN ('room_master_table', 'android_metadata')"
+        ).use { cursor -> buildList { while (cursor.moveToNext()) add(cursor.getString(0)) } }
 
     private fun SupportSQLiteDatabase.rows(table: String): List<Map<String, Any?>> =
         query("SELECT * FROM `$table`").use { it.rows() }

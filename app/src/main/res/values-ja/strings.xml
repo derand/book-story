@@ -10,9 +10,7 @@
     <string name="about_screen">アプリについて</string>
     <string name="add_books">書籍の追加?</string>
     <string name="delete_book">書籍の削除?</string>
-    <string name="delete_history">読書履歴を消去しますか?</string>
     <string name="delete_books_description">データベースから選択したすべての書籍(%1$s)を削除します。 選択した書籍はデバイスから削除されません。</string>
-    <string name="delete_history_description">すべての履歴をデータベースから削除します。すべての履歴が削除されると、書籍の順序はリセットされます。</string>
     <string name="error_something_went_wrong">問題が発生しました。</string>
     <string name="error_no_share_app">共有するアプリはありません。</string>
     <string name="error_closed_source">クローズドソース</string>
@@ -210,7 +208,6 @@
     <string name="credits_icon">アイコン</string>
     <string name="no_chapters">チャプターなし</string>
     <string name="copied">コピーされました</string>
-    <string name="history_deleted">履歴は正常に削除されました。</string>
     <string name="unknown">不明</string>
     <string name="author_changed">著者が正常に変更されました.</string>
     <string name="report_bug_option">バグを報告</string>
@@ -230,7 +227,6 @@
     <string name="title_changed">タイトルが正常に変更されました。</string>
     <string name="description_changed">説明が正常に変更されました.</string>
     <string name="path_changed">ファイルのパスが正常に変更されました.</string>
-    <string name="history_element_deleted">履歴の要素が正常に削除されました。</string>
     <string name="start_reading">スタート</string>
     <string name="continue_reading_query">%1$sから続きを読む</string>
     <string name="file_last_opened">最後に開いた</string>

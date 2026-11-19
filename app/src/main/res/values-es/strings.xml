@@ -13,8 +13,6 @@
     <string name="add_books">¿Añadir libros?</string>
     <string name="delete_books">¿Borrar libros?</string>
     <string name="delete_book">¿Borrar libro?</string>
-    <string name="delete_history">¿Borrar el historial de lectura?</string>
-    <string name="delete_history_description">Eliminará todo el historial de la base de datos. Después de borrar todo el historial, el orden de los libros se restablecerá.</string>
     <string name="error_no_description">Sin descripción.</string>
     <string name="error_something_went_wrong">Algo salió mal.</string>
     <string name="error_no_browser">No se encontró ninguna aplicación de navegador.</string>
@@ -55,7 +53,6 @@
     <string name="pink_theme">Saturno</string>
     <string name="yellow_theme">Venus</string>
     <string name="aqua_theme">Urano</string>
-    <string name="history_deleted">Se borró el historial.</string>
     <string name="copied">Copiado</string>
     <string name="start_language_preferences">Configuración del idioma</string>
     <string name="start_theme_preferences">Preferencias de tema</string>
@@ -119,7 +116,6 @@
     <string name="fast_color_preset_change_option_desc">Desliza la barra superior hacia la izquierda o hacia la derecha para cambiar el color predeterminado</string>
     <string name="color_preset_placeholder">Nombrar un preajuste…</string>
     <string name="book_moved">Este libro se movió correctamente.</string>
-    <string name="history_element_deleted">El elemento del historial se eliminó correctamente.</string>
     <string name="file_last_opened">Último archivo abierto</string>
     <string name="file_size">Tamaño del archivo</string>
     <string name="unknown">Desconocido</string>
@@ -147,10 +143,8 @@
     <string name="clear_selected_items_content_desc">Limpiar selección</string>
     <string name="add_files_content_desc">Añadir archivos</string>
     <string name="exit_search_content_desc">Salir de búsqueda</string>
-    <string name="delete_whole_history_content_desc">Borrar todo el historial</string>
     <string name="move_books_content_desc">Mover libros seleccionados</string>
     <string name="delete_books_content_desc">Eliminar libros seleccionados</string>
-    <string name="delete_history_element_content_desc">Eliminar elemento del historial</string>
     <string name="library_content_desc">Tu biblioteca</string>
     <string name="arrow_content_desc">Flecha</string>
     <string name="open_in_web_content_desc">Abrir en la web</string>

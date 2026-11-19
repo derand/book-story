@@ -22,8 +22,9 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import ua.acclorite.book_story.data.local.dto.BookEntity
-import ua.acclorite.book_story.data.local.dto.HistoryEntity
 import ua.acclorite.book_story.data.local.dto.ReadingSessionEntity
+import ua.acclorite.book_story.data.mapper.book.BookMapperImpl
+import ua.acclorite.book_story.data.repository.HistoryRepositoryImpl
 
 /**
  * The Library and History lists are whatever these flows emit, with no refresh
@@ -64,31 +65,52 @@ class ObservedListsTest {
 
     private suspend fun <T> Channel<T>.next(): T = withTimeout(5_000) { receive() }
 
+    /** One finished reading session of [bookId], as the reader records it. */
+    private suspend fun read(bookId: Int, start: Long, end: Long) =
+        database.statisticsDao.recordSession(
+            session = ReadingSessionEntity(
+                bookId = bookId,
+                startTime = start,
+                endTime = end,
+                wordsRead = 100
+            ),
+            timeMs = end - start,
+            coveragePercent = 0.1f,
+            reachedEnd = false,
+            title = "t",
+            author = "a"
+        )
+
     @Test
-    fun `a library row carries its latest open, and previews are left out`() = runBlocking {
-        val opened = insertBook("opened")
+    fun `a library row carries when it was last read, and previews are left out`() = runBlocking {
+        val read = insertBook("read")
         val never = insertBook("never")
+        val marked = insertBook("marked")
         insertBook("preview", inLibrary = false)
-        database.historyDao.insertHistory(HistoryEntity(bookId = opened, time = 5))
-        database.historyDao.insertHistory(HistoryEntity(bookId = opened, time = 9))
+        read(read, start = 1, end = 5)
+        read(read, start = 6, end = 9)
+        // A record with no sessions: marked finished by hand, never read.
+        database.statisticsDao.setBookFinished(
+            bookId = marked, title = "marked", author = "a", finished = true, now = 7
+        )
 
         val rows = database.bookDao.observeLibraryBooks().first()
 
         assertEquals(
-            mapOf(opened to 9L, never to null),
+            mapOf(read to 9L, never to null, marked to null),
             rows.associate { it.book.id to it.lastOpened }
         )
     }
 
     @Test
-    fun `the library re-emits after a book is added and after an open`() = runBlocking {
+    fun `the library re-emits after a book is added and after a reading session`() = runBlocking {
         val library = emissions(database.bookDao.observeLibraryBooks())
         assertEquals(emptyList<Int>(), library.next().map { it.book.id })
 
         val id = insertBook("added")
         assertEquals(listOf(id), library.next().map { it.book.id })
 
-        database.historyDao.insertHistory(HistoryEntity(bookId = id, time = 7))
+        read(id, start = 3, end = 7)
         assertEquals(7L, library.next().single().lastOpened)
 
         coroutineContext.cancelChildren()
@@ -97,14 +119,27 @@ class ObservedListsTest {
     @Test
     fun `the history re-emits after a book it shows is renamed`() = runBlocking {
         val id = insertBook("old")
-        database.historyDao.insertHistory(HistoryEntity(bookId = id, time = 1))
-        val history = emissions(database.historyDao.observeHistoryWithBook())
+        read(id, start = 1, end = 2)
+        val history = emissions(database.statisticsDao.observeSessionsWithBook())
         assertEquals("old", history.next().single().book?.title)
 
         database.bookDao.updateTitle(id, "new")
         assertEquals("new", history.next().single().book?.title)
 
         coroutineContext.cancelChildren()
+    }
+
+    @Test
+    fun `a deleted book's sessions leave the history`() = runBlocking {
+        val kept = insertBook("kept")
+        val deleted = insertBook("deleted")
+        read(kept, start = 1, end = 2)
+        read(deleted, start = 3, end = 4)
+        database.statisticsDao.anonymiseBookSessions(deleted)
+
+        val history = HistoryRepositoryImpl(database, BookMapperImpl()).observeHistory().first()
+
+        assertEquals(listOf(kept), history.map { it.book.id })
     }
 
     @Test

@@ -17,11 +17,9 @@
     <string name="settings_screen">Налады</string>
     <string name="about_screen">Пра прыкладанне</string>
     <string name="add_books">Дадаць кнігі?</string>
-    <string name="delete_history">Выдаліць гісторыю чытання?</string>
     <string name="edit">Рэдагаваць</string>
     <string name="add_books_description">Вы можаце выбраць кнігі, якія хочаце дадаць. Вы зможаце змяніць Назву і Відарыс Вокладкі кнігі пазней. Працэс загрузкі можа занять некалькі хвілін.</string>
     <string name="delete_book_description">Гэта выдаліць гэтую кнігу з базы дадзеных. Кніга не будзе выдалена з вашай прылады.</string>
-    <string name="delete_history_description">Гэта выдаліць усю гісторыю з базы дадзеных. Пасля выдалення ўсёй гісторыі парадак кніг будзе выдалены.</string>
     <string name="error_no_description">Без апісання.</string>
     <string name="error_something_went_wrong">Нажаль! Штосьці пайшло не так.</string>
     <string name="error_no_translator">Перакладчык не знойдзены.</string>
@@ -118,7 +116,6 @@
     <string name="book_deleted">Гэтая кніга была паспяхова выдалена.</string>
     <string name="book_moved">Гэтая кніга была паспяхова мерамешчана.</string>
     <string name="copied">Скапіравана</string>
-    <string name="history_deleted">Гісторыя была паспяхова выдалена.</string>
     <string name="title_changed">Назва была паспяхова зменена.</string>
     <string name="author_changed">Аўтар быў паспяхова зменены.</string>
     <string name="credits_ideas">Ідэі</string>
@@ -135,7 +132,6 @@
     <string name="progress_count_quantity">Колькасць</string>
     <string name="dynamic_theme">Меркурый</string>
     <string name="blue_theme">Няптун</string>
-    <string name="history_element_deleted">Элемент гісторыі быў паспяхова выдалены.</string>
     <string name="start_reading">Пачаць</string>
     <string name="continue_reading_query">Прадоўжыць з %1$s</string>
     <string name="file_details">Дэталі файла</string>

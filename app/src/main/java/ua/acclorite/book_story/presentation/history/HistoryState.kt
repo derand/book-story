@@ -7,9 +7,8 @@
 package ua.acclorite.book_story.presentation.history
 
 import androidx.compose.runtime.Immutable
-import ua.acclorite.book_story.core.Dialog
+import ua.acclorite.book_story.domain.model.history.GroupedHistory
 import ua.acclorite.book_story.domain.model.statistics.LibraryStatistics
-import ua.acclorite.book_story.presentation.history.model.GroupedHistory
 
 @Immutable
 data class HistoryState(
@@ -25,7 +24,5 @@ data class HistoryState(
 
     val showSearch: Boolean = false,
     val searchQuery: String = "",
-    val hasFocused: Boolean = false,
-
-    val dialog: Dialog? = null
+    val hasFocused: Boolean = false
 )

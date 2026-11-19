@@ -37,12 +37,14 @@ interface BookDao {
 
     /**
      * The library list as it changes: the same rows as [getLibraryBooks], with
-     * when each was last opened. Room re-runs it after any write to either
-     * table, so the list needs no refresh calls.
+     * when each was last read — the end of its latest reading session. A record
+     * with no sessions is a book only marked finished by hand, so it counts as
+     * never read. Room re-runs it after any write to either table, so the list
+     * needs no refresh calls.
      */
     @Query(
-        "SELECT bookentity.*, (SELECT MAX(time) FROM historyentity " +
-                "WHERE historyentity.bookId = bookentity.id) AS lastOpened " +
+        "SELECT bookentity.*, (SELECT lastReadAt FROM readbookentity " +
+                "WHERE readbookentity.bookId = bookentity.id AND sessions > 0) AS lastOpened " +
                 "FROM bookentity WHERE inLibrary = 1"
     )
     fun observeLibraryBooks(): Flow<List<LibraryBookRow>>

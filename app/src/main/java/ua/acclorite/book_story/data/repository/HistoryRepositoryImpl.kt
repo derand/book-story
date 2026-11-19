@@ -6,14 +6,12 @@
 
 package ua.acclorite.book_story.data.repository
 
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.withContext
-import ua.acclorite.book_story.core.helpers.runCatchingCancellable
 import ua.acclorite.book_story.data.local.room.BookDatabase
-import ua.acclorite.book_story.data.mapper.history.HistoryMapper
-import ua.acclorite.book_story.domain.model.history.History
+import ua.acclorite.book_story.data.mapper.book.BookMapper
+import ua.acclorite.book_story.domain.model.history.HistorySession
+import ua.acclorite.book_story.domain.model.statistics.ReadingSession
 import ua.acclorite.book_story.domain.repository.HistoryRepository
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -21,40 +19,23 @@ import javax.inject.Singleton
 @Singleton
 class HistoryRepositoryImpl @Inject constructor(
     private val database: BookDatabase,
-    private val historyMapper: HistoryMapper
+    private val bookMapper: BookMapper
 ) : HistoryRepository {
 
-    override suspend fun getHistoryForBook(bookId: Int): Result<History> = runCatchingCancellable {
-        withContext(Dispatchers.IO) {
-            database.historyDao.getHistoryForBook(bookId)?.let { historyMapper.toHistory(it) }
-                ?: throw NoSuchElementException("Could not get history from [$bookId].")
-        }
-    }
-
-    override suspend fun addHistory(history: History): Result<Unit> = runCatchingCancellable {
-        withContext(Dispatchers.IO) {
-            database.historyDao.insertHistory(historyMapper.toHistoryEntity(history))
-        }
-    }
-
-    override fun observeHistory(): Flow<List<History>> =
-        database.historyDao.observeHistoryWithBook().map { rows ->
-            rows.mapNotNull { historyMapper.toHistory(it) }
-        }
-
-    override suspend fun deleteWholeHistory(): Result<Unit> = runCatchingCancellable {
-        withContext(Dispatchers.IO) {
-            database.historyDao.deleteWholeHistory().also {
-                if (it == 0) throw Exception("Could not delete whole history in database.")
+    override fun observeHistory(): Flow<List<HistorySession>> =
+        database.statisticsDao.observeSessionsWithBook().map { rows ->
+            rows.mapNotNull { row ->
+                val book = row.book ?: return@mapNotNull null
+                HistorySession(
+                    book = bookMapper.toBook(book),
+                    session = ReadingSession(
+                        bookId = book.id,
+                        startTime = row.session.startTime,
+                        endTime = row.session.endTime,
+                        wordsRead = row.session.wordsRead,
+                        overlayMs = row.session.overlayMs
+                    )
+                )
             }
         }
-    }
-
-    override suspend fun deleteHistory(history: History): Result<Unit> = runCatchingCancellable {
-        withContext(Dispatchers.IO) {
-            database.historyDao.deleteHistory(historyMapper.toHistoryEntity(history)).also {
-                if (it == 0) throw Exception("Could not delete history in database.")
-            }
-        }
-    }
 }

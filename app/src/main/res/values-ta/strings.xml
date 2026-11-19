@@ -42,7 +42,6 @@
     <string name="book_deleted">இந்த நூல் வெற்றிகரமாக நீக்கப்பட்டது.</string>
     <string name="book_moved">இந்த நூல் வெற்றிகரமாக நகர்த்தப்பட்டது.</string>
     <string name="copied">நகலெடுக்கப்பட்டது</string>
-    <string name="history_element_deleted">வரலாற்று உறுப்பு வெற்றிகரமாக நீக்கப்பட்டது.</string>
     <string name="credits_translation">மொழிபெயர்ப்பு</string>
     <string name="credits_contribution">பங்களிப்பு</string>
     <string name="credits_ideas">சிந்தனைகள்</string>
@@ -52,7 +51,6 @@
     <string name="open_reader_settings_content_desc">வாசகர் அமைப்புகள்</string>
     <string name="checkbox_content_desc">தேர்வுப்பெட்டி</string>
     <string name="library_content_desc">உங்கள் நூலகம்</string>
-    <string name="delete_history_element_content_desc">வரலாற்று உறுப்பை நீக்கு</string>
     <string name="reading_speed_reader_settings">வாசிப்பு விரைவு</string>
     <string name="system_reader_settings">மண்டலம்</string>
     <string name="language_option">பயன்பாட்டு மொழி</string>
@@ -83,7 +81,6 @@
     <string name="layout_option">காட்சி முறை</string>
     <string name="sort_order_file_format">கோப்பு வடிவம்</string>
     <string name="default_string">இயல்புநிலை</string>
-    <string name="delete_history">வாசிப்பு வரலாற்றை நீக்கவா?</string>
     <string name="error_no_description">விளக்கம் இல்லை.</string>
     <string name="selected_items_count_query">%1$s தேர்ந்தெடுக்கப்பட்டன</string>
     <string name="undo">செயல்தவிர்</string>
@@ -151,7 +148,6 @@
     <string name="delete_book">புத்தகத்தை நீக்கவா?</string>
     <string name="add_books_description">நீங்கள் எந்த புத்தகங்களைச் சேர்க்க விரும்புகிறீர்கள் என்பதை நீங்கள் தேர்வு செய்யலாம். புத்தகத்தின் தலைப்பு மற்றும் படத்தை பின்னர் திருத்தலாம். ஏற்றுதல் செயல்முறை பல நிமிடங்கள் வரை ஆகலாம்.</string>
     <string name="delete_books_description">இது தரவுத்தளத்திலிருந்து தேர்ந்தெடுக்கப்பட்ட அனைத்து புத்தகங்களையும் (%1$s) நீக்கிவிடும். இது உங்கள் சாதனத்திலிருந்து தேர்ந்தெடுக்கப்பட்ட புத்தகங்களை நீக்காது.</string>
-    <string name="delete_history_description">இது முழு வரலாற்றையும் தரவுத்தளத்திலிருந்து நீக்குகிறது. முழு வரலாற்றையும் நீக்கிய பிறகு, புத்தகங்களின் வரிசை மீட்டமைக்கப்படும்.</string>
     <string name="delete_book_description">இது இந்த புத்தகத்தை தரவுத்தளத்திலிருந்து நீக்கிவிடும். இது உங்கள் சாதனத்திலிருந்து இந்த புத்தகத்தை நீக்காது.</string>
     <string name="error_no_translator">மொழிபெயர்ப்பாளர் பயன்பாடு எதுவும் கிடைக்கவில்லை.</string>
     <string name="error_no_share_app">பகிர்வதற்கு பயன்பாடு இல்லை.</string>
@@ -209,7 +205,6 @@
     <string name="aqua_theme">யுரேனச்</string>
     <string name="press_again_toast">வெளியேற மீண்டும் அழுத்தவும்</string>
     <string name="books_added">தேர்ந்தெடுக்கப்பட்ட அனைத்து புத்தகங்களும் வெற்றிகரமாக சேர்க்கப்பட்டன.</string>
-    <string name="history_deleted">வரலாறு வெற்றிகரமாக நீக்கப்பட்டது.</string>
     <string name="cover_reset">கவர் படம் வெற்றிகரமாக மீட்டமைக்கப்பட்டது.</string>
     <string name="file_path">கோப்பு பாதை</string>
     <string name="file_last_opened">கோப்பு கடைசியாக திறக்கப்பட்டது</string>
@@ -231,7 +226,6 @@
     <string name="search_content_desc">தேடல்</string>
     <string name="clear_selected_items_content_desc">தேர்ந்தெடுக்கப்பட்ட உருப்படிகளை அழிக்கவும்</string>
     <string name="add_files_content_desc">கோப்புகளைச் சேர்</string>
-    <string name="delete_whole_history_content_desc">முழு வரலாற்றையும் நீக்கு</string>
     <string name="move_books_content_desc">தேர்ந்தெடுக்கப்பட்ட புத்தகங்களை நகர்த்தவும்</string>
     <string name="delete_books_content_desc">தேர்ந்தெடுக்கப்பட்ட புத்தகங்களை நீக்கு</string>
     <string name="revert_content_desc">மாற்றியமைக்கவும்</string>

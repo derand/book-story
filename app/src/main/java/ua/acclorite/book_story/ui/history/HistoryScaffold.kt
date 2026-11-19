@@ -15,21 +15,19 @@ import androidx.compose.material3.pulltorefresh.PullToRefreshState
 import androidx.compose.material3.pulltorefresh.pullToRefresh
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import ua.acclorite.book_story.presentation.history.HistoryEvent
 import ua.acclorite.book_story.presentation.history.HistoryState
 import ua.acclorite.book_story.ui.common.components.common.ListRefreshIndicator
-import ua.acclorite.book_story.ui.common.components.common.Snackbar
+import ua.acclorite.book_story.ui.common.helpers.LocalSettings
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HistoryScaffold(
     state: HistoryState,
     refreshState: PullToRefreshState,
-    snackbarState: SnackbarHostState,
     listState: LazyListState,
     canScrollBackward: Boolean,
     focusRequester: FocusRequester,
@@ -53,9 +51,6 @@ fun HistoryScaffold(
                 focusRequester = focusRequester,
                 onEvent = onEvent
             )
-        },
-        bottomBar = {
-            Snackbar(snackbarState = snackbarState)
         }
     ) { paddingValues ->
         Box(
@@ -63,22 +58,28 @@ fun HistoryScaffold(
                 .fillMaxSize()
                 .padding(top = paddingValues.calculateTopPadding())
         ) {
-            HistoryLayout(
-                statistics = state.statistics,
-                onEvent = onEvent,
-                listState = listState,
-                history = state.history,
-                isLoading = state.isLoading,
-                isRefreshing = state.isRefreshing,
-            )
+            // History is read from the statistics, so with collection off it
+            // would quietly stop growing; say so instead, with the way there.
+            if (!LocalSettings.current.collectStatistics.value) {
+                HistoryStatisticsOffPlaceholder(onEvent = onEvent)
+            } else {
+                HistoryLayout(
+                    statistics = state.statistics,
+                    onEvent = onEvent,
+                    listState = listState,
+                    history = state.history,
+                    isLoading = state.isLoading,
+                    isRefreshing = state.isRefreshing,
+                )
 
-            HistoryEmptyPlaceholder(
-                isLoading = state.isLoading,
-                isRefreshing = state.isRefreshing,
-                isHistoryEmpty = state.history.isEmpty(),
-                loadFailed = state.loadFailed,
-                onEvent = onEvent
-            )
+                HistoryEmptyPlaceholder(
+                    isLoading = state.isLoading,
+                    isRefreshing = state.isRefreshing,
+                    isHistoryEmpty = state.history.isEmpty(),
+                    loadFailed = state.loadFailed,
+                    onEvent = onEvent
+                )
+            }
 
             ListRefreshIndicator(state = refreshState, isRefreshing = state.isRefreshing)
         }

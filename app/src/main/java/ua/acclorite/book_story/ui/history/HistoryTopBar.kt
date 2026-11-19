@@ -9,7 +9,6 @@ package ua.acclorite.book_story.ui.history
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.outlined.DeleteSweep
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -58,18 +57,6 @@ fun HistoryTopBar(
                         disableOnClick = true,
                     ) {
                         onEvent(HistoryEvent.OnSearchVisibility(true))
-                    }
-                    IconButton(
-                        icon = Icons.Outlined.DeleteSweep,
-                        contentDescription = R.string.delete_whole_history_content_desc,
-                        disableOnClick = false,
-                        enabled = !state.isLoading
-                                && !state.isRefreshing
-                                && state.history.isNotEmpty()
-                    ) {
-                        onEvent(
-                            HistoryEvent.OnShowDeleteWholeHistoryDialog
-                        )
                     }
                     NavigatorIconButton()
                 }

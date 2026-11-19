@@ -12,11 +12,13 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
+import kotlinx.coroutines.flow.Flow
 import ua.acclorite.book_story.data.local.dto.ReadBookEntity
 import ua.acclorite.book_story.data.local.dto.ReadingCoverageEntity
 import ua.acclorite.book_story.data.local.dto.ReadingSessionEntity
 import ua.acclorite.book_story.data.local.dto.SessionPace
 import ua.acclorite.book_story.data.local.dto.SessionSpan
+import ua.acclorite.book_story.data.local.dto.SessionWithBook
 
 @Dao
 interface StatisticsDao {
@@ -52,6 +54,15 @@ interface StatisticsDao {
             author = author
         )
     }
+
+    /**
+     * Every session of a book still in the database, with that book, again
+     * after any write to either table. The sessions of a deleted book are
+     * unlinked and so left out, as that book's history goes with it.
+     */
+    @Transaction
+    @Query("SELECT * FROM ReadingSessionEntity WHERE bookId IS NOT NULL")
+    fun observeSessionsWithBook(): Flow<List<SessionWithBook>>
 
     /**
      * Unlinks a deleted book's sessions instead of deleting them. The per-book

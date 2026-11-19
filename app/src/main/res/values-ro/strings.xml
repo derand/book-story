@@ -65,11 +65,9 @@
     <string name="add_books">Adăugați cărțile?</string>
     <string name="color_tab">Culori</string>
     <string name="add_books_description">Puteți alege ce cărți doriți să adăugați. Puteți edita titlul și imaginea de copertă a cărții mai târziu. Procesul de încărcare poate dura până la câteva minute.</string>
-    <string name="delete_history_description">Va șterge întregul istoric din baza de date. După ștergerea întregului istoric, ordinea cărților va fi resetată.</string>
     <string name="error_something_went_wrong">A intervenit o problemă.</string>
     <string name="done">Gata</string>
     <string name="delete_books_description">Va șterge toate cărțile selectate (%1$s) din baza de date. Nu va șterge cărțile selectate de pe dispozitivul dvs.</string>
-    <string name="delete_history">Ștergeți istoricul lecturilor?</string>
     <string name="unknown_author">Necunoscut</string>
     <string name="ok">Ok</string>
     <string name="change_cover">Schimbă imaginea de copertă</string>
@@ -160,7 +158,6 @@
     <string name="font_color_option">Culoarea fontului</string>
     <string name="alignment_justify">Margini</string>
     <string name="font_family_option">Familia de fonturi</string>
-    <string name="delete_whole_history_content_desc">Șterge întregul istoric</string>
     <string name="reader_tab">Cititor</string>
     <string name="double_click_translation_option">Dublu clic pentru traducere</string>
     <string name="cancel">Anulare</string>

@@ -14,10 +14,8 @@
     <string name="add_books">إضافة الكُتب؟</string>
     <string name="delete_books">حذف الكُتب؟</string>
     <string name="delete_book">حذف الكتاب؟</string>
-    <string name="delete_history">حذف تاريخ القراءة؟</string>
     <string name="delete_books_description">هذا سيحذف جميع الكُتب (%1$s) المُحدّدة من قاعدة البيانات. هذا لن يحذف الكُتب المُحدّدة مِن جهازك.</string>
     <string name="delete_book_description">هذا سيحذف هذا الكتاب من قاعدة البيانات. هذا لن يحذف الكتاب من جهازك.</string>
-    <string name="delete_history_description">هذا سيحذف التاريخ بأكمله من قاعدة البيانات. بعد حذف التاريخ بأكمله، سيتم إعادة ضبط ترتيب الكُتب.</string>
     <string name="error_something_went_wrong">حدث خطأ ما.</string>
     <string name="error_no_translator">لم يتم العثور على تطبيق ترجمة.</string>
     <string name="error_no_browser">لم يتم العثور على متصفح.</string>
@@ -105,7 +103,6 @@
     <string name="books_deleted">حُذفت جميع الكُتب المُحدّدة بنجاح.</string>
     <string name="copied">تم النسخ</string>
     <string name="cover_image_deleted">تم حذف صورة الغلاف بنجاح.</string>
-    <string name="history_deleted">حُذف التاريخ بنجاح.</string>
     <string name="cover_reset">تم إعادة تعيين صورة الغلاف بنجاح.</string>
     <string name="theme_contrast_high">عالي</string>
     <string name="grid_size_auto">اوتوماتيكي</string>
@@ -122,7 +119,6 @@
     <string name="books_moved">نُقلت جميع الكُتب المُحدّدة بنجاح.</string>
     <string name="books_added">أُضيفت جميع الكُتب المُحدّدة بنجاح.</string>
     <string name="font_style_normal">عادي</string>
-    <string name="history_element_deleted">تم محو عناصر التاريخ بنجاح.</string>
     <string name="file_size">الحجم</string>
     <string name="unknown">غير معروف</string>
     <string name="grid_size_option">حجم الشبكة</string>
@@ -250,10 +246,8 @@
     <string name="perception_expander_option">موسّع الإدراك</string>
     <string name="show_less_content_desc">اعرض أقل</string>
     <string name="show_more_content_desc">اعرض المزيد</string>
-    <string name="delete_whole_history_content_desc">احذف التاريخ بأكمله</string>
     <string name="perception_expander_padding_option">هامش جانب الخط</string>
     <string name="start_done_desc">لقد نجحت بإنجاز الإعدادات الأساسية للتطبيق. هل ترغب في معرفة كيفية استخدام التطبيق من خلال قراءة شاشة المساعدة؟</string>
-    <string name="delete_history_element_content_desc">احذف عنصر التاريخ</string>
     <string name="cover_image_content_desc">غلاف الصورة</string>
     <string name="start_theme_preferences">تفضيلات السمة</string>
     <string name="start_reading">ابدأ</string>
