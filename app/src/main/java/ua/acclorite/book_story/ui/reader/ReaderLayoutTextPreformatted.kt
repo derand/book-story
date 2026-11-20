@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.LineBreak
@@ -60,20 +59,14 @@ fun LazyItemScope.ReaderLayoutTextPreformatted(
     ) {
         preformatted.lines.forEachIndexed { part, line ->
             StyledText(
-                text = remember(
-                    line, openNote, part, searchMatches, currentSearchMatch, look.fontColor
-                ) {
-                    line
-                        .withReferenceListeners { tag ->
-                            openNote(ReaderEvent.OnOpenNote(tag))
-                        }
-                        .withSearchHighlights(
-                            matches = searchMatches,
-                            current = currentSearchMatch,
-                            fontColor = look.fontColor,
-                            part = part
-                        )
-                },
+                text = rememberRenderedLine(
+                    line = line,
+                    searchMatches = searchMatches,
+                    currentSearchMatch = currentSearchMatch,
+                    fontColor = look.fontColor,
+                    openNote = openNote,
+                    part = part
+                ),
                 style = TextStyle(
                     fontFamily = MonospaceFontFamily,
                     fontWeight = look.fontThickness.thickness,

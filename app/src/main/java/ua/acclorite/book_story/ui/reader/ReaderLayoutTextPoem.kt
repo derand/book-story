@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
@@ -63,20 +62,14 @@ fun LazyItemScope.ReaderLayoutTextPoem(
         ) {
             poem.lines.forEachIndexed { part, line ->
                 StyledText(
-                    text = remember(
-                        line.line, openNote, part, searchMatches, currentSearchMatch, look.fontColor
-                    ) {
-                        line.line
-                            .withReferenceListeners { tag ->
-                                openNote(ReaderEvent.OnOpenNote(tag))
-                            }
-                            .withSearchHighlights(
-                                matches = searchMatches,
-                                current = currentSearchMatch,
-                                fontColor = look.fontColor,
-                                part = part
-                            )
-                    },
+                    text = rememberRenderedLine(
+                        line = line.line,
+                        searchMatches = searchMatches,
+                        currentSearchMatch = currentSearchMatch,
+                        fontColor = look.fontColor,
+                        openNote = openNote,
+                        part = part
+                    ),
                     modifier = Modifier
                         .padding(
                             start = BLOCK_INDENT_STEP * line.role.indentSteps +
