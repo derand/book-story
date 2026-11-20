@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import ua.acclorite.book_story.domain.model.reader.ReaderText.Table
 import ua.acclorite.book_story.domain.model.reader.TableAlignment
 import ua.acclorite.book_story.domain.model.reader.SearchMatch
+import ua.acclorite.book_story.presentation.reader.ReaderEvent
 import ua.acclorite.book_story.ui.common.components.common.StyledText
 import kotlin.math.ceil
 import ua.acclorite.book_story.ui.reader.model.ReaderTextLook
@@ -53,6 +54,7 @@ fun LazyItemScope.ReaderLayoutTextTable(
     currentSearchMatch: SearchMatch?,
     table: Table,
     look: ReaderTextLook,
+    openNote: (ReaderEvent.OnOpenNote) -> Unit
 ) {
     val lineColor = look.fontColor.copy(alpha = 0.4f)
     val columns = table.rows.maxOfOrNull { it.size } ?: 0
@@ -119,15 +121,19 @@ fun LazyItemScope.ReaderLayoutTextTable(
 
                     repeat(columns) { columnIndex ->
                         StyledText(
-                            text = (row.getOrNull(columnIndex) ?: AnnotatedString(""))
-                                .withSearchHighlights(
-                                    matches = searchMatches,
-                                    current = currentSearchMatch,
-                                    fontColor = look.fontColor,
-                                    // The same numbering [forEachCell] hands the
-                                    // scanner: a position in the drawn grid.
-                                    part = rowIndex * columns + columnIndex
-                                ),
+                            // Note references get their listener here, as in
+                            // every other entry; a cell has no justified lines,
+                            // so the text's own link handling hits right.
+                            text = rememberRenderedLine(
+                                line = row.getOrNull(columnIndex) ?: AnnotatedString(""),
+                                searchMatches = searchMatches,
+                                currentSearchMatch = currentSearchMatch,
+                                fontColor = look.fontColor,
+                                openNote = openNote,
+                                // The same numbering [forEachCell] hands the
+                                // scanner: a position in the drawn grid.
+                                part = rowIndex * columns + columnIndex
+                            ),
                             modifier = Modifier
                                 .width(with(density) { columnWidths[columnIndex].toDp() })
                                 .padding(CELL_PADDING),

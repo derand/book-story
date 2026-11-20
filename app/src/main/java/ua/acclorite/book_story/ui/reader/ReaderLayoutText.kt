@@ -54,6 +54,7 @@ fun LazyItemScope.ReaderLayoutText(
                 currentSearchMatch = currentSearchMatch,
                 table = entry,
                 look = look,
+                openNote = openNote
             )
         }
 
