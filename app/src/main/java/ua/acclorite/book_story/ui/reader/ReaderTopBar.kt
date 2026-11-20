@@ -28,6 +28,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ua.acclorite.book_story.R
@@ -38,7 +39,6 @@ import ua.acclorite.book_story.presentation.reader.model.ReaderSearch
 import ua.acclorite.book_story.presentation.settings.SettingsEvent
 import ua.acclorite.book_story.ui.common.components.common.IconButton
 import ua.acclorite.book_story.ui.common.components.common.StyledText
-import ua.acclorite.book_story.ui.common.helpers.LocalActivity
 import ua.acclorite.book_story.ui.common.helpers.noRippleClickable
 import ua.acclorite.book_story.ui.theme.readerBarsColor
 
@@ -64,7 +64,6 @@ fun ReaderTopBar(
     navigateToBookInfo: (ReaderEvent.OnNavigateToBookInfo) -> Unit,
     navigateBack: (ReaderEvent.OnNavigateBack) -> Unit
 ) {
-    val activity = LocalActivity.current
     val animatedChapterProgress = animateFloatAsState(
         targetValue = currentChapterProgress
     )
@@ -144,7 +143,7 @@ fun ReaderTopBar(
             subtitle = {
                 StyledText(
                     text = currentChapter?.title
-                        ?: activity.getString(R.string.no_chapters),
+                        ?: stringResource(R.string.no_chapters),
                     modifier = Modifier.basicMarquee(iterations = Int.MAX_VALUE),
                     style = MaterialTheme.typography.bodyLarge.copy(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
