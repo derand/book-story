@@ -14,10 +14,8 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.text.withStyle
 import kotlin.math.roundToInt
 
 @Composable
@@ -32,33 +30,7 @@ fun HighlightedText(
     onTextLayout: ((TextLayoutResult) -> Unit)? = null
 ) {
     val highlightedText = remember(text, highlightThickness) {
-        buildAnnotatedString {
-            text.splitAnnotatedString().forEach { word ->
-                if (word.text.none { it.isLetter() }) {
-                    append(word)
-                    append(" ")
-                    return@forEach
-                }
-
-                val textWord = word.text.filterDigitsAtStartAndEnd()
-                val digitsAtStart = word.text.digitsAtStart()
-                val highlightArea = when (textWord.length) {
-                    3 -> 1
-                    else -> (textWord.length * 0.5f).roundToInt()
-                } + digitsAtStart
-
-                if (digitsAtStart > 0) {
-                    append(word.subSequence(0, digitsAtStart))
-                }
-
-                withStyle(style = SpanStyle(fontWeight = highlightThickness)) {
-                    append(word.subSequence(digitsAtStart, highlightArea))
-                }
-
-                append(word.subSequence(highlightArea, word.text.length))
-                append(" ")
-            }
-        }
+        text.withHighlightedReading(highlightThickness)
     }
 
     BasicText(
@@ -72,30 +44,52 @@ fun HighlightedText(
     )
 }
 
-private fun String.digitsAtStart(): Int {
-    var count = 0
-    for (char in this) {
-        if (!char.isLetter()) count++
-        else break
-    }
-    return count
+/**
+ * [highlightThickness] laid over the first part of every word ([highlightedReadingRanges]).
+ *
+ * Only styles are added: the text, and so every offset in it, stays exactly
+ * as given. Callers hit-test links against their own string with the layout
+ * of this one, and whitespace runs are kept by the parser on purpose.
+ *
+ * The highlight goes in *before* the text's own spans, so a word that is
+ * already bold (or any other weight) keeps its own.
+ */
+internal fun AnnotatedString.withHighlightedReading(
+    highlightThickness: FontWeight
+): AnnotatedString {
+    val ranges = highlightedReadingRanges(text)
+    if (ranges.isEmpty()) return this
+
+    return AnnotatedString.Builder(length).apply {
+        ranges.forEach { range ->
+            addStyle(SpanStyle(fontWeight = highlightThickness), range.first, range.last + 1)
+        }
+        append(this@withHighlightedReading)
+    }.toAnnotatedString()
 }
 
-private fun String.filterDigitsAtStartAndEnd(): String {
-    return dropWhile { !it.isLetter() }.dropLastWhile { !it.isLetter() }
-}
+/**
+ * The part of each word that highlighted reading makes heavier: for a word
+ * of three letters one letter, otherwise half of them, rounded. Characters
+ * that are not letters at either end of the word (quotes, digits,
+ * punctuation) are not counted, and those at the start are skipped over.
+ * A word with no letters at all gets nothing.
+ */
+internal fun highlightedReadingRanges(text: String): List<IntRange> =
+    WORD.findAll(text).mapNotNull { match ->
+        val word = match.value
+        val leading = word.indexOfFirst { it.isLetter() }
+        if (leading < 0) return@mapNotNull null
 
-private fun AnnotatedString.splitAnnotatedString(): List<AnnotatedString> {
-    val result = mutableListOf<AnnotatedString>()
+        val letters = word.indexOfLast { it.isLetter() } + 1 - leading
+        val highlighted = when (letters) {
+            3 -> 1
+            else -> (letters * 0.5f).roundToInt()
+        }
+        if (highlighted == 0) return@mapNotNull null
 
-    val wordRegex = Regex("\\S+")
-    wordRegex.findAll(this).forEach { matchResult ->
-        val wordStart = matchResult.range.first
-        val wordEnd = matchResult.range.last + 1
+        val start = match.range.first + leading
+        start until start + highlighted
+    }.toList()
 
-        val word = subSequence(wordStart, wordEnd)
-        result.add(word)
-    }
-
-    return result
-}
+private val WORD = Regex("\\S+")
