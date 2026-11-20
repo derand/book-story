@@ -10,8 +10,6 @@ package ua.acclorite.book_story.data.parser
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
-import kotlinx.coroutines.runBlocking
-import org.jsoup.Jsoup
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -106,9 +104,7 @@ class HtmlInlineTagsTest {
     }
 
     /** The first line becomes the chapter title, so the body starts at the second. */
-    private fun paragraphs(body: String): List<ReaderText.Text> = runBlocking {
-        documentParser
-            .parseDocument(Jsoup.parse("<html><body><p>Розділ</p>$body</body></html>"))
-            .filterIsInstance<ReaderText.Text>()
-    }
+    private fun paragraphs(body: String): List<ReaderText.Text> = documentParser
+        .parseHtmlBody("<p>Розділ</p>$body")
+        .filterIsInstance<ReaderText.Text>()
 }

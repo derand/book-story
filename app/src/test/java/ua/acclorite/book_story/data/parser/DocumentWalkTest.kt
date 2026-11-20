@@ -10,8 +10,6 @@ package ua.acclorite.book_story.data.parser
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import kotlinx.coroutines.runBlocking
-import org.jsoup.Jsoup
-import org.jsoup.parser.Parser
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -215,10 +213,8 @@ class DocumentWalkTest {
 
     @Test
     fun anEmptyLineInANoteIsAGapNotText() = runBlocking {
-        val section = Jsoup.parse(
-            """<section id="n1"><title><p>1</p></title><p>One.</p><empty-line/><p>Two.</p></section>""",
-            "",
-            Parser.xmlParser()
+        val section = fb2Document(
+            """<section id="n1"><title><p>1</p></title><p>One.</p><empty-line/><p>Two.</p></section>"""
         ).selectFirst("section")!!
 
         assertEquals("One.\n\nTwo.", documentParser.parseNote(section).text)
@@ -230,18 +226,9 @@ class DocumentWalkTest {
         filterIsInstance<ReaderText.Text>().map { it.line.text }
 
     /** An HTML document; unless [title] is false, a first line takes the chapter title. */
-    private fun html(body: String, title: Boolean = true): List<ReaderText> = runBlocking {
-        val prefix = if (title) "<p>Chapter</p>" else ""
-        documentParser.parseDocument(
-            Jsoup.parse("<html><body>$prefix$body</body></html>", "", Parser.htmlParser())
-        )
-    }
+    private fun html(body: String, title: Boolean = true): List<ReaderText> =
+        documentParser.parseHtmlBody(if (title) "<p>Chapter</p>$body" else body)
 
     /** An EPUB content document: read as XML, its chapter comes from the TOC. */
-    private fun xhtml(body: String): List<ReaderText> = runBlocking {
-        documentParser.parseDocument(
-            Jsoup.parse("<html><body>$body</body></html>", "", Parser.xmlParser()),
-            includeChapter = false
-        )
-    }
+    private fun xhtml(body: String): List<ReaderText> = documentParser.parseXhtmlBody(body)
 }

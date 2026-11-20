@@ -6,10 +6,7 @@
 
 package ua.acclorite.book_story.data.parser
 
-import kotlinx.coroutines.runBlocking
 import org.commonmark.parser.Parser as CommonmarkParser
-import org.jsoup.Jsoup
-import org.jsoup.parser.Parser
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -203,14 +200,8 @@ class TableAlignmentParsingTest {
      * all, so the table always travels with a line of text on either side —
      * the first becomes the chapter, the second a paragraph.
      */
-    private fun parse(body: String): ReaderText.Table = runBlocking {
-        val document = Jsoup.parse(
-            "<FictionBook><body>\nЗаголовок тесту.\n\n$body\n\nТекст після.\n</body></FictionBook>",
-            "",
-            Parser.xmlParser()
-        )
-        documentParser.parseDocument(document)
-            .filterIsInstance<ReaderText.Table>()
-            .single()
-    }
+    private fun parse(body: String): ReaderText.Table = documentParser
+        .parseFb2Body("\nЗаголовок тесту.\n\n$body\n\nТекст після.\n")
+        .filterIsInstance<ReaderText.Table>()
+        .single()
 }

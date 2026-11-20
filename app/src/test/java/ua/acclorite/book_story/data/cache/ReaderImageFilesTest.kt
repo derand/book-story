@@ -7,8 +7,6 @@
 package ua.acclorite.book_story.data.cache
 
 import android.app.Application
-import androidx.test.core.app.ApplicationProvider
-import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.After
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
@@ -19,10 +17,12 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.RuntimeEnvironment
 import java.io.File
 
 /** Checks for the transient per-session store behind the reader's images. */
-@RunWith(AndroidJUnit4::class)
+@RunWith(RobolectricTestRunner::class)
 class ReaderImageFilesTest {
 
     private lateinit var app: Application
@@ -31,7 +31,7 @@ class ReaderImageFilesTest {
 
     @Before
     fun setUp() {
-        app = ApplicationProvider.getApplicationContext()
+        app = RuntimeEnvironment.getApplication()
         root = File(app.cacheDir, "reader_images")
         root.deleteRecursively()
         files = ReaderImageFiles(app)

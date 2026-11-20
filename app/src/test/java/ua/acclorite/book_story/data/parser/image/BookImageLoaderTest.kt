@@ -10,22 +10,27 @@ package ua.acclorite.book_story.data.parser.image
 import android.app.Application
 import android.net.Uri
 import android.util.Base64
-import androidx.test.core.app.ApplicationProvider
-import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.RuntimeEnvironment
 import ua.acclorite.book_story.data.model.file.CachedFile
 import ua.acclorite.book_story.data.model.file.CachedFileBuilder
 import java.io.File
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
-@RunWith(AndroidJUnit4::class)
+@RunWith(RobolectricTestRunner::class)
 class BookImageLoaderTest {
+
+    @get:Rule
+    val temp = TemporaryFolder()
 
     private lateinit var app: Application
     private lateinit var dir: File
@@ -37,11 +42,8 @@ class BookImageLoaderTest {
 
     @Before
     fun setUp() {
-        app = ApplicationProvider.getApplicationContext()
-        dir = File(app.cacheDir, "image-loader-test").apply {
-            deleteRecursively()
-            mkdirs()
-        }
+        app = RuntimeEnvironment.getApplication()
+        dir = temp.root
         loader = BookImageLoader()
     }
 
@@ -142,6 +144,9 @@ class BookImageLoaderTest {
             zip.putNextEntry(ZipEntry("OEBPS/images/page1.png"))
             zip.write(page)
             zip.closeEntry()
+            zip.putNextEntry(ZipEntry("OEBPS/thumbs/cover.jpg"))
+            zip.write(extra)
+            zip.closeEntry()
         }
 
         val loaded = loadAll(
@@ -149,7 +154,8 @@ class BookImageLoaderTest {
             setOf("OEBPS/images/cover.jpg", "OEBPS/images/page1.png", "cover.jpg")
         ).toMap()
 
-        // A bare basename is no longer a key: two folders may hold the same name
+        // A bare name that two folders hold is never guessed (a unique one is
+        // found, so that broken relative paths still work: EpubPackage.entry)
         assertEquals(setOf("OEBPS/images/cover.jpg", "OEBPS/images/page1.png"), loaded.keys)
         assertArrayEquals(cover, loaded["OEBPS/images/cover.jpg"])
         assertArrayEquals(page, loaded["OEBPS/images/page1.png"])

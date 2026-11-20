@@ -45,12 +45,6 @@ class EpubTextParserTest {
         DocumentParser()
     )
 
-    /** A 3x2 PNG. */
-    private val png = java.util.Base64.getDecoder().decode(
-        "iVBORw0KGgoAAAANSUhEUgAAAAMAAAACCAIAAAASFvFNAAAAEElEQVR4nGP4" +
-                "z8AAQQxwFgBB0gX7h/C5SAAAAABJRU5ErkJggg=="
-    )
-
     // --- the snapshot ---
 
     @Test
@@ -172,7 +166,7 @@ class EpubTextParserTest {
             "OEBPS/content.opf" to opf("one.xhtml"),
             "OEBPS/toc.ncx" to ncx(navPoint("Розділ", "one.xhtml")),
             "OEBPS/one.xhtml" to xhtml("<p>текст</p><img src=\"Images/pic50%.png\"/>"),
-            "OEBPS/Images/pic50%.png" to png
+            "OEBPS/Images/pic50%.png" to TINY_PNG
         )
 
         val text = parse(book).text
@@ -201,7 +195,7 @@ class EpubTextParserTest {
             "OEBPS/content.opf" to opf("c++.xhtml"),
             "OEBPS/toc.ncx" to ncx(navPoint("Розділ", "c++.xhtml")),
             "OEBPS/c++.xhtml" to xhtml("<p>текст</p><img src=\"a+b.png\"/>"),
-            "OEBPS/a+b.png" to png
+            "OEBPS/a+b.png" to TINY_PNG
         )
 
         val text = parse(book).text
@@ -228,7 +222,7 @@ class EpubTextParserTest {
             "OEBPS/content.opf" to opf("%C3%89tude.xhtml"),
             "OEBPS/toc.ncx" to ncx(navPoint("Розділ", "%C3%89tude.xhtml")),
             "OEBPS/Étude.xhtml" to xhtml("<p>текст</p><img src=\"%C3%89.png\"/>"),
-            "OEBPS/É.png" to png
+            "OEBPS/É.png" to TINY_PNG
         )
 
         val text = parse(book).text
@@ -257,7 +251,7 @@ class EpubTextParserTest {
             "META-INF/container.xml" to container("OPS/package/content.opf"),
             "OPS/package/content.opf" to opf("../text/one.xhtml"),
             "OPS/text/one.xhtml" to xhtml("<p>Розділ</p><p>текст</p><img src=\"../img/a.png\"/>"),
-            "OPS/img/a.png" to png
+            "OPS/img/a.png" to TINY_PNG
         )
 
         val text = parse(book).text
@@ -275,9 +269,9 @@ class EpubTextParserTest {
                 navPoint("Друга частина", "b/ch1.xhtml")
             ),
             "OEBPS/a/ch1.xhtml" to xhtml("<p>текст а</p><img src=\"pic.png\"/>"),
-            "OEBPS/a/pic.png" to png,
+            "OEBPS/a/pic.png" to TINY_PNG,
             "OEBPS/b/ch1.xhtml" to xhtml("<p>текст б</p><img src=\"pic.png\"/>"),
-            "OEBPS/b/pic.png" to png
+            "OEBPS/b/pic.png" to TINY_PNG
         )
 
         val text = parse(book).text
@@ -296,7 +290,7 @@ class EpubTextParserTest {
             "OEBPS/content.opf" to opf("one.xhtml"),
             "OEBPS/toc.ncx" to ncx(navPoint("Розділ", "one.xhtml")),
             "OEBPS/one.xhtml" to xhtml("<p>текст</p><img src=\"../Images/cover.png\"/>"),
-            "OEBPS/Images/cover.png" to png
+            "OEBPS/Images/cover.png" to TINY_PNG
         )
 
         assertEquals(
@@ -311,8 +305,8 @@ class EpubTextParserTest {
             "OEBPS/content.opf" to opf("one.xhtml"),
             "OEBPS/toc.ncx" to ncx(navPoint("Розділ", "one.xhtml")),
             "OEBPS/one.xhtml" to xhtml("<p>текст</p><img src=\"../x/pic.png\"/>"),
-            "OEBPS/a/pic.png" to png,
-            "OEBPS/b/pic.png" to png
+            "OEBPS/a/pic.png" to TINY_PNG,
+            "OEBPS/b/pic.png" to TINY_PNG
         )
 
         assertTrue(parse(book).text.none { it is ReaderText.Image })
@@ -548,7 +542,7 @@ class EpubTextParserTest {
                 navPoint("Розділ", "one.xhtml")
             ),
             "OEBPS/cover.xhtml" to xhtml("<div><img src=\"Images/cover.png\"/></div>"),
-            "OEBPS/Images/cover.png" to png,
+            "OEBPS/Images/cover.png" to TINY_PNG,
             "OEBPS/one.xhtml" to xhtml("<p>текст</p>")
         )
 
@@ -567,7 +561,7 @@ class EpubTextParserTest {
         val book = epub(
             "OEBPS/content.opf" to opf("cover.xhtml", "one.xhtml"),
             "OEBPS/cover.xhtml" to xhtml("<div><img src=\"cover.png\"/></div>"),
-            "OEBPS/cover.png" to png,
+            "OEBPS/cover.png" to TINY_PNG,
             "OEBPS/one.xhtml" to xhtml("<p>Розділ</p><p>текст</p>")
         )
 
