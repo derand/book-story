@@ -12,7 +12,15 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.unit.dp
 import ua.acclorite.book_story.presentation.settings.SettingsEvent
+
+/**
+ * How far a horizontal swipe has to travel to switch the colour preset. In dp,
+ * so it is the same distance on every screen: 200 px on the 1.5x tablet it
+ * was first set on.
+ */
+private val SWITCH_THRESHOLD = 133.dp
 
 @Composable
 fun Modifier.readerColorPresetChange(
@@ -24,12 +32,13 @@ fun Modifier.readerColorPresetChange(
     return this.then(
         if (colorPresetChangeEnabled && !isLoading) {
             Modifier.pointerInput(Unit) {
+                val threshold = SWITCH_THRESHOLD.toPx()
                 detectHorizontalDragGestures(
                     onDragStart = { offset.floatValue = 0f },
                     onDragCancel = { offset.floatValue = 0f },
                     onDragEnd = {
                         when {
-                            offset.floatValue > 200 -> {
+                            offset.floatValue > threshold -> {
                                 switchColorPreset(
                                     SettingsEvent.OnSwitchColorPreset(
                                         previous = true
@@ -37,7 +46,7 @@ fun Modifier.readerColorPresetChange(
                                 )
                             }
 
-                            offset.floatValue < -200 -> {
+                            offset.floatValue < -threshold -> {
                                 switchColorPreset(
                                     SettingsEvent.OnSwitchColorPreset(
                                         previous = false

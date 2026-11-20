@@ -7,11 +7,21 @@
 
 package ua.acclorite.book_story.ui.reader
 
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.UriHandler
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.unit.dp
+import ua.acclorite.book_story.domain.model.reader.SearchMatch
+import ua.acclorite.book_story.presentation.reader.ReaderEvent
 
 /**
  * Positional hit-test for reference/link annotations: the link (if any) whose
@@ -74,6 +84,69 @@ internal fun AnnotatedString.linkAt(
         if (item.actionable) return item
     }
     return null
+}
+
+/**
+ * A single positional handler for every link of [text], because Compose's
+ * per-link touch boxes are misaligned on justified lines (see [linkAt]). It
+ * claims the gesture only when a link is genuinely under the finger; every
+ * other tap is left unconsumed for the reader to read as a zone. [layout] is
+ * the text's latest layout, read when the finger goes down.
+ */
+internal fun Modifier.referenceTaps(
+    text: AnnotatedString,
+    layout: () -> TextLayoutResult?,
+    uriHandler: UriHandler,
+    enabled: Boolean
+): Modifier {
+    if (!enabled) return this
+
+    return pointerInput(text) {
+        // Enlarge the reference hit boxes so the small superscript footnote
+        // markers stay easy to tap.
+        val linkPadding = 12.dp.toPx()
+        awaitEachGesture {
+            val down = awaitFirstDown(requireUnconsumed = true)
+            val result = layout() ?: return@awaitEachGesture
+            if (text.linkAt(result, down.position, linkPadding) == null) {
+                return@awaitEachGesture
+            }
+
+            down.consume()
+            // A press that travelled was going somewhere, not opening
+            // anything: with free scrolling given up nobody consumes that
+            // movement, so the drag would otherwise arrive here as a tap on a
+            // link.
+            val up = awaitPress(down)
+            if (up !is PressOutcome.Tap) return@awaitEachGesture
+            up.change.consume()
+            text.linkAt(result, up.change.position, linkPadding)?.dispatch(uriHandler)
+        }
+    }
+}
+
+/**
+ * One rendered line of an entry: its references wired to [openNote] and the
+ * search highlights of [part] laid over it. Remembered, as both steps copy the
+ * string.
+ */
+@Composable
+internal fun rememberRenderedLine(
+    line: AnnotatedString,
+    searchMatches: List<SearchMatch>,
+    currentSearchMatch: SearchMatch?,
+    fontColor: Color,
+    openNote: (ReaderEvent.OnOpenNote) -> Unit,
+    part: Int = 0
+): AnnotatedString = remember(line, part, searchMatches, currentSearchMatch, fontColor, openNote) {
+    line
+        .withReferenceListeners { tag -> openNote(ReaderEvent.OnOpenNote(tag)) }
+        .withSearchHighlights(
+            matches = searchMatches,
+            current = currentSearchMatch,
+            fontColor = fontColor,
+            part = part
+        )
 }
 
 /** Fires the link: its own listener, or — for a bare URL — the platform's. */

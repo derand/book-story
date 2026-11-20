@@ -12,9 +12,7 @@ import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
@@ -36,7 +34,7 @@ import ua.acclorite.book_story.ui.reader.model.ReaderTextLook
  * to the poem itself no matter how long its lines are.
  */
 @Composable
-fun LazyItemScope.ReaderLayoutTextPoem(
+fun ReaderLayoutTextPoem(
     searchMatches: List<SearchMatch>,
     currentSearchMatch: SearchMatch?,
     poem: Poem,
@@ -49,7 +47,6 @@ fun LazyItemScope.ReaderLayoutTextPoem(
 
     Column(
         modifier = Modifier
-            .animateItem(fadeInSpec = null, fadeOutSpec = null)
             .fillMaxWidth()
             .padding(horizontal = look.sidePadding)
             .padding(start = BLOCK_INDENT_STEP),
@@ -63,20 +60,14 @@ fun LazyItemScope.ReaderLayoutTextPoem(
         ) {
             poem.lines.forEachIndexed { part, line ->
                 StyledText(
-                    text = remember(
-                        line.line, openNote, part, searchMatches, currentSearchMatch, look.fontColor
-                    ) {
-                        line.line
-                            .withReferenceListeners { tag ->
-                                openNote(ReaderEvent.OnOpenNote(tag))
-                            }
-                            .withSearchHighlights(
-                                matches = searchMatches,
-                                current = currentSearchMatch,
-                                fontColor = look.fontColor,
-                                part = part
-                            )
-                    },
+                    text = rememberRenderedLine(
+                        line = line.line,
+                        searchMatches = searchMatches,
+                        currentSearchMatch = currentSearchMatch,
+                        fontColor = look.fontColor,
+                        openNote = openNote,
+                        part = part
+                    ),
                     modifier = Modifier
                         .padding(
                             start = BLOCK_INDENT_STEP * line.role.indentSteps +

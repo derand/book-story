@@ -243,10 +243,7 @@ fun ReaderLayout(
                         .coerceAtLeast(18.dp),
                 )
             ) {
-                itemsIndexed(
-                    text,
-                    key = { index, _ -> index }
-                ) { index, entry ->
+                itemsIndexed(text) { index, entry ->
                     when {
                         !look.images && entry is ReaderText.Image -> return@itemsIndexed
                         else -> {

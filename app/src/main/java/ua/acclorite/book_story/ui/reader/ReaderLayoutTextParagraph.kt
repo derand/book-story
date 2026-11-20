@@ -6,20 +6,16 @@
 
 package ua.acclorite.book_story.ui.reader
 
-import androidx.compose.foundation.gestures.awaitEachGesture
-import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextStyle
@@ -53,7 +49,7 @@ internal val ReaderTextRole.indentSteps: Int
     }
 
 @Composable
-fun LazyItemScope.ReaderLayoutTextParagraph(
+fun ReaderLayoutTextParagraph(
     searchMatches: List<SearchMatch>,
     currentSearchMatch: SearchMatch?,
     paragraph: Text,
@@ -69,26 +65,21 @@ fun LazyItemScope.ReaderLayoutTextParagraph(
 
     // Note/anchor references are parsed as listener-less clickable links;
     // the actual handler is attached here, at render time
-    val line = remember(paragraph.line, openNote, searchMatches, currentSearchMatch, look.fontColor) {
-        paragraph.line
-            .withReferenceListeners { tag ->
-                openNote(ReaderEvent.OnOpenNote(tag))
-            }
-            .withSearchHighlights(
-                matches = searchMatches,
-                current = currentSearchMatch,
-                fontColor = look.fontColor
-            )
-    }
+    val line = rememberRenderedLine(
+        line = paragraph.line,
+        searchMatches = searchMatches,
+        currentSearchMatch = currentSearchMatch,
+        fontColor = look.fontColor,
+        openNote = openNote
+    )
 
     // Captured from the text's layout so taps can be resolved against the
-    // actual (justify-accurate) glyph positions — see [dispatchLinkAt].
+    // actual (justify-accurate) glyph positions — see [referenceTaps].
     var layoutResult by remember { mutableStateOf<TextLayoutResult?>(null) }
     val uriHandler = LocalUriHandler.current
 
     Column(
         modifier = Modifier
-            .animateItem(fadeInSpec = null, fadeOutSpec = null)
             .fillMaxWidth()
             .padding(horizontal = look.sidePadding)
             .padding(start = blockIndent),
@@ -98,37 +89,11 @@ fun LazyItemScope.ReaderLayoutTextParagraph(
         StyledText(
             text = line,
             onTextLayout = { layoutResult = it },
-            modifier = Modifier.then(
-                if (toolbarHidden) {
-                    // A single positional handler for the whole paragraph,
-                    // because Compose's per-link touch boxes are misaligned on
-                    // justified lines. It claims the gesture only when a link
-                    // is genuinely under the finger; every other tap is left
-                    // unconsumed for the reader to read as a zone.
-                    Modifier.pointerInput(line) {
-                        // Enlarge the reference hit boxes so the small
-                        // superscript footnote markers stay easy to tap.
-                        val linkPadding = 12.dp.toPx()
-                        awaitEachGesture {
-                            val down = awaitFirstDown(requireUnconsumed = true)
-                            val layout = layoutResult ?: return@awaitEachGesture
-                            if (line.linkAt(layout, down.position, linkPadding) == null) {
-                                return@awaitEachGesture
-                            }
-
-                            down.consume()
-                            // A press that travelled was going somewhere, not
-                            // opening anything: with free scrolling given up
-                            // nobody consumes that movement, so the drag would
-                            // otherwise arrive here as a tap on a link.
-                            val up = awaitPress(down)
-                            if (up !is PressOutcome.Tap) return@awaitEachGesture
-                            up.change.consume()
-                            line.linkAt(layout, up.change.position, linkPadding)
-                                ?.dispatch(uriHandler)
-                        }
-                    }
-                } else Modifier
+            modifier = Modifier.referenceTaps(
+                text = line,
+                layout = { layoutResult },
+                uriHandler = uriHandler,
+                enabled = toolbarHidden
             ),
             style = TextStyle(
                 fontFamily = look.fontFamily.font,

@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
@@ -35,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import ua.acclorite.book_story.domain.model.reader.ReaderText.Table
 import ua.acclorite.book_story.domain.model.reader.TableAlignment
 import ua.acclorite.book_story.domain.model.reader.SearchMatch
+import ua.acclorite.book_story.presentation.reader.ReaderEvent
 import ua.acclorite.book_story.ui.common.components.common.StyledText
 import kotlin.math.ceil
 import ua.acclorite.book_story.ui.reader.model.ReaderTextLook
@@ -48,11 +48,12 @@ private val LINE_THICKNESS = 1.dp
  * [resolveColumnWidths] — so the table still spans the page width exactly.
  */
 @Composable
-fun LazyItemScope.ReaderLayoutTextTable(
+fun ReaderLayoutTextTable(
     searchMatches: List<SearchMatch>,
     currentSearchMatch: SearchMatch?,
     table: Table,
     look: ReaderTextLook,
+    openNote: (ReaderEvent.OnOpenNote) -> Unit
 ) {
     val lineColor = look.fontColor.copy(alpha = 0.4f)
     val columns = table.rows.maxOfOrNull { it.size } ?: 0
@@ -85,7 +86,6 @@ fun LazyItemScope.ReaderLayoutTextTable(
 
     BoxWithConstraints(
         modifier = Modifier
-            .animateItem(fadeInSpec = null, fadeOutSpec = null)
             .fillMaxWidth()
             .padding(horizontal = look.sidePadding)
     ) {
@@ -119,15 +119,19 @@ fun LazyItemScope.ReaderLayoutTextTable(
 
                     repeat(columns) { columnIndex ->
                         StyledText(
-                            text = (row.getOrNull(columnIndex) ?: AnnotatedString(""))
-                                .withSearchHighlights(
-                                    matches = searchMatches,
-                                    current = currentSearchMatch,
-                                    fontColor = look.fontColor,
-                                    // The same numbering [forEachCell] hands the
-                                    // scanner: a position in the drawn grid.
-                                    part = rowIndex * columns + columnIndex
-                                ),
+                            // Note references get their listener here, as in
+                            // every other entry; a cell has no justified lines,
+                            // so the text's own link handling hits right.
+                            text = rememberRenderedLine(
+                                line = row.getOrNull(columnIndex) ?: AnnotatedString(""),
+                                searchMatches = searchMatches,
+                                currentSearchMatch = currentSearchMatch,
+                                fontColor = look.fontColor,
+                                openNote = openNote,
+                                // The same numbering [forEachCell] hands the
+                                // scanner: a position in the drawn grid.
+                                part = rowIndex * columns + columnIndex
+                            ),
                             modifier = Modifier
                                 .width(with(density) { columnWidths[columnIndex].toDp() })
                                 .padding(CELL_PADDING),

@@ -35,6 +35,10 @@ import ua.acclorite.book_story.ui.settings.reader.system.SystemSubcategory
 import ua.acclorite.book_story.ui.settings.reader.text.TextSubcategory
 import ua.acclorite.book_story.ui.settings.reader.translator.TranslatorSubcategory
 
+/**
+ * The tab the sheet reopens on: the last one shown, for the life of the
+ * process. Deliberately not saved anywhere.
+ */
 private var initialPage = 0
 
 /**

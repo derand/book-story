@@ -179,13 +179,7 @@ private fun rememberCurrentCheckpoint(
     currentIndex: Int
 ): Checkpoint? {
     return remember(checkpoints, currentIndex) {
-        checkpoints.lastOrNull { checkpoint ->
-            when {
-                checkpoint.index > currentIndex -> true
-                checkpoint.index < currentIndex -> true
-                else -> false
-            }
-        }
+        checkpoints.lastOrNull { checkpoint -> checkpoint.index != currentIndex }
     }
 }
 
@@ -246,10 +240,7 @@ private fun ReaderBottomBarSlider(
     val interactionSource = remember { MutableInteractionSource() }
     val isDragging = interactionSource.collectIsDraggedAsState()
     val animatedProgress = animateFloatAsState(book.progress)
-    val progress = remember(isDragging.value, book.progress, animatedProgress.value) {
-        if (isDragging.value) book.progress
-        else animatedProgress.value
-    }
+    val progress = if (isDragging.value) book.progress else animatedProgress.value
 
     Slider(
         value = progress,

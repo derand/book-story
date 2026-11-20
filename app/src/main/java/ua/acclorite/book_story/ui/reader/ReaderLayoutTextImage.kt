@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -32,7 +31,7 @@ import ua.acclorite.book_story.ui.reader.model.ReaderTextLook
 import ua.acclorite.book_story.ui.common.helpers.noRippleClickable
 
 @Composable
-fun LazyItemScope.ReaderLayoutTextImage(
+fun ReaderLayoutTextImage(
     searchMatches: List<SearchMatch>,
     currentSearchMatch: SearchMatch?,
     entry: ReaderText.Image,
@@ -62,10 +61,6 @@ fun LazyItemScope.ReaderLayoutTextImage(
 
     Column(
         modifier = Modifier
-            .animateItem(
-                fadeInSpec = null,
-                fadeOutSpec = null
-            )
             .fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(captionSpacing)
     ) {

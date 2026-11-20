@@ -105,7 +105,7 @@ fun ReaderChaptersDrawer(
                         maxLines = 1
                     )
 
-                    if (expandableChapter.parent == currentChapter) {
+                    if (expandableChapter.parent.id == currentChapter?.id) {
                         Spacer(modifier = Modifier.width(18.dp))
                         StyledText(text = "${currentChapterProgress.calculateProgress(0)}%")
                     }
@@ -163,7 +163,7 @@ fun ReaderChaptersDrawer(
                                 maxLines = 1
                             )
 
-                            if (chapter == currentChapter) {
+                            if (chapter.id == currentChapter?.id) {
                                 Spacer(modifier = Modifier.width(18.dp))
                                 StyledText(text = "${currentChapterProgress.calculateProgress(0)}%")
                             }
