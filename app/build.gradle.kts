@@ -21,8 +21,6 @@ android {
         versionCode = 14
         versionName = "1.8.0"
 
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-
         vectorDrawables {
             useSupportLibrary = true
         }
@@ -214,10 +212,4 @@ dependencies {
     // app/src/test/resources/robolectric.properties.
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.robolectric:robolectric:4.16.1")
-
-    // Instrumented tests (app/src/androidTest) — only what needs a device: real
-    // app storage and a real Context. Run by hand, not in CI.
-    androidTestImplementation("androidx.test.ext:junit:1.2.1")
-    androidTestImplementation("androidx.test:runner:1.6.2")
-    androidTestImplementation("androidx.test:core:1.6.1")
 }
