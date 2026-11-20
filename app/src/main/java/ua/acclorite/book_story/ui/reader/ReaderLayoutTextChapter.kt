@@ -9,7 +9,6 @@ package ua.acclorite.book_story.ui.reader
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -27,7 +26,7 @@ import ua.acclorite.book_story.ui.common.components.common.StyledText
 import ua.acclorite.book_story.ui.reader.model.ReaderTextLook
 
 @Composable
-fun LazyItemScope.ReaderLayoutTextChapter(
+fun ReaderLayoutTextChapter(
     searchMatches: List<SearchMatch>,
     currentSearchMatch: SearchMatch?,
     chapter: Chapter,
@@ -55,10 +54,6 @@ fun LazyItemScope.ReaderLayoutTextChapter(
 
     Column(
         Modifier
-            .animateItem(
-                fadeInSpec = null,
-                fadeOutSpec = null
-            )
             .fillMaxWidth()
     ) {
         StyledText(

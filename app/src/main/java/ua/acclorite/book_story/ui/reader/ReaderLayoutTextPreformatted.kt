@@ -11,7 +11,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -39,7 +38,7 @@ private const val PREFORMATTED_BACKGROUND_ALPHA = 0.08f
  * columns of characters apart.
  */
 @Composable
-fun LazyItemScope.ReaderLayoutTextPreformatted(
+fun ReaderLayoutTextPreformatted(
     searchMatches: List<SearchMatch>,
     currentSearchMatch: SearchMatch?,
     preformatted: Preformatted,
@@ -48,7 +47,6 @@ fun LazyItemScope.ReaderLayoutTextPreformatted(
 ) {
     Column(
         modifier = Modifier
-            .animateItem(fadeInSpec = null, fadeOutSpec = null)
             .fillMaxWidth()
             .padding(horizontal = look.sidePadding)
             .background(

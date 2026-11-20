@@ -6,7 +6,6 @@
 
 package ua.acclorite.book_story.ui.reader
 
-import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.Dp
 import ua.acclorite.book_story.domain.model.reader.ReaderText
@@ -20,7 +19,7 @@ import ua.acclorite.book_story.ui.reader.model.ReaderTextLook
  * own links, which is why [openNote] is all that is passed down.
  */
 @Composable
-fun LazyItemScope.ReaderLayoutText(
+fun ReaderLayoutText(
     entry: ReaderText,
     searchMatches: List<SearchMatch>,
     currentSearchMatch: SearchMatch?,

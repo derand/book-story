@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
@@ -49,7 +48,7 @@ private val LINE_THICKNESS = 1.dp
  * [resolveColumnWidths] — so the table still spans the page width exactly.
  */
 @Composable
-fun LazyItemScope.ReaderLayoutTextTable(
+fun ReaderLayoutTextTable(
     searchMatches: List<SearchMatch>,
     currentSearchMatch: SearchMatch?,
     table: Table,
@@ -87,7 +86,6 @@ fun LazyItemScope.ReaderLayoutTextTable(
 
     BoxWithConstraints(
         modifier = Modifier
-            .animateItem(fadeInSpec = null, fadeOutSpec = null)
             .fillMaxWidth()
             .padding(horizontal = look.sidePadding)
     ) {

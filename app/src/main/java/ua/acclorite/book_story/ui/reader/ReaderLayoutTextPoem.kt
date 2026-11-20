@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -35,7 +34,7 @@ import ua.acclorite.book_story.ui.reader.model.ReaderTextLook
  * to the poem itself no matter how long its lines are.
  */
 @Composable
-fun LazyItemScope.ReaderLayoutTextPoem(
+fun ReaderLayoutTextPoem(
     searchMatches: List<SearchMatch>,
     currentSearchMatch: SearchMatch?,
     poem: Poem,
@@ -48,7 +47,6 @@ fun LazyItemScope.ReaderLayoutTextPoem(
 
     Column(
         modifier = Modifier
-            .animateItem(fadeInSpec = null, fadeOutSpec = null)
             .fillMaxWidth()
             .padding(horizontal = look.sidePadding)
             .padding(start = BLOCK_INDENT_STEP),

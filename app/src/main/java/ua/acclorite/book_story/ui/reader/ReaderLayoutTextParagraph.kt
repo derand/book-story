@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -50,7 +49,7 @@ internal val ReaderTextRole.indentSteps: Int
     }
 
 @Composable
-fun LazyItemScope.ReaderLayoutTextParagraph(
+fun ReaderLayoutTextParagraph(
     searchMatches: List<SearchMatch>,
     currentSearchMatch: SearchMatch?,
     paragraph: Text,
@@ -81,7 +80,6 @@ fun LazyItemScope.ReaderLayoutTextParagraph(
 
     Column(
         modifier = Modifier
-            .animateItem(fadeInSpec = null, fadeOutSpec = null)
             .fillMaxWidth()
             .padding(horizontal = look.sidePadding)
             .padding(start = blockIndent),
