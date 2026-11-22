@@ -7,6 +7,8 @@
 
 package ua.acclorite.book_story.domain.use_case.cache
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import ua.acclorite.book_story.data.cache.ParseCache
 import javax.inject.Inject
 
@@ -14,5 +16,8 @@ class GetParseCacheSizeUseCase @Inject constructor(
     private val parseCache: ParseCache
 ) {
 
-    operator fun invoke(): Long = parseCache.totalSizeBytes()
+    /** Walks the whole cache directory, so it runs on IO. */
+    suspend operator fun invoke(): Long = withContext(Dispatchers.IO) {
+        parseCache.totalSizeBytes()
+    }
 }

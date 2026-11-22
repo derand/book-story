@@ -21,7 +21,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.RuntimeEnvironment
 import org.robolectric.Shadows.shadowOf
 import ua.acclorite.book_story.core.CoverImage
 import ua.acclorite.book_story.core.ui.UIText
@@ -203,9 +202,7 @@ class BookInfoModelTest {
             getBookUseCase = GetBookUseCase(repository, NoStatistics()),
             getFileFromBookUseCase = GetFileFromBookUseCase(repository),
             deleteBookUseCase = DeleteBookUseCase(repository, covers),
-            canResetCoverImageUseCase = CanResetCoverImageUseCase(
-                RuntimeEnvironment.getApplication(), repository, covers
-            ),
+            canResetCoverImageUseCase = CanResetCoverImageUseCase(repository, covers),
             resetCoverImageUseCase = ResetCoverImageUseCase(repository, covers),
             getBookStatisticsUseCase = GetBookStatisticsUseCase(statistics),
             setBookFinishedUseCase = SetBookFinishedUseCase(statistics),
@@ -249,7 +246,7 @@ class BookInfoModelTest {
         override suspend fun decodeCover(uri: Uri): Result<CoverImage> = unused()
         override suspend fun saveCover(coverImage: CoverImage): Result<File> = unused()
         override suspend fun deleteCover(coverImage: Uri): Result<Unit> = unused()
-        override suspend fun compressCover(coverImage: CoverImage): Result<CoverImage> = unused()
+        override suspend fun isSavedAs(stored: Uri, coverImage: CoverImage): Result<Boolean> = unused()
     }
 
     private companion object {

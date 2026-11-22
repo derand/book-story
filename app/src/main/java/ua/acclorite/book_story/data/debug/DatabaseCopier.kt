@@ -7,6 +7,8 @@
 package ua.acclorite.book_story.data.debug
 
 import android.app.Application
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import ua.acclorite.book_story.core.log.logI
 import ua.acclorite.book_story.data.local.room.DatabaseSnapshot
 import java.io.File
@@ -36,7 +38,7 @@ class DatabaseCopier @Inject constructor(
      * Copies the database out as one consistent file — see [DatabaseSnapshot]
      * for why that takes a checkpoint — and returns where it landed.
      */
-    fun copy(): File {
+    suspend fun copy(): File = withContext(Dispatchers.IO) {
         val destination = File(application.getExternalFilesDir(null), DIRECTORY).apply {
             mkdirs()
         }
@@ -44,6 +46,6 @@ class DatabaseCopier @Inject constructor(
         val copied = snapshot.copyTo(File(destination, snapshot.file.name))
 
         logI(TAG, "Copied ${copied.length()} bytes to ${copied.path}.")
-        return copied
+        copied
     }
 }

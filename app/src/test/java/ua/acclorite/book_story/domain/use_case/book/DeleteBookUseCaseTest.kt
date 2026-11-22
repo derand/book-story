@@ -94,7 +94,7 @@ class DeleteBookUseCaseTest {
 
         override suspend fun decodeCover(uri: Uri): Result<CoverImage> = unused()
         override suspend fun saveCover(coverImage: CoverImage): Result<File> = unused()
-        override suspend fun compressCover(coverImage: CoverImage): Result<CoverImage> = unused()
+        override suspend fun isSavedAs(stored: Uri, coverImage: CoverImage): Result<Boolean> = unused()
 
         private fun unused(): Nothing = throw UnsupportedOperationException()
     }

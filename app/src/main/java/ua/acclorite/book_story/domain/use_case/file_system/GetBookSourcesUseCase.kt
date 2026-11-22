@@ -7,8 +7,6 @@
 
 package ua.acclorite.book_story.domain.use_case.file_system
 
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import ua.acclorite.book_story.core.log.logE
 import ua.acclorite.book_story.core.log.messageForLog
 import ua.acclorite.book_story.domain.model.file.BookSource
@@ -22,14 +20,14 @@ private const val TAG = "GetBookSources"
  * whether it answered just now.
  *
  * Asking costs one query per source, and against a provider that is not on this
- * device that is a round trip — hence off the main thread, and hence asked when
- * a screen opens or a grant changes rather than on every recomposition.
+ * device that is a round trip — hence asked when a screen opens or a grant
+ * changes rather than on every recomposition.
  */
 class GetBookSourcesUseCase @Inject constructor(
     private val fileProvider: FileProvider
 ) {
 
-    suspend operator fun invoke(): List<BookSource> = withContext(Dispatchers.IO) {
+    suspend operator fun invoke(): List<BookSource> =
         fileProvider.getStorageSources().fold(
             onSuccess = { it },
             onFailure = {
@@ -37,5 +35,4 @@ class GetBookSourcesUseCase @Inject constructor(
                 emptyList()
             }
         )
-    }
 }

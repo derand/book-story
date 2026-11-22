@@ -39,14 +39,14 @@ class CoverImageHandlerImpl @Inject constructor(
     }
 
     override suspend fun saveCover(coverImage: CoverImage): Result<File> = runCatchingCancellable {
-        if (!coversDir.exists()) {
-            coversDir.mkdirs()
-        }
-
         val coverUri = "${UUID.randomUUID()}.webp"
         val cover = File(coversDir, coverUri)
 
         withContext(Dispatchers.IO) {
+            if (!coversDir.exists()) {
+                coversDir.mkdirs()
+            }
+
             BufferedOutputStream(FileOutputStream(cover)).use { output ->
                 coverImage
                     .compress(Bitmap.CompressFormat.WEBP, 20, output)
@@ -61,15 +61,25 @@ class CoverImageHandlerImpl @Inject constructor(
     }
 
     override suspend fun deleteCover(coverImage: Uri): Result<Unit> = runCatchingCancellable {
-        coverImage.toFile().apply {
-            if (exists() && !delete()) throw Exception("Couldn't delete cover image.")
+        withContext(Dispatchers.IO) {
+            coverImage.toFile().apply {
+                if (exists() && !delete()) throw Exception("Couldn't delete cover image.")
+            }
         }
     }
 
-    override suspend fun compressCover(coverImage: CoverImage): Result<CoverImage> = runCatchingCancellable {
-        val stream = ByteArrayOutputStream()
-        coverImage.compress(Bitmap.CompressFormat.WEBP, 20, stream)
-        val byteArray = stream.toByteArray()
-        BitmapFactory.decodeByteArray(byteArray, 0, byteArray.size)
-    }
+    override suspend fun isSavedAs(stored: Uri, coverImage: CoverImage): Result<Boolean> =
+        runCatchingCancellable {
+            val compressed = withContext(Dispatchers.Default) {
+                val stream = ByteArrayOutputStream()
+                coverImage.compress(Bitmap.CompressFormat.WEBP, 20, stream)
+                val byteArray = stream.toByteArray()
+                BitmapFactory.decodeByteArray(byteArray, 0, byteArray.size)
+            }
+            val current = withContext(Dispatchers.IO) {
+                application.contentResolver.openInputStream(stored)
+                    ?.use { BitmapFactory.decodeStream(it) }
+            }
+            compressed.sameAs(current)
+        }
 }

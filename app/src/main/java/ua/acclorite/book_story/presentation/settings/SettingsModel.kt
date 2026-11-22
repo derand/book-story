@@ -10,7 +10,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,7 +20,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.withContext
 import ua.acclorite.book_story.core.helpers.runCatchingCancellable
 import ua.acclorite.book_story.core.log.logE
 import ua.acclorite.book_story.core.log.messageForLog
@@ -148,7 +146,7 @@ class SettingsModel @Inject constructor(
                 )
             }
 
-            val parseCacheSize = withContext(Dispatchers.IO) { getParseCacheSizeUseCase() }
+            val parseCacheSize = getParseCacheSizeUseCase()
             val categories = getCategoriesUseCase()
 
             _state.update {
@@ -286,24 +284,22 @@ class SettingsModel @Inject constructor(
             }
 
             is SettingsEvent.OnClearParseCache -> launchEvent {
-                val size = withContext(Dispatchers.IO) {
-                    clearParseCacheUseCase()
-                    getParseCacheSizeUseCase()
-                }
+                clearParseCacheUseCase()
+                val size = getParseCacheSizeUseCase()
                 _state.update {
                     it.copy(parseCacheSizeBytes = size)
                 }
             }
 
             is SettingsEvent.OnRefreshParseCacheSize -> launchEvent {
-                val size = withContext(Dispatchers.IO) { getParseCacheSizeUseCase() }
+                val size = getParseCacheSizeUseCase()
                 _state.update {
                     it.copy(parseCacheSizeBytes = size)
                 }
             }
 
             is SettingsEvent.OnCopyDatabase -> launchEvent {
-                val result = withContext(Dispatchers.IO) { copyDatabaseUseCase() }
+                val result = copyDatabaseUseCase()
                 _state.update {
                     it.copy(
                         databaseCopyPath = result.getOrNull(),

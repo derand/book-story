@@ -38,7 +38,7 @@ class AddPreviewToLibraryUseCaseTest {
     )
 
     private class FakeFileProvider(private val reachable: Boolean) : FileProvider {
-        override fun getFileFromBook(book: Book): Result<CachedFile> =
+        override suspend fun getFileFromBook(book: Book): Result<CachedFile> =
             if (reachable) {
                 Result.success(
                     CachedFile(
@@ -50,9 +50,9 @@ class AddPreviewToLibraryUseCaseTest {
                 Result.failure(NoSuchElementException("No grant reaches it."))
             }
 
-        override fun getStorageFiles(): Result<List<CachedFile>> = Result.success(emptyList())
+        override suspend fun getStorageFiles(): Result<List<CachedFile>> = Result.success(emptyList())
 
-        override fun getStorageSources(): Result<List<BookSource>> = Result.success(emptyList())
+        override suspend fun getStorageSources(): Result<List<BookSource>> = Result.success(emptyList())
     }
 
     @Test
