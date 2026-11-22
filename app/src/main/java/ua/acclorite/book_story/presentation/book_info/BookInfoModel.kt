@@ -32,7 +32,6 @@ import ua.acclorite.book_story.domain.use_case.book.UpdateBookUseCase
 import ua.acclorite.book_story.domain.use_case.book.UpdateCoverImageUseCase
 import ua.acclorite.book_story.domain.use_case.statistics.GetBookStatisticsUseCase
 import ua.acclorite.book_story.domain.use_case.statistics.SetBookFinishedUseCase
-import ua.acclorite.book_story.presentation.browse.BrowseScreen
 import javax.inject.Inject
 
 @HiltViewModel
@@ -215,7 +214,6 @@ class BookInfoModel @Inject constructor(
             is BookInfoEvent.OnActionDeleteDialog -> write { book ->
                 updateFor(book.id) { it.copy(dialog = null, bottomSheet = null) }
                 deleteBookUseCase(book)
-                BrowseScreen.refreshListChannel.trySend(Unit)
                 emitFor(book.id, BookInfoEffect.OnBookDeleted)
                 emitFor(book.id, BookInfoEffect.OnNavigateBack)
             }

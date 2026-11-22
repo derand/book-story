@@ -19,13 +19,16 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import ua.acclorite.book_story.R
 import ua.acclorite.book_story.core.helpers.ListSearch
+import ua.acclorite.book_story.core.helpers.launchWhileSubscribed
 import ua.acclorite.book_story.core.ui.UIText
 import ua.acclorite.book_story.domain.model.file.File
 import ua.acclorite.book_story.domain.use_case.file_system.GetBookSourcesUseCase
@@ -35,10 +38,13 @@ import ua.acclorite.book_story.domain.use_case.book.AddBookUseCase
 import ua.acclorite.book_story.domain.use_case.book.StoreBookCopyUseCase
 import ua.acclorite.book_story.domain.use_case.file_system.GetBookFromFileUseCase
 import ua.acclorite.book_story.domain.use_case.file_system.GetFilesUseCase
+import ua.acclorite.book_story.domain.use_case.file_system.ObserveLibraryFilesUseCase
 import ua.acclorite.book_story.presentation.browse.model.AddingBooks
+import ua.acclorite.book_story.presentation.browse.model.BrowseListOptions
 import ua.acclorite.book_story.presentation.browse.model.NullableBook
 import ua.acclorite.book_story.presentation.browse.model.SelectableFile
 import ua.acclorite.book_story.presentation.browse.model.SelectableNullableBook
+import ua.acclorite.book_story.presentation.browse.model.browseListing
 import ua.acclorite.book_story.presentation.browse.model.toggled
 import ua.acclorite.book_story.presentation.browse.model.withSelected
 import ua.acclorite.book_story.presentation.library.LibraryScreen
@@ -51,6 +57,7 @@ class BrowseModel @Inject constructor(
     private val getFilesUseCase: GetFilesUseCase,
     private val getBookFromFileUseCase: GetBookFromFileUseCase,
     private val getBookSourcesUseCase: GetBookSourcesUseCase,
+    private val observeLibraryFilesUseCase: ObserveLibraryFilesUseCase,
     private val settings: SettingsManager
 ) : ViewModel() {
 
@@ -62,25 +69,61 @@ class BrowseModel @Inject constructor(
 
     private val search = ListSearch(viewModelScope)
 
-    init {
-        refresh(loading = true, hideSearch = true)
+    /**
+     * The last walk of the granted folders, or null before the first one.
+     *
+     * Everything Browse shows is narrowed from it in memory: a walk is a query
+     * per directory — over the network for a cloud folder — and it used to run
+     * at every start, on every visit to the tab, on every pause in typing a
+     * search and after every sort, filter or library change.
+     */
+    private val walked = MutableStateFlow<Result<List<File>>?>(null)
 
-        // A search is a listing narrowed by name: a new query lists again.
-        viewModelScope.launch {
-            search.filter.drop(1).collect {
-                refresh(loading = false, hideSearch = false)
+    init {
+        // Only while the screen shows the list: this model lives as long as
+        // the activity, and the library it filters by changes on every
+        // settled scroll in the reader.
+        viewModelScope.launchWhileSubscribed(_state) {
+            // The first visit, not the model's creation, is what walks: the
+            // model is created at start, whether Browse is ever opened or not.
+            if (walked.value == null && walkJob?.isActive != true) {
+                refresh(loading = true, hideSearch = false)
             }
+
+            val options = combine(
+                search.filter,
+                settings.browseIncludedFilterItems.flow,
+                settings.browseSortOrder.flow,
+                settings.browseSortOrderDescending.flow,
+                ::BrowseListOptions
+            )
+            combine(
+                walked.filterNotNull(),
+                observeLibraryFilesUseCase(),
+                options
+            ) { walk, existing, listOptions ->
+                walk.mapCatching { files ->
+                    files.browseListing(existing.getOrThrow(), listOptions)
+                }
+            }.flowOn(Dispatchers.Default).collect { listing -> show(listing) }
         }
 
+        // The folders changed, so the walk is out of date. Walked again now if
+        // the list is on screen, on the next visit otherwise.
         viewModelScope.launch {
             BrowseScreen.refreshListChannel.receiveAsFlow().collectLatest {
-                refresh(loading = false, hideSearch = false)
+                if (_state.subscriptionCount.value > 0) {
+                    refresh(loading = false, hideSearch = false)
+                } else {
+                    walkJob?.cancel()
+                    walked.value = null
+                }
             }
         }
     }
 
     private var addBooksJob: Job? = null
-    private var refreshJob: Job? = null
+    private var walkJob: Job? = null
     private var getAddDialogBooksJob: Job? = null
 
     private fun send(effect: BrowseEffect) {
@@ -104,59 +147,77 @@ class BrowseModel @Inject constructor(
         }
     }
 
-    /** Lists the files again; a refresh already running gives way to this one. */
+    /**
+     * Walks the folders again; a walk already running gives way to this one,
+     * and stops at its next directory.
+     */
     private fun refresh(loading: Boolean, hideSearch: Boolean) {
         _state.update {
             it.copy(
                 isRefreshing = true,
-                isLoading = loading,
+                isLoading = loading || it.isLoading,
                 showSearch = if (hideSearch) false else it.showSearch
             )
         }
         if (hideSearch) search.clear()
 
-        refreshJob?.cancel()
-        refreshJob = viewModelScope.launch(Dispatchers.Default) {
-            val result = getFilesUseCase(search.filter.value)
-            val selectableFiles = result.getOrDefault(emptyList()).map { file ->
+        walkJob?.cancel()
+        walkJob = viewModelScope.launch {
+            val result = getFilesUseCase()
+
+            // Only when the folders hold nothing at all, because that is the
+            // only thing the counts decide: which of the two empty states this
+            // is. Asked unconditionally they would cost a round trip per
+            // granted tree on every walk, against a provider that answers over
+            // a network.
+            val sources = when {
+                result.getOrNull()?.isEmpty() == true -> getBookSourcesUseCase()
+                else -> null
+            }
+
+            // A newer walk has the last word, not this one.
+            ensureActive()
+            _state.update {
+                it.copy(
+                    sourcesGranted = sources?.size ?: it.sourcesGranted,
+                    sourcesAvailable = sources?.count { source ->
+                        source.isAvailable
+                    } ?: it.sourcesAvailable
+                )
+            }
+            walked.value = result
+
+            delay(500) // Long enough for the indicator to be seen
+            _state.update { it.copy(isRefreshing = false) }
+        }
+    }
+
+    /**
+     * Shows a new listing. The files that were selected and are still listed
+     * stay selected: a book added elsewhere, or a search typed further, is no
+     * reason to lose a selection.
+     */
+    private fun show(listing: Result<List<File>>) {
+        _state.update { state ->
+            val selected = state.files.filter { it.selected }.mapTo(HashSet()) { it.uri }
+            val files = listing.getOrDefault(emptyList()).map { file ->
                 SelectableFile(
                     name = file.name,
                     uri = file.uri,
                     path = file.path,
                     size = file.size,
                     lastModified = file.lastModified,
-                    selected = false
+                    selected = file.uri in selected
                 )
             }
-
-            // Only when there is nothing to show, because that is the
-            // only thing the counts decide: which of the two empty
-            // states this is. Asked unconditionally they would cost a
-            // round trip per granted tree on every refresh — and a
-            // refresh follows every pause in typing a search, against
-            // a provider that answers over a network.
-            val sources = when {
-                result.isSuccess && selectableFiles.isEmpty() -> getBookSourcesUseCase()
-                else -> null
-            }
-
-            // A newer refresh has the last word, not this one.
-            ensureActive()
-            _state.update {
-                it.copy(
-                    files = selectableFiles,
-                    loadFailed = result.isFailure,
-                    sourcesGranted = sources?.size ?: it.sourcesGranted,
-                    sourcesAvailable = sources?.count { source ->
-                        source.isAvailable
-                    } ?: it.sourcesAvailable,
-                    hasSelectedItems = false,
-                    isLoading = false
-                )
-            }
-
-            delay(500) // Long enough for the indicator to be seen
-            _state.update { it.copy(isRefreshing = false) }
+            val count = files.count { it.selected }
+            state.copy(
+                files = files,
+                loadFailed = listing.isFailure,
+                selectedItemsCount = if (count == 0) state.selectedItemsCount else count,
+                hasSelectedItems = count > 0,
+                isLoading = false
+            )
         }
     }
 
@@ -352,7 +413,8 @@ class BrowseModel @Inject constructor(
                                 )
                             }
                             LibraryScreen.scrollToPageCompositionChannel.trySend(0)
-                            refresh(loading = false, hideSearch = false)
+                            // No walk: the books added leave the list as the
+                            // library they went into changes.
                             onEvent(BrowseEvent.OnClearSelectedFiles)
                         }
                     }

@@ -12,7 +12,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.focus.FocusRequester
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -34,6 +33,11 @@ object BrowseScreen : Screen, Parcelable {
     @IgnoredOnParcel
     const val FILTER_BOTTOM_SHEET = "filter_bottom_sheet"
 
+    /**
+     * The granted folders changed: what Browse walked is out of date. Only
+     * for that — a change to the library reaches Browse through the database,
+     * and a sort, filter or search is applied to the last walk.
+     */
     @IgnoredOnParcel
     val refreshListChannel: Channel<Unit> = Channel(Channel.CONFLATED)
 
@@ -50,19 +54,6 @@ object BrowseScreen : Screen, Parcelable {
 
         val focusRequester = remember { FocusRequester() }
         val refreshState = rememberPullToRefreshState()
-
-        LaunchedEffect(
-            settings.browseIncludedFilterItems.value,
-            settings.browseSortOrderDescending.value,
-            settings.browseSortOrder.value
-        ) {
-            screenModel.onEvent(
-                BrowseEvent.OnRefreshList(
-                    loading = false,
-                    hideSearch = false
-                )
-            )
-        }
 
         BrowseEffects(
             effects = screenModel.effects,

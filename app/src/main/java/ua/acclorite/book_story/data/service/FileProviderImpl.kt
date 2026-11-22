@@ -129,9 +129,18 @@ class FileProviderImpl @Inject constructor(
         // import wrote exactly that into the book row, so the walk still matches
         // where the descent had nothing to follow. A fallback that filters more
         // than what it falls back from is not a fallback.
+        //
+        // Only the book's own provider, when it is known. Drive reports
+        // "/storage" for its folders, which prefixes every path on the device,
+        // so a local book whose file is gone would otherwise walk the whole of
+        // Drive, a round trip per folder, before saying "not found" — a tree
+        // that cannot hold it, since its provider is another one.
         bookTimingNote { "find file: descent found nothing, walking the tree" }
         storages.forEach { storage ->
             if (!book.filePath.startsWith(storage.path, ignoreCase = true)) return@forEach
+            if (book.documentAuthority != null &&
+                storage.uri.authority != book.documentAuthority
+            ) return@forEach
             storage.walk().forEach { file ->
                 if (book.filePath.equals(file.path, ignoreCase = true)) {
                     return@runCatchingCancellable file
