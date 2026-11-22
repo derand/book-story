@@ -28,7 +28,6 @@ import ua.acclorite.book_story.domain.use_case.book.DeleteBookUseCase
 import ua.acclorite.book_story.domain.use_case.book.LibraryBooks
 import ua.acclorite.book_story.domain.use_case.book.ObserveLibraryBooksUseCase
 import ua.acclorite.book_story.domain.use_case.book.UpdateBookUseCase
-import ua.acclorite.book_story.presentation.browse.BrowseScreen
 import ua.acclorite.book_story.presentation.library.model.SelectableBook
 import javax.inject.Inject
 
@@ -254,7 +253,6 @@ class LibraryModel @Inject constructor(
                         )
                     }
 
-                    BrowseScreen.refreshListChannel.trySend(Unit)
                     _effects.emit(LibraryEffect.OnBooksDeleted)
                 }
             }

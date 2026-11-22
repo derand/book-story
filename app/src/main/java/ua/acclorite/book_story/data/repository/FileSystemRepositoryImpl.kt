@@ -9,13 +9,12 @@ package ua.acclorite.book_story.data.repository
 import android.app.Application
 import androidx.core.net.toUri
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import ua.acclorite.book_story.core.CoverImage
 import ua.acclorite.book_story.core.data.ExtensionsData
 import ua.acclorite.book_story.core.helpers.mapCatchingCancellable
 import ua.acclorite.book_story.core.helpers.runCatchingCancellable
-import ua.acclorite.book_story.data.local.room.BookDatabase
-import ua.acclorite.book_story.data.mapper.book.BookMapper
 import ua.acclorite.book_story.data.mapper.file.FileMapper
 import ua.acclorite.book_story.data.model.file.CachedFile
 import ua.acclorite.book_story.data.model.file.CachedFileCompat
@@ -23,8 +22,6 @@ import ua.acclorite.book_story.data.parser.cover.CoverParser
 import ua.acclorite.book_story.data.parser.file.FileParser
 import ua.acclorite.book_story.domain.model.file.File
 import ua.acclorite.book_story.domain.model.library.Book
-import ua.acclorite.book_story.domain.model.library.LibraryFiles
-import ua.acclorite.book_story.domain.model.library.libraryFiles
 import ua.acclorite.book_story.domain.repository.FileSystemRepository
 import ua.acclorite.book_story.domain.service.FileProvider
 import javax.inject.Inject
@@ -33,52 +30,29 @@ import javax.inject.Singleton
 @Singleton
 class FileSystemRepositoryImpl @Inject constructor(
     private val application: Application,
-    private val database: BookDatabase,
-    private val bookMapper: BookMapper,
     private val fileMapper: FileMapper,
     private val fileParser: FileParser,
     private val coverParser: CoverParser,
     private val fileProvider: FileProvider
 ) : FileSystemRepository {
 
-    override suspend fun searchFiles(query: String): Result<List<File>> {
+    override suspend fun listBookFiles(): Result<List<File>> {
         return withContext(Dispatchers.IO) {
             fileProvider.getStorageFiles().mapCatchingCancellable { storages ->
-                val existing = database.bookDao.getLibraryBooks()
-                    .map { bookMapper.toBook(it) }
-                    .libraryFiles()
-
-                storages.map { storage ->
-                    storage.getFilesFromStorage(
-                        query = query,
-                        existing = existing
-                    )
-                }.flatten()
+                storages.flatMap { storage ->
+                    storage.bookFiles(checkCancelled = { ensureActive() })
+                }
             }
         }
     }
 
-    private fun CachedFile.isValid(query: String, existing: LibraryFiles): Boolean {
-        // The same question the parsers ask, so the listing cannot offer a file
-        // that then refuses to open — and so a book named the way Drive names
-        // one is visible here too.
-        if (ExtensionsData.formatOf(name) == null) return false
-        if (query.isNotBlank() && !name.contains(query.trim(), ignoreCase = true)) return false
-
-        return !existing.holds(
-            filePath = path,
-            documentAuthority = documentAuthority,
-            documentId = documentId
-        )
-    }
-
-    private fun CachedFile.getFilesFromStorage(
-        query: String,
-        existing: LibraryFiles
-    ): List<File> {
+    private fun CachedFile.bookFiles(checkCancelled: () -> Unit): List<File> {
         val files = mutableListOf<File>()
-        walk { cachedFile ->
-            if (cachedFile.isValid(query, existing)) {
+        walk(checkCancelled = checkCancelled) { cachedFile ->
+            // The same question the parsers ask, so the listing cannot offer a
+            // file that then refuses to open — and so a book named the way
+            // Drive names one is visible here too.
+            if (ExtensionsData.formatOf(cachedFile.name) != null) {
                 files.add(fileMapper.toFile(cachedFile))
             }
         }

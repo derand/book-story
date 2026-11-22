@@ -11,9 +11,13 @@ import ua.acclorite.book_story.domain.model.file.File
 import ua.acclorite.book_story.domain.model.library.Book
 
 interface FileSystemRepository {
-    suspend fun searchFiles(
-        query: String = ""
-    ): Result<List<File>>
+    /**
+     * Every file in a format the app reads, under every granted folder: a full
+     * walk, one query per directory, and cancellable between them. What the
+     * library already holds is not taken out here — that changes far more often
+     * than the folders do.
+     */
+    suspend fun listBookFiles(): Result<List<File>>
 
     suspend fun getBookFromFile(
         file: File

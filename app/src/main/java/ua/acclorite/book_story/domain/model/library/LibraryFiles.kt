@@ -21,8 +21,11 @@ package ua.acclorite.book_story.domain.model.library
  * Both are therefore asked of every book, and a copy answers with its origin.
  * A copy answering with nothing is how the same cloud document came to be added
  * once per copy made of it.
+ *
+ * Equal when it holds the same files: a library change that does not touch
+ * them — a title, a reading position — changes nothing a listing shows.
  */
-class LibraryFiles(
+data class LibraryFiles(
     private val identities: Set<String>,
     private val paths: Set<String>
 ) {

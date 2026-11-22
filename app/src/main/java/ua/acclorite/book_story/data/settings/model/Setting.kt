@@ -11,6 +11,8 @@ import androidx.compose.runtime.Stable
 import androidx.datastore.preferences.core.Preferences
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 @Stable
 class Setting<T, P>(
@@ -26,6 +28,9 @@ class Setting<T, P>(
         @Composable get() = _value.collectAsStateWithLifecycle().value
     val lastValue: T
         get() = _value.value
+
+    /** [value] for a model: what a composable reads, as it changes. */
+    val flow: StateFlow<T> = _value.asStateFlow()
 
     /**
      * Shows [value] and stores it. A value equal to the one shown is neither

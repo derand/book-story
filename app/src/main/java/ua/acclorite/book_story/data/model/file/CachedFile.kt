@@ -20,6 +20,7 @@ import java.io.File
 import java.io.FileOutputStream
 import java.io.InputStream
 import java.util.UUID
+import kotlin.coroutines.cancellation.CancellationException
 
 private const val TAG = "CachedFile"
 
@@ -247,6 +248,10 @@ class CachedFile(
                     forEach?.invoke(queryFile)
                     cachedFiles.add(queryFile)
                 }
+            } catch (e: CancellationException) {
+                // A walk stopped from inside [forEach]: it has to reach the
+                // caller, not end this one directory's listing as a failure.
+                throw e
             } catch (e: Exception) {
                 logE(TAG, e.messageForLog())
             }
@@ -255,10 +260,20 @@ class CachedFile(
         return cachedFiles
     }
 
+    /**
+     * Every file under this directory, one query per directory.
+     *
+     * [checkCancelled] runs before each of those queries and stops the walk by
+     * throwing. A walk is blocking I/O, so cancelling the coroutine it runs in
+     * does not reach it otherwise — and over a cloud provider a whole tree is
+     * minutes of round trips nobody is waiting for any more.
+     */
     fun walk(
         includeDirectories: Boolean = false,
+        checkCancelled: () -> Unit = {},
         forEach: ((CachedFile) -> Unit)? = null
     ): List<CachedFile> {
+        checkCancelled()
         val cachedFiles = mutableListOf<CachedFile>()
 
         listFiles {
@@ -270,7 +285,7 @@ class CachedFile(
 
                 true -> {
                     if (includeDirectories) cachedFiles.add(it)
-                    cachedFiles.addAll(it.walk(includeDirectories, forEach))
+                    cachedFiles.addAll(it.walk(includeDirectories, checkCancelled, forEach))
                 }
             }
         }
