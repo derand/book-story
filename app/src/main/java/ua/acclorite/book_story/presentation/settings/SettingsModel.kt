@@ -10,7 +10,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,7 +20,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.withContext
 import ua.acclorite.book_story.core.helpers.runCatchingCancellable
 import ua.acclorite.book_story.core.log.logE
 import ua.acclorite.book_story.core.log.messageForLog
@@ -46,6 +44,7 @@ import ua.acclorite.book_story.domain.use_case.permission.GrantPersistableUriPer
 import ua.acclorite.book_story.domain.use_case.permission.ReleasePersistableUriPermissionUseCase
 import ua.acclorite.book_story.domain.use_case.settings.UpdateLanguageUseCase
 import ua.acclorite.book_story.domain.use_case.statistics.DeleteStatisticsUseCase
+import ua.acclorite.book_story.presentation.browse.BrowseScreen
 import javax.inject.Inject
 import kotlin.random.Random
 
@@ -148,7 +147,7 @@ class SettingsModel @Inject constructor(
                 )
             }
 
-            val parseCacheSize = withContext(Dispatchers.IO) { getParseCacheSizeUseCase() }
+            val parseCacheSize = getParseCacheSizeUseCase()
             val categories = getCategoriesUseCase()
 
             _state.update {
@@ -180,13 +179,17 @@ class SettingsModel @Inject constructor(
             }
 
             is SettingsEvent.OnGrantPersistableUriPermission -> launchEvent {
-                grantPersistableUriPermissionUseCase(event.uri)
-                refreshBookSources()
+                sourcesChanged(
+                    changed = grantPersistableUriPermissionUseCase(event.uri),
+                    added = true
+                )
             }
 
             is SettingsEvent.OnReleasePersistableUriPermission -> launchEvent {
-                releasePersistableUriPermissionUseCase(event.uri)
-                refreshBookSources()
+                sourcesChanged(
+                    changed = releasePersistableUriPermissionUseCase(event.uri),
+                    added = false
+                )
             }
 
             is SettingsEvent.OnRefreshBookSources -> launchEvent {
@@ -286,24 +289,22 @@ class SettingsModel @Inject constructor(
             }
 
             is SettingsEvent.OnClearParseCache -> launchEvent {
-                val size = withContext(Dispatchers.IO) {
-                    clearParseCacheUseCase()
-                    getParseCacheSizeUseCase()
-                }
+                clearParseCacheUseCase()
+                val size = getParseCacheSizeUseCase()
                 _state.update {
                     it.copy(parseCacheSizeBytes = size)
                 }
             }
 
             is SettingsEvent.OnRefreshParseCacheSize -> launchEvent {
-                val size = withContext(Dispatchers.IO) { getParseCacheSizeUseCase() }
+                val size = getParseCacheSizeUseCase()
                 _state.update {
                     it.copy(parseCacheSizeBytes = size)
                 }
             }
 
             is SettingsEvent.OnCopyDatabase -> launchEvent {
-                val result = withContext(Dispatchers.IO) { copyDatabaseUseCase() }
+                val result = copyDatabaseUseCase()
                 _state.update {
                     it.copy(
                         databaseCopyPath = result.getOrNull(),
@@ -316,6 +317,20 @@ class SettingsModel @Inject constructor(
                 deleteStatisticsUseCase()
             }
         }
+    }
+
+    /**
+     * After a grant was taken or released: Browse walks again only once the
+     * grant has changed, so the walk sees the new set of folders, and a failure
+     * is said rather than leaving the list silently as it was.
+     */
+    private suspend fun sourcesChanged(changed: Boolean, added: Boolean) {
+        if (changed) {
+            BrowseScreen.refreshListChannel.trySend(Unit)
+        } else {
+            _effects.emit(SettingsEffect.OnSourceChangeFailed(added = added))
+        }
+        refreshBookSources()
     }
 
     private fun launchEvent(block: suspend () -> Unit) {

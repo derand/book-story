@@ -256,16 +256,16 @@ class BrowseModelTest {
     }
 
     private object NoFolders : FileProvider {
-        override fun getFileFromBook(book: Book): Result<CachedFile> = error("not asked")
-        override fun getStorageFiles(): Result<List<CachedFile>> = error("not asked")
-        override fun getStorageSources(): Result<List<BookSource>> = Result.success(emptyList())
+        override suspend fun getFileFromBook(book: Book): Result<CachedFile> = error("not asked")
+        override suspend fun getStorageFiles(): Result<List<CachedFile>> = error("not asked")
+        override suspend fun getStorageSources(): Result<List<BookSource>> = Result.success(emptyList())
     }
 
     private object NoCovers : CoverImageHandler {
         override suspend fun decodeCover(uri: Uri): Result<CoverImage> = error("not asked")
         override suspend fun saveCover(coverImage: CoverImage) = error("not asked")
         override suspend fun deleteCover(coverImage: Uri) = error("not asked")
-        override suspend fun compressCover(coverImage: CoverImage) = error("not asked")
+        override suspend fun isSavedAs(stored: Uri, coverImage: CoverImage) = error("not asked")
     }
 
     private class NoStore : DataStore {

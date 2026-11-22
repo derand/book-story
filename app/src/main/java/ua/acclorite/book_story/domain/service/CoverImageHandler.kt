@@ -20,5 +20,10 @@ interface CoverImageHandler {
 
     suspend fun saveCover(coverImage: CoverImage): Result<File>
     suspend fun deleteCover(coverImage: Uri): Result<Unit>
-    suspend fun compressCover(coverImage: CoverImage): Result<CoverImage>
+
+    /**
+     * Whether the cover stored at [stored] is what saving [coverImage] would
+     * have produced — the same compression, compared pixel by pixel.
+     */
+    suspend fun isSavedAs(stored: Uri, coverImage: CoverImage): Result<Boolean>
 }

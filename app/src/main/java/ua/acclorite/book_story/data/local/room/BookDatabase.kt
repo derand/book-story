@@ -6,7 +6,6 @@
 
 package ua.acclorite.book_story.data.local.room
 
-import android.app.Application
 import androidx.room.AutoMigration
 import androidx.room.Database
 import androidx.room.DeleteColumn
@@ -21,7 +20,6 @@ import ua.acclorite.book_story.data.local.dto.ColorPresetEntity
 import ua.acclorite.book_story.data.local.dto.ReadBookEntity
 import ua.acclorite.book_story.data.local.dto.ReadingCoverageEntity
 import ua.acclorite.book_story.data.local.dto.ReadingSessionEntity
-import java.io.File
 
 /**
  * The schema version this build writes and the newest one it can open. A
@@ -77,6 +75,22 @@ abstract class BookDatabase : RoomDatabase() {
 
 @Suppress("ClassName")
 object DatabaseHelper {
+
+    /**
+     * Makes sure the default category (id -1) exists, every time the database
+     * is opened. Room runs this on the thread that opens it — the first
+     * query's, which is never Main — after any migrations, so the open and the
+     * migrations no longer happen during the first frame.
+     */
+    val DEFAULT_CATEGORY_CALLBACK = object : RoomDatabase.Callback() {
+        override fun onOpen(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                "INSERT OR IGNORE INTO CategoryEntity " +
+                        "(id, title, `order`, sortOrder, sortOrderDescending) " +
+                        "VALUES (-1, '', -1, 'LAST_READ', 1)"
+            )
+        }
+    }
 
     /**
      * The hand-written migrations, in the order Room needs them. Where one
@@ -141,22 +155,7 @@ object DatabaseHelper {
 
     @DeleteColumn("BookEntity", "textPath")
     @DeleteColumn("BookEntity", "chapters")
-    class AUTO_MIGRATION_7_8 : AutoMigrationSpec {
-        companion object {
-            /**
-             * Along with textPath deletion,
-             * books directory with text does not
-             * serve any purpose.
-             */
-            fun removeBooksDir(application: Application) {
-                val booksDir = File(application.filesDir, "books")
-
-                if (booksDir.exists()) {
-                    booksDir.deleteRecursively()
-                }
-            }
-        }
-    }
+    class AUTO_MIGRATION_7_8 : AutoMigrationSpec
 
     @DeleteTable("FavoriteDirectoryEntity")
     class AUTO_MIGRATION_8_9 : AutoMigrationSpec

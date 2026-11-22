@@ -6,8 +6,6 @@
 
 package ua.acclorite.book_story.domain.use_case.book
 
-import android.app.Application
-import android.graphics.BitmapFactory
 import ua.acclorite.book_story.core.helpers.mapCatchingCancellable
 import ua.acclorite.book_story.core.log.logE
 import ua.acclorite.book_story.core.log.logI
@@ -19,7 +17,6 @@ import javax.inject.Inject
 private const val TAG = "CanResetCover"
 
 class CanResetCoverImageUseCase @Inject constructor(
-    private val application: Application,
     private val bookRepository: BookRepository,
     private val coverImageHandler: CoverImageHandler
 ) {
@@ -37,14 +34,7 @@ class CanResetCoverImageUseCase @Inject constructor(
                 return@mapCatchingCancellable true
             }
 
-            // Getting compressed cover images
-            val compressedDefaultCoverImage =
-                coverImageHandler.compressCover(defaultCoverImage).getOrThrow()
-            val compressedCoverImage = application.contentResolver
-                .openInputStream(book.coverImage)
-                ?.use { BitmapFactory.decodeStream(it) }
-
-            !compressedDefaultCoverImage.sameAs(compressedCoverImage)
+            !coverImageHandler.isSavedAs(book.coverImage, defaultCoverImage).getOrThrow()
         }.fold(
             onSuccess = {
                 logI(TAG, "Can reset cover image of [$bookId]: $it.")

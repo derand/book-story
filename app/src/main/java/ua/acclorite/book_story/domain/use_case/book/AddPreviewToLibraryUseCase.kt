@@ -7,8 +7,6 @@
 
 package ua.acclorite.book_story.domain.use_case.book
 
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import ua.acclorite.book_story.core.log.logI
 import ua.acclorite.book_story.core.log.logW
 import ua.acclorite.book_story.core.log.messageForLog
@@ -80,12 +78,7 @@ class AddPreviewToLibraryUseCase @Inject constructor(
         // Asked without the preview's own URI, which would answer yes and mean
         // nothing — that URI is good only while the task that received it lives,
         // and this is the decision to keep the book past it.
-        //
-        // Off the main thread: it walks the grants one provider query per level,
-        // and against a cloud provider each of those is a network round trip.
-        val reachable = withContext(Dispatchers.IO) {
-            fileProvider.getFileFromBook(book.copy(previewUri = null)).getOrNull()
-        }
+        val reachable = fileProvider.getFileFromBook(book.copy(previewUri = null)).getOrNull()
         if (reachable == null) {
             val folder = book.filePath.substringBeforeLast('/', missingDelimiterValue = "")
             logI(TAG, "[${book.id}] is not reachable yet; asking for the folder above it.")

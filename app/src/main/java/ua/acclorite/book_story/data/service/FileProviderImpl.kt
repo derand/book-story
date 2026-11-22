@@ -11,6 +11,10 @@ import android.net.Uri
 import android.os.Build
 import android.provider.DocumentsContract
 import androidx.core.net.toUri
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.withContext
 import ua.acclorite.book_story.core.helpers.rethrowIfCancellation
 import ua.acclorite.book_story.core.helpers.runCatchingCancellable
 import ua.acclorite.book_story.core.log.bookTimingNote
@@ -48,7 +52,10 @@ class FileProviderImpl @Inject constructor(
      */
     private val lastServingTree = ConcurrentHashMap<String, Uri>()
 
-    override fun getFileFromBook(book: Book): Result<CachedFile> = runCatchingCancellable {
+    override suspend fun getFileFromBook(book: Book): Result<CachedFile> =
+        withContext(Dispatchers.IO) { fileFromBook(book) }
+
+    private suspend fun fileFromBook(book: Book): Result<CachedFile> = runCatchingCancellable {
         // A book being previewed is reached by the URI another app handed over,
         // not by descending a granted tree: there is no grant, and that is the
         // whole reason it is a preview. The URI is good for as long as the task
@@ -141,7 +148,10 @@ class FileProviderImpl @Inject constructor(
             if (book.documentAuthority != null &&
                 storage.uri.authority != book.documentAuthority
             ) return@forEach
-            storage.walk().forEach { file ->
+            // Cancellable between directories: leaving the screen that asked
+            // stops a walk over a cloud tree instead of letting it finish.
+            val context = currentCoroutineContext()
+            storage.walk(checkCancelled = { context.ensureActive() }).forEach { file ->
                 if (book.filePath.equals(file.path, ignoreCase = true)) {
                     return@runCatchingCancellable file
                 }
@@ -173,7 +183,10 @@ class FileProviderImpl @Inject constructor(
         return null
     }
 
-    override fun getStorageSources(): Result<List<BookSource>> = runCatchingCancellable {
+    override suspend fun getStorageSources(): Result<List<BookSource>> =
+        withContext(Dispatchers.IO) { storageSources() }
+
+    private fun storageSources(): Result<List<BookSource>> = runCatchingCancellable {
         application.contentResolver.persistedUriPermissions.map { permission ->
             // Asked one source at a time. A provider is free to throw rather than
             // answer — an unmounted card, a stale tree, an account that is gone —
@@ -240,7 +253,10 @@ class FileProviderImpl @Inject constructor(
         }.getOrNull()
     }
 
-    override fun getStorageFiles(): Result<List<CachedFile>> = runCatchingCancellable {
+    override suspend fun getStorageFiles(): Result<List<CachedFile>> =
+        withContext(Dispatchers.IO) { storageFiles() }
+
+    private fun storageFiles(): Result<List<CachedFile>> = runCatchingCancellable {
         // A tree that answers nothing is indistinguishable from an empty one: the
         // query returns a null cursor and `isDirectory` falls back to false.
         val readable = LinkedHashMap<SafRoot, CachedFile>()
