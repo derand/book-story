@@ -14,4 +14,9 @@ sealed class SettingsEffect {
     data class OnSwitchedColorPreset(
         val newColorPreset: ColorPreset
     ) : SettingsEffect()
+
+    /** A folder could not be added ([added]) or removed; nothing changed. */
+    data class OnSourceChangeFailed(
+        val added: Boolean
+    ) : SettingsEffect()
 }

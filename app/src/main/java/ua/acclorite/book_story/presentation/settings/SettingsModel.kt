@@ -44,6 +44,7 @@ import ua.acclorite.book_story.domain.use_case.permission.GrantPersistableUriPer
 import ua.acclorite.book_story.domain.use_case.permission.ReleasePersistableUriPermissionUseCase
 import ua.acclorite.book_story.domain.use_case.settings.UpdateLanguageUseCase
 import ua.acclorite.book_story.domain.use_case.statistics.DeleteStatisticsUseCase
+import ua.acclorite.book_story.presentation.browse.BrowseScreen
 import javax.inject.Inject
 import kotlin.random.Random
 
@@ -178,13 +179,17 @@ class SettingsModel @Inject constructor(
             }
 
             is SettingsEvent.OnGrantPersistableUriPermission -> launchEvent {
-                grantPersistableUriPermissionUseCase(event.uri)
-                refreshBookSources()
+                sourcesChanged(
+                    changed = grantPersistableUriPermissionUseCase(event.uri),
+                    added = true
+                )
             }
 
             is SettingsEvent.OnReleasePersistableUriPermission -> launchEvent {
-                releasePersistableUriPermissionUseCase(event.uri)
-                refreshBookSources()
+                sourcesChanged(
+                    changed = releasePersistableUriPermissionUseCase(event.uri),
+                    added = false
+                )
             }
 
             is SettingsEvent.OnRefreshBookSources -> launchEvent {
@@ -312,6 +317,20 @@ class SettingsModel @Inject constructor(
                 deleteStatisticsUseCase()
             }
         }
+    }
+
+    /**
+     * After a grant was taken or released: Browse walks again only once the
+     * grant has changed, so the walk sees the new set of folders, and a failure
+     * is said rather than leaving the list silently as it was.
+     */
+    private suspend fun sourcesChanged(changed: Boolean, added: Boolean) {
+        if (changed) {
+            BrowseScreen.refreshListChannel.trySend(Unit)
+        } else {
+            _effects.emit(SettingsEffect.OnSourceChangeFailed(added = added))
+        }
+        refreshBookSources()
     }
 
     private fun launchEvent(block: suspend () -> Unit) {

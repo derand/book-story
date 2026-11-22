@@ -57,6 +57,8 @@
     <string name="error_no_browser">No browser app found.</string>
     <string name="error_no_share_app">No app to share found.</string>
     <string name="error_no_file_manager_app">No app to choose folder found.</string>
+    <string name="error_could_not_add_folder">Could not add this folder.</string>
+    <string name="error_could_not_remove_folder">Could not remove this folder.</string>
     <string name="error_could_not_get_text">
         File is empty, missing, or inaccessible.
         Verify the file, scan settings or change the path, then try again.

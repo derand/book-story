@@ -43,6 +43,13 @@ fun SettingsEffects(
                         applied.title(context)
                     ).showToast(context, longToast = false)
                 }
+
+                is SettingsEffect.OnSourceChangeFailed -> {
+                    context.getString(
+                        if (effect.added) R.string.error_could_not_add_folder
+                        else R.string.error_could_not_remove_folder
+                    ).showToast(context, longToast = false)
+                }
             }
         }
     }

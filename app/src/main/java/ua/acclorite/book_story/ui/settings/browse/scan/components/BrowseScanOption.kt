@@ -35,8 +35,9 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ua.acclorite.book_story.R
+import ua.acclorite.book_story.core.log.logE
+import ua.acclorite.book_story.core.log.messageForLog
 import ua.acclorite.book_story.domain.model.file.BookSource
-import ua.acclorite.book_story.presentation.browse.BrowseScreen
 import ua.acclorite.book_story.presentation.settings.SettingsEvent
 import ua.acclorite.book_story.presentation.settings.SettingsModel
 import ua.acclorite.book_story.ui.common.components.common.IconButton
@@ -44,6 +45,8 @@ import ua.acclorite.book_story.ui.common.components.common.StyledText
 import ua.acclorite.book_story.ui.common.helpers.noRippleClickable
 import ua.acclorite.book_story.ui.common.helpers.showToast
 import ua.acclorite.book_story.ui.theme.dynamicListItemColor
+
+private const val TAG = "BrowseScanOption"
 
 @Composable
 fun BrowseScanOption() {
@@ -67,7 +70,6 @@ fun BrowseScanOption() {
                 uri = uri.toString()
             )
         )
-        BrowseScreen.refreshListChannel.trySend(Unit)
     }
 
     Column(
@@ -83,7 +85,6 @@ fun BrowseScanOption() {
                     settingsModel.onEvent(
                         SettingsEvent.OnReleasePersistableUriPermission(uri = source.uri)
                     )
-                    BrowseScreen.refreshListChannel.trySend(Unit)
                 }
             )
         }
@@ -94,7 +95,7 @@ fun BrowseScanOption() {
             try {
                 persistedUriIntent.launch(null)
             } catch (e: Exception) {
-                e.printStackTrace()
+                logE(TAG, "Could not open the folder picker: ${e.messageForLog()}")
 
                 context.getString(R.string.error_no_file_manager_app)
                     .showToast(context, longToast = false)

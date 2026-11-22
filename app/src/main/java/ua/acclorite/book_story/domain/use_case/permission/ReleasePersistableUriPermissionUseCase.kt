@@ -19,19 +19,22 @@ class ReleasePersistableUriPermissionUseCase @Inject constructor(
     private val permissionRepository: PermissionRepository
 ) {
 
-    suspend operator fun invoke(uri: String) {
+    /** Whether the grant changed; a failure is logged and changes nothing. */
+    suspend operator fun invoke(uri: String): Boolean {
         val source = withoutLocations(uri)
         logI(TAG, "Releasing persistable URI permission from \"$source\".")
 
-        permissionRepository.releasePersistableUriPermission(uri).fold(
+        return permissionRepository.releasePersistableUriPermission(uri).fold(
             onSuccess = {
                 logI(TAG, "Successfully released persistable URI permission from \"$source\".")
+                true
             },
             onFailure = {
                 logE(
                     TAG,
                     "Could not release persistable URI permission from \"$source\" with error: ${it.messageForLog()}."
                 )
+                false
             }
         )
     }
