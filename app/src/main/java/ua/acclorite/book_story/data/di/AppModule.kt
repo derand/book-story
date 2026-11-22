@@ -60,10 +60,8 @@ object AppModule {
             RoomDatabase.JournalMode.WRITE_AHEAD_LOGGING
         ).addMigrations(
             *DatabaseHelper.MANUAL_MIGRATIONS
-        ).allowMainThreadQueries().build().also { database ->
-            // Additional Migrations
-            DatabaseHelper.AUTO_MIGRATION_7_8.removeBooksDir(app)
-            database.categoryDao.ensureDefaultCategory()
-        }
+        ).addCallback(
+            DatabaseHelper.DEFAULT_CATEGORY_CALLBACK
+        ).build()
     }
 }

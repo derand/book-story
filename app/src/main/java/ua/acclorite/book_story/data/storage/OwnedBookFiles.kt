@@ -24,11 +24,9 @@ private const val PART_SUFFIX = ".part"
 /**
  * The directory books the app owns live in, one directory per book.
  *
- * Deliberately not `books`: `DatabaseHelper.AUTO_MIGRATION_7_8.removeBooksDir`
- * deletes `filesDir/books`, and `AppModule` calls it every time the database is
- * built rather than only when that migration runs. A store named `books` was
- * therefore emptied on every app start — the book was added, survived being
- * closed, and was gone by the next launch.
+ * Not `books`: builds before 2026-11 deleted `filesDir/books` (left over from
+ * schema 7) on every start, so going back to one of them would empty a store
+ * with that name.
  */
 private const val DIR_NAME = "owned_books"
 
