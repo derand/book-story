@@ -40,8 +40,8 @@ fun ClearParseCacheOption() {
 
     var showDialog by remember { mutableStateOf(false) }
 
-    // The size is loaded once at ViewModel init; refresh it when this screen
-    // appears so it reflects books cached since (e.g. after reading).
+    // Read only here, when the row appears: walking the cache at every app
+    // start was for a value nobody saw.
     LaunchedEffect(Unit) {
         settingsModel.onEvent(SettingsEvent.OnRefreshParseCacheSize)
     }

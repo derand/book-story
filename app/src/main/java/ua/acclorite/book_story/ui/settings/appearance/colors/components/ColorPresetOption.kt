@@ -28,6 +28,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
@@ -69,6 +70,7 @@ import sh.calvin.reorderable.rememberReorderableLazyListState
 import ua.acclorite.book_story.R
 import ua.acclorite.book_story.domain.model.reader.ColorPreset
 import ua.acclorite.book_story.domain.model.reader.activeColorPreset
+import ua.acclorite.book_story.presentation.settings.SettingsEffect
 import ua.acclorite.book_story.presentation.settings.SettingsEvent
 import ua.acclorite.book_story.presentation.settings.SettingsModel
 import ua.acclorite.book_story.ui.common.components.common.AnimatedVisibility
@@ -97,8 +99,24 @@ fun ColorPresetOption(backgroundColor: Color) {
         isDark = isDark
     )
 
+    // Opens on the preset shown as selected (with "auto", the built-in of the
+    // current theme, not the stored one); after an add or a delete the model
+    // says where to go. The presets are loaded before the first frame.
+    val listState = rememberLazyListState(
+        initialFirstVisibleItemIndex = remember {
+            state.value.colorPresets.indexOfFirst { it.id == activePreset.id }.coerceAtLeast(0)
+        }
+    )
+    LaunchedEffect(settingsModel.effects) {
+        settingsModel.effects.collect { effect ->
+            if (effect is SettingsEffect.OnScrollToColorPreset) {
+                listState.requestScrollToItem(index = effect.index, scrollOffset = 0)
+            }
+        }
+    }
+
     val reorderableListState = rememberReorderableLazyListState(
-        lazyListState = state.value.colorPresetListState
+        lazyListState = listState
     ) { from, to ->
         settingsModel.onEvent(
             SettingsEvent.OnReorderColorPresets(
@@ -122,7 +140,7 @@ fun ColorPresetOption(backgroundColor: Color) {
         Spacer(modifier = Modifier.height(10.dp))
         LazyRow(
             modifier = Modifier.fillMaxWidth(),
-            state = state.value.colorPresetListState,
+            state = listState,
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(4.dp),
             contentPadding = PaddingValues(horizontal = 18.dp)

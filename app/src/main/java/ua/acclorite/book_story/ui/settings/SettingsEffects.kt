@@ -44,6 +44,9 @@ fun SettingsEffects(
                     ).showToast(context, longToast = false)
                 }
 
+                // The preset list on the Appearance screen scrolls itself.
+                is SettingsEffect.OnScrollToColorPreset -> Unit
+
                 is SettingsEffect.OnSourceChangeFailed -> {
                     context.getString(
                         if (effect.added) R.string.error_could_not_add_folder

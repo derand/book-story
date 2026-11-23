@@ -15,6 +15,14 @@ sealed class SettingsEffect {
         val newColorPreset: ColorPreset
     ) : SettingsEffect()
 
+    /**
+     * Bring the preset at [index] into view: after an add (the new last one)
+     * or a delete (the one selected in its place). Handled by the preset list.
+     */
+    data class OnScrollToColorPreset(
+        val index: Int
+    ) : SettingsEffect()
+
     /** A folder could not be added ([added]) or removed; nothing changed. */
     data class OnSourceChangeFailed(
         val added: Boolean

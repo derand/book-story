@@ -110,52 +110,16 @@ class SettingsModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            var colorPresets = getColorPresetsUseCase()
-
-            // Ensure the two built-in presets (Dark/Light) always exist. Seeded
-            // once, non-deletable, and (when active) they auto-follow the theme.
-            val wasEmpty = colorPresets.isEmpty()
-            var seededAny = false
-            // Seed Light before Dark so the built-in chips read Light → Dark,
-            // matching the Appearance "Mode" segmented control (System/Light/Dark).
-            if (colorPresets.none { it.type == ColorPresetType.LIGHT }) {
-                updateColorPresetUseCase(ColorPreset.builtInLight)
-                seededAny = true
-            }
-            if (colorPresets.none { it.type == ColorPresetType.DARK }) {
-                updateColorPresetUseCase(ColorPreset.builtInDark)
-                seededAny = true
-            }
-            if (seededAny) colorPresets = getColorPresetsUseCase()
-
-            if (wasEmpty) {
-                // Fresh install: default to auto mode (a built-in is selected, so
-                // the reading colors follow the app's dark/light theme). If the
-                // seeding failed, there is nothing to select: the reader falls
-                // back to the default preset and the next start seeds again.
-                colorPresets.firstOrNull { it.type == ColorPresetType.DARK }?.let {
-                    selectColorPresetUseCase(it)
-                    colorPresets = getColorPresetsUseCase()
-                }
-            }
-
-            val scrollIndex = colorPresets.indexOfFirst { it.isSelected }
-            if (scrollIndex != -1) {
-                _state.value.colorPresetListState.requestScrollToItem(
-                    index = scrollIndex,
-                    scrollOffset = 0
-                )
-            }
-
-            val parseCacheSize = getParseCacheSizeUseCase()
+            // The built-in presets are seeded by the database's open callback.
+            // The parse-cache size is not read here: its row asks when shown.
+            val colorPresets = getColorPresetsUseCase()
             val categories = getCategoriesUseCase()
 
             _state.update {
                 it.copy(
                     selectedColorPreset = colorPresets.getSelectedColorPreset(),
                     colorPresets = colorPresets,
-                    categories = categories,
-                    parseCacheSizeBytes = parseCacheSize
+                    categories = categories
                 )
             }
 
@@ -376,10 +340,7 @@ class SettingsModel @Inject constructor(
         selectColorPresetUseCase(nextColorPreset)
 
         reloadColorPresets()
-        _state.value.colorPresetListState.requestScrollToItem(
-            index = nextPosition,
-            scrollOffset = 0
-        )
+        _effects.emit(SettingsEffect.OnScrollToColorPreset(nextPosition))
     }
 
     private suspend fun addColorPreset(backgroundColor: Color, fontColor: Color) {
@@ -392,10 +353,7 @@ class SettingsModel @Inject constructor(
         getColorPresetsUseCase().lastOrNull()?.let { selectColorPresetUseCase(it) }
 
         val colorPresets = reloadColorPresets()
-        _state.value.colorPresetListState.requestScrollToItem(
-            index = colorPresets.lastIndex,
-            scrollOffset = 0
-        )
+        _effects.emit(SettingsEffect.OnScrollToColorPreset(colorPresets.lastIndex))
     }
 
     /** Applies [edit] to the stored preset [id]; a `null` from it means no change. */
