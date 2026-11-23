@@ -11,15 +11,15 @@ import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import ua.acclorite.book_story.R
 import ua.acclorite.book_story.core.data.CoreData
-import ua.acclorite.book_story.presentation.settings.SettingsEvent
-import ua.acclorite.book_story.presentation.settings.SettingsModel
+import ua.acclorite.book_story.presentation.settings.GeneralSettingsEvent
+import ua.acclorite.book_story.presentation.settings.GeneralSettingsModel
 import ua.acclorite.book_story.ui.common.components.settings.ChipsWithTitle
 import ua.acclorite.book_story.ui.common.helpers.LocalSettings
 import ua.acclorite.book_story.ui.common.model.ListItem
 
 @Composable
 fun AppLanguageOption() {
-    val settingsModel = hiltViewModel<SettingsModel>()
+    val generalSettingsModel = hiltViewModel<GeneralSettingsModel>()
     val settings = LocalSettings.current
 
     ChipsWithTitle(
@@ -32,7 +32,7 @@ fun AppLanguageOption() {
             )
         },
         onClick = { item ->
-            settingsModel.onEvent(SettingsEvent.OnUpdateLanguage(item))
+            generalSettingsModel.onEvent(GeneralSettingsEvent.OnUpdateLanguage(item))
         }
     )
 }

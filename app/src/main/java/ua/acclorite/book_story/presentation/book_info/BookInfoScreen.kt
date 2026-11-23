@@ -23,7 +23,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.parcelize.Parcelize
 import ua.acclorite.book_story.presentation.navigator.Screen
-import ua.acclorite.book_story.presentation.settings.SettingsModel
+import ua.acclorite.book_story.presentation.settings.CategoriesModel
 import ua.acclorite.book_story.ui.book_info.BookInfoContent
 import ua.acclorite.book_story.ui.book_info.BookInfoEffects
 
@@ -37,14 +37,14 @@ data class BookInfoScreen(
     @Composable
     override fun Content() {
         val screenModel = hiltViewModel<BookInfoModel>()
-        val settingsModel = hiltViewModel<SettingsModel>()
+        val categoriesModel = hiltViewModel<CategoriesModel>()
 
-        val settingsState = settingsModel.state.collectAsStateWithLifecycle()
+        val allCategories = categoriesModel.categories.collectAsStateWithLifecycle()
         val state = screenModel.state.collectAsStateWithLifecycle()
         val listState = rememberLazyListState()
 
-        val categories = remember(settingsState.value.categories) {
-            settingsState.value.categories.filterNot { it.id == -1 }
+        val categories = remember(allCategories.value) {
+            allCategories.value.filterNot { it.id == -1 }
         }
 
         // Asked for once. The screen keeps this across a return from a screen

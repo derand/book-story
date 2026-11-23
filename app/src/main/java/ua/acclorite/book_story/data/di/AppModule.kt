@@ -62,6 +62,8 @@ object AppModule {
             *DatabaseHelper.MANUAL_MIGRATIONS
         ).addCallback(
             DatabaseHelper.DEFAULT_CATEGORY_CALLBACK
+        ).addCallback(
+            DatabaseHelper.BUILT_IN_COLOR_PRESETS_CALLBACK
         ).build()
     }
 }

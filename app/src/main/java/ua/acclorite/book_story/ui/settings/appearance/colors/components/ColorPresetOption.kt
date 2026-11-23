@@ -28,6 +28,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
@@ -69,8 +70,9 @@ import sh.calvin.reorderable.rememberReorderableLazyListState
 import ua.acclorite.book_story.R
 import ua.acclorite.book_story.domain.model.reader.ColorPreset
 import ua.acclorite.book_story.domain.model.reader.activeColorPreset
-import ua.acclorite.book_story.presentation.settings.SettingsEvent
-import ua.acclorite.book_story.presentation.settings.SettingsModel
+import ua.acclorite.book_story.presentation.settings.ColorPresetsEffect
+import ua.acclorite.book_story.presentation.settings.ColorPresetsEvent
+import ua.acclorite.book_story.presentation.settings.ColorPresetsModel
 import ua.acclorite.book_story.ui.common.components.common.AnimatedVisibility
 import ua.acclorite.book_story.ui.common.components.common.IconButton
 import ua.acclorite.book_story.ui.common.components.common.StyledText
@@ -86,9 +88,9 @@ private const val DISABLED_ALPHA = 0.38f
 
 @Composable
 fun ColorPresetOption(backgroundColor: Color) {
-    val settingsModel = hiltViewModel<SettingsModel>()
+    val colorPresetsModel = hiltViewModel<ColorPresetsModel>()
     val settings = LocalSettings.current
-    val state = settingsModel.state.collectAsStateWithLifecycle()
+    val state = colorPresetsModel.state.collectAsStateWithLifecycle()
 
     // The preset actually shown/edited: a built-in auto-follows the theme.
     val isDark = settings.darkTheme.value.isDark()
@@ -97,11 +99,27 @@ fun ColorPresetOption(backgroundColor: Color) {
         isDark = isDark
     )
 
+    // Opens on the preset shown as selected (with "auto", the built-in of the
+    // current theme, not the stored one); after an add or a delete the model
+    // says where to go. The presets are loaded before the first frame.
+    val listState = rememberLazyListState(
+        initialFirstVisibleItemIndex = remember {
+            state.value.colorPresets.indexOfFirst { it.id == activePreset.id }.coerceAtLeast(0)
+        }
+    )
+    LaunchedEffect(colorPresetsModel.effects) {
+        colorPresetsModel.effects.collect { effect ->
+            if (effect is ColorPresetsEffect.OnScrollToColorPreset) {
+                listState.requestScrollToItem(index = effect.index, scrollOffset = 0)
+            }
+        }
+    }
+
     val reorderableListState = rememberReorderableLazyListState(
-        lazyListState = state.value.colorPresetListState
+        lazyListState = listState
     ) { from, to ->
-        settingsModel.onEvent(
-            SettingsEvent.OnReorderColorPresets(
+        colorPresetsModel.onEvent(
+            ColorPresetsEvent.OnReorderColorPresets(
                 from = from.index,
                 to = to.index
             )
@@ -122,7 +140,7 @@ fun ColorPresetOption(backgroundColor: Color) {
         Spacer(modifier = Modifier.height(10.dp))
         LazyRow(
             modifier = Modifier.fillMaxWidth(),
-            state = state.value.colorPresetListState,
+            state = listState,
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(4.dp),
             contentPadding = PaddingValues(horizontal = 18.dp)
@@ -159,11 +177,11 @@ fun ColorPresetOption(backgroundColor: Color) {
                             state.value.colorPresets.size > 1
                         },
                         onDragStopped = {
-                            settingsModel.onEvent(SettingsEvent.OnConfirmReorderColorPresets)
+                            colorPresetsModel.onEvent(ColorPresetsEvent.OnConfirmReorderColorPresets)
                         },
                         onClick = {
-                            settingsModel.onEvent(
-                                SettingsEvent.OnSelectColorPreset(
+                            colorPresetsModel.onEvent(
+                                ColorPresetsEvent.OnSelectColorPreset(
                                     id = colorPreset.id
                                 )
                             )
@@ -188,31 +206,31 @@ fun ColorPresetOption(backgroundColor: Color) {
                 colorPreset = activePreset,
                 canDelete = state.value.colorPresets.size > 1 && !activePreset.isBuiltIn,
                 onDelete = {
-                    settingsModel.onEvent(
-                        SettingsEvent.OnDeleteColorPreset(id = activePreset.id)
+                    colorPresetsModel.onEvent(
+                        ColorPresetsEvent.OnDeleteColorPreset(id = activePreset.id)
                     )
                 },
                 onReset = {
-                    settingsModel.onEvent(
-                        SettingsEvent.OnResetColorPreset(id = activePreset.id)
+                    colorPresetsModel.onEvent(
+                        ColorPresetsEvent.OnResetColorPreset(id = activePreset.id)
                     )
                 },
                 onTitleChange = {
-                    settingsModel.onEvent(
-                        SettingsEvent.OnUpdateColorPresetTitle(
+                    colorPresetsModel.onEvent(
+                        ColorPresetsEvent.OnUpdateColorPresetTitle(
                             id = activePreset.id,
                             title = it
                         )
                     )
                 },
                 onShuffle = {
-                    settingsModel.onEvent(
-                        SettingsEvent.OnShuffleColorPreset(id = activePreset.id)
+                    colorPresetsModel.onEvent(
+                        ColorPresetsEvent.OnShuffleColorPreset(id = activePreset.id)
                     )
                 },
                 onAdd = {
-                    settingsModel.onEvent(
-                        SettingsEvent.OnAddColorPreset(
+                    colorPresetsModel.onEvent(
+                        ColorPresetsEvent.OnAddColorPreset(
                             backgroundColor = defaultBackgroundColor,
                             fontColor = defaultFontColor
                         )
@@ -227,8 +245,8 @@ fun ColorPresetOption(backgroundColor: Color) {
                 presetId = activePreset.id,
                 title = stringResource(id = R.string.background_color_option),
                 onValueChange = {
-                    settingsModel.onEvent(
-                        SettingsEvent.OnUpdateColorPresetColor(
+                    colorPresetsModel.onEvent(
+                        ColorPresetsEvent.OnUpdateColorPresetColor(
                             id = activePreset.id,
                             backgroundColor = it,
                             fontColor = null
@@ -241,8 +259,8 @@ fun ColorPresetOption(backgroundColor: Color) {
                 presetId = activePreset.id,
                 title = stringResource(id = R.string.font_color_option),
                 onValueChange = {
-                    settingsModel.onEvent(
-                        SettingsEvent.OnUpdateColorPresetColor(
+                    colorPresetsModel.onEvent(
+                        ColorPresetsEvent.OnUpdateColorPresetColor(
                             id = activePreset.id,
                             backgroundColor = null,
                             fontColor = it

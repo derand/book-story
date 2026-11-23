@@ -41,7 +41,7 @@ import ua.acclorite.book_story.core.helpers.calculateProgress
 import ua.acclorite.book_story.core.log.BookOpenTrace
 import ua.acclorite.book_story.presentation.navigator.Screen
 import ua.acclorite.book_story.presentation.reader.model.ReaderProgressCount
-import ua.acclorite.book_story.presentation.settings.SettingsModel
+import ua.acclorite.book_story.presentation.settings.ColorPresetsModel
 import ua.acclorite.book_story.ui.common.helpers.LocalActivity
 import ua.acclorite.book_story.domain.model.reader.activeColorPreset
 import ua.acclorite.book_story.ui.common.helpers.LocalSettings
@@ -64,11 +64,11 @@ data class ReaderScreen(val bookId: Int) : Screen, Parcelable {
     @Composable
     override fun Content() {
         val screenModel = hiltViewModel<ReaderModel>()
-        val settingsModel = hiltViewModel<SettingsModel>()
+        val colorPresetsModel = hiltViewModel<ColorPresetsModel>()
         val settings = LocalSettings.current
 
         val state = screenModel.state.collectAsStateWithLifecycle()
-        val settingsState = settingsModel.state.collectAsStateWithLifecycle()
+        val colorPresetsState = colorPresetsModel.state.collectAsStateWithLifecycle()
 
         val activity = LocalActivity.current
         val lifecycleOwner = LocalLifecycleOwner.current
@@ -101,8 +101,8 @@ data class ReaderScreen(val bookId: Int) : Screen, Parcelable {
         }
 
         // A built-in preset auto-follows the theme; a custom one is used as-is.
-        val activePreset = settingsState.value.colorPresets.activeColorPreset(
-            selected = settingsState.value.selectedColorPreset,
+        val activePreset = colorPresetsState.value.colorPresets.activeColorPreset(
+            selected = colorPresetsState.value.selectedColorPreset,
             isDark = settings.darkTheme.value.isDark()
         )
         val backgroundColor = animateColorAsState(
@@ -279,7 +279,7 @@ data class ReaderScreen(val bookId: Int) : Screen, Parcelable {
                 look = look,
                 controls = controls,
                 progress = progress,
-                switchColorPreset = settingsModel::onEvent,
+                switchColorPreset = colorPresetsModel::onEvent,
                 onEvent = screenModel::onEvent,
                 addingToLibrary = state.value.addingToLibrary || state.value.lockMenu
             )

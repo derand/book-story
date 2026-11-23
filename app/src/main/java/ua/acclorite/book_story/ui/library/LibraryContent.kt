@@ -18,7 +18,7 @@ import ua.acclorite.book_story.presentation.library.model.LibraryLayout
 import ua.acclorite.book_story.presentation.library.model.LibraryPage
 import ua.acclorite.book_story.presentation.library.model.LibrarySortOrder
 import ua.acclorite.book_story.presentation.library.model.LibraryTitlePosition
-import ua.acclorite.book_story.presentation.settings.SettingsEvent
+import ua.acclorite.book_story.presentation.settings.CategoriesEvent
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -41,7 +41,7 @@ fun LibraryContent(
     gridSize: Int,
     autoGridSize: Boolean,
     refreshState: PullToRefreshState,
-    updateCategory: (SettingsEvent.OnUpdateCategory) -> Unit,
+    updateCategory: (CategoriesEvent.OnUpdateCategory) -> Unit,
     changeSortOrder: (LibrarySortOrder) -> Unit,
     changeSortOrderDescending: (Boolean) -> Unit,
     onEvent: (LibraryEvent) -> Unit

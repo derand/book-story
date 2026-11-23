@@ -19,7 +19,10 @@ import ua.acclorite.book_story.data.local.room.BookDatabase
 import ua.acclorite.book_story.data.mapper.color_preset.ColorPresetMapperImpl
 import ua.acclorite.book_story.domain.model.reader.ColorPreset
 
-/** Reorder and select write only what they change, in one statement or transaction. */
+/**
+ * Reorder and select write only what they change, in one statement or
+ * transaction; a new preset is added after the last one.
+ */
 @RunWith(RobolectricTestRunner::class)
 class ColorPresetRepositoryTest {
 
@@ -62,6 +65,20 @@ class ColorPresetRepositoryTest {
 
         val stored = repository.getColorPresets().getOrThrow()
         assertEquals(Color.Blue, stored.first { it.id == b.id }.backgroundColor)
+    }
+
+    @Test
+    fun `a new preset goes after the last one, also after a delete`() = runBlocking {
+        val (a, b) = addPresets("A", "B", "C", "D")
+        repository.deleteColorPreset(a).getOrThrow()
+        repository.deleteColorPreset(b).getOrThrow()
+
+        repository.updateColorPreset(
+            ColorPreset.default.copy(name = "E", backgroundColor = Color.Red)
+        ).getOrThrow()
+
+        val stored = repository.getColorPresets().getOrThrow()
+        assertEquals(listOf("C", "D", "E"), stored.map { it.name })
     }
 
     @Test

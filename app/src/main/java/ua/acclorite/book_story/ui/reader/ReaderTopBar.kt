@@ -36,7 +36,7 @@ import ua.acclorite.book_story.domain.model.library.Book
 import ua.acclorite.book_story.domain.model.reader.ReaderText.Chapter
 import ua.acclorite.book_story.presentation.reader.ReaderEvent
 import ua.acclorite.book_story.presentation.reader.model.ReaderSearch
-import ua.acclorite.book_story.presentation.settings.SettingsEvent
+import ua.acclorite.book_story.presentation.settings.ColorPresetsEvent
 import ua.acclorite.book_story.ui.common.components.common.IconButton
 import ua.acclorite.book_story.ui.common.components.common.StyledText
 import ua.acclorite.book_story.ui.common.helpers.noRippleClickable
@@ -54,7 +54,7 @@ fun ReaderTopBar(
     search: ReaderSearch,
     listState: LazyListState,
     leave: (ReaderEvent.OnLeave) -> Unit,
-    switchColorPreset: (SettingsEvent.OnSwitchColorPreset) -> Unit,
+    switchColorPreset: (ColorPresetsEvent.OnSwitchColorPreset) -> Unit,
     showSettingsBottomSheet: (ReaderEvent.OnShowSettingsBottomSheet) -> Unit,
     showChaptersDrawer: (ReaderEvent.OnShowChaptersDrawer) -> Unit,
     searchVisibility: (ReaderEvent.OnSearchVisibility) -> Unit,

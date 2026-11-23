@@ -20,6 +20,8 @@ import ua.acclorite.book_story.data.local.dto.ColorPresetEntity
 import ua.acclorite.book_story.data.local.dto.ReadBookEntity
 import ua.acclorite.book_story.data.local.dto.ReadingCoverageEntity
 import ua.acclorite.book_story.data.local.dto.ReadingSessionEntity
+import ua.acclorite.book_story.domain.model.reader.ColorPreset
+import ua.acclorite.book_story.domain.model.reader.ColorPresetType
 
 /**
  * The schema version this build writes and the newest one it can open. A
@@ -88,6 +90,52 @@ object DatabaseHelper {
                 "INSERT OR IGNORE INTO CategoryEntity " +
                         "(id, title, `order`, sortOrder, sortOrderDescending) " +
                         "VALUES (-1, '', -1, 'LAST_READ', 1)"
+            )
+        }
+    }
+
+    /**
+     * Makes sure the two built-in presets exist, every time the database is
+     * opened (same thread and timing as [DEFAULT_CATEGORY_CALLBACK]). Light is
+     * added before Dark, so the chips read Light → Dark like the Appearance
+     * "Mode" control. On a fresh install Dark is selected: a built-in means
+     * "follow the app's theme". A deleted built-in comes back with its factory
+     * colours; one that exists is never touched.
+     */
+    val BUILT_IN_COLOR_PRESETS_CALLBACK = object : RoomDatabase.Callback() {
+        override fun onOpen(db: SupportSQLiteDatabase) {
+            db.beginTransaction()
+            try {
+                val wasEmpty = db.query("SELECT COUNT(*) FROM ColorPresetEntity").use {
+                    it.moveToFirst() && it.getInt(0) == 0
+                }
+                insertBuiltIn(db, ColorPreset.builtInLight)
+                insertBuiltIn(db, ColorPreset.builtInDark)
+                if (wasEmpty) {
+                    db.execSQL(
+                        "UPDATE ColorPresetEntity SET isSelected = (type = ?)",
+                        arrayOf(ColorPresetType.DARK.name)
+                    )
+                }
+                db.setTransactionSuccessful()
+            } finally {
+                db.endTransaction()
+            }
+        }
+
+        /** Adds [preset] after the last one unless a preset of its type exists. */
+        private fun insertBuiltIn(db: SupportSQLiteDatabase, preset: ColorPreset) {
+            db.execSQL(
+                "INSERT INTO ColorPresetEntity " +
+                        "(name, backgroundColor, fontColor, isSelected, `order`, type) " +
+                        "SELECT '', ?, ?, 0, (SELECT COALESCE(MAX(`order`) + 1, 0) FROM ColorPresetEntity), ? " +
+                        "WHERE NOT EXISTS (SELECT 1 FROM ColorPresetEntity WHERE type = ?)",
+                arrayOf(
+                    preset.backgroundColor.value.toLong(),
+                    preset.fontColor.value.toLong(),
+                    preset.type.name,
+                    preset.type.name
+                )
             )
         }
     }
