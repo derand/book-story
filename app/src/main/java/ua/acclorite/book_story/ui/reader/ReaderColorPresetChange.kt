@@ -13,7 +13,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
-import ua.acclorite.book_story.presentation.settings.SettingsEvent
+import ua.acclorite.book_story.presentation.settings.ColorPresetsEvent
 
 /**
  * How far a horizontal swipe has to travel to switch the colour preset. In dp,
@@ -26,7 +26,7 @@ private val SWITCH_THRESHOLD = 133.dp
 fun Modifier.readerColorPresetChange(
     colorPresetChangeEnabled: Boolean,
     isLoading: Boolean,
-    switchColorPreset: (SettingsEvent.OnSwitchColorPreset) -> Unit
+    switchColorPreset: (ColorPresetsEvent.OnSwitchColorPreset) -> Unit
 ): Modifier {
     val offset = remember { mutableFloatStateOf(0f) }
     return this.then(
@@ -40,7 +40,7 @@ fun Modifier.readerColorPresetChange(
                         when {
                             offset.floatValue > threshold -> {
                                 switchColorPreset(
-                                    SettingsEvent.OnSwitchColorPreset(
+                                    ColorPresetsEvent.OnSwitchColorPreset(
                                         previous = true
                                     )
                                 )
@@ -48,7 +48,7 @@ fun Modifier.readerColorPresetChange(
 
                             offset.floatValue < -threshold -> {
                                 switchColorPreset(
-                                    SettingsEvent.OnSwitchColorPreset(
+                                    ColorPresetsEvent.OnSwitchColorPreset(
                                         previous = false
                                     )
                                 )

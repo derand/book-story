@@ -19,8 +19,8 @@ import ua.acclorite.book_story.core.data.CoreData
 import ua.acclorite.book_story.presentation.browse.BrowseScreen
 import ua.acclorite.book_story.presentation.navigator.Screen
 import ua.acclorite.book_story.presentation.navigator.StackEvent
-import ua.acclorite.book_story.presentation.settings.SettingsEvent
-import ua.acclorite.book_story.presentation.settings.SettingsModel
+import ua.acclorite.book_story.presentation.settings.GeneralSettingsEvent
+import ua.acclorite.book_story.presentation.settings.GeneralSettingsModel
 import ua.acclorite.book_story.ui.common.helpers.LocalActivity
 import ua.acclorite.book_story.ui.common.helpers.LocalSettings
 import ua.acclorite.book_story.ui.common.model.ListItem
@@ -49,7 +49,7 @@ object StartScreen : Screen, Parcelable {
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.current
-        val settingsModel = hiltViewModel<SettingsModel>()
+        val generalSettingsModel = hiltViewModel<GeneralSettingsModel>()
         val settings = LocalSettings.current
         val activity = LocalActivity.current
 
@@ -70,7 +70,7 @@ object StartScreen : Screen, Parcelable {
             currentPage = currentPage.intValue,
             stackEvent = stackEvent.value,
             languages = languages,
-            updateLanguage = { settingsModel.onEvent(SettingsEvent.OnUpdateLanguage(it)) },
+            updateLanguage = { generalSettingsModel.onEvent(GeneralSettingsEvent.OnUpdateLanguage(it)) },
             navigateForward = {
                 if (currentPage.intValue + 1 == 4) {
                     return@StartContent

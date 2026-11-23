@@ -19,8 +19,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ua.acclorite.book_story.R
-import ua.acclorite.book_story.presentation.settings.SettingsEvent
-import ua.acclorite.book_story.presentation.settings.SettingsModel
+import ua.acclorite.book_story.presentation.settings.GeneralSettingsEvent
+import ua.acclorite.book_story.presentation.settings.GeneralSettingsModel
 import ua.acclorite.book_story.ui.common.components.common.StyledText
 
 /**
@@ -33,8 +33,8 @@ import ua.acclorite.book_story.ui.common.components.common.StyledText
  */
 @Composable
 fun CopyDatabaseOption() {
-    val settingsModel = hiltViewModel<SettingsModel>()
-    val state = settingsModel.state.collectAsStateWithLifecycle()
+    val generalSettingsModel = hiltViewModel<GeneralSettingsModel>()
+    val state = generalSettingsModel.state.collectAsStateWithLifecycle()
 
     val description = state.value.let { current ->
         when {
@@ -47,7 +47,7 @@ fun CopyDatabaseOption() {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { settingsModel.onEvent(SettingsEvent.OnCopyDatabase) }
+            .clickable { generalSettingsModel.onEvent(GeneralSettingsEvent.OnCopyDatabase) }
             .padding(horizontal = 18.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.Center
     ) {

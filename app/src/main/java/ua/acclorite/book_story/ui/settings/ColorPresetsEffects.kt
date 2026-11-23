@@ -15,17 +15,17 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import ua.acclorite.book_story.R
 import ua.acclorite.book_story.domain.model.reader.activeColorPreset
-import ua.acclorite.book_story.presentation.settings.SettingsEffect
-import ua.acclorite.book_story.presentation.settings.SettingsState
+import ua.acclorite.book_story.presentation.settings.ColorPresetsEffect
+import ua.acclorite.book_story.presentation.settings.ColorPresetsState
 import ua.acclorite.book_story.ui.common.helpers.LocalSettings
 import ua.acclorite.book_story.ui.common.helpers.showToast
 import ua.acclorite.book_story.ui.common.helpers.title
 
 /** Needs [LocalSettings]: a built-in preset is named after the theme it is applied in. */
 @Composable
-fun SettingsEffects(
-    effects: SharedFlow<SettingsEffect>,
-    state: StateFlow<SettingsState>
+fun ColorPresetsEffects(
+    effects: SharedFlow<ColorPresetsEffect>,
+    state: StateFlow<ColorPresetsState>
 ) {
     val context = LocalContext.current
     val isDark by rememberUpdatedState(LocalSettings.current.darkTheme.value.isDark())
@@ -33,7 +33,7 @@ fun SettingsEffects(
     LaunchedEffect(effects) {
         effects.collect { effect ->
             when (effect) {
-                is SettingsEffect.OnSwitchedColorPreset -> {
+                is ColorPresetsEffect.OnSwitchedColorPreset -> {
                     val applied = state.value.colorPresets.activeColorPreset(
                         selected = effect.newColorPreset,
                         isDark = isDark
@@ -45,14 +45,7 @@ fun SettingsEffects(
                 }
 
                 // The preset list on the Appearance screen scrolls itself.
-                is SettingsEffect.OnScrollToColorPreset -> Unit
-
-                is SettingsEffect.OnSourceChangeFailed -> {
-                    context.getString(
-                        if (effect.added) R.string.error_could_not_add_folder
-                        else R.string.error_could_not_remove_folder
-                    ).showToast(context, longToast = false)
-                }
+                is ColorPresetsEffect.OnScrollToColorPreset -> Unit
             }
         }
     }

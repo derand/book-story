@@ -49,8 +49,8 @@ import sh.calvin.reorderable.ReorderableScope
 import ua.acclorite.book_story.R
 import ua.acclorite.book_story.domain.model.library.Category
 import ua.acclorite.book_story.presentation.library.LibraryScreen
-import ua.acclorite.book_story.presentation.settings.SettingsEvent
-import ua.acclorite.book_story.presentation.settings.SettingsModel
+import ua.acclorite.book_story.presentation.settings.CategoriesEvent
+import ua.acclorite.book_story.presentation.settings.CategoriesModel
 import ua.acclorite.book_story.ui.common.components.common.IconButton
 import ua.acclorite.book_story.ui.common.components.common.StyledText
 import ua.acclorite.book_story.ui.common.components.dialog.Dialog
@@ -65,11 +65,11 @@ private const val REMOVE_DIALOG = "remove_dialog"
 
 @Composable
 fun LibraryCategoriesOption() {
-    val settingsModel = hiltViewModel<SettingsModel>()
-    val state = settingsModel.state.collectAsStateWithLifecycle()
+    val categoriesModel = hiltViewModel<CategoriesModel>()
+    val allCategories = categoriesModel.categories.collectAsStateWithLifecycle()
 
-    val categories = remember(state.value.categories) {
-        state.value.categories.filterNot { it.id == -1 }
+    val categories = remember(allCategories.value) {
+        allCategories.value.filterNot { it.id == -1 }
     }
     val dialog = remember {
         mutableStateOf<String?>(null)
@@ -83,8 +83,8 @@ fun LibraryCategoriesOption() {
             LibraryCategoriesCreateDialog(
                 onDismiss = { dialog.value = null },
                 onAction = { title ->
-                    settingsModel.onEvent(
-                        SettingsEvent.OnCreateCategory(
+                    categoriesModel.onEvent(
+                        CategoriesEvent.OnCreateCategory(
                             title = title
                         )
                     )
@@ -98,8 +98,8 @@ fun LibraryCategoriesOption() {
                 onDismiss = { dialog.value = null },
                 onAction = { title ->
                     selectedCategory.value?.let { selectedCategory ->
-                        settingsModel.onEvent(
-                            SettingsEvent.OnUpdateCategory(
+                        categoriesModel.onEvent(
+                            CategoriesEvent.OnUpdateCategory(
                                 category = selectedCategory.copy(
                                     title = title
                                 )
@@ -116,8 +116,8 @@ fun LibraryCategoriesOption() {
                 onAction = {
                     selectedCategory.value?.let { selectedCategory ->
                         LibraryScreen.scrollToPageCompositionChannel.trySend(0)
-                        settingsModel.onEvent(
-                            SettingsEvent.OnRemoveCategory(selectedCategory)
+                        categoriesModel.onEvent(
+                            CategoriesEvent.OnRemoveCategory(selectedCategory)
                         )
                     }
                     dialog.value = null
@@ -133,8 +133,8 @@ fun LibraryCategoriesOption() {
         list = categories,
         onSettle = { from, to ->
             LibraryScreen.scrollToPageCompositionChannel.trySend(0)
-            settingsModel.onEvent(
-                SettingsEvent.OnUpdateCategoryOrder(
+            categoriesModel.onEvent(
+                CategoriesEvent.OnUpdateCategoryOrder(
                     categories.toMutableList().apply {
                         add(to, removeAt(from))
                     }

@@ -25,7 +25,7 @@ import kotlinx.parcelize.Parcelize
 import ua.acclorite.book_story.R
 import ua.acclorite.book_story.presentation.library.model.libraryPages
 import ua.acclorite.book_story.presentation.navigator.Screen
-import ua.acclorite.book_story.presentation.settings.SettingsModel
+import ua.acclorite.book_story.presentation.settings.CategoriesModel
 import ua.acclorite.book_story.ui.common.helpers.LocalSettings
 import ua.acclorite.book_story.ui.library.LibraryContent
 import ua.acclorite.book_story.ui.library.LibraryEffects
@@ -50,13 +50,13 @@ object LibraryScreen : Screen, Parcelable {
     @Composable
     override fun Content() {
         val screenModel = hiltViewModel<LibraryModel>()
-        val settingsModel = hiltViewModel<SettingsModel>()
+        val categoriesModel = hiltViewModel<CategoriesModel>()
         val settings = LocalSettings.current
 
         val state = screenModel.state.collectAsStateWithLifecycle()
-        val settingsState = settingsModel.state.collectAsStateWithLifecycle()
+        val categoriesState = categoriesModel.categories.collectAsStateWithLifecycle()
 
-        val categories = settingsState.value.categories
+        val categories = categoriesState.value
         val library = state.value.library
         val shown = state.value.books
         val alwaysShowDefault = settings.libraryShowDefaultTab.value
@@ -109,13 +109,13 @@ object LibraryScreen : Screen, Parcelable {
             layout = settings.libraryLayout.value,
             gridSize = settings.libraryGridSize.value,
             autoGridSize = settings.libraryAutoGridSize.value,
-            categories = settingsState.value.categories,
+            categories = categoriesState.value,
             pages = pages,
             sortOrder = settings.librarySortOrder.value,
             sortOrderDescending = settings.librarySortOrderDescending.value,
             perCategorySort = settings.libraryPerCategorySort.value,
             refreshState = refreshState,
-            updateCategory = settingsModel::onEvent,
+            updateCategory = categoriesModel::onEvent,
             changeSortOrder = { settings.librarySortOrder.update(it) },
             changeSortOrderDescending = { settings.librarySortOrderDescending.update(it) },
             onEvent = screenModel::onEvent

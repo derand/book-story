@@ -23,14 +23,14 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import ua.acclorite.book_story.R
-import ua.acclorite.book_story.presentation.settings.SettingsEvent
-import ua.acclorite.book_story.presentation.settings.SettingsModel
+import ua.acclorite.book_story.presentation.settings.GeneralSettingsEvent
+import ua.acclorite.book_story.presentation.settings.GeneralSettingsModel
 import ua.acclorite.book_story.ui.common.components.common.StyledText
 import ua.acclorite.book_story.ui.common.components.dialog.Dialog
 
 @Composable
 fun DeleteStatisticsOption() {
-    val settingsModel = hiltViewModel<SettingsModel>()
+    val generalSettingsModel = hiltViewModel<GeneralSettingsModel>()
 
     var showDialog by remember { mutableStateOf(false) }
 
@@ -63,7 +63,7 @@ fun DeleteStatisticsOption() {
             withContent = false,
             onDismiss = { showDialog = false },
             onAction = {
-                settingsModel.onEvent(SettingsEvent.OnDeleteStatistics)
+                generalSettingsModel.onEvent(GeneralSettingsEvent.OnDeleteStatistics)
                 showDialog = false
             }
         )

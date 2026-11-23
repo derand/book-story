@@ -39,7 +39,7 @@ class ColorPresetRepositoryImpl @Inject constructor(
                     colorPreset = colorPreset,
                     order = if (colorPreset.id != -1) {
                         database.colorPresetDao.getColorPresetOrder(colorPreset.id)
-                    } else database.colorPresetDao.getColorPresetsSize()
+                    } else database.colorPresetDao.getNextColorPresetOrder()
                 )
             )
         }

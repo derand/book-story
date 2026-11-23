@@ -21,8 +21,12 @@ interface ColorPresetDao {
     @Query("SELECT `order` FROM colorpresetentity WHERE id = :id")
     suspend fun getColorPresetOrder(id: Int): Int
 
-    @Query("SELECT COUNT(*) FROM colorpresetentity")
-    suspend fun getColorPresetsSize(): Int
+    /**
+     * The order for a preset added at the end. Not the count: a delete leaves
+     * a gap, and a count-based order then lands before the last preset.
+     */
+    @Query("SELECT COALESCE(MAX(`order`) + 1, 0) FROM colorpresetentity")
+    suspend fun getNextColorPresetOrder(): Int
 
     @Query("SELECT * FROM colorpresetentity ORDER BY `order` ASC")
     suspend fun getColorPresets(): List<ColorPresetEntity>

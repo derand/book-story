@@ -24,7 +24,7 @@ import ua.acclorite.book_story.presentation.library.LibraryEvent
 import ua.acclorite.book_story.presentation.library.model.LibraryPage
 import ua.acclorite.book_story.presentation.library.model.LibrarySortOrder
 import ua.acclorite.book_story.presentation.library.model.pageAt
-import ua.acclorite.book_story.presentation.settings.SettingsEvent
+import ua.acclorite.book_story.presentation.settings.CategoriesEvent
 import ua.acclorite.book_story.ui.common.components.common.LazyColumnWithScrollbar
 import ua.acclorite.book_story.ui.common.components.modal_bottom_sheet.ModalBottomSheet
 import ua.acclorite.book_story.ui.settings.library.display.LibraryDisplaySubcategory
@@ -42,7 +42,7 @@ fun LibraryFilterBottomSheet(
     perCategorySort: Boolean,
     changeSortOrder: (LibrarySortOrder) -> Unit,
     changeSortOrderDescending: (Boolean) -> Unit,
-    updateCategory: (SettingsEvent.OnUpdateCategory) -> Unit,
+    updateCategory: (CategoriesEvent.OnUpdateCategory) -> Unit,
     onEvent: (LibraryEvent) -> Unit
 ) {
     val currentCategory = pages.pageAt(categoriesPagerState.currentPage).category
@@ -86,7 +86,7 @@ fun LibraryFilterBottomSheet(
                             onChange = { sortOrder, sortOrderDescending ->
                                 if (perCategorySort) {
                                     updateCategory(
-                                        SettingsEvent.OnUpdateCategory(
+                                        CategoriesEvent.OnUpdateCategory(
                                             currentCategory.copy(
                                                 sortOrder = sortOrder,
                                                 sortOrderDescending = sortOrderDescending

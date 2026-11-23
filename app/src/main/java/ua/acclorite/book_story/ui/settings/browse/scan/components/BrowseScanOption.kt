@@ -38,8 +38,9 @@ import ua.acclorite.book_story.R
 import ua.acclorite.book_story.core.log.logE
 import ua.acclorite.book_story.core.log.messageForLog
 import ua.acclorite.book_story.domain.model.file.BookSource
-import ua.acclorite.book_story.presentation.settings.SettingsEvent
-import ua.acclorite.book_story.presentation.settings.SettingsModel
+import ua.acclorite.book_story.presentation.settings.BookSourcesEffect
+import ua.acclorite.book_story.presentation.settings.BookSourcesEvent
+import ua.acclorite.book_story.presentation.settings.BookSourcesModel
 import ua.acclorite.book_story.ui.common.components.common.IconButton
 import ua.acclorite.book_story.ui.common.components.common.StyledText
 import ua.acclorite.book_story.ui.common.helpers.noRippleClickable
@@ -50,23 +51,38 @@ private const val TAG = "BrowseScanOption"
 
 @Composable
 fun BrowseScanOption() {
-    val settingsModel = hiltViewModel<SettingsModel>()
+    val bookSourcesModel = hiltViewModel<BookSourcesModel>()
     val context = LocalContext.current
-    val state = settingsModel.state.collectAsStateWithLifecycle()
+    val bookSources = bookSourcesModel.bookSources.collectAsStateWithLifecycle()
+
+    // The grant and release run while this row is on screen: the picker
+    // returns here, and Clear is on the row itself.
+    LaunchedEffect(bookSourcesModel.effects) {
+        bookSourcesModel.effects.collect { effect ->
+            when (effect) {
+                is BookSourcesEffect.OnSourceChangeFailed -> {
+                    context.getString(
+                        if (effect.added) R.string.error_could_not_add_folder
+                        else R.string.error_could_not_remove_folder
+                    ).showToast(context, longToast = false)
+                }
+            }
+        }
+    }
 
     // Asking a source whether it answers is a query against its provider, and
     // for one that is not on this device that is a round trip — so it is asked
     // when the screen opens and when a grant changes, not while drawing.
     LaunchedEffect(Unit) {
-        settingsModel.onEvent(SettingsEvent.OnRefreshBookSources)
+        bookSourcesModel.onEvent(BookSourcesEvent.OnRefreshBookSources)
     }
 
     val persistedUriIntent = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocumentTree()
     ) { uri ->
         if (uri == null) return@rememberLauncherForActivityResult
-        settingsModel.onEvent(
-            SettingsEvent.OnGrantPersistableUriPermission(
+        bookSourcesModel.onEvent(
+            BookSourcesEvent.OnGrantPersistableUriPermission(
                 uri = uri.toString()
             )
         )
@@ -77,13 +93,13 @@ fun BrowseScanOption() {
             .fillMaxWidth()
             .animateContentSize()
     ) {
-        state.value.bookSources.forEachIndexed { index, source ->
+        bookSources.value.forEachIndexed { index, source ->
             BrowseScanFolderItem(
                 index = index,
                 source = source,
                 releasePersistableUriPermission = {
-                    settingsModel.onEvent(
-                        SettingsEvent.OnReleasePersistableUriPermission(uri = source.uri)
+                    bookSourcesModel.onEvent(
+                        BookSourcesEvent.OnReleasePersistableUriPermission(uri = source.uri)
                     )
                 }
             )

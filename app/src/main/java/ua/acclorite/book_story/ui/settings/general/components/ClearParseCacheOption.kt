@@ -27,15 +27,15 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ua.acclorite.book_story.R
-import ua.acclorite.book_story.presentation.settings.SettingsEvent
-import ua.acclorite.book_story.presentation.settings.SettingsModel
+import ua.acclorite.book_story.presentation.settings.GeneralSettingsEvent
+import ua.acclorite.book_story.presentation.settings.GeneralSettingsModel
 import ua.acclorite.book_story.ui.common.components.common.StyledText
 import ua.acclorite.book_story.ui.common.components.dialog.Dialog
 
 @Composable
 fun ClearParseCacheOption() {
-    val settingsModel = hiltViewModel<SettingsModel>()
-    val state = settingsModel.state.collectAsStateWithLifecycle()
+    val generalSettingsModel = hiltViewModel<GeneralSettingsModel>()
+    val state = generalSettingsModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
     var showDialog by remember { mutableStateOf(false) }
@@ -43,7 +43,7 @@ fun ClearParseCacheOption() {
     // Read only here, when the row appears: walking the cache at every app
     // start was for a value nobody saw.
     LaunchedEffect(Unit) {
-        settingsModel.onEvent(SettingsEvent.OnRefreshParseCacheSize)
+        generalSettingsModel.onEvent(GeneralSettingsEvent.OnRefreshParseCacheSize)
     }
 
     val sizeText = remember(state.value.parseCacheSizeBytes) {
@@ -79,7 +79,7 @@ fun ClearParseCacheOption() {
             withContent = false,
             onDismiss = { showDialog = false },
             onAction = {
-                settingsModel.onEvent(SettingsEvent.OnClearParseCache)
+                generalSettingsModel.onEvent(GeneralSettingsEvent.OnClearParseCache)
                 showDialog = false
             }
         )

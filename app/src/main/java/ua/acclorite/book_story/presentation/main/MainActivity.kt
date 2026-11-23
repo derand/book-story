@@ -36,7 +36,8 @@ import ua.acclorite.book_story.presentation.library.LibraryModel
 import ua.acclorite.book_story.presentation.library.LibraryScreen
 import ua.acclorite.book_story.presentation.navigator.NavigatorItem
 import ua.acclorite.book_story.presentation.navigator.StackEvent
-import ua.acclorite.book_story.presentation.settings.SettingsModel
+import ua.acclorite.book_story.presentation.settings.CategoriesModel
+import ua.acclorite.book_story.presentation.settings.ColorPresetsModel
 import ua.acclorite.book_story.presentation.start.StartScreen
 import ua.acclorite.book_story.ui.common.components.navigation_bar.NavigationBar
 import ua.acclorite.book_story.ui.common.components.navigation_rail.NavigationRail
@@ -47,7 +48,7 @@ import ua.acclorite.book_story.ui.main.VolumeKeyPaging
 import ua.acclorite.book_story.ui.main.MainFileOpenEffects
 import ua.acclorite.book_story.ui.navigator.Navigator
 import ua.acclorite.book_story.ui.navigator.NavigatorTabs
-import ua.acclorite.book_story.ui.settings.SettingsEffects
+import ua.acclorite.book_story.ui.settings.ColorPresetsEffects
 import ua.acclorite.book_story.ui.theme.BookStoryTheme
 import ua.acclorite.book_story.ui.theme.Transitions
 import java.lang.reflect.Field
@@ -60,12 +61,15 @@ class MainActivity : AppCompatActivity() {
 
     @Inject
     lateinit var settings: SettingsManager
-    private val settingsModel: SettingsModel by viewModels()
+    private val colorPresetsModel: ColorPresetsModel by viewModels()
+    private val categoriesModel: CategoriesModel by viewModels()
     private val mainModel: MainModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen().setKeepOnScreenCondition {
-            !settings.initialized.value || !settingsModel.initialized.value
+            !settings.initialized.value ||
+                    !colorPresetsModel.initialized.value ||
+                    !categoriesModel.initialized.value
         }
 
         super.onCreate(savedInstanceState)
@@ -97,9 +101,9 @@ class MainActivity : AppCompatActivity() {
             val browseModel = hiltViewModel<BrowseModel>()
 
             ProvideSettings(settings) {
-                SettingsEffects(
-                    effects = settingsModel.effects,
-                    state = settingsModel.state
+                ColorPresetsEffects(
+                    effects = colorPresetsModel.effects,
+                    state = colorPresetsModel.state
                 )
 
                 val tabs = persistentListOf(

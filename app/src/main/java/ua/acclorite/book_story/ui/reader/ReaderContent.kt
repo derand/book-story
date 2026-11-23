@@ -23,7 +23,7 @@ import ua.acclorite.book_story.presentation.reader.ReaderScreen
 import ua.acclorite.book_story.presentation.reader.model.Checkpoint
 import ua.acclorite.book_story.presentation.reader.model.ReaderSearch
 import ua.acclorite.book_story.presentation.reader.model.ReaderVolumePaging
-import ua.acclorite.book_story.presentation.settings.SettingsEvent
+import ua.acclorite.book_story.presentation.settings.ColorPresetsEvent
 import ua.acclorite.book_story.ui.reader.model.ReaderControls
 import ua.acclorite.book_story.ui.reader.model.ReaderLook
 
@@ -50,7 +50,7 @@ fun ReaderContent(
     look: ReaderLook,
     controls: ReaderControls,
     progress: String,
-    switchColorPreset: (SettingsEvent.OnSwitchColorPreset) -> Unit,
+    switchColorPreset: (ColorPresetsEvent.OnSwitchColorPreset) -> Unit,
     onEvent: (ReaderEvent) -> Unit,
     addingToLibrary: Boolean
 ) {

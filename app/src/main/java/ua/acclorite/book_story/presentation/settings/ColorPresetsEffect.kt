@@ -10,10 +10,10 @@ import androidx.compose.runtime.Immutable
 import ua.acclorite.book_story.domain.model.reader.ColorPreset
 
 @Immutable
-sealed class SettingsEffect {
+sealed class ColorPresetsEffect {
     data class OnSwitchedColorPreset(
         val newColorPreset: ColorPreset
-    ) : SettingsEffect()
+    ) : ColorPresetsEffect()
 
     /**
      * Bring the preset at [index] into view: after an add (the new last one)
@@ -21,10 +21,5 @@ sealed class SettingsEffect {
      */
     data class OnScrollToColorPreset(
         val index: Int
-    ) : SettingsEffect()
-
-    /** A folder could not be added ([added]) or removed; nothing changed. */
-    data class OnSourceChangeFailed(
-        val added: Boolean
-    ) : SettingsEffect()
+    ) : ColorPresetsEffect()
 }
