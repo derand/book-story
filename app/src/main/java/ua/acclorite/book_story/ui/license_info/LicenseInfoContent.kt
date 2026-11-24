@@ -16,6 +16,7 @@ import com.mikepenz.aboutlibraries.entity.Library
 @Composable
 fun LicenseInfoContent(
     library: Library?,
+    loaded: Boolean,
     scrollBehavior: TopAppBarScrollBehavior,
     listState: LazyListState,
     navigateToBrowserPage: (String) -> Unit,
@@ -23,6 +24,7 @@ fun LicenseInfoContent(
 ) {
     LicenseInfoScaffold(
         library = library,
+        loaded = loaded,
         scrollBehavior = scrollBehavior,
         listState = listState,
         navigateToBrowserPage = navigateToBrowserPage,

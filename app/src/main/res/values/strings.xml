@@ -65,6 +65,7 @@
     </string>
     <string name="error_could_not_reset_cover">Could not reset cover image.</string>
     <string name="error_closed_source">Closed source</string>
+    <string name="error_license_not_found">This library is no longer listed.</string>
     <string name="error_no_file">File does not exist or inaccessible</string>
     <string name="error_library_unreadable">Could not read the library</string>
     <string name="history_statistics_off">History is made of reading statistics, and collecting them is off.</string>

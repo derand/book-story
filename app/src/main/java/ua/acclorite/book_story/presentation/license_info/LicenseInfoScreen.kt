@@ -10,18 +10,13 @@ import android.os.Parcelable
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.ui.platform.LocalContext
-import com.mikepenz.aboutlibraries.Libs
-import com.mikepenz.aboutlibraries.util.withJson
 import kotlinx.parcelize.Parcelize
-import ua.acclorite.book_story.R
 import ua.acclorite.book_story.presentation.navigator.Screen
 import ua.acclorite.book_story.ui.common.components.top_bar.collapsibleTopAppBarScrollBehavior
 import ua.acclorite.book_story.ui.common.helpers.LocalActivity
 import ua.acclorite.book_story.ui.common.helpers.openInBrowser
 import ua.acclorite.book_story.ui.license_info.LicenseInfoContent
+import ua.acclorite.book_story.ui.licenses.data.rememberLicenses
 import ua.acclorite.book_story.ui.navigator.LocalNavigator
 
 @Parcelize
@@ -32,17 +27,13 @@ data class LicenseInfoScreen(val uniqueId: String) : Screen, Parcelable {
     override fun Content() {
         val navigator = LocalNavigator.current
         val activity = LocalActivity.current
-        val context = LocalContext.current
         val (scrollBehavior, listState) = TopAppBarDefaults.collapsibleTopAppBarScrollBehavior()
-        val library = remember {
-            derivedStateOf {
-                Libs.Builder().withJson(context, R.raw.aboutlibraries).build()
-                    .libraries.find { it.uniqueId == uniqueId }
-            }
-        }
+        val libraries = rememberLicenses()
+        val library = libraries.value?.find { it.uniqueId == uniqueId }
 
         LicenseInfoContent(
-            library = library.value,
+            library = library,
+            loaded = libraries.value != null,
             scrollBehavior = scrollBehavior,
             listState = listState,
             navigateToBrowserPage = activity::openInBrowser,

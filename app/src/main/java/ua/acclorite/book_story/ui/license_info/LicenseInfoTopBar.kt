@@ -23,7 +23,7 @@ import ua.acclorite.book_story.ui.navigator.NavigatorBackIconButton
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LicenseInfoTopBar(
-    library: Library,
+    library: Library?,
     scrollBehavior: TopAppBarScrollBehavior,
     navigateToBrowserPage: (String) -> Unit,
     navigateBack: () -> Unit
@@ -31,20 +31,21 @@ fun LicenseInfoTopBar(
     LargeTopAppBar(
         title = {
             StyledText(
-                text = library.name
+                text = library?.name.orEmpty()
             )
         },
         navigationIcon = {
             NavigatorBackIconButton(navigateBack = navigateBack)
         },
         actions = {
-            if (library.website?.isNotBlank() == true) {
+            val website = library?.website
+            if (!website.isNullOrBlank()) {
                 IconButton(
                     icon = Icons.Outlined.Language,
                     contentDescription = R.string.open_in_web_content_desc,
                     disableOnClick = false
                 ) {
-                    navigateToBrowserPage(library.website!!)
+                    navigateToBrowserPage(website)
                 }
             }
         },
