@@ -6,7 +6,7 @@
 
 @file:Suppress("FunctionName")
 
-package ua.acclorite.book_story.ui.settings.browse.sort.components
+package ua.acclorite.book_story.ui.browse.components
 
 import androidx.compose.foundation.lazy.LazyListScope
 import ua.acclorite.book_story.R

@@ -6,7 +6,7 @@
 
 @file:Suppress("FunctionName")
 
-package ua.acclorite.book_story.ui.settings.browse.filter.components
+package ua.acclorite.book_story.ui.browse.components
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row

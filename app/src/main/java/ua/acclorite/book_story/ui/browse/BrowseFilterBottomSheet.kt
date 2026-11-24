@@ -17,12 +17,12 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import kotlinx.coroutines.launch
 import ua.acclorite.book_story.presentation.browse.BrowseEvent
+import ua.acclorite.book_story.ui.browse.components.BrowseFilterSubcategory
+import ua.acclorite.book_story.ui.browse.components.BrowseSortSubcategory
 import ua.acclorite.book_story.ui.common.components.common.LazyColumnWithScrollbar
 import ua.acclorite.book_story.ui.common.components.modal_bottom_sheet.ModalBottomSheet
 import ua.acclorite.book_story.ui.common.helpers.LocalSettings
 import ua.acclorite.book_story.ui.settings.browse.display.BrowseDisplaySubcategory
-import ua.acclorite.book_story.ui.settings.browse.filter.BrowseFilterSubcategory
-import ua.acclorite.book_story.ui.settings.browse.sort.BrowseSortSubcategory
 
 private var initialPage = 0
 

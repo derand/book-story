@@ -6,7 +6,7 @@
 
 @file:Suppress("FunctionName")
 
-package ua.acclorite.book_story.ui.settings.browse.sort
+package ua.acclorite.book_story.ui.browse.components
 
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.material3.MaterialTheme
@@ -15,7 +15,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import ua.acclorite.book_story.R
 import ua.acclorite.book_story.presentation.browse.model.BrowseSortOrder
-import ua.acclorite.book_story.ui.settings.browse.sort.components.BrowseSortOption
 import ua.acclorite.book_story.ui.settings.components.SettingsSubcategory
 
 fun LazyListScope.BrowseSortSubcategory(
