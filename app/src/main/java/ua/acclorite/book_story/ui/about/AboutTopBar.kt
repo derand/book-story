@@ -14,7 +14,6 @@ import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import ua.acclorite.book_story.R
-import ua.acclorite.book_story.presentation.about.AboutEvent
 import ua.acclorite.book_story.ui.common.components.common.StyledText
 import ua.acclorite.book_story.ui.navigator.NavigatorBackIconButton
 
@@ -22,14 +21,14 @@ import ua.acclorite.book_story.ui.navigator.NavigatorBackIconButton
 @Composable
 fun AboutTopBar(
     scrollBehavior: TopAppBarScrollBehavior,
-    navigateBack: (AboutEvent.OnNavigateBack) -> Unit
+    navigateBack: () -> Unit
 ) {
     LargeTopAppBar(
         title = {
             StyledText(stringResource(id = R.string.about_screen))
         },
         navigationIcon = {
-            NavigatorBackIconButton(navigateBack = { navigateBack(AboutEvent.OnNavigateBack) })
+            NavigatorBackIconButton(navigateBack = navigateBack)
         },
         scrollBehavior = scrollBehavior,
         colors = TopAppBarDefaults.topAppBarColors(

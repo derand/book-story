@@ -27,16 +27,15 @@ import androidx.compose.ui.unit.dp
 import ua.acclorite.book_story.BuildConfig
 import ua.acclorite.book_story.R
 import ua.acclorite.book_story.core.data.LinkData
-import ua.acclorite.book_story.presentation.about.AboutEvent
 import ua.acclorite.book_story.ui.common.components.common.LazyColumnWithScrollbar
 
 @Composable
 fun AboutLayout(
     paddingValues: PaddingValues,
     listState: LazyListState,
-    navigateToBrowserPage: (AboutEvent.OnNavigateToBrowserPage) -> Unit,
-    navigateToLicenses: (AboutEvent.OnNavigateToLicenses) -> Unit,
-    navigateToCredits: (AboutEvent.OnNavigateToCredits) -> Unit
+    navigateToBrowserPage: (String) -> Unit,
+    navigateToLicenses: () -> Unit,
+    navigateToCredits: () -> Unit
 ) {
     LazyColumnWithScrollbar(
         Modifier
@@ -77,11 +76,7 @@ fun AboutLayout(
                 title = stringResource(id = R.string.app_version_option),
                 description = "${stringResource(R.string.app_name)} v${BuildConfig.VERSION_NAME}",
             ) {
-                navigateToBrowserPage(
-                    AboutEvent.OnNavigateToBrowserPage(
-                        page = LinkData.RELEASES
-                    )
-                )
+                navigateToBrowserPage(LinkData.RELEASES)
             }
         }
 
@@ -90,11 +85,7 @@ fun AboutLayout(
                 title = stringResource(id = R.string.report_bug_option),
                 description = null
             ) {
-                navigateToBrowserPage(
-                    AboutEvent.OnNavigateToBrowserPage(
-                        page = LinkData.ISSUES
-                    )
-                )
+                navigateToBrowserPage(LinkData.ISSUES)
             }
         }
 
@@ -104,11 +95,7 @@ fun AboutLayout(
                 title = stringResource(id = R.string.contributors_option),
                 description = null
             ) {
-                navigateToBrowserPage(
-                    AboutEvent.OnNavigateToBrowserPage(
-                        page = LinkData.CONTRIBUTORS
-                    )
-                )
+                navigateToBrowserPage(LinkData.CONTRIBUTORS)
             }
         }
 
@@ -117,7 +104,7 @@ fun AboutLayout(
                 title = stringResource(id = R.string.licenses_option),
                 description = null
             ) {
-                navigateToLicenses(AboutEvent.OnNavigateToLicenses)
+                navigateToLicenses()
             }
         }
 
@@ -126,7 +113,7 @@ fun AboutLayout(
                 title = stringResource(id = R.string.credits_option),
                 description = null
             ) {
-                navigateToCredits(AboutEvent.OnNavigateToCredits)
+                navigateToCredits()
             }
         }
 
@@ -135,11 +122,7 @@ fun AboutLayout(
                 title = stringResource(id = R.string.support_original_author_option),
                 description = null
             ) {
-                navigateToBrowserPage(
-                    AboutEvent.OnNavigateToBrowserPage(
-                        page = LinkData.SUPPORT_ORIGINAL_AUTHOR
-                    )
-                )
+                navigateToBrowserPage(LinkData.SUPPORT_ORIGINAL_AUTHOR)
             }
         }
 

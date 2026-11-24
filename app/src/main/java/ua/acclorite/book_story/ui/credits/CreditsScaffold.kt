@@ -18,15 +18,14 @@ import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import ua.acclorite.book_story.presentation.about.AboutEvent
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreditsScaffold(
     scrollBehavior: TopAppBarScrollBehavior,
     listState: LazyListState,
-    navigateToBrowserPage: (AboutEvent.OnNavigateToBrowserPage) -> Unit,
-    navigateBack: (AboutEvent.OnNavigateBack) -> Unit
+    navigateToBrowserPage: (String) -> Unit,
+    navigateBack: () -> Unit
 ) {
     Scaffold(
         Modifier

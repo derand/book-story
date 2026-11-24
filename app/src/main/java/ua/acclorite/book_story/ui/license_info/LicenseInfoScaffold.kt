@@ -19,7 +19,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import com.mikepenz.aboutlibraries.entity.Library
-import ua.acclorite.book_story.presentation.about.AboutEvent
 import ua.acclorite.book_story.ui.theme.DefaultTransition
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -28,8 +27,8 @@ fun LicenseInfoScaffold(
     library: Library?,
     scrollBehavior: TopAppBarScrollBehavior,
     listState: LazyListState,
-    navigateToBrowserPage: (AboutEvent.OnNavigateToBrowserPage) -> Unit,
-    navigateBack: (AboutEvent.OnNavigateBack) -> Unit
+    navigateToBrowserPage: (String) -> Unit,
+    navigateBack: () -> Unit
 ) {
     Scaffold(
         Modifier

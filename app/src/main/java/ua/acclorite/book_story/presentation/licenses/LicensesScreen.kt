@@ -51,7 +51,7 @@ object LicensesScreen : Screen, Parcelable {
                 navigator.push(LicenseInfoScreen(it.uniqueId))
             },
             navigateBack = {
-                navigator.pop()
+                navigator.pop(from = this)
             }
         )
     }

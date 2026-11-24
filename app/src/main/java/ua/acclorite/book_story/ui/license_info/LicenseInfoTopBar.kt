@@ -16,7 +16,6 @@ import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
 import com.mikepenz.aboutlibraries.entity.Library
 import ua.acclorite.book_story.R
-import ua.acclorite.book_story.presentation.about.AboutEvent
 import ua.acclorite.book_story.ui.common.components.common.IconButton
 import ua.acclorite.book_story.ui.common.components.common.StyledText
 import ua.acclorite.book_story.ui.navigator.NavigatorBackIconButton
@@ -26,8 +25,8 @@ import ua.acclorite.book_story.ui.navigator.NavigatorBackIconButton
 fun LicenseInfoTopBar(
     library: Library,
     scrollBehavior: TopAppBarScrollBehavior,
-    navigateToBrowserPage: (AboutEvent.OnNavigateToBrowserPage) -> Unit,
-    navigateBack: (AboutEvent.OnNavigateBack) -> Unit
+    navigateToBrowserPage: (String) -> Unit,
+    navigateBack: () -> Unit
 ) {
     LargeTopAppBar(
         title = {
@@ -36,7 +35,7 @@ fun LicenseInfoTopBar(
             )
         },
         navigationIcon = {
-            NavigatorBackIconButton(navigateBack = { navigateBack(AboutEvent.OnNavigateBack) })
+            NavigatorBackIconButton(navigateBack = navigateBack)
         },
         actions = {
             if (library.website?.isNotBlank() == true) {
@@ -45,11 +44,7 @@ fun LicenseInfoTopBar(
                     contentDescription = R.string.open_in_web_content_desc,
                     disableOnClick = false
                 ) {
-                    navigateToBrowserPage(
-                        AboutEvent.OnNavigateToBrowserPage(
-                            page = library.website!!
-                        )
-                    )
+                    navigateToBrowserPage(library.website!!)
                 }
             }
         },
