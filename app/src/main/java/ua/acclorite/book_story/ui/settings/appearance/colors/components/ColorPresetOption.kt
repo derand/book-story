@@ -160,24 +160,15 @@ fun ColorPresetOption(backgroundColor: Color) {
                         colorPreset = colorPreset,
                         // A built-in auto-follows the theme, so highlight the one
                         // actually applied rather than the raw selection.
-                        isSelected = remember(
-                            colorPreset.id,
-                            activePreset.id,
-                            state.value.colorPresets.size
-                        ) {
-                            if (state.value.colorPresets.size > 1) {
-                                colorPreset.id == activePreset.id
-                            } else true
-                        },
+                        isSelected = state.value.colorPresets.size <= 1 ||
+                            colorPreset.id == activePreset.id,
                         // Selecting the other theme's built-in would apply this
                         // theme's one, so a tap on it would change nothing.
                         enabled = !colorPreset.isBuiltIn || state.value.colorPresets
                             .activeColorPreset(selected = colorPreset, isDark = isDark)
                             .id == colorPreset.id,
                         enableAnimation = state.value.animateColorPreset,
-                        canDrag = remember(state.value.colorPresets.size) {
-                            state.value.colorPresets.size > 1
-                        },
+                        canDrag = state.value.colorPresets.size > 1,
                         onDragStopped = {
                             colorPresetsModel.onEvent(ColorPresetsEvent.OnConfirmReorderColorPresets)
                         },

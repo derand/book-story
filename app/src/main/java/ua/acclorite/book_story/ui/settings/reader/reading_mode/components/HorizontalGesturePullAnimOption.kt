@@ -19,10 +19,7 @@ fun HorizontalGesturePullAnimOption() {
     val settings = LocalSettings.current
 
     ExpandingTransition(
-        visible = when (settings.horizontalGesture.value) {
-            ReaderHorizontalGesture.OFF -> false
-            else -> true
-        }
+        visible = settings.horizontalGesture.value != ReaderHorizontalGesture.OFF
     ) {
         SwitchWithTitle(
             selected = settings.horizontalGesturePullAnim.value,
