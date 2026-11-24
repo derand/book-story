@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Label
 import androidx.compose.material.icons.automirrored.outlined.LabelOff
@@ -24,10 +23,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.outlined.Clear
 import androidx.compose.material.icons.outlined.EditNote
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
@@ -35,12 +31,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -56,7 +47,6 @@ import ua.acclorite.book_story.ui.common.components.common.StyledText
 import ua.acclorite.book_story.ui.common.components.dialog.Dialog
 import ua.acclorite.book_story.ui.common.components.dialog.DialogWithTextField
 import ua.acclorite.book_story.ui.common.helpers.noRippleClickable
-import ua.acclorite.book_story.ui.theme.ExpandingTransition
 import ua.acclorite.book_story.ui.theme.dynamicListItemColor
 
 private const val CREATE_DIALOG = "create_dialog"
@@ -69,7 +59,7 @@ fun LibraryCategoriesOption() {
     val allCategories = categoriesModel.categories.collectAsStateWithLifecycle()
 
     val categories = remember(allCategories.value) {
-        allCategories.value.filterNot { it.id == -1 }
+        allCategories.value.filterNot { it.id == Category.DEFAULT_ID }
     }
     val dialog = remember {
         mutableStateOf<String?>(null)
@@ -80,7 +70,9 @@ fun LibraryCategoriesOption() {
 
     when (dialog.value) {
         CREATE_DIALOG -> {
-            LibraryCategoriesCreateDialog(
+            LibraryCategoryTitleDialog(
+                title = stringResource(id = R.string.create_category),
+                initialValue = "",
                 onDismiss = { dialog.value = null },
                 onAction = { title ->
                     categoriesModel.onEvent(
@@ -93,7 +85,8 @@ fun LibraryCategoriesOption() {
         }
 
         EDIT_DIALOG -> {
-            LibraryCategoriesEditDialog(
+            LibraryCategoryTitleDialog(
+                title = stringResource(id = R.string.edit),
                 initialValue = selectedCategory.value?.title ?: "",
                 onDismiss = { dialog.value = null },
                 onAction = { title ->
@@ -163,19 +156,22 @@ fun LibraryCategoriesOption() {
 }
 
 @Composable
-private fun LibraryCategoriesEditDialog(
+private fun LibraryCategoryTitleDialog(
+    title: String,
     initialValue: String,
     onDismiss: () -> Unit,
     onAction: (title: String) -> Unit
 ) {
     DialogWithTextField(
         initialValue = initialValue,
+        title = title,
+        label = stringResource(id = R.string.library_categories_create_category_placeholder),
         lengthLimit = 200,
+        allowBlank = false,
         onDismiss = {
             onDismiss()
         },
         onAction = {
-            if (it.isBlank()) return@DialogWithTextField
             onAction(it.replace("\n", "").trim())
         }
     )
@@ -198,89 +194,6 @@ private fun LibraryCategoriesRemoveDialog(
             onAction()
         },
         withContent = false
-    )
-}
-
-@Composable
-private fun LibraryCategoriesCreateDialog(
-    onDismiss: () -> Unit,
-    onAction: (title: String) -> Unit
-) {
-    val title = remember {
-        mutableStateOf("")
-    }
-    val error = remember {
-        mutableStateOf(false)
-    }
-
-    val focusRequester = remember { FocusRequester() }
-    val focused = remember { mutableStateOf(false) }
-
-    Dialog(
-        title = stringResource(id = R.string.create_category),
-        description = null,
-        onDismiss = { onDismiss() },
-        actionEnabled = true,
-        disableOnClick = false,
-        onAction = {
-            if (title.value.isBlank()) {
-                error.value = true
-                return@Dialog
-            }
-
-            onAction(title.value.replace("\n", "").trim())
-            onDismiss()
-        },
-        withContent = true,
-        items = {
-            item {
-                OutlinedTextField(
-                    value = title.value,
-                    onValueChange = {
-                        error.value = false
-                        if (it.length <= 200) {
-                            title.value = it
-                        }
-                    },
-                    keyboardOptions = KeyboardOptions(KeyboardCapitalization.Sentences),
-                    isError = error.value,
-                    modifier = Modifier
-                        .padding(horizontal = 24.dp)
-                        .fillMaxWidth()
-                        .focusRequester(focusRequester)
-                        .onGloballyPositioned {
-                            if (!focused.value) {
-                                focusRequester.requestFocus()
-                                focused.value = true
-                            }
-                        },
-                    colors = TextFieldDefaults.colors(
-                        errorContainerColor = Color.Transparent,
-                        focusedContainerColor = Color.Transparent,
-                        disabledContainerColor = Color.Transparent,
-                        unfocusedContainerColor = Color.Transparent
-                    ),
-                    label = {
-                        StyledText(
-                            text = stringResource(
-                                id = R.string.library_categories_create_category_placeholder
-                            ),
-                            maxLines = 1
-                        )
-                    },
-                    supportingText = {
-                        ExpandingTransition(error.value) {
-                            StyledText(
-                                text = stringResource(id = R.string.error_field_empty),
-                                style = LocalTextStyle.current.copy(
-                                    color = MaterialTheme.colorScheme.error
-                                )
-                            )
-                        }
-                    }
-                )
-            }
-        }
     )
 }
 

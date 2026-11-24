@@ -19,11 +19,11 @@ fun BookInfoTitleDialog(
     DialogWithTextField(
         initialValue = book.title,
         lengthLimit = 100,
+        allowBlank = false,
         onDismiss = {
             onEvent(BookInfoEvent.OnDismissDialog)
         },
         onAction = {
-            if (it.isBlank()) return@DialogWithTextField
             onEvent(
                 BookInfoEvent.OnActionTitleDialog(
                     title = it.trim().replace("\n", "")

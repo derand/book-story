@@ -22,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.parcelize.Parcelize
+import ua.acclorite.book_story.domain.model.library.Category
 import ua.acclorite.book_story.presentation.navigator.Screen
 import ua.acclorite.book_story.presentation.settings.CategoriesModel
 import ua.acclorite.book_story.ui.book_info.BookInfoContent
@@ -44,7 +45,7 @@ data class BookInfoScreen(
         val listState = rememberLazyListState()
 
         val categories = remember(allCategories.value) {
-            allCategories.value.filterNot { it.id == -1 }
+            allCategories.value.filterNot { it.id == Category.DEFAULT_ID }
         }
 
         // Asked for once. The screen keeps this across a return from a screen

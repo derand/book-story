@@ -57,6 +57,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -76,6 +77,7 @@ import ua.acclorite.book_story.presentation.settings.ColorPresetsModel
 import ua.acclorite.book_story.ui.common.components.common.AnimatedVisibility
 import ua.acclorite.book_story.ui.common.components.common.IconButton
 import ua.acclorite.book_story.ui.common.components.common.StyledText
+import ua.acclorite.book_story.ui.common.components.dialog.limitedEdit
 import ua.acclorite.book_story.ui.common.components.settings.ColorPickerWithTitle
 import ua.acclorite.book_story.ui.common.helpers.LocalSettings
 import ua.acclorite.book_story.ui.common.helpers.title
@@ -396,14 +398,14 @@ private fun ColorPresetOptionConfigurationItem(
             )
         } else {
             val title = remember(colorPreset.id) {
-                mutableStateOf(colorPreset.name)
+                mutableStateOf(TextFieldValue(colorPreset.name))
             }
 
             // drop(1): the first emission is the stored name, which used to be
             // written back on every open of the screen.
             LaunchedEffect(title) {
                 snapshotFlow {
-                    title.value
+                    title.value.text
                 }.drop(1).debounce(50).collectLatest {
                     onTitleChange(it)
                 }
@@ -420,9 +422,7 @@ private fun ColorPresetOptionConfigurationItem(
                     fontFamily = MaterialTheme.typography.titleLarge.fontFamily
                 ),
                 onValueChange = {
-                    if (it.length < 40 || it.length <= title.value.length) {
-                        title.value = it
-                    }
+                    title.value = limitedEdit(title.value, it, 40)
                 },
                 keyboardOptions = KeyboardOptions(
                     KeyboardCapitalization.Sentences
@@ -433,7 +433,7 @@ private fun ColorPresetOptionConfigurationItem(
                     modifier = Modifier.fillMaxHeight(),
                     contentAlignment = Alignment.CenterStart
                 ) {
-                    if (title.value.isEmpty()) {
+                    if (title.value.text.isEmpty()) {
                         StyledText(
                             text = stringResource(id = R.string.color_preset_placeholder),
                             style = MaterialTheme.typography.titleLarge.copy(

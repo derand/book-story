@@ -16,4 +16,9 @@ data class Category(
     val order: Int = 0,
     val sortOrder: LibrarySortOrder = LibrarySortOrder.LAST_READ,
     val sortOrderDescending: Boolean = true
-)
+) {
+    companion object {
+        /** The built-in category that holds books with no category of their own. */
+        const val DEFAULT_ID = -1
+    }
+}

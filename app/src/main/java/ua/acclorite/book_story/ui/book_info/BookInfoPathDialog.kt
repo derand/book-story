@@ -19,11 +19,11 @@ fun BookInfoPathDialog(
     DialogWithTextField(
         initialValue = book.filePath.trim(),
         lengthLimit = 10000,
+        allowBlank = false,
         onDismiss = {
             onEvent(BookInfoEvent.OnDismissDialog)
         },
         onAction = {
-            if (it.isBlank()) return@DialogWithTextField
             onEvent(
                 BookInfoEvent.OnActionPathDialog(
                     path = it.trim().replace("\n", "")
