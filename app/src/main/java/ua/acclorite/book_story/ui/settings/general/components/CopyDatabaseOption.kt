@@ -6,22 +6,14 @@
 
 package ua.acclorite.book_story.ui.settings.general.components
 
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ua.acclorite.book_story.R
 import ua.acclorite.book_story.presentation.settings.GeneralSettingsEvent
 import ua.acclorite.book_story.presentation.settings.GeneralSettingsModel
-import ua.acclorite.book_story.ui.common.components.common.StyledText
+import ua.acclorite.book_story.ui.settings.components.SettingsActionRow
 
 /**
  * Copies the database somewhere adb can read it. Present only in the builds
@@ -44,24 +36,10 @@ fun CopyDatabaseOption() {
         }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { generalSettingsModel.onEvent(GeneralSettingsEvent.OnCopyDatabase) }
-            .padding(horizontal = 18.dp, vertical = 8.dp),
-        verticalArrangement = Arrangement.Center
+    SettingsActionRow(
+        title = stringResource(id = R.string.copy_database_option),
+        description = description
     ) {
-        StyledText(
-            text = stringResource(id = R.string.copy_database_option),
-            style = MaterialTheme.typography.titleMedium.copy(
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        )
-        StyledText(
-            text = description,
-            style = MaterialTheme.typography.bodySmall.copy(
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        )
+        generalSettingsModel.onEvent(GeneralSettingsEvent.OnCopyDatabase)
     }
 }

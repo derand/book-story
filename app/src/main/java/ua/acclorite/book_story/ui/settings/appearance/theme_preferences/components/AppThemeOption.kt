@@ -109,13 +109,14 @@ private fun AppThemeOptionItem(
             Modifier
                 .fillMaxWidth()
                 .clip(MaterialTheme.shapes.large)
-                .clickable(enabled = !selected) {
-                    onClick()
-                }
                 .background(
                     colorScheme.surface,
                     MaterialTheme.shapes.large
                 )
+                // After the background, or the ripple is painted under it.
+                .clickable(enabled = !selected) {
+                    onClick()
+                }
                 .border(
                     4.dp,
                     if (selected) colorScheme.primary

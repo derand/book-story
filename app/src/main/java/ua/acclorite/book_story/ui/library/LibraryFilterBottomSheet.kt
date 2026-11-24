@@ -27,8 +27,8 @@ import ua.acclorite.book_story.presentation.library.model.pageAt
 import ua.acclorite.book_story.presentation.settings.CategoriesEvent
 import ua.acclorite.book_story.ui.common.components.common.LazyColumnWithScrollbar
 import ua.acclorite.book_story.ui.common.components.modal_bottom_sheet.ModalBottomSheet
+import ua.acclorite.book_story.ui.library.components.LibrarySortOption
 import ua.acclorite.book_story.ui.settings.library.display.LibraryDisplaySubcategory
-import ua.acclorite.book_story.ui.settings.library.sort.components.LibrarySortOption
 import ua.acclorite.book_story.ui.settings.library.tabs.LibraryTabsSubcategory
 
 private var initialPage = 0

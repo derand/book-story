@@ -1,0 +1,109 @@
+/*
+ * Book's Story — free and open-source Material You eBook reader.
+ * Copyright (C) 2024-2026 Acclorite
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
+
+@file:Suppress("FunctionName")
+
+package ua.acclorite.book_story.ui.settings
+
+import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.CollectionsBookmark
+import androidx.compose.material.icons.outlined.DisplaySettings
+import androidx.compose.material.icons.outlined.Explore
+import androidx.compose.material.icons.outlined.LocalLibrary
+import androidx.compose.material.icons.outlined.Palette
+import androidx.compose.material.icons.outlined.RestartAlt
+import androidx.compose.material.icons.outlined.SettingsBackupRestore
+import androidx.compose.ui.res.stringResource
+import ua.acclorite.book_story.R
+
+/** The root settings list: one row per settings screen, and the setup guide. */
+fun LazyListScope.SettingsMenu(
+    navigateToGeneralSettings: () -> Unit,
+    navigateToAppearanceSettings: () -> Unit,
+    navigateToReaderSettings: () -> Unit,
+    navigateToLibrarySettings: () -> Unit,
+    navigateToBrowseSettings: () -> Unit,
+    navigateToBackupSettings: () -> Unit,
+    navigateToStart: () -> Unit
+) {
+    item {
+        SettingsLayoutItem(
+            index = 0,
+            icon = Icons.Outlined.DisplaySettings,
+            title = stringResource(id = R.string.general_settings),
+            description = stringResource(id = R.string.general_settings_desc)
+        ) {
+            navigateToGeneralSettings()
+        }
+    }
+
+    item {
+        SettingsLayoutItem(
+            index = 1,
+            icon = Icons.Outlined.Palette,
+            title = stringResource(id = R.string.appearance_settings),
+            description = stringResource(id = R.string.appearance_settings_desc)
+        ) {
+            navigateToAppearanceSettings()
+        }
+    }
+
+    item {
+        SettingsLayoutItem(
+            index = 2,
+            icon = Icons.Outlined.LocalLibrary,
+            title = stringResource(id = R.string.reader_settings),
+            description = stringResource(id = R.string.reader_settings_desc)
+        ) {
+            navigateToReaderSettings()
+        }
+    }
+
+    item {
+        SettingsLayoutItem(
+            index = 3,
+            icon = Icons.Outlined.CollectionsBookmark,
+            title = stringResource(id = R.string.library_settings),
+            description = stringResource(id = R.string.library_settings_desc)
+        ) {
+            navigateToLibrarySettings()
+        }
+    }
+
+    item {
+        SettingsLayoutItem(
+            index = 4,
+            icon = Icons.Outlined.Explore,
+            title = stringResource(id = R.string.browse_settings),
+            description = stringResource(id = R.string.browse_settings_desc)
+        ) {
+            navigateToBrowseSettings()
+        }
+    }
+
+    item {
+        SettingsLayoutItem(
+            index = 5,
+            icon = Icons.Outlined.SettingsBackupRestore,
+            title = stringResource(id = R.string.backup_settings),
+            description = stringResource(id = R.string.backup_settings_desc)
+        ) {
+            navigateToBackupSettings()
+        }
+    }
+
+    item {
+        SettingsLayoutItem(
+            index = 6,
+            icon = Icons.Outlined.RestartAlt,
+            title = stringResource(id = R.string.start_guide_settings),
+            description = stringResource(id = R.string.start_guide_settings_desc)
+        ) {
+            navigateToStart()
+        }
+    }
+}

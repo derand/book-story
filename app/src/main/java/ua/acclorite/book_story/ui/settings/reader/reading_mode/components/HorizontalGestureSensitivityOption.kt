@@ -19,10 +19,7 @@ fun HorizontalGestureSensitivityOption() {
     val settings = LocalSettings.current
 
     ExpandingTransition(
-        visible = when (settings.horizontalGesture.value) {
-            ReaderHorizontalGesture.OFF -> false
-            else -> true
-        }
+        visible = settings.horizontalGesture.value != ReaderHorizontalGesture.OFF
     ) {
         SliderWithTitle(
             value = settings.horizontalGestureSensitivity.value to "%",

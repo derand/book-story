@@ -7,26 +7,18 @@
 
 package ua.acclorite.book_story.ui.settings.general.components
 
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import ua.acclorite.book_story.R
 import ua.acclorite.book_story.presentation.settings.GeneralSettingsEvent
 import ua.acclorite.book_story.presentation.settings.GeneralSettingsModel
-import ua.acclorite.book_story.ui.common.components.common.StyledText
 import ua.acclorite.book_story.ui.common.components.dialog.Dialog
+import ua.acclorite.book_story.ui.settings.components.SettingsActionRow
 
 @Composable
 fun DeleteStatisticsOption() {
@@ -34,25 +26,11 @@ fun DeleteStatisticsOption() {
 
     var showDialog by remember { mutableStateOf(false) }
 
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { showDialog = true }
-            .padding(horizontal = 18.dp, vertical = 8.dp),
-        verticalArrangement = Arrangement.Center
+    SettingsActionRow(
+        title = stringResource(id = R.string.delete_statistics_option),
+        description = stringResource(id = R.string.delete_statistics_option_desc)
     ) {
-        StyledText(
-            text = stringResource(id = R.string.delete_statistics_option),
-            style = MaterialTheme.typography.titleMedium.copy(
-                color = MaterialTheme.colorScheme.onSurface
-            )
-        )
-        StyledText(
-            text = stringResource(id = R.string.delete_statistics_option_desc),
-            style = MaterialTheme.typography.bodySmall.copy(
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        )
+        showDialog = true
     }
 
     if (showDialog) {

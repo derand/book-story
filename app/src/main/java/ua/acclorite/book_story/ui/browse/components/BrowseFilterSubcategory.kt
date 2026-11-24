@@ -6,7 +6,7 @@
 
 @file:Suppress("FunctionName")
 
-package ua.acclorite.book_story.ui.settings.browse.filter
+package ua.acclorite.book_story.ui.browse.components
 
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.material3.MaterialTheme
@@ -14,7 +14,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import ua.acclorite.book_story.R
-import ua.acclorite.book_story.ui.settings.browse.filter.components.BrowseFilterOption
 import ua.acclorite.book_story.ui.settings.components.SettingsSubcategory
 
 fun LazyListScope.BrowseFilterSubcategory(

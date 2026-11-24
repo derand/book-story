@@ -12,18 +12,26 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.parcelize.IgnoredOnParcel
 import kotlinx.parcelize.Parcelize
 import ua.acclorite.book_story.R
 import ua.acclorite.book_story.presentation.library.model.libraryPages
+import ua.acclorite.book_story.presentation.library.model.pageAt
 import ua.acclorite.book_story.presentation.navigator.Screen
 import ua.acclorite.book_story.presentation.settings.CategoriesModel
 import ua.acclorite.book_story.ui.common.helpers.LocalSettings
@@ -85,9 +93,32 @@ object LibraryScreen : Screen, Parcelable {
 
         val pagerState = rememberPagerState { pages.size }
 
+        // The pager keeps an index, so a reorder or a deleted category would
+        // leave it on another category. Keep the shown one by id instead.
+        val shownCategoryId = rememberSaveable { mutableStateOf<Int?>(null) }
+        val currentPages = rememberUpdatedState(pages)
+
         LaunchedEffect(Unit) {
             scrollToPageCompositionChannel.receiveAsFlow().collectLatest {
+                shownCategoryId.value = currentPages.value.pageAt(it).category.id
                 pagerState.scrollToPage(it)
+            }
+        }
+
+        LaunchedEffect(pages) {
+            val index = pages.indexOfFirst { it.category.id == shownCategoryId.value }
+            if (index >= 0 && index != pagerState.currentPage) {
+                try {
+                    pagerState.scrollToPage(index)
+                } catch (e: CancellationException) {
+                    // A newer scroll (the channel above) took over; keep tracking.
+                    currentCoroutineContext().ensureActive()
+                }
+            }
+            // Emits the current page first, so a deleted category is replaced
+            // by the one now shown.
+            snapshotFlow { pagerState.settledPage }.collect {
+                shownCategoryId.value = pages.pageAt(it).category.id
             }
         }
 

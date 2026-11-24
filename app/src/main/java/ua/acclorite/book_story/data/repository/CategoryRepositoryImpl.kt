@@ -44,7 +44,7 @@ class CategoryRepositoryImpl @Inject constructor(
         withContext(Dispatchers.IO) {
             database.categoryDao.updateCategory(
                 category = categoryMapper.toCategoryEntity(
-                    if (category.id != -1) category else category.copy(
+                    if (category.id != Category.DEFAULT_ID) category else category.copy(
                         title = "",
                         order = -1
                     )
@@ -57,7 +57,7 @@ class CategoryRepositoryImpl @Inject constructor(
     override suspend fun updateOrder(categories: List<Category>): Result<Unit> = runCatchingCancellable {
         withContext(Dispatchers.IO) {
             categories.forEachIndexed { index, category ->
-                if (category.id == -1) return@forEachIndexed
+                if (category.id == Category.DEFAULT_ID) return@forEachIndexed
                 database.categoryDao.updateCategory(
                     categoryMapper.toCategoryEntity(
                         category.copy(order = index)
@@ -69,7 +69,7 @@ class CategoryRepositoryImpl @Inject constructor(
 
     override suspend fun deleteCategory(category: Category): Result<Unit> = runCatchingCancellable {
         withContext(Dispatchers.IO) {
-            if (category.id == -1) throw IllegalArgumentException("Id should not be -1.")
+            if (category.id == Category.DEFAULT_ID) throw IllegalArgumentException("The default category cannot be deleted.")
             database.categoryDao.deleteCategory(categoryMapper.toCategoryEntity(category))
             updateOrder(getCategories().getOrThrow())
         }

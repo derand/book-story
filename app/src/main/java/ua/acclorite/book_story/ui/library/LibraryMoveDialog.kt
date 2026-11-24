@@ -19,7 +19,6 @@ import androidx.compose.ui.unit.dp
 import ua.acclorite.book_story.R
 import ua.acclorite.book_story.domain.model.library.Category
 import ua.acclorite.book_story.presentation.library.LibraryEvent
-import ua.acclorite.book_story.presentation.library.model.DEFAULT_CATEGORY_ID
 import ua.acclorite.book_story.presentation.library.model.SelectableBook
 import ua.acclorite.book_story.ui.common.components.common.StyledText
 import ua.acclorite.book_story.ui.common.components.dialog.CheckboxDialogItem
@@ -31,7 +30,7 @@ fun LibraryMoveDialog(
     categories: List<Category>,
     onEvent: (LibraryEvent) -> Unit
 ) {
-    val choices = categories.filterNot { it.id == DEFAULT_CATEGORY_ID }
+    val choices = categories.filterNot { it.id == Category.DEFAULT_ID }
     // Ticked to begin with: the categories every selected book is in already.
     val selectedCategories = remember {
         val selectedBooks = books.filter { it.selected }

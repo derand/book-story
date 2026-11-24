@@ -10,24 +10,16 @@ package ua.acclorite.book_story.ui.settings.backup.components
 import android.text.format.Formatter
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ua.acclorite.book_story.R
 import ua.acclorite.book_story.presentation.settings.BackupSettingsEvent
 import ua.acclorite.book_story.presentation.settings.BackupSettingsModel
-import ua.acclorite.book_story.ui.common.components.common.StyledText
+import ua.acclorite.book_story.ui.settings.components.SettingsActionRow
 import java.time.LocalDate
 
 /**
@@ -73,28 +65,13 @@ fun ExportBackupOption() {
         }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(enabled = !state.value.exporting) {
-                // Dated, so a second backup does not offer to overwrite the
-                // first one; not translated, since it is a file name.
-                picker.launch("book-story-backup-${LocalDate.now()}.zip")
-            }
-            .padding(horizontal = 18.dp, vertical = 8.dp),
-        verticalArrangement = Arrangement.Center
+    SettingsActionRow(
+        title = stringResource(id = R.string.export_backup_option),
+        description = description,
+        enabled = !state.value.exporting
     ) {
-        StyledText(
-            text = stringResource(id = R.string.export_backup_option),
-            style = MaterialTheme.typography.titleMedium.copy(
-                color = MaterialTheme.colorScheme.onSurface
-            )
-        )
-        StyledText(
-            text = description,
-            style = MaterialTheme.typography.bodySmall.copy(
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        )
+        // Dated, so a second backup does not offer to overwrite the
+        // first one; not translated, since it is a file name.
+        picker.launch("book-story-backup-${LocalDate.now()}.zip")
     }
 }

@@ -11,13 +11,8 @@ package ua.acclorite.book_story.ui.settings.general
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.lazy.LazyListScope
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.coerceAtLeast
 import androidx.compose.ui.unit.dp
 import ua.acclorite.book_story.BuildConfig
 import ua.acclorite.book_story.R
@@ -30,13 +25,9 @@ import ua.acclorite.book_story.ui.settings.general.components.DeleteStatisticsOp
 import ua.acclorite.book_story.ui.settings.general.components.DoublePressExitOption
 import ua.acclorite.book_story.ui.settings.general.components.ParseCacheSizeOption
 
-fun LazyListScope.GeneralSettingsCategory(
-    titleColor: @Composable () -> Color = { MaterialTheme.colorScheme.primary },
-    topPadding: Dp = 16.dp,
-    bottomPadding: Dp = 16.dp
-) {
+fun LazyListScope.GeneralSettingsCategory() {
     item {
-        Spacer(modifier = Modifier.height((topPadding - 8.dp).coerceAtLeast(0.dp)))
+        Spacer(modifier = Modifier.height(8.dp))
     }
 
     item {
@@ -48,7 +39,6 @@ fun LazyListScope.GeneralSettingsCategory(
     }
 
     SettingsSubcategory(
-        titleColor = titleColor,
         title = { stringResource(id = R.string.parse_cache_option) },
         showTitle = true,
         showDivider = false
@@ -63,7 +53,6 @@ fun LazyListScope.GeneralSettingsCategory(
     }
 
     SettingsSubcategory(
-        titleColor = titleColor,
         title = { stringResource(id = R.string.statistics_option) },
         showTitle = true,
         showDivider = false
@@ -82,8 +71,7 @@ fun LazyListScope.GeneralSettingsCategory(
     // be read at all.
     if (BuildConfig.DB_EXPORT) {
         SettingsSubcategory(
-            titleColor = titleColor,
-            title = { stringResource(id = R.string.debug_option) },
+                title = { stringResource(id = R.string.debug_option) },
             showTitle = true,
             showDivider = false
         ) {
@@ -94,6 +82,6 @@ fun LazyListScope.GeneralSettingsCategory(
     }
 
     item {
-        Spacer(modifier = Modifier.height(bottomPadding))
+        Spacer(modifier = Modifier.height(16.dp))
     }
 }

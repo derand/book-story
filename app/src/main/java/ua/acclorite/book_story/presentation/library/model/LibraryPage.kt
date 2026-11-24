@@ -12,9 +12,6 @@ import ua.acclorite.book_story.core.helpers.compareByWithOrder
 import ua.acclorite.book_story.domain.model.library.Book
 import ua.acclorite.book_story.domain.model.library.Category
 
-/** The id of the Default category: the page of books in no other category. */
-const val DEFAULT_CATEGORY_ID = -1
-
 /**
  * One page of the Library pager, and one tab. [category] is the stored one, so
  * a sort change can be written back; [title] is what the tab shows.
@@ -44,9 +41,9 @@ fun libraryPages(
     sortOrderDescending: Boolean,
     defaultTitle: String
 ): List<LibraryPage> {
-    val default = categories.find { it.id == DEFAULT_CATEGORY_ID }
-        ?: Category(id = DEFAULT_CATEGORY_ID, title = "", order = -1)
-    val others = categories.filterNot { it.id == DEFAULT_CATEGORY_ID }
+    val default = categories.find { it.id == Category.DEFAULT_ID }
+        ?: Category(id = Category.DEFAULT_ID, title = "", order = -1)
+    val others = categories.filterNot { it.id == Category.DEFAULT_ID }
     val otherIds = others.mapTo(HashSet()) { it.id }
 
     fun Book.isUncategorised() = this.categories.none { it in otherIds }
@@ -58,12 +55,12 @@ fun libraryPages(
         .sortedBy { it.order }
         .map { category ->
             val books = shown.filter { book ->
-                if (category.id == DEFAULT_CATEGORY_ID) book.data.isUncategorised()
+                if (category.id == Category.DEFAULT_ID) book.data.isUncategorised()
                 else category.id in book.data.categories
             }
             LibraryPage(
                 category = category,
-                title = if (category.id == DEFAULT_CATEGORY_ID) defaultTitle else category.title,
+                title = if (category.id == Category.DEFAULT_ID) defaultTitle else category.title,
                 books = if (perCategorySort) {
                     books.sortedBy(category.sortOrder, category.sortOrderDescending)
                 } else {
