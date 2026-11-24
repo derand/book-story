@@ -9,7 +9,6 @@
 
 package ua.acclorite.book_story.ui.common.components.common
 
-import androidx.annotation.StringRes
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -32,12 +31,13 @@ import androidx.compose.ui.unit.dp
 import ua.acclorite.book_story.R
 
 /**
- * One row per sort order in [entries], an arrow on the [selected] one. Tapping it
- * flips [descending]; tapping another selects that one, descending.
+ * One row per sort order in [entries], titled by the string resource [label] gives
+ * for it, an arrow on the [selected] one. Tapping it flips [descending]; tapping
+ * another selects that one, descending.
  */
 fun <T : Enum<T>> LazyListScope.SortOrderList(
     entries: List<T>,
-    @StringRes label: (T) -> Int,
+    label: (T) -> Int,
     selected: T,
     descending: Boolean,
     onChange: (sortOrder: T, descending: Boolean) -> Unit
