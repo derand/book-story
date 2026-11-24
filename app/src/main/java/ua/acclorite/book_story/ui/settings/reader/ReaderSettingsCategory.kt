@@ -9,9 +9,6 @@
 package ua.acclorite.book_story.ui.settings.reader
 
 import androidx.compose.foundation.lazy.LazyListScope
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.Color
 import ua.acclorite.book_story.ui.settings.reader.chapters.ChaptersSubcategory
 import ua.acclorite.book_story.ui.settings.reader.font.FontSubcategory
 import ua.acclorite.book_story.ui.settings.reader.images.ImagesSubcategory
@@ -24,41 +21,18 @@ import ua.acclorite.book_story.ui.settings.reader.system.SystemSubcategory
 import ua.acclorite.book_story.ui.settings.reader.text.TextSubcategory
 import ua.acclorite.book_story.ui.settings.reader.translator.TranslatorSubcategory
 
-fun LazyListScope.ReaderSettingsCategory(
-    titleColor: @Composable () -> Color = { MaterialTheme.colorScheme.primary }
-) {
-    FontSubcategory(
-        titleColor = titleColor
-    )
-    TextSubcategory(
-        titleColor = titleColor
-    )
-    ImagesSubcategory(
-        titleColor = titleColor
-    )
-    ChaptersSubcategory(
-        titleColor = titleColor
-    )
-    ReadingModeSubcategory(
-        titleColor = titleColor
-    )
-    PaddingSubcategory(
-        titleColor = titleColor
-    )
-    SystemSubcategory(
-        titleColor = titleColor
-    )
-    ReadingSpeedSubcategory(
-        titleColor = titleColor
-    )
-    ProgressSubcategory(
-        titleColor = titleColor
-    )
-    TranslatorSubcategory(
-        titleColor = titleColor
-    )
+fun LazyListScope.ReaderSettingsCategory() {
+    FontSubcategory()
+    TextSubcategory()
+    ImagesSubcategory()
+    ChaptersSubcategory()
+    ReadingModeSubcategory()
+    PaddingSubcategory()
+    SystemSubcategory()
+    ReadingSpeedSubcategory()
+    ProgressSubcategory()
+    TranslatorSubcategory()
     MiscSubcategory(
-        titleColor = titleColor,
         showDivider = false
     )
 }

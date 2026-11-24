@@ -13,18 +13,13 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.coerceAtLeast
 import androidx.compose.ui.unit.dp
 import ua.acclorite.book_story.ui.settings.backup.components.ExportBackupOption
 import ua.acclorite.book_story.ui.settings.backup.components.RestoreBackupOption
 
-fun LazyListScope.BackupSettingsCategory(
-    topPadding: Dp = 16.dp,
-    bottomPadding: Dp = 16.dp
-) {
+fun LazyListScope.BackupSettingsCategory() {
     item {
-        Spacer(modifier = Modifier.height((topPadding - 8.dp).coerceAtLeast(0.dp)))
+        Spacer(modifier = Modifier.height(8.dp))
     }
 
     item {
@@ -36,6 +31,6 @@ fun LazyListScope.BackupSettingsCategory(
     }
 
     item {
-        Spacer(modifier = Modifier.height(bottomPadding))
+        Spacer(modifier = Modifier.height(16.dp))
     }
 }

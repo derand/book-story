@@ -7,30 +7,20 @@
 package ua.acclorite.book_story.presentation.settings
 
 import android.os.Parcelable
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import kotlinx.parcelize.Parcelize
+import ua.acclorite.book_story.R
 import ua.acclorite.book_story.presentation.navigator.Screen
-import ua.acclorite.book_story.ui.common.components.top_bar.collapsibleTopAppBarScrollBehavior
-import ua.acclorite.book_story.ui.navigator.LocalNavigator
-import ua.acclorite.book_story.ui.settings.library.LibrarySettingsContent
+import ua.acclorite.book_story.ui.settings.components.SettingsSubScreen
+import ua.acclorite.book_story.ui.settings.library.LibrarySettingsCategory
 
 @Parcelize
 object LibrarySettingsScreen : Screen, Parcelable {
 
-    @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     override fun Content() {
-        val navigator = LocalNavigator.current
-        val (scrollBehavior, listState) = TopAppBarDefaults.collapsibleTopAppBarScrollBehavior()
-
-        LibrarySettingsContent(
-            listState = listState,
-            scrollBehavior = scrollBehavior,
-            navigateBack = {
-                navigator.pop()
-            }
-        )
+        SettingsSubScreen(title = R.string.library_settings) {
+            LibrarySettingsCategory()
+        }
     }
 }
