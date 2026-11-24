@@ -8,7 +8,6 @@ package ua.acclorite.book_story.ui.settings.library.categories.components
 
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -19,7 +18,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Label
 import androidx.compose.material.icons.automirrored.outlined.LabelOff
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.outlined.Clear
 import androidx.compose.material.icons.outlined.EditNote
 import androidx.compose.material3.Icon
@@ -45,7 +43,7 @@ import ua.acclorite.book_story.ui.common.components.common.IconButton
 import ua.acclorite.book_story.ui.common.components.common.StyledText
 import ua.acclorite.book_story.ui.common.components.dialog.Dialog
 import ua.acclorite.book_story.ui.common.components.dialog.DialogWithTextField
-import ua.acclorite.book_story.ui.common.helpers.noRippleClickable
+import ua.acclorite.book_story.ui.settings.components.SettingsAddRow
 import ua.acclorite.book_story.ui.theme.dynamicListItemColor
 
 private const val CREATE_DIALOG = "create_dialog"
@@ -147,7 +145,7 @@ fun LibraryCategoriesOption() {
         }
     }
 
-    LibraryCategoriesAction {
+    SettingsAddRow(text = stringResource(id = R.string.create_category)) {
         dialog.value = CREATE_DIALOG
     }
 }
@@ -192,34 +190,6 @@ private fun LibraryCategoriesRemoveDialog(
         },
         withContent = false
     )
-}
-
-@Composable
-private fun LibraryCategoriesAction(
-    create: () -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .padding(18.dp)
-            .noRippleClickable {
-                create()
-            },
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        Icon(
-            modifier = Modifier.size(24.dp),
-            imageVector = Icons.Default.Add,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.secondary
-        )
-        StyledText(
-            text = stringResource(id = R.string.create_category),
-            style = MaterialTheme.typography.labelLarge.copy(
-                color = MaterialTheme.colorScheme.secondary
-            )
-        )
-    }
 }
 
 @Composable

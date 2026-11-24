@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.outlined.Clear
 import androidx.compose.material.icons.outlined.Folder
 import androidx.compose.material.icons.outlined.FolderOff
@@ -43,8 +42,8 @@ import ua.acclorite.book_story.presentation.settings.BookSourcesEvent
 import ua.acclorite.book_story.presentation.settings.BookSourcesModel
 import ua.acclorite.book_story.ui.common.components.common.IconButton
 import ua.acclorite.book_story.ui.common.components.common.StyledText
-import ua.acclorite.book_story.ui.common.helpers.noRippleClickable
 import ua.acclorite.book_story.ui.common.helpers.showToast
+import ua.acclorite.book_story.ui.settings.components.SettingsAddRow
 import ua.acclorite.book_story.ui.theme.dynamicListItemColor
 
 private const val TAG = "BrowseScanOption"
@@ -106,18 +105,16 @@ fun BrowseScanOption() {
         }
     }
 
-    BrowseScanAction(
-        requestPersistableUriPermission = {
-            try {
-                persistedUriIntent.launch(null)
-            } catch (e: Exception) {
-                logE(TAG, "Could not open the folder picker: ${e.messageForLog()}")
+    SettingsAddRow(text = stringResource(id = R.string.add_folder)) {
+        try {
+            persistedUriIntent.launch(null)
+        } catch (e: Exception) {
+            logE(TAG, "Could not open the folder picker: ${e.messageForLog()}")
 
-                context.getString(R.string.error_no_file_manager_app)
-                    .showToast(context, longToast = false)
-            }
+            context.getString(R.string.error_no_file_manager_app)
+                .showToast(context, longToast = false)
         }
-    )
+    }
 }
 
 @Composable
@@ -215,33 +212,5 @@ private fun BrowseScanFolderItem(
         ) {
             releasePersistableUriPermission()
         }
-    }
-}
-
-@Composable
-private fun BrowseScanAction(
-    requestPersistableUriPermission: () -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .padding(horizontal = 18.dp, vertical = 18.dp)
-            .noRippleClickable {
-                requestPersistableUriPermission()
-            },
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        Icon(
-            modifier = Modifier.size(24.dp),
-            imageVector = Icons.Default.Add,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.secondary
-        )
-        StyledText(
-            text = stringResource(id = R.string.add_folder),
-            style = MaterialTheme.typography.labelLarge.copy(
-                color = MaterialTheme.colorScheme.secondary
-            )
-        )
     }
 }
