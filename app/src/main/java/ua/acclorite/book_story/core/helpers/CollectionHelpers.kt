@@ -6,10 +6,6 @@
 
 package ua.acclorite.book_story.core.helpers
 
-fun <T> MutableList<T>.addAll(calculation: () -> List<T>) {
-    addAll(calculation())
-}
-
 fun <T> List<T>.toggle(item: T): List<T> {
     return toMutableList().apply { toggle(item) }
 }

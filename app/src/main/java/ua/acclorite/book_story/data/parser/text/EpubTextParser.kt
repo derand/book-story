@@ -16,7 +16,6 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.yield
 import org.jsoup.Jsoup
 import org.jsoup.parser.Parser
-import ua.acclorite.book_story.core.helpers.addAll
 import ua.acclorite.book_story.core.helpers.containsVisibleText
 import ua.acclorite.book_story.core.helpers.rethrowIfCancellation
 import ua.acclorite.book_story.core.log.logE
@@ -69,10 +68,7 @@ class EpubTextParser @Inject constructor(
 
             yield()
 
-            if (
-                readerText.isEmpty() ||
-                readerText.filterIsInstance<ReaderText.Chapter>().isEmpty()
-            ) {
+            if (readerText.none { it is ReaderText.Chapter }) {
                 logE(TAG, "Could not extract text from EPUB.")
                 return ParsedText.EMPTY
             }
@@ -119,12 +115,11 @@ class EpubTextParser @Inject constructor(
             }.awaitAll()
 
             // Sorting chapters in correct order
-            readerText.addAll {
+            readerText.addAll(
                 unformattedText.toList()
                     .sortedBy { (index, _) -> index }
-                    .map { it.second }
-                    .flatten()
-            }
+                    .flatMap { it.second }
+            )
         }
 
         return readerText
@@ -186,11 +181,11 @@ class EpubTextParser @Inject constructor(
         }
 
         // A chapter that yielded nothing beyond its own title is empty; one
-        // holding only an image (a cover page) is not.
-        if (
-            readerText.none { line -> line !is ReaderText.Chapter } ||
-            readerText.filterIsInstance<ReaderText.Chapter>().isEmpty()
-        ) {
+        // holding only an image (a cover page) is not, as long as the TOC names
+        // it. Without a TOC entry it has no text to take a title from, and the
+        // `return` above has already dropped it
+        // (knownEdge_anImageOnlyDocumentWithoutATocEntryIsDropped).
+        if (readerText.none { line -> line !is ReaderText.Chapter }) {
             logW(TAG, "Could not extract text from [${entry.name}].")
             return
         }

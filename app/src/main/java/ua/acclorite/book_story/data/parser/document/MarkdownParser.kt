@@ -25,10 +25,10 @@ import org.commonmark.node.StrongEmphasis
 import org.commonmark.node.Text
 import org.commonmark.parser.Parser
 import ua.acclorite.book_story.core.helpers.rethrowIfCancellation
-import ua.acclorite.book_story.core.ui.MonospaceFontFamily
-import javax.inject.Inject
 import ua.acclorite.book_story.core.log.logE
 import ua.acclorite.book_story.core.log.messageForLog
+import ua.acclorite.book_story.core.ui.MonospaceFontFamily
+import javax.inject.Inject
 
 private const val TAG = "MarkdownParser"
 
@@ -46,7 +46,7 @@ class MarkdownParser @Inject constructor(
             buildAnnotatedString {
                 parseNode(document)
             }.ifBlank { buildAnnotatedString { append(markdown) } }
-                .trim() as AnnotatedString
+                .trimmed()
         } catch (e: Exception) {
             e.rethrowIfCancellation()
             logE(TAG, e.messageForLog())
@@ -110,4 +110,11 @@ class MarkdownParser @Inject constructor(
             child = child.next
         }
     }
+}
+
+/** `trim` for an [AnnotatedString], keeping its styles: it has no `trim` of its own. */
+private fun AnnotatedString.trimmed(): AnnotatedString {
+    val start = text.indexOfFirst { !it.isWhitespace() }
+    if (start < 0) return AnnotatedString("")
+    return subSequence(start, text.indexOfLast { !it.isWhitespace() } + 1)
 }
