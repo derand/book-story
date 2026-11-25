@@ -32,6 +32,7 @@ import ua.acclorite.book_story.core.log.logI
 import ua.acclorite.book_story.core.log.messageForLog
 import ua.acclorite.book_story.data.local.data_store.DataStore
 import ua.acclorite.book_story.data.settings.model.Setting
+import ua.acclorite.book_story.domain.model.library.Category
 import ua.acclorite.book_story.presentation.browse.model.BrowseLayout
 import ua.acclorite.book_story.presentation.browse.model.BrowseSortOrder
 import ua.acclorite.book_story.presentation.library.model.LibraryLayout
@@ -430,6 +431,10 @@ class SettingsManager @Inject constructor(
     )
     val libraryPerCategorySort = setting<Boolean, Boolean>(
         key = booleanPreferencesKey("library_per_category_sort"), default = false
+    )
+    /** The category whose page Library shows, kept between launches. */
+    val libraryShownCategory = setting<Int, Int>(
+        key = intPreferencesKey("library_shown_category"), default = Category.DEFAULT_ID
     )
 
     /* ------ Browse ----------------------------- */

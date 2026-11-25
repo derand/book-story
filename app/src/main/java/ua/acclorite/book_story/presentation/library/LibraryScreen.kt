@@ -12,10 +12,8 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.res.stringResource
@@ -94,19 +92,24 @@ object LibraryScreen : Screen, Parcelable {
         val pagerState = rememberPagerState { pages.size }
 
         // The pager keeps an index, so a reorder or a deleted category would
-        // leave it on another category. Keep the shown one by id instead.
-        val shownCategoryId = rememberSaveable { mutableStateOf<Int?>(null) }
+        // leave it on another category. Keep the shown one by id instead, in
+        // settings, so a launch opens it too.
+        val shownCategory = settings.libraryShownCategory
         val currentPages = rememberUpdatedState(pages)
+        // Until the books are in, the Default page may be missing and every
+        // page after it one place to the left: neither follow nor record.
+        val pagesReady = !state.value.isLoading && !state.value.loadFailed
 
         LaunchedEffect(Unit) {
             scrollToPageCompositionChannel.receiveAsFlow().collectLatest {
-                shownCategoryId.value = currentPages.value.pageAt(it).category.id
+                shownCategory.update(currentPages.value.pageAt(it).category.id)
                 pagerState.scrollToPage(it)
             }
         }
 
-        LaunchedEffect(pages) {
-            val index = pages.indexOfFirst { it.category.id == shownCategoryId.value }
+        LaunchedEffect(pages, pagesReady) {
+            if (!pagesReady) return@LaunchedEffect
+            val index = pages.indexOfFirst { it.category.id == shownCategory.lastValue }
             if (index >= 0 && index != pagerState.currentPage) {
                 try {
                     pagerState.scrollToPage(index)
@@ -118,7 +121,7 @@ object LibraryScreen : Screen, Parcelable {
             // Emits the current page first, so a deleted category is replaced
             // by the one now shown.
             snapshotFlow { pagerState.settledPage }.collect {
-                shownCategoryId.value = pages.pageAt(it).category.id
+                shownCategory.update(pages.pageAt(it).category.id)
             }
         }
 
