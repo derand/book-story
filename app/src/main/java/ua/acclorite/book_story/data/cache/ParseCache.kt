@@ -296,6 +296,8 @@ class ParseCache @Inject constructor(application: Application) {
         //     "%" kept, case folded after decoding).
         // 13: EPUB read through container.xml → OPF; images keyed by their
         //     full zip path; TOC from the EPUB 3 nav when there is one.
-        const val VERSION = 13
+        // 14: a .md title is the plain text of its first line ("# " dropped);
+        //     a TXT/PDF title keeps its "_", "*" and "#".
+        const val VERSION = 14
     }
 }

@@ -101,8 +101,10 @@ class MarkdownTextParser @Inject constructor(
                         readerText.add(ReaderText.Text(AnnotatedString(line)))
                     }
 
+                    // "# My Book" names the chapter "My Book"
                     !chapterAdded -> {
-                        readerText.add(0, ReaderText.Chapter(title = line))
+                        val title = markdownParser.parse(line).text
+                        readerText.add(0, ReaderText.Chapter(title = title))
                         chapterAdded = true
                     }
 

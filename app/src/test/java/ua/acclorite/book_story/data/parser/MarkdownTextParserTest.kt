@@ -71,6 +71,13 @@ class MarkdownTextParserTest {
     }
 
     @Test
+    fun aHeadingAsTheFirstLineNamesTheChapterWithoutItsHashes() {
+        val text = parse("# My *Book*\nBody.")
+
+        assertEquals("My Book", text.filterIsInstance<ReaderText.Chapter>().single().title)
+    }
+
+    @Test
     fun privateUseCharactersAreShownAsTheyAre() {
         // U+E011–U+E019 once carried styling from the DOM formats into
         // MarkdownParser, which cut them out of every line it parsed — a .md or

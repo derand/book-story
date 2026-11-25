@@ -11,7 +11,6 @@ import com.tom_roush.pdfbox.android.PDFBoxResourceLoader
 import com.tom_roush.pdfbox.pdmodel.PDDocument
 import com.tom_roush.pdfbox.text.PDFTextStripper
 import kotlinx.coroutines.yield
-import ua.acclorite.book_story.core.helpers.clearAllMarkdown
 import ua.acclorite.book_story.core.helpers.rethrowIfCancellation
 import ua.acclorite.book_story.core.log.logE
 import ua.acclorite.book_story.core.log.logI
@@ -131,10 +130,10 @@ class PdfTextParser @Inject constructor(
                         )
 
                         else -> {
-                            if (!chapterAdded && line.clearAllMarkdown().isNotBlank()) {
+                            if (!chapterAdded && line.isNotBlank()) {
                                 readerText.add(
                                     0, ReaderText.Chapter(
-                                        title = line.clearAllMarkdown(),
+                                        title = line.trim(),
                                         depth = 0
                                     )
                                 )

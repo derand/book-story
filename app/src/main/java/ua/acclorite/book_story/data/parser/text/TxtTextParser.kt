@@ -9,7 +9,6 @@ package ua.acclorite.book_story.data.parser.text
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
-import ua.acclorite.book_story.core.helpers.clearAllMarkdown
 import ua.acclorite.book_story.core.helpers.rethrowIfCancellation
 import ua.acclorite.book_story.core.log.logE
 import ua.acclorite.book_story.core.log.logI
@@ -44,10 +43,10 @@ class TxtTextParser @Inject constructor(
                                 )
 
                                 else -> {
-                                    if (!chapterAdded && line.clearAllMarkdown().isNotBlank()) {
+                                    if (!chapterAdded && line.isNotBlank()) {
                                         readerText.add(
                                             0, ReaderText.Chapter(
-                                                title = line.clearAllMarkdown(),
+                                                title = line.trim(),
                                                 depth = 0
                                             )
                                         )
