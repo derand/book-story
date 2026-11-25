@@ -1,4 +1,4 @@
-Chapter depth=0 "# Markdown Tag Coverage Test"
+Chapter depth=0 "Markdown Tag Coverage Test"
 Text "Text before the table. Below is a three-column table with a header."
 Table header=true align=[Unspecified, Unspecified, Unspecified]
   | "Tag" | "Status" | "Note" |

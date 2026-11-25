@@ -10,15 +10,14 @@ import androidx.room.TypeConverter
 import kotlinx.serialization.json.Json
 
 class CategoryConverter {
-    private val json = Json
 
     @TypeConverter
-    fun fromCategoryList(value: List<Int>?): String {
-        return json.encodeToString(value)
+    fun fromCategoryList(value: List<Int>): String {
+        return Json.encodeToString(value)
     }
 
     @TypeConverter
     fun toCategoryList(value: String): List<Int> {
-        return json.decodeFromString(value)
+        return Json.decodeFromString(value)
     }
 }

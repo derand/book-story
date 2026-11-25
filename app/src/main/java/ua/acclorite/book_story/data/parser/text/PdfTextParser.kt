@@ -11,7 +11,6 @@ import com.tom_roush.pdfbox.android.PDFBoxResourceLoader
 import com.tom_roush.pdfbox.pdmodel.PDDocument
 import com.tom_roush.pdfbox.text.PDFTextStripper
 import kotlinx.coroutines.yield
-import ua.acclorite.book_story.core.helpers.clearAllMarkdown
 import ua.acclorite.book_story.core.helpers.rethrowIfCancellation
 import ua.acclorite.book_story.core.log.logE
 import ua.acclorite.book_story.core.log.logI
@@ -29,7 +28,6 @@ class PdfTextParser @Inject constructor(
     private val application: Application
 ) : TextParser {
 
-    @Suppress("UNUSED_PARAMETER")
     override suspend fun parse(cachedFile: CachedFile, keepImageBytes: Boolean): ParsedText {
         logI(TAG, "Started PDF parsing: ${cachedFile.size} bytes.")
 
@@ -52,7 +50,6 @@ class PdfTextParser @Inject constructor(
 
             yield()
 
-            val readerText = mutableListOf<ReaderText>()
             val text = oldText.filterIndexed { index, c ->
                 yield()
 
@@ -120,34 +117,7 @@ class PdfTextParser @Inject constructor(
 
             yield()
 
-            var chapterAdded = false
-            lines.forEach { line ->
-                yield()
-
-                if (line.isNotBlank()) {
-                    when (line) {
-                        "***", "---" -> readerText.add(
-                            ReaderText.Separator
-                        )
-
-                        else -> {
-                            if (!chapterAdded && line.clearAllMarkdown().isNotBlank()) {
-                                readerText.add(
-                                    0, ReaderText.Chapter(
-                                        title = line.clearAllMarkdown(),
-                                        depth = 0
-                                    )
-                                )
-                                chapterAdded = true
-                            } else readerText.add(
-                                ReaderText.Text(
-                                    line = markdownParser.parse(line)
-                                )
-                            )
-                        }
-                    }
-                }
-            }
+            val readerText = markdownParser.parsePlainLines(lines.asSequence())
 
             yield()
 

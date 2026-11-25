@@ -8,9 +8,7 @@
 package ua.acclorite.book_story.data.parser.text
 
 import androidx.compose.ui.text.AnnotatedString
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ensureActive
-import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
 import ua.acclorite.book_story.core.helpers.containsVisibleText
 import ua.acclorite.book_story.core.helpers.rethrowIfCancellation
@@ -20,6 +18,8 @@ import ua.acclorite.book_story.core.log.messageForLog
 import ua.acclorite.book_story.data.model.file.CachedFile
 import ua.acclorite.book_story.data.parser.document.MarkdownLine
 import ua.acclorite.book_story.data.parser.document.MarkdownParser
+import ua.acclorite.book_story.data.parser.document.SEPARATOR_TEXT_REGEX
+import ua.acclorite.book_story.data.parser.document.YIELD_INTERVAL
 import ua.acclorite.book_story.data.parser.document.splitMarkdownBlocks
 import ua.acclorite.book_story.data.parser.document.withoutBlankEdges
 import ua.acclorite.book_story.domain.model.reader.ParsedText
@@ -28,12 +28,6 @@ import javax.inject.Inject
 import kotlin.coroutines.coroutineContext
 
 private const val TAG = "MarkdownTextParser"
-
-/** Separator-like text: "---", "***", "___", also spaced out ("* * *"). */
-private val SEPARATOR_TEXT_REGEX = Regex("""^([-*_])(\s*\1){2,}$""")
-
-/** How many lines run between two [yield] calls. */
-private const val YIELD_INTERVAL = 64
 
 /**
  * A `.md` file: markdown, one paragraph per line.
@@ -51,15 +45,12 @@ class MarkdownTextParser @Inject constructor(
     private val markdownParser: MarkdownParser
 ) : TextParser {
 
-    @Suppress("UNUSED_PARAMETER")
     override suspend fun parse(cachedFile: CachedFile, keepImageBytes: Boolean): ParsedText {
         logI(TAG, "Started Markdown parsing: ${cachedFile.size} bytes.")
 
         return try {
-            val lines = withContext(Dispatchers.IO) {
-                cachedFile.openInputStream()?.bufferedReader()?.use { reader ->
-                    reader.readText().removePrefix("\uFEFF").lines()
-                }
+            val lines = cachedFile.openInputStream()?.bufferedReader()?.use { reader ->
+                reader.readText().removePrefix("\uFEFF").lines()
             } ?: return ParsedText.EMPTY
 
             val readerText = mutableListOf<ReaderText>()
@@ -101,8 +92,10 @@ class MarkdownTextParser @Inject constructor(
                         readerText.add(ReaderText.Text(AnnotatedString(line)))
                     }
 
+                    // "# My Book" names the chapter "My Book"
                     !chapterAdded -> {
-                        readerText.add(0, ReaderText.Chapter(title = line))
+                        val title = markdownParser.parse(line).text
+                        readerText.add(0, ReaderText.Chapter(title = title))
                         chapterAdded = true
                     }
 

@@ -17,12 +17,12 @@ import javax.inject.Inject
 private const val TAG = "TextParser"
 
 class TextParserImpl @Inject constructor(
-    // Markdown parser (Markdown)
+    // One paragraph per line
     private val txtTextParser: TxtTextParser,
     private val markdownTextParser: MarkdownTextParser,
     private val pdfTextParser: PdfTextParser,
 
-    // Document parser (HTML+Markdown)
+    // DOM walk (DocumentParser)
     private val epubTextParser: EpubTextParser,
     private val htmlTextParser: HtmlTextParser,
     private val xmlTextParser: XmlTextParser
@@ -35,36 +35,16 @@ class TextParserImpl @Inject constructor(
         }
 
         val fileFormat = ExtensionsData.formatOf(cachedFile.name)
+        // The one switch for every format: the parsers below read the file
+        // with blocking calls and rely on running here
         return withContext(Dispatchers.IO) {
             when (fileFormat) {
-                ".pdf" -> {
-                    pdfTextParser.parse(cachedFile, keepImageBytes)
-                }
-
-                ".epub" -> {
-                    epubTextParser.parse(cachedFile, keepImageBytes)
-                }
-
-                ".txt" -> {
-                    txtTextParser.parse(cachedFile, keepImageBytes)
-                }
-
-                ".fb2" -> {
-                    xmlTextParser.parse(cachedFile, keepImageBytes)
-                }
-
-                ".html" -> {
-                    htmlTextParser.parse(cachedFile, keepImageBytes)
-                }
-
-                ".htm" -> {
-                    htmlTextParser.parse(cachedFile, keepImageBytes)
-                }
-
-                ".md" -> {
-                    markdownTextParser.parse(cachedFile, keepImageBytes)
-                }
-
+                ".pdf" -> pdfTextParser.parse(cachedFile, keepImageBytes)
+                ".epub" -> epubTextParser.parse(cachedFile, keepImageBytes)
+                ".txt" -> txtTextParser.parse(cachedFile, keepImageBytes)
+                ".fb2" -> xmlTextParser.parse(cachedFile, keepImageBytes)
+                ".html", ".htm" -> htmlTextParser.parse(cachedFile, keepImageBytes)
+                ".md" -> markdownTextParser.parse(cachedFile, keepImageBytes)
                 else -> {
                     logE(TAG, "Wrong file format, could not find supported extension.")
                     ParsedText.EMPTY

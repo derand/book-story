@@ -363,7 +363,9 @@ class BookRepositoryImpl @Inject constructor(
                         // writing each image out, since the scan publishes as it
                         // goes.
                         timed("  images: scan source", describe = { "$scanned asked for" }) {
-                            bookImageLoader.loadImages(cachedFile, stillMissing, ::publish)
+                            bookImageLoader.loadImages(
+                                cachedFile, stillMissing, isActive = { pass.isActive }, onImage = ::publish
+                            )
                         }
                     }
 

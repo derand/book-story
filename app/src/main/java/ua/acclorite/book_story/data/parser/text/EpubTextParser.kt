@@ -12,11 +12,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.yield
 import org.jsoup.Jsoup
 import org.jsoup.parser.Parser
-import ua.acclorite.book_story.core.helpers.addAll
 import ua.acclorite.book_story.core.helpers.containsVisibleText
 import ua.acclorite.book_story.core.helpers.rethrowIfCancellation
 import ua.acclorite.book_story.core.log.logE
@@ -53,28 +52,23 @@ class EpubTextParser @Inject constructor(
             val rawFile = cachedFile.rawFile
             if (rawFile == null || !rawFile.exists() || !rawFile.canRead()) return ParsedText.EMPTY
 
-            withContext(Dispatchers.IO) {
-                ZipFile(rawFile).use { zip ->
-                    val epub = EpubPackage.open(zip)
-                    val chapterTitles = epub.readToc()
+            ZipFile(rawFile).use { zip ->
+                val epub = EpubPackage.open(zip)
+                val chapterTitles = epub.readToc()
 
-                    logI(TAG, "OPF Entry: ${epub.opfPath ?: "no .opf entry"}")
-                    logI(TAG, "Chapter entries, size: ${epub.spine.size}")
-                    logI(TAG, "Title entries, size: ${chapterTitles?.size}")
+                logI(TAG, "OPF Entry: ${epub.opfPath ?: "no .opf entry"}")
+                logI(TAG, "Chapter entries, size: ${epub.spine.size}")
+                logI(TAG, "Title entries, size: ${chapterTitles?.size}")
 
-                    readerText = epub.parseEpub(
-                        chapterTitles = chapterTitles,
-                        keepImageBytes = keepImageBytes
-                    )
-                }
+                readerText = epub.parseEpub(
+                    chapterTitles = chapterTitles,
+                    keepImageBytes = keepImageBytes
+                )
             }
 
             yield()
 
-            if (
-                readerText.isEmpty() ||
-                readerText.filterIsInstance<ReaderText.Chapter>().isEmpty()
-            ) {
+            if (readerText.none { it is ReaderText.Chapter }) {
                 logE(TAG, "Could not extract text from EPUB.")
                 return ParsedText.EMPTY
             }
@@ -100,7 +94,7 @@ class EpubTextParser @Inject constructor(
     ): List<ReaderText> {
 
         val readerText = mutableListOf<ReaderText>()
-        withContext(Dispatchers.IO) {
+        coroutineScope {
             val unformattedText = ConcurrentLinkedQueue<Pair<Int, List<ReaderText>>>()
 
             // Asynchronously getting all chapters with text
@@ -121,12 +115,11 @@ class EpubTextParser @Inject constructor(
             }.awaitAll()
 
             // Sorting chapters in correct order
-            readerText.addAll {
+            readerText.addAll(
                 unformattedText.toList()
                     .sortedBy { (index, _) -> index }
-                    .map { it.second }
-                    .flatten()
-            }
+                    .flatMap { it.second }
+            )
         }
 
         return readerText
@@ -147,7 +140,7 @@ class EpubTextParser @Inject constructor(
         keepImageBytes: Boolean
     ) {
         // Getting all text
-        val content = withContext(Dispatchers.IO) { epub.read(entry) }
+        val content = epub.read(entry)
         // An EPUB content document is XHTML, and read as HTML it is not the same
         // document: HTML has no self-closing <title/> or <a id="…"/>, and a
         // <title/> left open took the text after it into the page title. jsoup's
@@ -188,11 +181,11 @@ class EpubTextParser @Inject constructor(
         }
 
         // A chapter that yielded nothing beyond its own title is empty; one
-        // holding only an image (a cover page) is not.
-        if (
-            readerText.none { line -> line !is ReaderText.Chapter } ||
-            readerText.filterIsInstance<ReaderText.Chapter>().isEmpty()
-        ) {
+        // holding only an image (a cover page) is not, as long as the TOC names
+        // it. Without a TOC entry it has no text to take a title from, and the
+        // `return` above has already dropped it
+        // (knownEdge_anImageOnlyDocumentWithoutATocEntryIsDropped).
+        if (readerText.none { line -> line !is ReaderText.Chapter }) {
             logW(TAG, "Could not extract text from [${entry.name}].")
             return
         }

@@ -48,28 +48,34 @@ class BookImageLoader @Inject constructor() {
      * Resolves the bytes of [srcs] from the book file, invoking [onImage] for
      * each one as soon as it is read. Stops early once every src is resolved.
      * Unresolvable srcs are simply never reported.
+     *
+     * @param isActive Checked per image and per buffer of the FB2 scan: once it
+     *   is false the scan stops, so a closed reader does not keep reading a big
+     *   book, possibly from a cloud provider, to its last image.
      */
     fun loadImages(
         cachedFile: CachedFile,
         srcs: Set<String>,
+        isActive: () -> Boolean = { true },
         onImage: (src: String, bytes: ByteArray) -> Unit
     ) {
         if (srcs.isEmpty()) return
         val format = ExtensionsData.formatOf(cachedFile.name)
         when (format) {
-            ".fb2" -> loadFromFb2(cachedFile, srcs, onImage)
-            ".epub" -> loadFromEpub(cachedFile, srcs, onImage)
+            ".fb2" -> loadFromFb2(cachedFile, srcs, isActive, onImage)
+            ".epub" -> loadFromEpub(cachedFile, srcs, isActive, onImage)
         }
     }
 
     private fun loadFromFb2(
         cachedFile: CachedFile,
         srcs: Set<String>,
+        isActive: () -> Boolean,
         onImage: (String, ByteArray) -> Unit
     ) {
         try {
             cachedFile.openInputStream()?.use { stream ->
-                scanFb2Binaries(stream, srcs, onImage)
+                scanFb2Binaries(stream, srcs, isActive, onImage)
             }
         } catch (e: Exception) {
             logE(TAG, "Could not load FB2 images: ${e.messageForLog()}")
@@ -79,6 +85,7 @@ class BookImageLoader @Inject constructor() {
     private fun loadFromEpub(
         cachedFile: CachedFile,
         srcs: Set<String>,
+        isActive: () -> Boolean,
         onImage: (String, ByteArray) -> Unit
     ) {
         val rawFile = cachedFile.rawFile
@@ -86,9 +93,10 @@ class BookImageLoader @Inject constructor() {
         try {
             ZipFile(rawFile).use { zip ->
                 val epub = EpubPackage.open(zip)
-                srcs.forEach { src ->
+                for (src in srcs) {
+                    if (!isActive()) return
                     try {
-                        onImage(src, epub.imageBytes(src) ?: return@forEach)
+                        onImage(src, epub.imageBytes(src) ?: continue)
                     } catch (e: Exception) {
                         logE(TAG, "Could not read EPUB image [$src]: ${e.messageForLog()}")
                     }
@@ -107,12 +115,13 @@ class BookImageLoader @Inject constructor() {
     private fun scanFb2Binaries(
         stream: InputStream,
         srcs: Set<String>,
+        isActive: () -> Boolean,
         onImage: (String, ByteArray) -> Unit
     ) {
-        val scanner = Fb2Scanner(stream)
+        val scanner = Fb2Scanner(stream, isActive)
         val remaining = srcs.toMutableSet()
 
-        while (remaining.isNotEmpty()) {
+        while (remaining.isNotEmpty() && isActive()) {
             if (!scanner.skipTo(BINARY_OPEN)) return
 
             // Guard against elements that merely start with the same characters:
@@ -151,9 +160,13 @@ class BookImageLoader @Inject constructor() {
     /**
      * Byte-level reader over the book stream. FB2 markup and base64 are ASCII, so
      * scanning bytes needs no charset handling; only attribute text is decoded
-     * (as UTF-8) because an id could carry non-ASCII characters.
+     * (as UTF-8) because an id could carry non-ASCII characters. Once [isActive]
+     * is false the stream reads as ended, wherever the scan is.
      */
-    private class Fb2Scanner(private val input: InputStream) {
+    private class Fb2Scanner(
+        private val input: InputStream,
+        private val isActive: () -> Boolean
+    ) {
 
         private val buffer = ByteArray(SCAN_BUFFER)
         private var length = 0
@@ -161,6 +174,7 @@ class BookImageLoader @Inject constructor() {
 
         fun read(): Int {
             if (position >= length) {
+                if (!isActive()) return -1
                 length = input.read(buffer)
                 position = 0
                 if (length <= 0) return -1

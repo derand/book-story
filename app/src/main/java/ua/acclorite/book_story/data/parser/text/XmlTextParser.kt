@@ -6,6 +6,7 @@
 
 package ua.acclorite.book_story.data.parser.text
 
+import androidx.compose.ui.text.AnnotatedString
 import kotlinx.coroutines.yield
 import org.jsoup.Jsoup
 import org.jsoup.parser.Parser
@@ -17,7 +18,6 @@ import ua.acclorite.book_story.core.log.timed
 import ua.acclorite.book_story.data.model.file.CachedFile
 import ua.acclorite.book_story.data.parser.document.Base64Images
 import ua.acclorite.book_story.data.parser.document.DocumentParser
-import androidx.compose.ui.text.AnnotatedString
 import ua.acclorite.book_story.domain.model.reader.ParsedText
 import ua.acclorite.book_story.domain.model.reader.ReaderText
 import javax.inject.Inject
@@ -39,10 +39,11 @@ class XmlTextParser @Inject constructor(
                 }
 
                 // FB2 stores images as Base64 <binary id="...">, referenced by <image>
-                val base64Images = document.select("binary").associate { binary ->
+                val binaries = document.select("binary")
+                val base64Images = binaries.associate { binary ->
                     binary.attr("id").trim().lowercase() to binary.wholeText()
                 }.filterKeys { it.isNotBlank() }
-                document.select("binary").remove()
+                binaries.remove()
 
                 // FB2 stores footnote texts in extra bodies (<body name="notes">
                 // etc.). Collect them for the in-text note popups; the bodies
