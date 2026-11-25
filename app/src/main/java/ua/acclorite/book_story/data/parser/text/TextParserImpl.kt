@@ -35,6 +35,8 @@ class TextParserImpl @Inject constructor(
         }
 
         val fileFormat = ExtensionsData.formatOf(cachedFile.name)
+        // The one switch for every format: the parsers below read the file
+        // with blocking calls and rely on running here
         return withContext(Dispatchers.IO) {
             when (fileFormat) {
                 ".pdf" -> pdfTextParser.parse(cachedFile, keepImageBytes)

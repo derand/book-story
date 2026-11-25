@@ -12,7 +12,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.yield
 import org.jsoup.Jsoup
 import org.jsoup.parser.Parser
@@ -53,20 +53,18 @@ class EpubTextParser @Inject constructor(
             val rawFile = cachedFile.rawFile
             if (rawFile == null || !rawFile.exists() || !rawFile.canRead()) return ParsedText.EMPTY
 
-            withContext(Dispatchers.IO) {
-                ZipFile(rawFile).use { zip ->
-                    val epub = EpubPackage.open(zip)
-                    val chapterTitles = epub.readToc()
+            ZipFile(rawFile).use { zip ->
+                val epub = EpubPackage.open(zip)
+                val chapterTitles = epub.readToc()
 
-                    logI(TAG, "OPF Entry: ${epub.opfPath ?: "no .opf entry"}")
-                    logI(TAG, "Chapter entries, size: ${epub.spine.size}")
-                    logI(TAG, "Title entries, size: ${chapterTitles?.size}")
+                logI(TAG, "OPF Entry: ${epub.opfPath ?: "no .opf entry"}")
+                logI(TAG, "Chapter entries, size: ${epub.spine.size}")
+                logI(TAG, "Title entries, size: ${chapterTitles?.size}")
 
-                    readerText = epub.parseEpub(
-                        chapterTitles = chapterTitles,
-                        keepImageBytes = keepImageBytes
-                    )
-                }
+                readerText = epub.parseEpub(
+                    chapterTitles = chapterTitles,
+                    keepImageBytes = keepImageBytes
+                )
             }
 
             yield()
@@ -100,7 +98,7 @@ class EpubTextParser @Inject constructor(
     ): List<ReaderText> {
 
         val readerText = mutableListOf<ReaderText>()
-        withContext(Dispatchers.IO) {
+        coroutineScope {
             val unformattedText = ConcurrentLinkedQueue<Pair<Int, List<ReaderText>>>()
 
             // Asynchronously getting all chapters with text
@@ -147,7 +145,7 @@ class EpubTextParser @Inject constructor(
         keepImageBytes: Boolean
     ) {
         // Getting all text
-        val content = withContext(Dispatchers.IO) { epub.read(entry) }
+        val content = epub.read(entry)
         // An EPUB content document is XHTML, and read as HTML it is not the same
         // document: HTML has no self-closing <title/> or <a id="…"/>, and a
         // <title/> left open took the text after it into the page title. jsoup's

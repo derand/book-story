@@ -8,9 +8,7 @@
 package ua.acclorite.book_story.data.parser.text
 
 import androidx.compose.ui.text.AnnotatedString
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ensureActive
-import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
 import ua.acclorite.book_story.core.helpers.containsVisibleText
 import ua.acclorite.book_story.core.helpers.rethrowIfCancellation
@@ -52,10 +50,8 @@ class MarkdownTextParser @Inject constructor(
         logI(TAG, "Started Markdown parsing: ${cachedFile.size} bytes.")
 
         return try {
-            val lines = withContext(Dispatchers.IO) {
-                cachedFile.openInputStream()?.bufferedReader()?.use { reader ->
-                    reader.readText().removePrefix("\uFEFF").lines()
-                }
+            val lines = cachedFile.openInputStream()?.bufferedReader()?.use { reader ->
+                reader.readText().removePrefix("\uFEFF").lines()
             } ?: return ParsedText.EMPTY
 
             val readerText = mutableListOf<ReaderText>()

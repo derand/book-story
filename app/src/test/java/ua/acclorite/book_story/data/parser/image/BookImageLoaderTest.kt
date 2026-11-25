@@ -162,6 +162,37 @@ class BookImageLoaderTest {
     }
 
     @Test
+    fun anFb2ScanStopsOnceThePassIsNoLongerActive() {
+        val file = fb2(binary("a.jpg", cover), binary("b.jpg", page))
+
+        val seen = mutableListOf<String>()
+        loader.loadImages(cachedFile(file), setOf("a.jpg", "b.jpg"), isActive = { seen.isEmpty() }) { src, _ ->
+            seen.add(src)
+        }
+
+        assertEquals(listOf("a.jpg"), seen)
+    }
+
+    @Test
+    fun anEpubScanStopsOnceThePassIsNoLongerActive() {
+        val file = File(dir, "book.epub")
+        ZipOutputStream(file.outputStream()).use { zip ->
+            listOf("a.jpg" to cover, "b.jpg" to page).forEach { (name, bytes) ->
+                zip.putNextEntry(ZipEntry(name))
+                zip.write(bytes)
+                zip.closeEntry()
+            }
+        }
+
+        val seen = mutableListOf<String>()
+        loader.loadImages(cachedFile(file), linkedSetOf("a.jpg", "b.jpg"), isActive = { seen.isEmpty() }) { src, _ ->
+            seen.add(src)
+        }
+
+        assertEquals(listOf("a.jpg"), seen)
+    }
+
+    @Test
     fun formatsWithoutImageBytesLoadNothing() {
         val file = File(dir, "book.txt").apply { writeText("plain text") }
 

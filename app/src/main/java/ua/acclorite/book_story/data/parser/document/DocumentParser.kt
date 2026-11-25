@@ -50,10 +50,12 @@ class DocumentParser @Inject constructor() {
     ): List<ReaderText> = coroutineScope {
         yield()
 
-        // Images decode in parallel while the text is being walked
+        // Images decode in parallel while the text is being walked. On IO: a job
+        // reads the bytes out of the zip or the FB2 first, and only peeks at
+        // the bounds, so it would block a CPU thread that the walk needs.
         val imageJobs = mutableMapOf<String, Deferred<ReaderImage?>>()
         fun decode(src: String) = imageJobs.getOrPut(src) {
-            async(Dispatchers.Default) {
+            async(Dispatchers.IO) {
                 loadImage(src, images, keepImageBytes)
             }
         }

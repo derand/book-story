@@ -6,8 +6,6 @@
 
 package ua.acclorite.book_story.data.parser.text
 
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
 import ua.acclorite.book_story.core.helpers.rethrowIfCancellation
 import ua.acclorite.book_story.core.log.logE
@@ -30,10 +28,8 @@ class TxtTextParser @Inject constructor(
         logI(TAG, "Started TXT parsing: ${cachedFile.size} bytes.")
 
         return try {
-            val readerText = withContext(Dispatchers.IO) {
-                cachedFile.openInputStream()?.bufferedReader()?.useLines { lines ->
-                    markdownParser.parsePlainLines(lines)
-                }
+            val readerText = cachedFile.openInputStream()?.bufferedReader()?.useLines { lines ->
+                markdownParser.parsePlainLines(lines)
             } ?: return ParsedText.EMPTY
 
             yield()
