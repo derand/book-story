@@ -30,34 +30,11 @@ class FileParserImpl @Inject constructor(
 
         val fileFormat = ExtensionsData.formatOf(cachedFile.name)
         return when (fileFormat) {
-            ".pdf" -> {
-                pdfFileParser.parse(cachedFile)
-            }
-
-            ".epub" -> {
-                epubFileParser.parse(cachedFile)
-            }
-
-            ".txt" -> {
-                txtFileParser.parse(cachedFile)
-            }
-
-            ".fb2" -> {
-                fb2FileParser.parse(cachedFile)
-            }
-
-            ".html" -> {
-                htmlFileParser.parse(cachedFile)
-            }
-
-            ".htm" -> {
-                htmlFileParser.parse(cachedFile)
-            }
-
-            ".md" -> {
-                txtFileParser.parse(cachedFile)
-            }
-
+            ".pdf" -> pdfFileParser.parse(cachedFile)
+            ".epub" -> epubFileParser.parse(cachedFile)
+            ".txt", ".md" -> txtFileParser.parse(cachedFile)
+            ".fb2" -> fb2FileParser.parse(cachedFile)
+            ".html", ".htm" -> htmlFileParser.parse(cachedFile)
             else -> {
                 logE(TAG, "Wrong file format, could not find supported extension.")
                 null

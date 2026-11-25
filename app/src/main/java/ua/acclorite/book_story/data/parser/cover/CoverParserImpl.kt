@@ -16,10 +16,7 @@ private const val TAG = "CoverParser"
 
 class CoverParserImpl @Inject constructor(
     private val epubCoverParser: EpubCoverParser,
-    private val txtCoverParser: TxtCoverParser,
-    private val pdfCoverParser: PdfCoverParser,
-    private val fb2CoverParser: Fb2CoverParser,
-    private val htmlCoverParser: HtmlCoverParser
+    private val fb2CoverParser: Fb2CoverParser
 ) : CoverParser {
 
     override suspend fun parse(cachedFile: CachedFile): CoverImage? {
@@ -30,38 +27,14 @@ class CoverParserImpl @Inject constructor(
 
         val fileFormat = ExtensionsData.formatOf(cachedFile.name)
         return when (fileFormat) {
-            ".pdf" -> {
-                pdfCoverParser.parse(cachedFile)
-            }
-
-            ".epub" -> {
-                epubCoverParser.parse(cachedFile)
-            }
-
-            ".txt" -> {
-                txtCoverParser.parse(cachedFile)
-            }
-
-            ".fb2" -> {
-                fb2CoverParser.parse(cachedFile)
-            }
-
-            ".html" -> {
-                htmlCoverParser.parse(cachedFile)
-            }
-
-            ".htm" -> {
-                htmlCoverParser.parse(cachedFile)
-            }
-
-            ".md" -> {
-                txtCoverParser.parse(cachedFile)
-            }
-
-            else -> {
+            ".epub" -> epubCoverParser.parse(cachedFile)
+            ".fb2" -> fb2CoverParser.parse(cachedFile)
+            null -> {
                 logE(TAG, "Wrong file format, could not find supported extension.")
                 null
             }
+            // PDF, TXT, HTML and Markdown carry no cover
+            else -> null
         }
     }
 }
