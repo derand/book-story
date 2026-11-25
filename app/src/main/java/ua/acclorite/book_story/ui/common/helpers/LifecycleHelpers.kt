@@ -14,6 +14,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.platform.LocalContext
+import androidx.core.net.toUri
+import ua.acclorite.book_story.R
 import ua.acclorite.book_story.core.log.logE
 import ua.acclorite.book_story.core.log.messageForLog
 
@@ -38,6 +40,16 @@ inline fun Intent.launchActivity(
     }
 
     success()
+}
+
+/** Opens [url] in a browser, or shows a toast when none can open it. */
+fun ComponentActivity.openInBrowser(url: String) {
+    Intent(Intent.ACTION_VIEW, url.toUri()).launchActivity(
+        activity = this,
+        error = {
+            getString(R.string.error_no_browser).showToast(context = this, longToast = false)
+        }
+    )
 }
 
 fun ComponentActivity.setBrightness(brightness: Float?) {

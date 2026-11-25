@@ -18,13 +18,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import ua.acclorite.book_story.R
-import ua.acclorite.book_story.presentation.about.AboutEvent
 import ua.acclorite.book_story.ui.about.data.AboutData
 import ua.acclorite.book_story.ui.common.helpers.showToast
 
 @Composable
 fun AboutBadges(
-    navigateToBrowserPage: (AboutEvent.OnNavigateToBrowserPage) -> Unit
+    navigateToBrowserPage: (String) -> Unit
 ) {
     val context = LocalContext.current
 
@@ -50,11 +49,7 @@ fun AboutBadges(
 
                         else -> {
                             badge.url?.let {
-                                navigateToBrowserPage(
-                                    AboutEvent.OnNavigateToBrowserPage(
-                                        page = it
-                                    )
-                                )
+                                navigateToBrowserPage(it)
                             }
                         }
                     }

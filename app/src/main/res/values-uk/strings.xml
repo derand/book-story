@@ -44,6 +44,7 @@
     </string>
     <string name="error_could_not_reset_cover">Не вдалося скинути обкладинку.</string>
     <string name="error_closed_source">Закритий код</string>
+    <string name="error_license_not_found">Цієї бібліотеки більше немає в списку.</string>
     <string name="error_no_file">Файла не існує або він недоступний</string>
     <string name="error_field_empty">Це поле не повинно бути пустим.</string>
 
