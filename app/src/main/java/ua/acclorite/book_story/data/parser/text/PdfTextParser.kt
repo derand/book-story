@@ -51,7 +51,6 @@ class PdfTextParser @Inject constructor(
 
             yield()
 
-            val readerText = mutableListOf<ReaderText>()
             val text = oldText.filterIndexed { index, c ->
                 yield()
 
@@ -119,34 +118,7 @@ class PdfTextParser @Inject constructor(
 
             yield()
 
-            var chapterAdded = false
-            lines.forEach { line ->
-                yield()
-
-                if (line.isNotBlank()) {
-                    when (line) {
-                        "***", "---" -> readerText.add(
-                            ReaderText.Separator
-                        )
-
-                        else -> {
-                            if (!chapterAdded && line.isNotBlank()) {
-                                readerText.add(
-                                    0, ReaderText.Chapter(
-                                        title = line.trim(),
-                                        depth = 0
-                                    )
-                                )
-                                chapterAdded = true
-                            } else readerText.add(
-                                ReaderText.Text(
-                                    line = markdownParser.parse(line)
-                                )
-                            )
-                        }
-                    }
-                }
-            }
+            val readerText = markdownParser.parsePlainLines(lines.asSequence())
 
             yield()
 

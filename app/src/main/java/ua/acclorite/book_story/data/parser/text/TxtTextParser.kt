@@ -30,38 +30,11 @@ class TxtTextParser @Inject constructor(
         logI(TAG, "Started TXT parsing: ${cachedFile.size} bytes.")
 
         return try {
-            val readerText = mutableListOf<ReaderText>()
-            var chapterAdded = false
-
-            withContext(Dispatchers.IO) {
-                cachedFile.openInputStream()?.bufferedReader()?.use { reader ->
-                    reader.forEachLine { line ->
-                        if (line.isNotBlank()) {
-                            when (line) {
-                                "***", "---" -> readerText.add(
-                                    ReaderText.Separator
-                                )
-
-                                else -> {
-                                    if (!chapterAdded && line.isNotBlank()) {
-                                        readerText.add(
-                                            0, ReaderText.Chapter(
-                                                title = line.trim(),
-                                                depth = 0
-                                            )
-                                        )
-                                        chapterAdded = true
-                                    } else readerText.add(
-                                        ReaderText.Text(
-                                            line = markdownParser.parse(line)
-                                        )
-                                    )
-                                }
-                            }
-                        }
-                    }
+            val readerText = withContext(Dispatchers.IO) {
+                cachedFile.openInputStream()?.bufferedReader()?.useLines { lines ->
+                    markdownParser.parsePlainLines(lines)
                 }
-            }
+            } ?: return ParsedText.EMPTY
 
             yield()
 

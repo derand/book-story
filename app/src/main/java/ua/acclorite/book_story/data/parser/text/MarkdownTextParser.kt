@@ -20,6 +20,8 @@ import ua.acclorite.book_story.core.log.messageForLog
 import ua.acclorite.book_story.data.model.file.CachedFile
 import ua.acclorite.book_story.data.parser.document.MarkdownLine
 import ua.acclorite.book_story.data.parser.document.MarkdownParser
+import ua.acclorite.book_story.data.parser.document.SEPARATOR_TEXT_REGEX
+import ua.acclorite.book_story.data.parser.document.YIELD_INTERVAL
 import ua.acclorite.book_story.data.parser.document.splitMarkdownBlocks
 import ua.acclorite.book_story.data.parser.document.withoutBlankEdges
 import ua.acclorite.book_story.domain.model.reader.ParsedText
@@ -28,12 +30,6 @@ import javax.inject.Inject
 import kotlin.coroutines.coroutineContext
 
 private const val TAG = "MarkdownTextParser"
-
-/** Separator-like text: "---", "***", "___", also spaced out ("* * *"). */
-private val SEPARATOR_TEXT_REGEX = Regex("""^([-*_])(\s*\1){2,}$""")
-
-/** How many lines run between two [yield] calls. */
-private const val YIELD_INTERVAL = 64
 
 /**
  * A `.md` file: markdown, one paragraph per line.

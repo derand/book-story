@@ -298,6 +298,8 @@ class ParseCache @Inject constructor(application: Application) {
         //     full zip path; TOC from the EPUB 3 nav when there is one.
         // 14: a .md title is the plain text of its first line ("# " dropped);
         //     a TXT/PDF title keeps its "_", "*" and "#".
-        const val VERSION = 14
+        // 15: TXT/PDF scene breaks ("***", "* * *", "---") are literal text,
+        //     as in .md and the DOM formats, never a drawn separator.
+        const val VERSION = 15
     }
 }

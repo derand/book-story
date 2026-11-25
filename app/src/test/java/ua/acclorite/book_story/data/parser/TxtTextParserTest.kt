@@ -10,6 +10,7 @@ package ua.acclorite.book_story.data.parser
 import kotlinx.coroutines.runBlocking
 import org.commonmark.parser.Parser as CommonmarkParser
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -34,6 +35,28 @@ class TxtTextParserTest {
         assertEquals("Chapter #1", title("Chapter #1\nBody."))
         assertEquals("my_book_v2", title("  my_book_v2  \nBody."))
         assertEquals("Глава (*)", title("\n\nГлава (*)\nBody."))
+    }
+
+    @Test
+    fun aSceneBreakIsKeptAsTypedInEveryForm() {
+        val text = parse("Title\n***\nOne.\n  * * *  \n---\n___\nTwo.")
+
+        assertTrue("no drawn separator", text.none { it is ReaderText.Separator })
+        assertEquals(
+            listOf("***", "One.", "* * *", "---", "___", "Two."),
+            text.filterIsInstance<ReaderText.Text>().map { it.line.text }
+        )
+    }
+
+    @Test
+    fun aSceneBreakIsNeverTheTitle() {
+        val text = parse("* * *\n\n   \nTitle\nBody.")
+
+        assertEquals("Title", text.filterIsInstance<ReaderText.Chapter>().single().title)
+        assertEquals(
+            listOf("* * *", "Body."),
+            text.filterIsInstance<ReaderText.Text>().map { it.line.text }
+        )
     }
 
     private fun title(content: String): String =

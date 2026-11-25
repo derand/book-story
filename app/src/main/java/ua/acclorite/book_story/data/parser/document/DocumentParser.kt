@@ -28,18 +28,6 @@ import javax.inject.Inject
 
 private const val TAG = "DocumentParser"
 
-/**
- * How many items of a phase run between two [yield] calls.
- *
- * Yielding once per line cost a quarter of the whole parse (#39): the work
- * itself is microseconds and the round-trip through the dispatcher is ~166 µs,
- * moving the coroutine between worker threads each time. Cancellation is not
- * what paid for that — `ensureActive` still runs on every item and throws just
- * as promptly; a yield only lets *other* coroutines in, and at 64 items that is
- * still well under 50 ms of work between turns.
- */
-private const val YIELD_INTERVAL = 64
-
 class DocumentParser @Inject constructor() {
 
     /**

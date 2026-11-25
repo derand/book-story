@@ -75,9 +75,6 @@ private fun Element.startsLine(): Boolean = when (val name = normalName()) {
 /** Elements a heading flattened onto one line or a table cell cannot hold. */
 private val NOT_INLINE_ELEMENTS = setOf("empty-line", "hr", "image", "img", "table")
 
-/** Separator-like text: "---", "***", "___", also spaced out ("* * *"). */
-private val SEPARATOR_TEXT_REGEX = Regex("""^([-*_])(\s*\1){2,}$""")
-
 /** The style an inline element — or a heading — puts on its text, if any. */
 private fun styleOf(name: String): SpanStyle? = when (name) {
     "b", "strong", "h1", "h2", "h3", "h4", "h5", "h6" -> BOLD
