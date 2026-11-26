@@ -97,7 +97,7 @@ fun LibraryListItem(
             // would return titles with no visible reason for being there. Only
             // when the book carries one — the placeholder for an unknown author
             // says nothing and would sit under every book that has no metadata.
-            book.data.author.getAsString()?.let { author ->
+            book.data.author.literalOrNull()?.let { author ->
                 StyledText(
                     text = author,
                     style = MaterialTheme.typography.bodySmall.copy(

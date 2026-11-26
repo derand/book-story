@@ -82,7 +82,7 @@ private fun List<SelectableBook>.sortedBy(
             LibrarySortOrder.NAME -> book.data.title.trim()
             LibrarySortOrder.LAST_READ -> book.data.lastOpened
             LibrarySortOrder.PROGRESS -> book.data.progress
-            LibrarySortOrder.AUTHOR -> book.data.author.getAsString()
+            LibrarySortOrder.AUTHOR -> book.data.author.literalOrNull()
         }
     }
 )

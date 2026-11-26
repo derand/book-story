@@ -19,7 +19,18 @@ import java.io.Serializable
 @Immutable
 sealed class UIText : Parcelable {
     data class StringValue(val value: String) : UIText()
-    class StringResource(@StringRes val resId: Int, vararg val args: Serializable) : UIText()
+    class StringResource(@StringRes val resId: Int, vararg val args: Serializable) : UIText() {
+        // By value, as for StringValue: args is an array, which compares by identity.
+        override fun equals(other: Any?): Boolean {
+            return other is StringResource &&
+                resId == other.resId &&
+                args.contentEquals(other.args)
+        }
+
+        override fun hashCode(): Int = 31 * resId + args.contentHashCode()
+
+        override fun toString(): String = "StringResource($resId, ${args.contentToString()})"
+    }
 
     @Composable
     fun asString(): String {
@@ -36,7 +47,8 @@ sealed class UIText : Parcelable {
         }
     }
 
-    fun getAsString(): String? {
+    /** The text itself for a [StringValue]; null for a [StringResource]. */
+    fun literalOrNull(): String? {
         return when (this) {
             is StringValue -> value
             is StringResource -> null

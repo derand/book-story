@@ -60,7 +60,7 @@ class FileParserTest {
         val book = parse(resourceFile("fb2/tags-test.fb2"))
 
         assertEquals("FB2 Tag Coverage Test", book.title)
-        assertEquals("FB2 Tag Test", book.author.getAsString())
+        assertEquals("FB2 Tag Test", book.author.literalOrNull())
         assertEquals(
             "A test book: every section checks one FB2 tag. " +
                 "Under each example it says what must be visible.",
@@ -73,7 +73,7 @@ class FileParserTest {
         val book = parse(zipDirectory(resourceFile("epub/tags-test"), "tags-test.epub"))
 
         assertEquals("EPUB Tag Coverage Test", book.title)
-        assertEquals("derand", book.author.getAsString())
+        assertEquals("derand", book.author.literalOrNull())
         assertEquals(
             "Hand-written EPUB exercising the inline and block tags the reader handles. " +
                 "All text original.",
@@ -116,7 +116,7 @@ class FileParserTest {
         )
 
         assertEquals("Тестова книга", book.title)
-        assertEquals("Іван Петренко", book.author.getAsString())
+        assertEquals("Іван Петренко", book.author.literalOrNull())
     }
 
     @Test
@@ -128,7 +128,7 @@ class FileParserTest {
             )
         )
 
-        assertEquals("Анна Петрівна Коваль", book.author.getAsString())
+        assertEquals("Анна Петрівна Коваль", book.author.literalOrNull())
     }
 
     @Test
@@ -141,7 +141,7 @@ class FileParserTest {
             )
         )
 
-        assertEquals("Ann Lee", book.author.getAsString())
+        assertEquals("Ann Lee", book.author.literalOrNull())
     }
 
     @Test
@@ -156,14 +156,14 @@ class FileParserTest {
             )
         )
 
-        assertEquals("Ann Lee, Bob Ray", book.author.getAsString())
+        assertEquals("Ann Lee, Bob Ray", book.author.literalOrNull())
     }
 
     @Test
     fun fb2NicknameStandsInForAMissingName() {
         val book = parse(fb2(titleInfo = "<author><nickname>anon42</nickname></author>"))
 
-        assertEquals("anon42", book.author.getAsString())
+        assertEquals("anon42", book.author.literalOrNull())
     }
 
     @Test
@@ -226,7 +226,7 @@ class FileParserTest {
             )
         )
 
-        assertEquals("Ann Lee, Bob Ray", book.author.getAsString())
+        assertEquals("Ann Lee, Bob Ray", book.author.literalOrNull())
     }
 
     @Test
@@ -244,7 +244,7 @@ class FileParserTest {
             )
         )
 
-        assertEquals("Ann Lee, Bob Ray", book.author.getAsString())
+        assertEquals("Ann Lee, Bob Ray", book.author.literalOrNull())
     }
 
     @Test
