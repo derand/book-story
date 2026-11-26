@@ -44,7 +44,7 @@ fun Book.matchesSearch(tokens: List<String>): Boolean {
 
     val haystack = buildString {
         append(title)
-        author.getAsString()?.let {
+        author.literalOrNull()?.let {
             append(' ')
             append(it)
         }

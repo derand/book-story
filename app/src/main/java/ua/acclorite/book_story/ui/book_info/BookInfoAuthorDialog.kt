@@ -19,7 +19,7 @@ fun BookInfoAuthorDialog(
     onEvent: (BookInfoEvent) -> Unit
 ) {
     DialogWithTextField(
-        initialValue = book.author.getAsString() ?: "",
+        initialValue = book.author.literalOrNull() ?: "",
         lengthLimit = 100,
         onDismiss = {
             onEvent(BookInfoEvent.OnDismissDialog)

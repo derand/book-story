@@ -159,7 +159,7 @@ class BookInfoModel @Inject constructor(
             is BookInfoEvent.OnActionAuthorDialog -> write { book ->
                 // Stored the way the row has it: "unknown author" is no author
                 // at all.
-                val author = event.author.getAsString() ?: ""
+                val author = event.author.literalOrNull() ?: ""
                 edit(
                     book.id,
                     write = { updateBookUseCase.author(book.id, author) },

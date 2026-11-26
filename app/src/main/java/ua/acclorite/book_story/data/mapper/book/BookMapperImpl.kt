@@ -22,7 +22,7 @@ class BookMapperImpl @Inject constructor() : BookMapper {
             scrollIndex = book.scrollIndex,
             scrollOffset = book.scrollOffset,
             progress = book.progress,
-            author = book.author.getAsString() ?: "",
+            author = book.author.literalOrNull() ?: "",
             description = book.description,
             image = book.coverImage?.toString(),
             categories = book.categories,

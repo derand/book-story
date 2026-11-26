@@ -26,6 +26,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.collections.immutable.persistentListOf
 import ua.acclorite.book_story.R
+import ua.acclorite.book_story.core.log.logE
+import ua.acclorite.book_story.core.log.messageForLog
 import ua.acclorite.book_story.data.model.file.CachedFile
 import ua.acclorite.book_story.data.settings.SettingsManager
 import ua.acclorite.book_story.presentation.browse.BrowseModel
@@ -80,7 +82,7 @@ class MainActivity : AppCompatActivity() {
             field.isAccessible = true
             field.set(null, 100 * 1024 * 1024)
         } catch (e: Exception) {
-            e.printStackTrace()
+            logE("MainActivity", "Could not enlarge the cursor window: ${e.messageForLog()}")
         }
 
         // Edge to edge

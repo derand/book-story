@@ -28,7 +28,7 @@ class SetBookFinishedUseCase @Inject constructor(
         statisticsRepository.setFinished(
             bookId = book.id,
             title = book.title,
-            author = book.author.getAsString() ?: "",
+            author = book.author.literalOrNull() ?: "",
             finished = finished
         ).onFailure {
             logW(TAG, "Could not set finished on [${book.id}]: ${it.messageForLog()}")

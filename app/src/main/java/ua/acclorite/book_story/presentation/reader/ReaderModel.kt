@@ -874,7 +874,7 @@ class ReaderModel @Inject constructor(
             wordsRead = ended.wordsRead,
             overlayMs = ended.overlayMs,
             title = book.title,
-            author = book.author.getAsString() ?: "",
+            author = book.author.literalOrNull() ?: "",
             coveragePercent = ended.coveragePercent,
             reachedEnd = ended.reachedEnd
         )
