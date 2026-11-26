@@ -36,10 +36,6 @@
 -dontwarn org.slf4j.LoggerFactory
 -dontwarn org.xmlpull.v1.XmlPullParserFactory
 
-# Fixes issue with displaying .xml files, but may produce reproducibility issues
-#-keep class org.xmlpull.** { *; }
-#-keepclassmembers class org.xmlpull.** { *; }
-
 # Keeping names of classes that produce undeterministic results
 -keepnames class **
 -keepnames class org.xmlpull.** { *; }

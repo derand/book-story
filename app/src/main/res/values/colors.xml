@@ -5,6 +5,5 @@
   -->
 
 <resources>
-    <color name="splash_bg_light">#FAFAFA</color>
-    <color name="splash_bg_dark">#101010</color>
+    <color name="splash_bg">#FAFAFA</color>
 </resources>
