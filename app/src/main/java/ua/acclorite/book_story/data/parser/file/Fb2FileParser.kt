@@ -7,6 +7,7 @@
 package ua.acclorite.book_story.data.parser.file
 
 import org.jsoup.Jsoup
+import org.jsoup.nodes.Element
 import org.jsoup.parser.Parser
 import ua.acclorite.book_story.R
 import ua.acclorite.book_story.core.helpers.rethrowIfCancellation
@@ -27,21 +28,30 @@ class Fb2FileParser @Inject constructor() : FileParser {
                 Jsoup.parse(it, null, "", Parser.xmlParser())
             }
 
-            val title = document?.selectFirst("book-title")?.text()?.trim().run {
+            // Only the book's own metadata: `document-info` names whoever made
+            // the file, `src-title-info` the original, and the body has
+            // annotations of its own sections
+            val titleInfo = document?.selectFirst("description > title-info")
+
+            val title = titleInfo?.selectFirst("> book-title")?.text()?.trim().run {
                 if (isNullOrBlank()) {
                     return@run cachedFile.name.substringBeforeLast(".").trim()
                 }
                 this
             }
 
-            val author = document?.selectFirst("author")?.text()?.trim().run {
-                if (isNullOrBlank()) {
-                    return@run UIText.StringResource(R.string.unknown_author)
+            val author = titleInfo?.select("> author").orEmpty()
+                .mapNotNull { authorName(it) }
+                .distinct()
+                .joinToString(", ")
+                .run {
+                    if (isBlank()) {
+                        return@run UIText.StringResource(R.string.unknown_author)
+                    }
+                    UIText.StringValue(this)
                 }
-                UIText.StringValue(this.trim())
-            }
 
-            val description = document?.selectFirst("annotation")?.text()?.trim().run {
+            val description = titleInfo?.selectFirst("> annotation")?.text()?.trim().run {
                 if (isNullOrBlank()) {
                     return@run null
                 }
@@ -66,4 +76,18 @@ class Fb2FileParser @Inject constructor() : FileParser {
             null
         }
     }
+}
+
+/**
+ * One `<author>` as a name: the name parts joined by a space (they are often
+ * written with no whitespace between the tags), else the nickname. Everything
+ * else in it — `<id>`, `<email>`, `<home-page>` — is not part of the name.
+ */
+private fun authorName(author: Element): String? {
+    fun part(tag: String) = author.selectFirst("> $tag")?.text()?.trim()?.takeIf { it.isNotEmpty() }
+
+    val name = listOf("first-name", "middle-name", "last-name")
+        .mapNotNull { part(it) }
+        .joinToString(" ")
+    return name.ifEmpty { part("nickname") }
 }
