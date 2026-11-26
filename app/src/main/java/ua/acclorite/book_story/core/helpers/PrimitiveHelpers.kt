@@ -6,22 +6,22 @@
 
 package ua.acclorite.book_story.core.helpers
 
-fun String.removeTrailingZero(): String {
-    if (!this.contains('.'))
-        return this
-    return this
-        .dropLastWhile { it == '0' }
-        .dropLastWhile { it == '.' }
-}
+import java.math.RoundingMode
+import java.text.NumberFormat
 
-fun Double.removeDigits(digits: Int) = "%.${digits}f".format(this).replace(",", ".")
-
+/**
+ * This fraction as a percentage for the app language (the default locale):
+ * its digits and decimal separator, rounded half up to at most [digits]
+ * fraction digits, without trailing zeros, and never with a minus sign.
+ */
 fun Float.calculateProgress(digits: Int): String {
-    return (this * 100)
-        .toDouble()
-        .removeDigits(digits)
-        .removeTrailingZero()
-        .dropWhile { it == '-' }
+    val percent = (this * 100).toDouble()
+    return NumberFormat.getInstance().apply {
+        minimumFractionDigits = 0
+        maximumFractionDigits = digits
+        roundingMode = RoundingMode.HALF_UP
+        isGroupingUsed = false
+    }.format(if (percent > 0.0) percent else 0.0)
 }
 
 fun Float?.coerceAndPreventNaN(): Float {
