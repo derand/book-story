@@ -60,6 +60,7 @@ class FileParserTest {
         val book = parse(resourceFile("fb2/tags-test.fb2"))
 
         assertEquals("FB2 Tag Coverage Test", book.title)
+        assertEquals("FB2 Tag Test", book.author.getAsString())
         assertEquals(
             "A test book: every section checks one FB2 tag. " +
                 "Under each example it says what must be visible.",
@@ -119,6 +120,71 @@ class FileParserTest {
     }
 
     @Test
+    fun fb2NamePartsWithoutWhitespaceBetweenTagsKeepASpace() {
+        val book = parse(
+            fb2(
+                titleInfo = "<author><first-name>Анна</first-name>" +
+                    "<middle-name>Петрівна</middle-name><last-name>Коваль</last-name></author>"
+            )
+        )
+
+        assertEquals("Анна Петрівна Коваль", book.author.getAsString())
+    }
+
+    @Test
+    fun fb2AuthorIdEmailAndHomePageAreNotPartOfTheName() {
+        val book = parse(
+            fb2(
+                titleInfo = "<author><first-name>Ann</first-name><last-name>Lee</last-name>" +
+                    "<home-page>https://example.com</home-page><email>ann@example.com</email>" +
+                    "<id>3f2a0c1e-0000-4000-8000-000000000001</id></author>"
+            )
+        )
+
+        assertEquals("Ann Lee", book.author.getAsString())
+    }
+
+    @Test
+    fun fb2EveryAuthorIsListedOnce() {
+        val book = parse(
+            fb2(
+                titleInfo = """
+                    <author><first-name>Ann</first-name><last-name>Lee</last-name></author>
+                    <author><first-name>Bob</first-name><last-name>Ray</last-name></author>
+                    <author><first-name>Ann</first-name><last-name>Lee</last-name></author>
+                """
+            )
+        )
+
+        assertEquals("Ann Lee, Bob Ray", book.author.getAsString())
+    }
+
+    @Test
+    fun fb2NicknameStandsInForAMissingName() {
+        val book = parse(fb2(titleInfo = "<author><nickname>anon42</nickname></author>"))
+
+        assertEquals("anon42", book.author.getAsString())
+    }
+
+    @Test
+    fun fb2MetadataComesOnlyFromTitleInfo() {
+        val book = parse(
+            fb2(
+                titleInfo = "<genre>prose</genre>",
+                documentInfo = "<author><nickname>file maker</nickname></author>",
+                srcTitleInfo = "<author><first-name>Orig</first-name></author>" +
+                    "<book-title>Original</book-title><annotation><p>Original.</p></annotation>",
+                body = "<section><annotation><p>A section's own.</p></annotation><p>Text.</p></section>",
+                name = "only-title-info.fb2"
+            )
+        )
+
+        assertEquals("only-title-info", book.title)
+        assertUnknownAuthor(book)
+        assertNull(book.description)
+    }
+
+    @Test
     fun fb2WithoutAuthorTitleOrAnnotation() {
         val book = parse(fb2(titleInfo = "<genre>prose</genre>", name = "no-metadata.fb2"))
 
@@ -143,6 +209,66 @@ class FileParserTest {
         assertEquals("bare", book.title)
         assertUnknownAuthor(book)
         assertNull(book.description)
+    }
+
+    @Test
+    fun epubAuthorsAreTheCreatorsWithoutAnotherRole() {
+        val book = parse(
+            epub(
+                metadata = """
+                    <dc:title>Book</dc:title>
+                    <dc:creator opf:role="aut">Ann Lee</dc:creator>
+                    <dc:creator opf:role="ill">Ivy Ill</dc:creator>
+                    <dc:creator>Bob Ray</dc:creator>
+                    <dc:creator opf:role="trl">Tom Trl</dc:creator>
+                    <dc:creator opf:role="aut">Ann Lee</dc:creator>
+                """
+            )
+        )
+
+        assertEquals("Ann Lee, Bob Ray", book.author.getAsString())
+    }
+
+    @Test
+    fun epub3RolesRefineTheCreatorsById() {
+        val book = parse(
+            epub(
+                metadata = """
+                    <dc:title>Book</dc:title>
+                    <dc:creator id="c1">Ann Lee</dc:creator>
+                    <meta refines="#c1" property="role" scheme="marc:relators">aut</meta>
+                    <dc:creator id="c2">Ivy Ill</dc:creator>
+                    <meta refines="#c2" property="role" scheme="marc:relators">ill</meta>
+                    <dc:creator id="c3">Bob Ray</dc:creator>
+                """
+            )
+        )
+
+        assertEquals("Ann Lee, Bob Ray", book.author.getAsString())
+    }
+
+    @Test
+    fun epubOnlyATranslatorIsAnUnknownAuthor() {
+        val book = parse(
+            epub(metadata = "<dc:title>Book</dc:title><dc:creator opf:role=\"trl\">Tom Trl</dc:creator>")
+        )
+
+        assertUnknownAuthor(book)
+    }
+
+    @Test
+    fun epubTitleIsTheFirstOne() {
+        val book = parse(
+            epub(
+                metadata = """
+                    <dc:title> </dc:title>
+                    <dc:title>Main Title</dc:title>
+                    <dc:title>Collected Classics</dc:title>
+                """
+            )
+        )
+
+        assertEquals("Main Title", book.title)
     }
 
     @Test
@@ -220,7 +346,13 @@ class FileParserTest {
     private fun file(name: String, text: String): File =
         temp.newFile(name).apply { writeText(text) }
 
-    private fun fb2(titleInfo: String, name: String = "book.fb2"): File = file(
+    private fun fb2(
+        titleInfo: String,
+        documentInfo: String = "",
+        srcTitleInfo: String = "",
+        body: String = "<section><p>Text.</p></section>",
+        name: String = "book.fb2"
+    ): File = file(
         name,
         """
             <?xml version="1.0" encoding="UTF-8"?>
@@ -229,8 +361,10 @@ class FileParserTest {
                 <title-info>
                   $titleInfo
                 </title-info>
+                <src-title-info>$srcTitleInfo</src-title-info>
+                <document-info>$documentInfo</document-info>
               </description>
-              <body><section><p>Text.</p></section></body>
+              <body>$body</body>
             </FictionBook>
         """.trimIndent()
     )

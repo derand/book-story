@@ -9,6 +9,7 @@ package ua.acclorite.book_story.data.parser.file
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.jsoup.Jsoup
+import org.jsoup.nodes.Document
 import ua.acclorite.book_story.R
 import ua.acclorite.book_story.core.helpers.rethrowIfCancellation
 import ua.acclorite.book_story.core.log.logE
@@ -35,13 +36,14 @@ class EpubFileParser @Inject constructor() : FileParser {
                 ZipFile(rawFile).use { zip ->
                     val document = EpubPackage.open(zip).opf ?: return@withContext
 
-                    val title = document.select("metadata > dc|title").text().trim().run {
-                        ifBlank {
-                            cachedFile.name.substringBeforeLast(".").trim()
-                        }
-                    }
+                    // The first title is the book's; the others are subtitles,
+                    // series or collection names
+                    val title = document.select("metadata > dc|title")
+                        .map { it.text().trim() }
+                        .firstOrNull { it.isNotEmpty() }
+                        ?: cachedFile.name.substringBeforeLast(".").trim()
 
-                    val author = document.select("metadata > dc|creator").text().trim().run {
+                    val author = authors(document).joinToString(", ").run {
                         if (isBlank()) {
                             UIText.StringResource(R.string.unknown_author)
                         } else {
@@ -78,4 +80,26 @@ class EpubFileParser @Inject constructor() : FileParser {
             null
         }
     }
+}
+
+/**
+ * The creators who wrote the book: those without a role or with `aut`. An
+ * illustrator, translator or editor is a creator too. The role is an
+ * `opf:role` attribute (EPUB 2) or a `role` meta refining the creator's id
+ * (EPUB 3).
+ */
+private fun authors(opf: Document): List<String> {
+    val refinedRoles = opf.select("metadata > meta[property=role][refines]")
+        .associate { it.attr("refines").removePrefix("#") to it.text().trim() }
+
+    return opf.select("metadata > dc|creator")
+        .filter { creator ->
+            val role = creator.attr("opf:role").ifBlank {
+                refinedRoles[creator.id()].orEmpty()
+            }
+            role.isBlank() || role.equals("aut", ignoreCase = true)
+        }
+        .map { it.text().trim() }
+        .filter { it.isNotEmpty() }
+        .distinct()
 }
