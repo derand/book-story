@@ -6,6 +6,7 @@
 
 package ua.acclorite.book_story.ui.library
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
@@ -43,7 +44,6 @@ import ua.acclorite.book_story.presentation.library.LibraryEvent
 import ua.acclorite.book_story.presentation.library.LibraryState
 import ua.acclorite.book_story.presentation.library.model.LibraryPage
 import ua.acclorite.book_story.presentation.library.model.pageAt
-import ua.acclorite.book_story.ui.common.components.common.AnimatedVisibility
 import ua.acclorite.book_story.ui.common.components.common.IconButton
 import ua.acclorite.book_story.ui.common.components.common.SearchTextField
 import ua.acclorite.book_story.ui.common.components.common.StyledText

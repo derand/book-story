@@ -34,7 +34,7 @@ fun LazyVerticalGridWithScrollbar(
     verticalArrangement: Arrangement.Vertical = Arrangement.Top,
     content: LazyGridScope.() -> Unit
 ) {
-    val enabled = remember {
+    val enabled = remember(state, enableScrollbar) {
         derivedStateOf {
             enableScrollbar && (state.canScrollBackward || state.canScrollForward)
         }

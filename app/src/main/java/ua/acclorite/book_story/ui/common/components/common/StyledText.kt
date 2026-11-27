@@ -37,10 +37,7 @@ fun StyledText(
                 modifier = modifier,
                 text = text,
                 highlightThickness = highlightThickness,
-                style = style.copy(
-                    textDirection = TextDirection.Content,
-                    color = style.color.takeOrElse { LocalContentColor.current }
-                ),
+                style = style.withContentDefaults(),
                 maxLines = maxLines,
                 minLines = minLines,
                 overflow = overflow,
@@ -52,10 +49,7 @@ fun StyledText(
             BasicText(
                 modifier = modifier,
                 text = text,
-                style = style.copy(
-                    textDirection = TextDirection.Content,
-                    color = style.color.takeOrElse { LocalContentColor.current }
-                ),
+                style = style.withContentDefaults(),
                 onTextLayout = onTextLayout,
                 maxLines = maxLines,
                 minLines = minLines,
@@ -77,12 +71,18 @@ fun StyledText(
     BasicText(
         modifier = modifier,
         text = text,
-        style = style.copy(
-            textDirection = TextDirection.Content,
-            color = style.color.takeOrElse { LocalContentColor.current }
-        ),
+        style = style.withContentDefaults(),
         maxLines = maxLines,
         minLines = minLines,
         overflow = overflow
+    )
+}
+
+/** Direction from the text itself; an unset colour falls back to [LocalContentColor]. */
+@Composable
+private fun TextStyle.withContentDefaults(): TextStyle {
+    return copy(
+        textDirection = TextDirection.Content,
+        color = color.takeOrElse { LocalContentColor.current }
     )
 }
