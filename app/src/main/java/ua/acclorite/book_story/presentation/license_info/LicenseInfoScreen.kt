@@ -7,6 +7,7 @@
 package ua.acclorite.book_story.presentation.license_info
 
 import android.os.Parcelable
+import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material.icons.Icons
@@ -18,7 +19,6 @@ import ua.acclorite.book_story.R
 import ua.acclorite.book_story.presentation.navigator.Screen
 import ua.acclorite.book_story.ui.common.components.common.IconButton
 import ua.acclorite.book_story.ui.common.components.common.SimpleListScaffold
-import ua.acclorite.book_story.ui.common.helpers.LocalActivity
 import ua.acclorite.book_story.ui.common.helpers.openInBrowser
 import ua.acclorite.book_story.ui.license_info.licenseInfoItems
 import ua.acclorite.book_story.ui.licenses.data.rememberLicenses
@@ -30,7 +30,7 @@ data class LicenseInfoScreen(val uniqueId: String) : Screen, Parcelable {
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.current
-        val activity = LocalActivity.current
+        val activity = checkNotNull(LocalActivity.current)
         val libraries = rememberLicenses()
         val library = libraries.value?.find { it.uniqueId == uniqueId }
 

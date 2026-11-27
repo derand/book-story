@@ -6,6 +6,7 @@
 
 package ua.acclorite.book_story.ui.theme
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.EaseInOut
 import androidx.compose.animation.core.animateFloatAsState
@@ -30,7 +31,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
-import ua.acclorite.book_story.ui.common.components.common.AnimatedVisibility
 import kotlin.math.roundToInt
 
 object Transitions {
@@ -86,8 +86,9 @@ fun SlidingTransition(
         exit = slideOutVertically(tween(150)) {
             with(density) { -10.dp.toPx() }.roundToInt()
         } + fadeOut(tween(100)),
-        content = content
-    )
+    ) {
+        content()
+    }
 }
 
 @Composable
@@ -103,8 +104,9 @@ fun ExpandingTransition(
                 fadeIn(tween(400)),
         exit = shrinkVertically(tween(350)) +
                 fadeOut(tween(200)),
-        content = content
-    )
+    ) {
+        content()
+    }
 }
 
 @Composable

@@ -6,6 +6,7 @@
 
 package ua.acclorite.book_story.ui.common.components.top_bar
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
@@ -28,7 +29,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
-import ua.acclorite.book_story.ui.common.components.common.AnimatedVisibility
 
 data class TopAppBarData(
     val contentID: Int,
@@ -80,7 +80,8 @@ fun TopAppBar(
     ) {
         Box(modifier = Modifier.fillMaxWidth()) {
             topBars.forEach { data ->
-                AnimatedVisibility(
+                // Qualified: inside Column, the ColumnScope overload is not callable from here.
+                androidx.compose.animation.AnimatedVisibility(
                     visible = data.contentID == shownTopBar,
                     enter = fadeIn(spring(stiffness = Spring.StiffnessMediumLow)),
                     exit = fadeOut(spring(stiffness = Spring.StiffnessMediumLow))

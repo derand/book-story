@@ -23,15 +23,12 @@ fun AboutItem(
     modifier: Modifier = Modifier,
     title: String,
     description: String?,
-    isOnClickEnabled: Boolean = true,
     onClick: () -> Unit = {}
 ) {
     Column(
         modifier
             .fillMaxWidth()
-            .clickable(enabled = isOnClickEnabled) {
-                onClick()
-            }
+            .clickable(onClick = onClick)
             .padding(horizontal = 18.dp, vertical = 14.dp),
         verticalArrangement = Arrangement.spacedBy(2.dp)
     ) {

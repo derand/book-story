@@ -140,7 +140,7 @@ class MainActivity : AppCompatActivity() {
                     BookStoryTheme(
                         theme = settings.theme.value,
                         isDark = isDark,
-                        isPureDark = settings.pureDark.value.isPureDark(this),
+                        pureDark = settings.pureDark.value,
                         themeContrast = settings.themeContrast.value
                     ) {
                         Navigator(

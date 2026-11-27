@@ -10,7 +10,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import ua.acclorite.book_story.R
 import ua.acclorite.book_story.ui.common.components.settings.SegmentedButtonWithTitle
@@ -34,7 +33,7 @@ fun ThemeContrastOption() {
     BookStoryTheme(
         theme = themeContrastTheme.value,
         isDark = settings.darkTheme.value.isDark(),
-        isPureDark = settings.pureDark.value.isPureDark(context = LocalContext.current),
+        pureDark = settings.pureDark.value,
         themeContrast = settings.themeContrast.value
     ) {
         ExpandingTransition(visible = settings.theme.value.hasThemeContrast) {

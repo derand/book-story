@@ -7,6 +7,7 @@
 package ua.acclorite.book_story.ui.browse
 
 import androidx.annotation.StringRes
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -15,7 +16,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import ua.acclorite.book_story.R
 import ua.acclorite.book_story.presentation.browse.BrowseEvent
-import ua.acclorite.book_story.ui.common.components.common.AnimatedVisibility
 import ua.acclorite.book_story.ui.common.components.placeholder.EmptyPlaceholder
 import ua.acclorite.book_story.ui.common.components.placeholder.ErrorPlaceholder
 import ua.acclorite.book_story.ui.theme.Transitions

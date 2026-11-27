@@ -7,6 +7,7 @@
 package ua.acclorite.book_story.ui.common.components.modal_drawer
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.slideInHorizontally
@@ -30,6 +31,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -39,7 +41,6 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import ua.acclorite.book_story.ui.common.components.common.AnimatedVisibility
 import ua.acclorite.book_story.ui.common.components.common.LazyColumnWithScrollbar
 import ua.acclorite.book_story.ui.common.data.ScrollbarData
 import ua.acclorite.book_story.ui.common.helpers.noRippleClickable
@@ -66,6 +67,8 @@ fun ModalDrawer(
 ) {
     val layoutDirection = LocalLayoutDirection.current
     val density = LocalDensity.current
+    // The drag handler below outlives the composition that set it up.
+    val currentOnDismissRequest = rememberUpdatedState(onDismissRequest)
 
     val offset = remember { mutableFloatStateOf(0f) }
     val offsetDp = remember {
@@ -125,12 +128,12 @@ fun ModalDrawer(
                     )
                     .background(MaterialTheme.colorScheme.surfaceContainerLow)
                     .noRippleClickable {}
-                    .pointerInput(Unit) {
+                    .pointerInput(layoutDirection) {
                         detectHorizontalDragGestures(
                             onDragStart = { offset.floatValue = 0f },
                             onDragCancel = { offset.floatValue = 0f },
                             onDragEnd = {
-                                if (offset.floatValue.toDp() < (-60).dp) onDismissRequest()
+                                if (offset.floatValue.toDp() < (-60).dp) currentOnDismissRequest.value()
                                 else offset.floatValue = 0f
                             }
                         ) { _, dragAmount ->

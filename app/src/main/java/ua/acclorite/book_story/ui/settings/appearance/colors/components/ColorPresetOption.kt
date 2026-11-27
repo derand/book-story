@@ -6,6 +6,7 @@
 
 package ua.acclorite.book_story.ui.settings.appearance.colors.components
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.fadeIn
@@ -74,7 +75,6 @@ import ua.acclorite.book_story.domain.model.reader.activeColorPreset
 import ua.acclorite.book_story.presentation.settings.ColorPresetsEffect
 import ua.acclorite.book_story.presentation.settings.ColorPresetsEvent
 import ua.acclorite.book_story.presentation.settings.ColorPresetsModel
-import ua.acclorite.book_story.ui.common.components.common.AnimatedVisibility
 import ua.acclorite.book_story.ui.common.components.common.IconButton
 import ua.acclorite.book_story.ui.common.components.common.StyledText
 import ua.acclorite.book_story.ui.common.components.dialog.limitedEdit

@@ -13,9 +13,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.Typography
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
+import ua.acclorite.book_story.ui.theme.model.PureDark
 import ua.acclorite.book_story.ui.theme.model.Theme
 import ua.acclorite.book_story.ui.theme.model.ThemeContrast
 
@@ -23,7 +25,7 @@ import ua.acclorite.book_story.ui.theme.model.ThemeContrast
 fun BookStoryTheme(
     theme: Theme,
     isDark: Boolean,
-    isPureDark: Boolean,
+    pureDark: PureDark,
     themeContrast: ThemeContrast,
     content: @Composable () -> Unit
 ) {
@@ -46,10 +48,11 @@ fun BookStoryTheme(
         }
     }
 
+    val powerSaveMode = rememberPowerSaveMode()
     val colorScheme = colorScheme(
         theme = Theme.entries().find { it == theme } ?: Theme.entries().first(),
         darkTheme = isDark,
-        isPureDark = isPureDark,
+        isPureDark = pureDark.isPureDark(powerSaveMode),
         themeContrast = themeContrast
     )
     val animatedColorScheme = animateColorScheme(targetColorScheme = colorScheme)
@@ -57,7 +60,8 @@ fun BookStoryTheme(
     MaterialTheme(
         colorScheme = animatedColorScheme,
         shapes = Shapes(),
-        typography = Typography(),
-        content = content
-    )
+        typography = Typography()
+    ) {
+        CompositionLocalProvider(LocalPowerSaveMode provides powerSaveMode, content)
+    }
 }

@@ -8,6 +8,7 @@ package ua.acclorite.book_story.presentation.start
 
 import android.annotation.SuppressLint
 import android.os.Parcelable
+import androidx.activity.compose.LocalActivity
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -21,7 +22,6 @@ import ua.acclorite.book_story.presentation.navigator.Screen
 import ua.acclorite.book_story.presentation.navigator.StackEvent
 import ua.acclorite.book_story.presentation.settings.GeneralSettingsEvent
 import ua.acclorite.book_story.presentation.settings.GeneralSettingsModel
-import ua.acclorite.book_story.ui.common.helpers.LocalActivity
 import ua.acclorite.book_story.ui.common.helpers.LocalSettings
 import ua.acclorite.book_story.ui.common.model.ListItem
 import ua.acclorite.book_story.ui.navigator.LocalNavigator
@@ -51,7 +51,7 @@ object StartScreen : Screen, Parcelable {
         val navigator = LocalNavigator.current
         val generalSettingsModel = hiltViewModel<GeneralSettingsModel>()
         val settings = LocalSettings.current
-        val activity = LocalActivity.current
+        val activity = checkNotNull(LocalActivity.current)
 
         val currentPage = remember { mutableIntStateOf(0) }
         val stackEvent = remember { mutableStateOf(StackEvent.DEFAULT) }

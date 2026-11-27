@@ -38,90 +38,23 @@ fun colorScheme(
     themeContrast: ThemeContrast
 ): ColorScheme {
     val colorScheme = when (theme) {
-        Theme.DYNAMIC -> {
-            /* Dynamic Theme */
-            dynamicTheme(isDark = darkTheme)
-        }
-
-        Theme.BLUE -> {
-            /* Blue Theme */
-            blueTheme(isDark = darkTheme, themeContrast = themeContrast)
-        }
-
-        Theme.PURPLE -> {
-            /* Purple Theme */
-            purpleTheme(isDark = darkTheme, themeContrast = themeContrast)
-        }
-
-        Theme.PURPLE_GRAY -> {
-            /* Purple Gray Theme */
-            purpleGrayTheme(isDark = darkTheme)
-        }
-
-        Theme.GREEN -> {
-            /* Green Theme */
-            greenTheme(isDark = darkTheme, themeContrast = themeContrast)
-        }
-
-        Theme.GREEN2 -> {
-            /* Green2 Theme */
-            green2Theme(isDark = darkTheme)
-        }
-
-        Theme.GREEN_GRAY -> {
-            /* Green Gray Theme */
-            greenGrayTheme(isDark = darkTheme)
-        }
-
-        Theme.MARSH -> {
-            /* Marsh Theme */
-            marshTheme(isDark = darkTheme, themeContrast = themeContrast)
-        }
-
-        Theme.PINK -> {
-            /* Pink Theme */
-            pinkTheme(isDark = darkTheme, themeContrast = themeContrast)
-        }
-
-        Theme.PINK2 -> {
-            /* Pink2 Theme */
-            pink2Theme(isDark = darkTheme)
-        }
-
-        Theme.LAVENDER -> {
-            /* Lavender Theme */
-            lavenderTheme(isDark = darkTheme, themeContrast = themeContrast)
-        }
-
-        Theme.YELLOW -> {
-            /* Yellow Theme */
-            yellowTheme(isDark = darkTheme, themeContrast = themeContrast)
-        }
-
-        Theme.YELLOW2 -> {
-            /* Yellow2 Theme */
-            yellow2Theme(isDark = darkTheme)
-        }
-
-        Theme.RED -> {
-            /* Red Theme */
-            redTheme(isDark = darkTheme, themeContrast = themeContrast)
-        }
-
-        Theme.RED_GRAY -> {
-            /* Red Gray Theme */
-            redGrayTheme(isDark = darkTheme)
-        }
-
-        Theme.AQUA -> {
-            /* Aqua Theme */
-            aquaTheme(isDark = darkTheme, themeContrast = themeContrast)
-        }
-
-        Theme.GRAY -> {
-            /* Gray Theme */
-            grayTheme(isDark = darkTheme)
-        }
+        Theme.DYNAMIC -> dynamicTheme(isDark = darkTheme)
+        Theme.BLUE -> blueTheme(isDark = darkTheme, themeContrast = themeContrast)
+        Theme.PURPLE -> purpleTheme(isDark = darkTheme, themeContrast = themeContrast)
+        Theme.PURPLE_GRAY -> purpleGrayTheme(isDark = darkTheme)
+        Theme.GREEN -> greenTheme(isDark = darkTheme, themeContrast = themeContrast)
+        Theme.GREEN2 -> green2Theme(isDark = darkTheme)
+        Theme.GREEN_GRAY -> greenGrayTheme(isDark = darkTheme)
+        Theme.MARSH -> marshTheme(isDark = darkTheme, themeContrast = themeContrast)
+        Theme.PINK -> pinkTheme(isDark = darkTheme, themeContrast = themeContrast)
+        Theme.PINK2 -> pink2Theme(isDark = darkTheme)
+        Theme.LAVENDER -> lavenderTheme(isDark = darkTheme, themeContrast = themeContrast)
+        Theme.YELLOW -> yellowTheme(isDark = darkTheme, themeContrast = themeContrast)
+        Theme.YELLOW2 -> yellow2Theme(isDark = darkTheme)
+        Theme.RED -> redTheme(isDark = darkTheme, themeContrast = themeContrast)
+        Theme.RED_GRAY -> redGrayTheme(isDark = darkTheme)
+        Theme.AQUA -> aquaTheme(isDark = darkTheme, themeContrast = themeContrast)
+        Theme.GRAY -> grayTheme(isDark = darkTheme)
     }
 
     return if (isPureDark && darkTheme) {

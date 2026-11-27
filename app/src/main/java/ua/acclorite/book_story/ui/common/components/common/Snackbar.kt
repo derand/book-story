@@ -6,6 +6,7 @@
 
 package ua.acclorite.book_story.ui.common.components.common
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut

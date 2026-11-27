@@ -6,6 +6,7 @@
 
 package ua.acclorite.book_story.ui.navigator
 
+import androidx.activity.compose.LocalActivity
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.ContentTransform
@@ -32,7 +33,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.dp
 import ua.acclorite.book_story.presentation.navigator.Screen
-import ua.acclorite.book_story.ui.common.helpers.LocalActivity
 
 @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
 @Composable
@@ -43,7 +43,7 @@ fun NavigatorTabs(
     navigationRail: @Composable () -> Unit,
     content: @Composable (Screen) -> Unit
 ) {
-    val windowClass = calculateWindowSizeClass(activity = LocalActivity.current)
+    val windowClass = calculateWindowSizeClass(activity = checkNotNull(LocalActivity.current))
     val tabletUI = remember(windowClass) {
         windowClass.widthSizeClass != WindowWidthSizeClass.Compact
     }

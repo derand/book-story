@@ -10,6 +10,7 @@ import android.content.ClipData
 import android.content.Intent
 import android.os.Build
 import android.os.Parcelable
+import androidx.activity.compose.LocalActivity
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -21,7 +22,6 @@ import kotlinx.parcelize.Parcelize
 import ua.acclorite.book_story.R
 import ua.acclorite.book_story.core.crash.CrashUtils
 import ua.acclorite.book_story.presentation.navigator.Screen
-import ua.acclorite.book_story.ui.common.helpers.LocalActivity
 import ua.acclorite.book_story.ui.common.helpers.launchActivity
 import ua.acclorite.book_story.ui.common.helpers.showToast
 import ua.acclorite.book_story.ui.crash.CrashContent
@@ -31,7 +31,7 @@ object CrashScreen : Screen, Parcelable {
 
     @Composable
     override fun Content() {
-        val activity = LocalActivity.current
+        val activity = checkNotNull(LocalActivity.current)
         val clipboard = LocalClipboard.current
         val scope = rememberCoroutineScope()
 

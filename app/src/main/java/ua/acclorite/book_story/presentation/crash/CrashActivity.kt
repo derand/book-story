@@ -13,6 +13,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.core.view.WindowCompat
 import ua.acclorite.book_story.ui.theme.BookStoryTheme
+import ua.acclorite.book_story.ui.theme.model.PureDark
 import ua.acclorite.book_story.ui.theme.model.Theme
 import ua.acclorite.book_story.ui.theme.model.ThemeContrast
 
@@ -42,7 +43,7 @@ class CrashActivity : AppCompatActivity() {
             BookStoryTheme(
                 theme = Theme.DYNAMIC,
                 isDark = isSystemInDarkTheme(),
-                isPureDark = false,
+                pureDark = PureDark.OFF,
                 themeContrast = ThemeContrast.STANDARD
             ) {
                 CrashScreen.Content()

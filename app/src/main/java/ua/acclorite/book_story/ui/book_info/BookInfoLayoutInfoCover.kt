@@ -29,7 +29,7 @@ import ua.acclorite.book_story.domain.model.library.Book
 import ua.acclorite.book_story.presentation.book_info.BookInfoEvent
 import ua.acclorite.book_story.presentation.book_info.BookInfoState
 import ua.acclorite.book_story.ui.common.components.common.AsyncCoverImage
-import ua.acclorite.book_story.ui.common.helpers.noRippleClickable
+import ua.acclorite.book_story.ui.common.helpers.longPressable
 
 @Composable
 fun BookInfoLayoutInfoCover(
@@ -45,12 +45,9 @@ fun BookInfoLayoutInfoCover(
             .width(width)
             .clip(MaterialTheme.shapes.large)
             .background(MaterialTheme.colorScheme.surfaceContainerLow)
-            .noRippleClickable(
-                onClick = {},
-                onLongClick = {
-                    onEvent(BookInfoEvent.OnShowBottomSheet(BookInfoState.Sheet.ChangeCover))
-                }
-            )
+            .longPressable {
+                onEvent(BookInfoEvent.OnShowBottomSheet(BookInfoState.Sheet.ChangeCover))
+            }
     ) {
         if (book.coverImage != null) {
             AsyncCoverImage(

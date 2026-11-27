@@ -7,6 +7,7 @@
 package ua.acclorite.book_story.ui.reader
 
 import android.annotation.SuppressLint
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Column
@@ -33,7 +34,6 @@ import ua.acclorite.book_story.presentation.reader.ReaderEvent
 import ua.acclorite.book_story.presentation.reader.model.Checkpoint
 import ua.acclorite.book_story.presentation.reader.model.ReaderSearch
 import ua.acclorite.book_story.presentation.settings.ColorPresetsEvent
-import ua.acclorite.book_story.ui.common.components.common.AnimatedVisibility
 import ua.acclorite.book_story.ui.reader.model.ReaderControls
 import ua.acclorite.book_story.ui.reader.model.ReaderLook
 import androidx.compose.runtime.getValue

@@ -34,7 +34,7 @@ fun LazyColumnWithScrollbar(
     userScrollEnabled: Boolean = true,
     content: LazyListScope.() -> Unit
 ) {
-    val enabled = remember {
+    val enabled = remember(state, enableScrollbar) {
         derivedStateOf {
             enableScrollbar && (state.canScrollBackward || state.canScrollForward)
         }
