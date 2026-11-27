@@ -36,7 +36,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import ua.acclorite.book_story.R
@@ -44,6 +43,7 @@ import ua.acclorite.book_story.ui.common.components.common.AnimatedVisibility
 import ua.acclorite.book_story.ui.common.components.common.StyledText
 import ua.acclorite.book_story.ui.common.helpers.LocalSettings
 import ua.acclorite.book_story.ui.settings.components.SettingsSubcategoryTitle
+import ua.acclorite.book_story.ui.theme.LocalPowerSaveMode
 import ua.acclorite.book_story.ui.theme.animatedColorScheme
 import ua.acclorite.book_story.ui.theme.model.Theme
 import ua.acclorite.book_story.ui.theme.model.ThemeContrast
@@ -75,7 +75,7 @@ fun AppThemeOption() {
                     theme = themeEntry,
                     darkTheme = settings.darkTheme.value.isDark(),
                     themeContrast = settings.themeContrast.value,
-                    isPureDark = settings.pureDark.value.isPureDark(context = LocalContext.current),
+                    isPureDark = settings.pureDark.value.isPureDark(LocalPowerSaveMode.current),
                     selected = settings.theme.value == themeEntry
                 ) {
                     settings.theme.update(themeEntry)
