@@ -14,7 +14,7 @@ import ua.acclorite.book_story.domain.model.library.Book
 import ua.acclorite.book_story.presentation.book_info.BookInfoEvent
 import ua.acclorite.book_story.presentation.book_info.BookInfoState
 import ua.acclorite.book_story.ui.common.components.common.StyledText
-import ua.acclorite.book_story.ui.common.helpers.noRippleClickable
+import ua.acclorite.book_story.ui.common.helpers.longPressable
 
 @Composable
 fun BookInfoLayoutInfoTitle(
@@ -25,12 +25,9 @@ fun BookInfoLayoutInfoTitle(
         text = book.title,
         modifier = Modifier
             .fillMaxWidth()
-            .noRippleClickable(
-                onClick = {},
-                onLongClick = {
-                    onEvent(BookInfoEvent.OnShowDialog(BookInfoState.Dialog.Title))
-                }
-            ),
+            .longPressable {
+                onEvent(BookInfoEvent.OnShowDialog(BookInfoState.Dialog.Title))
+            },
         style = MaterialTheme.typography.headlineSmall.copy(
             color = MaterialTheme.colorScheme.onSurface
         ),
