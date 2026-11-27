@@ -9,6 +9,7 @@ package ua.acclorite.book_story.presentation.reader
 import android.content.pm.ActivityInfo
 import android.os.Parcelable
 import android.view.WindowManager
+import androidx.activity.compose.LocalActivity
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.PaddingValues
@@ -42,7 +43,6 @@ import ua.acclorite.book_story.core.log.BookOpenTrace
 import ua.acclorite.book_story.presentation.navigator.Screen
 import ua.acclorite.book_story.presentation.reader.model.ReaderProgressCount
 import ua.acclorite.book_story.presentation.settings.ColorPresetsModel
-import ua.acclorite.book_story.ui.common.helpers.LocalActivity
 import ua.acclorite.book_story.domain.model.reader.activeColorPreset
 import ua.acclorite.book_story.ui.common.helpers.LocalSettings
 import ua.acclorite.book_story.ui.common.helpers.ProvideBookImages
@@ -70,7 +70,7 @@ data class ReaderScreen(val bookId: Int) : Screen, Parcelable {
         val state = screenModel.state.collectAsStateWithLifecycle()
         val colorPresetsState = colorPresetsModel.state.collectAsStateWithLifecycle()
 
-        val activity = LocalActivity.current
+        val activity = checkNotNull(LocalActivity.current)
         val lifecycleOwner = LocalLifecycleOwner.current
         // The model scrolls this very object, so the screen must not swap it for
         // a restored copy.

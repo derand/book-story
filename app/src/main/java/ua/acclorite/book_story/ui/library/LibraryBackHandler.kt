@@ -7,6 +7,7 @@
 package ua.acclorite.book_story.ui.library
 
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -18,7 +19,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import ua.acclorite.book_story.R
 import ua.acclorite.book_story.presentation.library.LibraryEvent
-import ua.acclorite.book_story.ui.common.helpers.LocalActivity
 import ua.acclorite.book_story.ui.common.helpers.showToast
 
 @Composable
@@ -29,7 +29,7 @@ fun LibraryBackHandler(
     doublePressExit: Boolean,
     onEvent: (LibraryEvent) -> Unit
 ) {
-    val activity = LocalActivity.current
+    val activity = checkNotNull(LocalActivity.current)
     val scope = rememberCoroutineScope()
     // State, not a plain local: a recomposition between the two presses
     // (the list re-reads itself) would otherwise start the count again.

@@ -7,6 +7,7 @@
 package ua.acclorite.book_story.presentation.about
 
 import android.os.Parcelable
+import androidx.activity.compose.LocalActivity
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import kotlinx.parcelize.Parcelize
@@ -16,7 +17,6 @@ import ua.acclorite.book_story.presentation.licenses.LicensesScreen
 import ua.acclorite.book_story.presentation.navigator.Screen
 import ua.acclorite.book_story.ui.about.aboutItems
 import ua.acclorite.book_story.ui.common.components.common.SimpleListScaffold
-import ua.acclorite.book_story.ui.common.helpers.LocalActivity
 import ua.acclorite.book_story.ui.common.helpers.openInBrowser
 import ua.acclorite.book_story.ui.navigator.LocalNavigator
 
@@ -26,7 +26,7 @@ object AboutScreen : Screen, Parcelable {
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.current
-        val activity = LocalActivity.current
+        val activity = checkNotNull(LocalActivity.current)
 
         SimpleListScaffold(
             title = stringResource(id = R.string.about_screen),

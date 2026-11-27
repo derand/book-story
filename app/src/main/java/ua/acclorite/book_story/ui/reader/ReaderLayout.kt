@@ -7,6 +7,7 @@
 package ua.acclorite.book_story.ui.reader
 
 import android.os.Build
+import androidx.activity.compose.LocalActivity
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInVertically
@@ -43,7 +44,6 @@ import ua.acclorite.book_story.ui.common.components.common.AnimatedVisibility
 import ua.acclorite.book_story.ui.common.components.common.LazyColumnWithScrollbar
 import ua.acclorite.book_story.ui.common.components.common.SelectionContainer
 import ua.acclorite.book_story.ui.common.components.common.SpacedItem
-import ua.acclorite.book_story.ui.common.helpers.LocalActivity
 import ua.acclorite.book_story.ui.common.helpers.showToast
 import ua.acclorite.book_story.ui.reader.model.ReaderControls
 import ua.acclorite.book_story.ui.reader.model.ReaderLook
@@ -62,7 +62,7 @@ fun ReaderLayout(
     showMenu: Boolean,
     onEvent: (ReaderEvent) -> Unit
 ) {
-    val activity = LocalActivity.current
+    val activity = checkNotNull(LocalActivity.current)
 
     // Grouped once rather than filtered per item: a book of tens of thousands
     // of paragraphs would otherwise walk the whole match list for every one of

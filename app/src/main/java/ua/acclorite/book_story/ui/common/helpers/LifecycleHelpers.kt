@@ -6,33 +6,29 @@
 
 package ua.acclorite.book_story.ui.common.helpers
 
-import android.annotation.SuppressLint
+import android.app.Activity
 import android.content.Intent
 import android.view.WindowManager
-import androidx.activity.ComponentActivity
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.ProvidableCompositionLocal
-import androidx.compose.runtime.compositionLocalOf
-import androidx.compose.ui.platform.LocalContext
 import androidx.core.net.toUri
 import ua.acclorite.book_story.R
 import ua.acclorite.book_story.core.log.logE
 import ua.acclorite.book_story.core.log.messageForLog
 
+/**
+ * Starts this intent from [activity], in its task: a share sheet or another
+ * app's screen opens over the app and Back returns to it. (It used to start
+ * through `baseContext` with `FLAG_ACTIVITY_NEW_TASK`, so every one opened as a
+ * separate task — #167.)
+ */
 inline fun Intent.launchActivity(
-    activity: ComponentActivity,
+    activity: Activity,
     createChooser: Boolean = false,
-    openInNewWindow: Boolean = true,
     success: () -> Unit = {},
     error: () -> Unit = {}
 ) {
     try {
         val intent = if (createChooser) Intent.createChooser(this, "") else this
-        if (openInNewWindow) {
-            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
-        }
-
-        activity.baseContext.startActivity(intent)
+        activity.startActivity(intent)
     } catch (e: Exception) {
         logE("LifecycleHelpers", e.messageForLog())
         error()
@@ -43,7 +39,7 @@ inline fun Intent.launchActivity(
 }
 
 /** Opens [url] in a browser, or shows a toast when none can open it. */
-fun ComponentActivity.openInBrowser(url: String) {
+fun Activity.openInBrowser(url: String) {
     Intent(Intent.ACTION_VIEW, url.toUri()).launchActivity(
         activity = this,
         error = {
@@ -52,16 +48,9 @@ fun ComponentActivity.openInBrowser(url: String) {
     )
 }
 
-fun ComponentActivity.setBrightness(brightness: Float?) {
+fun Activity.setBrightness(brightness: Float?) {
     window.attributes.apply {
         screenBrightness = brightness ?: WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
         window.attributes = this
     }
 }
-
-val LocalActivity: ProvidableCompositionLocal<ComponentActivity>
-    @SuppressLint("ContextCastToActivity") @Composable get() {
-        (LocalContext.current as ComponentActivity).let { activity ->
-            return compositionLocalOf { activity }
-        }
-    }

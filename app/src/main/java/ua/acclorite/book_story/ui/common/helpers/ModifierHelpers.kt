@@ -16,6 +16,7 @@ import androidx.compose.ui.node.DelegatingNode
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.node.SemanticsModifierNode
 import androidx.compose.ui.node.currentValueOf
+import androidx.compose.ui.platform.InspectorInfo
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.SemanticsPropertyReceiver
 import androidx.compose.ui.semantics.onLongClick
@@ -53,6 +54,10 @@ private data class LongPressElement(
 
     override fun update(node: LongPressNode) {
         node.onLongClick = onLongClick
+    }
+
+    override fun InspectorInfo.inspectableProperties() {
+        name = "longPressable"
     }
 }
 

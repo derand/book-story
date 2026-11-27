@@ -6,7 +6,9 @@
 
 package ua.acclorite.book_story.ui.navigator
 
+import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.LocalActivity
 import androidx.activity.viewModels
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedContentTransitionScope
@@ -26,11 +28,10 @@ import kotlinx.coroutines.Dispatchers
 import ua.acclorite.book_story.presentation.navigator.Navigator
 import ua.acclorite.book_story.presentation.navigator.Screen
 import ua.acclorite.book_story.presentation.navigator.StackEvent
-import ua.acclorite.book_story.ui.common.helpers.LocalActivity
 
 @Composable
 fun rememberNavigator(initialScreen: Screen): Navigator {
-    val activity = LocalActivity.current
+    val activity = LocalActivity.current as ComponentActivity
     return activity.viewModels<Navigator>(
         extrasProducer = {
             activity.defaultViewModelCreationExtras

@@ -9,6 +9,7 @@ package ua.acclorite.book_story.ui.reader
 import android.app.SearchManager
 import android.content.Intent
 import android.provider.DocumentsContract
+import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
@@ -25,7 +26,6 @@ import ua.acclorite.book_story.domain.model.library.Book
 import ua.acclorite.book_story.presentation.book_info.BookInfoScreen
 import ua.acclorite.book_story.presentation.reader.ReaderEffect
 import ua.acclorite.book_story.presentation.reader.ReaderEvent
-import ua.acclorite.book_story.ui.common.helpers.LocalActivity
 import ua.acclorite.book_story.ui.common.helpers.launchActivity
 import ua.acclorite.book_story.ui.common.helpers.showToast
 import ua.acclorite.book_story.presentation.navigator.Screen
@@ -43,7 +43,7 @@ fun ReaderEffects(
     grantFolder: (ReaderEvent.OnGrantFolder) -> Unit
 ) {
     val navigator = LocalNavigator.current
-    val activity = LocalActivity.current
+    val activity = checkNotNull(LocalActivity.current)
 
     val folderPicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocumentTree()
