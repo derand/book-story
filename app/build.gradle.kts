@@ -118,12 +118,19 @@ kotlin {
 }
 
 // About Libraries configuration
+// res/raw/aboutlibraries.json is committed, not generated per build
+// (registerAndroidTasks = false). Re-export it after any dependency change:
+//   ./gradlew :app:exportLibraryDefinitions -PaboutLibraries.exportVariant=release \
+//       -PaboutLibraries.exportPath=src/main/res/raw/
 aboutLibraries {
     registerAndroidTasks = false
     prettyPrint = true
 
     filterVariants = arrayOf("debug", "release", "release-debug")
     excludeFields = arrayOf("generated", "funding", "description")
+    // A BOM only pins versions and ships no code. The Compose BOM (brought in by
+    // LazyColumnScrollbar) has no scm entry, so the screen would mark it "Closed source".
+    exclusionPatterns = listOf(Regex(".*-bom").toPattern())
 }
 
 dependencies {
