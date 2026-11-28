@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -20,10 +22,6 @@ android {
         targetSdk = 36
         versionCode = 14
         versionName = "1.8.0"
-
-        vectorDrawables {
-            useSupportLibrary = true
-        }
     }
 
     // Shared debug signing: pin the debug build to a committed keystore so every
@@ -77,19 +75,13 @@ android {
         }
     }
 
-    // Kotlin configuration
+    // Java target (Kotlin's is in the kotlin {} block below)
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    kotlinOptions {
-        jvmTarget = "17"
-    }
 
     // Room configuration
-    ksp {
-        arg("room.schemaLocation", "$projectDir/schemas")
-    }
     room {
         schemaDirectory("$projectDir/schemas")
     }
@@ -115,18 +107,30 @@ android {
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
-            excludes += "/META-INF/gradle/incremental.annotation.processors"
         }
     }
 }
 
+kotlin {
+    compilerOptions {
+        jvmTarget.set(JvmTarget.JVM_17)
+    }
+}
+
 // About Libraries configuration
+// res/raw/aboutlibraries.json is committed, not generated per build
+// (registerAndroidTasks = false). Re-export it after any dependency change:
+//   ./gradlew :app:exportLibraryDefinitions -PaboutLibraries.exportVariant=release \
+//       -PaboutLibraries.exportPath=src/main/res/raw/
 aboutLibraries {
     registerAndroidTasks = false
     prettyPrint = true
 
     filterVariants = arrayOf("debug", "release", "release-debug")
     excludeFields = arrayOf("generated", "funding", "description")
+    // A BOM only pins versions and ships no code. The Compose BOM (brought in by
+    // LazyColumnScrollbar) has no scm entry, so the screen would mark it "Closed source".
+    exclusionPatterns = listOf(Regex(".*-bom").toPattern())
 }
 
 dependencies {
@@ -140,22 +144,19 @@ dependencies {
     // although it is not.
     implementation("androidx.compose.foundation:foundation:1.9.3")
     implementation("androidx.compose.animation:animation:1.9.3")
-    implementation("androidx.compose.animation:animation-android:1.9.3")
     implementation("androidx.compose.foundation:foundation-layout:1.9.3")
     implementation("androidx.compose.ui:ui:1.9.3")
     implementation("androidx.compose.ui:ui-graphics:1.9.3")
-    implementation("androidx.compose.ui:ui-android:1.9.3")
     implementation("androidx.compose.material3:material3:1.5.0-alpha06")
-    implementation("androidx.compose.material3:material3-window-size-class:1.4.0")
+    implementation("androidx.compose.material3:material3-window-size-class:1.5.0-alpha06")
     implementation("androidx.compose.material:material-icons-extended:1.7.8")
 
     // All dependencies
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.9.1")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.9.4")
 
     // Dagger - Hilt
     implementation("com.google.dagger:hilt-android:2.57.2")
     ksp("com.google.dagger:hilt-android-compiler:2.57.2")
-    implementation("com.google.dagger:hilt-compiler:2.57.2")
     ksp("androidx.hilt:hilt-compiler:1.2.0")
     implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
 
